@@ -92,17 +92,17 @@ Do not claim individual Spark rolls are imported unless a current report field p
 - Update Repo_Current_State.
 - Repeat.
 
-## First Ticket Series
+## Condensed v1 Ticket Series
 
-T0001–T0050 ends with:
+T0001–T0021 ends with:
 
-- normalized game data
-- skills/abilities/items/mod planner
+- pinned/normalized official game data including skill advancement tables, dynamic ability data, items, TSys powers, and profiles
+- skills/levels/two ability bars/items/mod planner
 - per-ability calculator foundation
 - Spark simulation
 - save/share/edit/delete
-- character import
+- early character-report parsing plus My Items import
 - CurrentStats validation
 - A/B build comparison
 
-Rotation Simulator is intentionally next-series work.
+Rotation Simulator is intentionally next-series work after the 21-ticket v1 is stabilized.
