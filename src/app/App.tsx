@@ -12,7 +12,7 @@ function saveError(result: Exclude<SaveResult, { ok: true }>): string {
   switch (result.reason) {
     case 'unsupported-version': return `Saved schema ${result.schemaVersion} is unsupported. The stored draft is protected from overwrite. Use a compatible app version to recover it.`;
     case 'unavailable': return 'Browser storage is unavailable. Changes remain in this page only; enable local storage and retry saving.';
-    case 'read-failed': return 'The local draft could not be read. Saving is blocked until storage access is restored.';
+    case 'read-failed': return 'The local draft could not be read. Editing is disabled to protect unread data. Restore storage access, then reload this page to recover the draft.';
     case 'write-failed': return 'The local draft could not be saved. Storage may be full or blocked. Keep this page open, free storage, and retry saving.';
     default: return 'The local draft contains invalid data. A new build is shown; your next build edit will replace the invalid draft.';
   }
@@ -36,7 +36,8 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
     },
   }));
   const versionMismatch = build.gameDataVersion !== data.gameDataVersion;
-  const protectedDraft = session.restored.status === 'fallback' && session.restored.error.reason === 'unsupported-version';
+  const protectedDraft = session.restored.status === 'fallback' &&
+    (session.restored.error.reason === 'unsupported-version' || session.restored.error.reason === 'read-failed');
   const readOnly = versionMismatch || protectedDraft;
 
   useEffect(() => {

@@ -29,7 +29,9 @@ preserved. Search strings, pending level text and rank previews are transient.
 
 Malformed draft recovery is shown without writing until an actual build edit.
 Unsupported-schema drafts are protected by the T0007 persistence API, with
-fallback build editing disabled. A different saved game-data version is retained
+fallback build editing disabled. Unreadable drafts also disable editing until
+storage access is restored and the page is reloaded, preventing later overwrite
+of fields that could not be read. A different saved game-data version is retained
 and shown read-only: only the current bundled snapshot is available, and there
 is no implicit migration or historical-snapshot loader.
 
@@ -87,12 +89,15 @@ server and **`wrangler dev` (Cloudflare Workers local assets)**:
 6. Desktop 1440×1000 and mobile 375×812; no horizontal overflow on mobile.
 7. Real artifact-load failure followed by successful retry.
 8. Missing saved IDs visibly retained, and future-schema draft left untouched.
+   A blocked draft read disables edits; restoring access and reloading recovers
+   the original complete draft without overwriting it.
 9. No unexpected browser console errors or page exceptions on successful flows.
 
 The four requested example skills omit Rank for many abilities. Their upgraded
 records correctly say “Rank not published”; IDs and levels still distinguish
 options. Official Battle Chemistry abilities also demonstrate published Rank
-strings in the focused official-data tests.
+strings in the focused official-data tests and a browser check: choosing
+`ability_1708` and `ability_1709` saves the exact string ranks `"2"` and `"3"`.
 
 Local initial repository preparation took approximately **1.7–1.8 seconds**.
 Chromium reported approximately **195–239 MB used JavaScript heap** after loading

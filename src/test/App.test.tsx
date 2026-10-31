@@ -208,6 +208,7 @@ it('reports blocked storage reads without blindly overwriting the unreadable dra
   const writes = vi.spyOn(Storage.prototype, 'setItem');
   await render();
   expect(container.textContent).toContain('could not be read');
+  expect(control('#skill-A').matches(':disabled')).toBe(true);
   await change('#skill-A', 'Cow');
   await tick();
   expect(writes).not.toHaveBeenCalled();
