@@ -75,7 +75,7 @@ The supplied Storage report contains multiple same-slot items with `IsInInventor
 
 Therefore GorgonBuilder must not silently identify one as the active equipped item solely from that field.
 
-The user can choose a loadout from imported items.
+If a current report format exposes a separate authoritative equipped-state field, the importer may capability-detect and use it. Otherwise the user chooses a loadout from imported items.
 
 A later inference feature may attempt matching against `CurrentStats`, but it must be explicitly labeled as inference, not fact.
 
@@ -132,6 +132,10 @@ Initial test families:
 
 - Psychology / Deer
 - Cow / Unarmed
+
+## Test Fixture Privacy
+
+The customer's real CharacterSheet/Storage exports must not be committed to the public repository. Automated tests should use sanitized/minimal fixtures that preserve the report structure and representative field behavior without retaining personal character data.
 
 ## Privacy
 
