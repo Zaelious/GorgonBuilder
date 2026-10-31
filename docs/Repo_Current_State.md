@@ -6,7 +6,7 @@
 
 ## Current Status
 
-T0001 foundation, T0002 official data acquisition, T0003 skill/progression normalization, and T0004 ability/dynamic-data normalization are merged. The repository contains the Vite/React/strict TypeScript app shell, Cloudflare Workers static-asset hosting, the verified official Project Gorgon v490 raw snapshot, and React-independent normalized progression, ability, keyword-rule, dynamic-data, and acquisition-source contracts. Item/treasure-system normalization, generated runtime data, and planner UI are not yet implemented.
+T0001–T0005 are merged. The repository contains the Vite/React/strict TypeScript app shell, Cloudflare Workers static-asset hosting, the verified official Project Gorgon v490 raw snapshot, and React-independent normalized progression, ability, keyword-rule, dynamic-data, item, treasure-power/tier, TSys profile, and acquisition-source contracts. Generated runtime data, a consolidated runtime repository, and planner UI are not yet implemented.
 
 ## Completed Tickets
 
@@ -15,12 +15,13 @@ T0001 foundation, T0002 official data acquisition, T0003 skill/progression norma
 - **T0003 — Normalize Skills, Advancement Tables, Attributes, and Effects** (merged 2026-10-31 via [PR #4](https://github.com/Zaelious/GorgonBuilder/pull/4); squash commit `74407932fc37a46c5f62ba079b2f6e1a0b831273`). Strict contracts, a pure normalizer and 25 focused tests are in place. See [normalization README](../src/data/normalized/README.md).
 
 - **T0004 — Normalize Abilities and Dynamic Ability Data** (merged 2026-10-31 via [PR #5](https://github.com/Zaelious/GorgonBuilder/pull/5); squash commit `067e57f3227b859b6ffbca92b132cb310196f28b`). Added a pure ability normalizer, typed keyword/dynamic/acquisition contracts and 37 focused tests. See [normalization README](../src/data/normalized/README.md).
+- **T0006 — Generated Dataset, Completeness Checks, and Runtime Repository** (merged 2026-10-31 via [PR #6](https://github.com/Zaelious/GorgonBuilder/pull/6); squash commit `3a3d02b865b6b469295b10d4ad6ff3136f5d708d`). Added pure item/TSys normalization, typed item/power/tier/profile contracts, provenance and structured diagnostics, with 42 focused tests. See [normalization README](../src/data/normalized/README.md).
 
 **Deployment housekeeping completed** via [PR #2](https://github.com/Zaelious/GorgonBuilder/pull/2) (squash commit `9df290379b396f8bb4cc2717e154bbbca577af98`): explicit static-assets `wrangler.jsonc`, Wrangler 4.156.0 and synchronized lockfile, deploy/preview scripts, GitHub CI with Cloudflare dry-run, and deployment instructions.
 
 ## Active Ticket
 
-None. T0004 is merged; T0005 has not started.
+None. T0005 is merged; T0006 has not started.
 
 ## Planned Next Ticket
 
@@ -71,8 +72,8 @@ src/
 │  ├─ sparks/                (placeholder)
 │  └─ validation/            (placeholder)
 ├─ data/
-│  ├─ adapters/              (official-source.ts, normalize-progression.ts, normalize-abilities.ts, focused tests)
-│  ├─ normalized/            (progression.ts, abilities.ts contracts, README.md)
+│  ├─ adapters/              (official-source.ts; progression, ability, and item/TSys normalizers; focused tests)
+│  ├─ normalized/            (progression.ts, abilities.ts, items-treasure.ts contracts, README.md)
 │  ├─ raw/                   (pinned snapshot + v490 cache)
 │  └─ search/                (placeholder)
 ├─ features/
@@ -122,7 +123,9 @@ These are implementation-agent test results, not a separate independent executio
 
 **T0004 acceptance evidence (2026-10-31):** Codex reported `npm ci`, pinned offline snapshot validation, 37 focused tests, lint, strict typecheck, **131 total tests across 4 files**, production build, and `git diff --check` passing. [GitHub Actions PR-head CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41240276925) independently passed lint/typecheck/test/build and Wrangler dry-run. The Cloudflare Workers Builds check also succeeded for PR #5. Architect reviewed the four changed files before squash-merge. Raw data and ingestion scripts were unchanged. The normalizer retains **1,546 source-reference diagnostics** (1,532 `Skill: Unknown`, 14 missing effect-keyword memberships), which must remain visible through T0006.
 
-**Cloudflare PR preview warning:** Workers Builds checks failed on PRs #2, #3 and #4 despite successful GitHub CI; PR #5's Cloudflare check passed. KI-0006 remains tracked until preview-build reliability is confirmed across branches. See [deployment troubleshooting](Cloudflare_Deployment.md).
+**T0005 acceptance evidence (2026-10-31):** Codex reported pinned offline snapshot validation, **42 focused tests**, lint, strict typecheck, **173 total tests across 5 files**, production build, and whitespace checks passing. [GitHub Actions PR-head CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41241709925) independently passed dependency installation, lint, typecheck, tests, build, and Wrangler dry-run. Cloudflare preview build/deployment succeeded for PR #6. Architect reviewed the scoped four-file PR and squash-merged it. T0005 adds **96 diagnostics** (6 unresolved `Skill: Unknown` references; 90 unsupported `AnySkill` selectors); the existing **1,546 T0004 diagnostics** remain distinct and must be carried through T0006. `NormalizedItem.level` is explicitly the published `CraftingTargetLevel`, **not** a validated equip-level requirement; 500 equipment records lack it.
+
+**Cloudflare PR preview warning:** Workers Builds checks failed on PRs #2, #3 and #4 despite successful GitHub CI; PR #5 and PR #6 Cloudflare checks passed. KI-0006 remains tracked until preview-build reliability is confirmed across branches. See [deployment troubleshooting](Cloudflare_Deployment.md).
 
 ## Hosting and Previews
 
@@ -135,7 +138,7 @@ These are implementation-agent test results, not a separate independent executio
 
 ## Game Data
 
-**Committed on `main`:** the official Project Gorgon v490 raw snapshot (13 datasets, 39,162,208 dataset bytes), versioned official index, and SHA-256/count/provenance manifests under `src/data/raw/`. Acquisition is a development command; the frontend never fetches live data. T0003 implements React-independent normalization of 188 skills, 588 advancement tables, 2,189 attributes, and 23,282 effects in `src/data/adapters/normalize-progression.ts` and `src/data/normalized/progression.ts`. Advancement references resolve by official table names (e.g. `Balanced` to `3_Balanced`); reward values and unknown fields remain uninterpreted, and unresolved attribute links are reported in `integrityIssues`. The existing source adapter and snapshot workflow remain in `src/data/adapters/official-source.ts` and `scripts/`. The initial cache is committed for offline reproducibility; future upgrades must be explicit. T0004 also implements `normalizeAbilities` in `src/data/adapters/normalize-abilities.ts` and its typed contracts in `src/data/normalized/abilities.ts`. The v490 pin yields **5,972 abilities, 26 keyword rules, 2 global dynamic DoTs, 4 global dynamic special values, 4,063 acquisition records**, plus **1,757 embedded DoTs** and **1,823 embedded special values**. Official IDs, Level versus explicit Rank, damage/timing/targeting fields, raw records, and provenance remain distinct. Upgrade/prerequisite/timer/acquisition links resolve; conditional applicability and combat semantics are not inferred. Callers must verify input hashes. **1,546 unresolved source references** are retained for T0006, not silently repaired. See [normalization README](../src/data/normalized/README.md). Item/TSys normalization belongs to T0005, and generated runtime artifacts/completeness checks to T0006.
+**Committed on `main`:** the official Project Gorgon v490 raw snapshot (13 datasets, 39,162,208 dataset bytes), versioned official index, and SHA-256/count/provenance manifests under `src/data/raw/`. Acquisition is a development command; the frontend never fetches live data. T0003 implements React-independent normalization of 188 skills, 588 advancement tables, 2,189 attributes, and 23,282 effects in `src/data/adapters/normalize-progression.ts` and `src/data/normalized/progression.ts`. Advancement references resolve by official table names (e.g. `Balanced` to `3_Balanced`); reward values and unknown fields remain uninterpreted, and unresolved attribute links are reported in `integrityIssues`. The existing source adapter and snapshot workflow remain in `src/data/adapters/official-source.ts` and `scripts/`. The initial cache is committed for offline reproducibility; future upgrades must be explicit. T0004 also implements `normalizeAbilities` in `src/data/adapters/normalize-abilities.ts` and its typed contracts in `src/data/normalized/abilities.ts`. The v490 pin yields **5,972 abilities, 26 keyword rules, 2 global dynamic DoTs, 4 global dynamic special values, 4,063 acquisition records**, plus **1,757 embedded DoTs** and **1,823 embedded special values**. Official IDs, Level versus explicit Rank, damage/timing/targeting fields, raw records, and provenance remain distinct. Upgrade/prerequisite/timer/acquisition links resolve; conditional applicability and combat semantics are not inferred. Callers must verify input hashes. **1,546 unresolved source references** are retained for T0006, not silently repaired. See [normalization README](../src/data/normalized/README.md). T0005 adds `normalizeItemsTreasure` in `src/data/adapters/normalize-items-treasure.ts`, with typed contracts in `src/data/normalized/items-treasure.ts`: **3,078 equipment records**, **8,131 other item IDs explicitly accounted for**, **8,460 fixed-effect descriptions**, **1,947 treasure powers**, **45,634 power-owned tiers**, **40 TSys profiles**, **8,649 profile-to-power memberships**, and **10,068 acquisition records**. All **2,578 item-to-profile** and **8,649 profile-to-power** references resolve. Its **96 structured diagnostics** preserve unresolved versus uninterpreted source meanings. `level` means published `CraftingTargetLevel` (518 equipment records at 90+; 500 without a published target level), not a proven equipping requirement. Profile membership is not final mod eligibility, and effect descriptions are not numeric modifiers. See [normalization README](../src/data/normalized/README.md). T0006 owns generated runtime artifacts, unified lookup, and broader completeness checks; it must retain T0004 and T0005 diagnostics.
 
 Official data ingestion/normalization is concentrated in T0002–T0006, including advancement tables, dynamic ability data, TSys profiles, completeness checks, and the runtime data repository.
 
@@ -152,7 +155,7 @@ Character import is not yet implemented.
 
 ## Known Issues
 
-See `docs/Known_Issues_And_Followups.md`. T0004 introduces no known implementation blocker; its unresolved source diagnostics must remain visible in T0006. Earlier Cloudflare preview failures remain tracked as KI-0006, although PR #5's Cloudflare check succeeded.
+See `docs/Known_Issues_And_Followups.md`. T0004 and T0005 source diagnostics must remain visible in T0006. T0005's `CraftingTargetLevel` versus equipment-level interpretation must be resolved before T0009's level filtering; see KI-0007. Earlier Cloudflare preview failures remain tracked as KI-0006, although PR #5 and #6 preview checks succeeded.
 
 ## Documentation Rule
 
