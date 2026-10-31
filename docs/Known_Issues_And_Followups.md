@@ -36,7 +36,7 @@ Supplied reports expose normal item TSys powers but do not establish a field con
 
 ## KI-0004 — Backend Provider Not Yet Selected
 
-**Status:** Planned T0042 decision
+**Status:** Planned T0018 decision
 
 Architecture intentionally uses a provider-agnostic `BuildRepository`.
 
