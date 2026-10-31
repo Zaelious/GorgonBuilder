@@ -52,9 +52,19 @@ The condensed v1 ticket series validates the underlying per-ability engine and c
 
 **Status:** Investigation needed; no evidence of a T0003 application regression.
 
-Cloudflare Workers Builds marked PR previews on PRs #2, #3 and #4 as failed on 2026-10-31 while GitHub Actions CI, including Wrangler dry-run, succeeded. GitHub checks do not include the underlying Cloudflare error log; the cause is not yet established.
+Cloudflare Workers Builds marked PR previews on PRs #2, #3 and #4 as failed on 2026-10-31 while GitHub Actions CI, including Wrangler dry-run, succeeded. PR #5 and PR #6 preview builds/deployments subsequently succeeded, but the root cause of the earlier failures has not been established. GitHub checks do not include the underlying Cloudflare error log.
 
 **Action:** Go to Workers & Pages → `gorgonbuilder` → Deployments → View build history. Open PR #4's failed build ID `66cf1b10-8e5b-4439-8889-86a3f3175ee2`, inspect the first failure, compare with `docs/Cloudflare_Deployment.md` settings, verify Branch control/Preview Builds and retry after fixing the identified issue. Avoid unrelated code changes without diagnostic evidence.
+
+## KI-0007 — Crafting Target Level Is Not a Validated Equipment Requirement
+
+**Status:** Data semantics to resolve for T0009 equipment filtering
+
+T0005's official v490 `items` data exposes `CraftingTargetLevel`, not a generic item `Level`. Normalized `level` intentionally equals that source field with `levelSource` recorded. Of 3,078 equipment records, 518 have crafting target level 90+ and 500 omit the field.
+
+**Risk:** Using this field as an unqualified item-level/equip-level requirement could hide valid gear or communicate a false gameplay restriction. Imported concrete item-instance levels and published item `SkillReqs` are separate concepts.
+
+**Action:** Before implementing T0009's global minimum-level filter, establish and document intended filtering semantics from official data and/or controlled game evidence; preserve null/unknown levels rather than substituting zero. Do not redefine the T0005 source field without a documented design decision.
 
 ## Follow-Up Candidates After T0021
 

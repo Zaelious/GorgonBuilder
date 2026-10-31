@@ -69,6 +69,18 @@ T0004 is data-only; automated verification and architect review replace UI manua
 - Inspect **1,546 integrity diagnostics**: 1,532 published `Skill: Unknown` references and 14 unmatched effect-keyword references. They are unresolved source gaps, not proven nonexistent mechanics; T0006 must retain/report them.
 - Run lint, typecheck, full tests and build. [PR #5 GitHub CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41240276925) passed.
 
+### T0005 item and treasure-system normalization checks
+
+T0005 is data-only. Architect review and automated inspection replace UI manual testing.
+
+- Run `npm run data:update -- --check` and `npx vitest run src/data/adapters/normalize-items-treasure.test.ts`.
+- Verify the official v490 normalized totals: **3,078 equippable items**, **8,131 other item IDs**, **8,460 fixed-effect descriptions**, **1,947 powers**, **45,634 power-owned tiers**, **40 profiles**, **8,649 profile memberships**, and **10,068 item acquisition records**.
+- Check representative source records: `item_45640` (MainHand/Dagger), `item_45722` (OffHand/Dirk), `item_45052` (OffHandShield/Shield), `item_42093` (Chest/All), `item_49070` (Ring/All), and `item_48081` (Necklace/All). All have published `CraftingTargetLevel: 90`, which is **not proof of an equip-level restriction**. Confirm skill requirements remain separate.
+- Confirm all **2,578 item/profile** and **8,649 profile/power** published links resolve, and original power/tier identities are intact. Inspect `power_10001/id_1`, `power_10001/id_9`, and the atypical `power_129/id_120`.
+- Confirm exact fixed-effect prose, unknown tier fields, canonical raw records, source IDs, URLs, SHA-256 hashes, and version remain available without invented numeric modifier or eligibility semantics.
+- Inspect T0005's **96 diagnostics**: 6 unresolved `Skill: Unknown` links and 90 `AnySkill` selectors with unsupported semantics. Preserve the distinct **1,546 T0004 diagnostics** for T0006.
+- Run lint, typecheck, the full test suite, and build. The [PR #6 GitHub CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41241709925) passed, with 42 focused tests and 173 total tests.
+
 ## Calculation Tickets
 
 Verify:
