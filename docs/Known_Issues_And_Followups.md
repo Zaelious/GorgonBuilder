@@ -48,6 +48,14 @@ DPS depends heavily on build-specific setup, buffs, debuffs, stacks, cooldowns, 
 
 The condensed v1 ticket series validates the underlying per-ability engine and completes import validation, comparison, and save/share before implementing stateful rotation simulation.
 
+## KI-0006 — Cloudflare Workers Preview Build Failures
+
+**Status:** Investigation needed; no evidence of a T0003 application regression.
+
+Cloudflare Workers Builds marked PR previews on PRs #2, #3 and #4 as failed on 2026-10-31 while GitHub Actions CI, including Wrangler dry-run, succeeded. GitHub checks do not include the underlying Cloudflare error log; the cause is not yet established.
+
+**Action:** Go to Workers & Pages → `gorgonbuilder` → Deployments → View build history. Open PR #4's failed build ID `66cf1b10-8e5b-4439-8889-86a3f3175ee2`, inspect the first failure, compare with `docs/Cloudflare_Deployment.md` settings, verify Branch control/Preview Builds and retry after fixing the identified issue. Avoid unrelated code changes without diagnostic evidence.
+
 ## Follow-Up Candidates After T0021
 
 - Rotation Simulator explicit sequence

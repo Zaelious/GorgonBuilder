@@ -82,6 +82,14 @@ Should preserve:
 
 When the same combat skill is selected in both planner skill slots, downstream modifier aggregation must treat it as one active skill for skill-wide progression rewards.
 
+### T0003 implemented progression contracts
+
+`src/data/normalized/progression.ts` defines `NormalizedSkill`, `NormalizedAdvancementTable`, `NormalizedAttribute`, `NormalizedEffect`, `LevelProgression`, `ProgressionReward`, `AdvancementReference` and source/integrity types. The pure `normalizeProgression` function is in `src/data/adapters/normalize-progression.ts`; the [normalization README](../../src/data/normalized/README.md) documents the complete contract and verification.
+
+The pinned official v490 snapshot yields 188 skills, 588 advancement tables, 2,189 attributes and 23,282 effects. References such as `Balanced` resolve to official full IDs such as `3_Balanced`. Numeric levels, raw reward values, qualified reward keys and table `Keywords` are preserved. Each record retains source version, URL, hash and original definition. Missing advancement tables produce errors; unresolved attribute references are structured `integrityIssues`. No effect links are guessed from descriptions.
+
+This layer does **not** decide reward stacking, qualifier applicability, modifier meaning or damage formula ordering. T0006 will create generated runtime lookup artifacts. T0012 will determine applicable skill-wide modifiers without double-counting one skill selected twice.
+
 ### NormalizedAbility
 
 Should include:

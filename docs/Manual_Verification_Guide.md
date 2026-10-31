@@ -46,6 +46,17 @@ Verify:
 - representative known records exist
 - unknown fields do not silently become fake interpreted values
 
+### T0003 progression-normalization checks
+
+For this data-only ticket, run focused tests and inspect normalized records rather than expecting new UI:
+
+- `npm run data:update -- --check` validates the pinned snapshot offline.
+- `npx vitest run src/data/adapters/normalize-progression.test.ts` tests source preservation, deterministic results, invalid references and official-data integration.
+- Inspect Psychology/Unarmed (`Balanced` → `3_Balanced`), Cow (`PlayerCow` → `11_PlayerCow`), and Deer (`PlayerDeer` → `15_PlayerDeer`).
+- Ensure qualified rewards and unknown fields remain uninterpreted; malformed references fail explicitly.
+- Inspect `integrityIssues` and remember it covers only implemented namespaces, not all possible cross-dataset links.
+- Run lint, typecheck, full tests and production build. See `Repo_Current_State.md` for the verified GitHub CI run.
+
 ## Calculation Tickets
 
 Verify:
