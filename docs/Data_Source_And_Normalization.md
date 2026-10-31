@@ -13,10 +13,11 @@ Relevant datasets are expected to include, depending on the current published da
 - items
 - abilities
 - skills
+- advancement tables / skill progression rewards
 - attributes
 - effects
-- treasure-system client info
-- treasure-system profiles
+- treasure-system client info / powers
+- treasure-system profiles / item eligibility
 - ability keywords
 - dynamic ability values/DoTs
 - item/ability sources when available
@@ -68,6 +69,19 @@ Should include:
 - searchable text
 - source metadata where available
 
+### NormalizedSkill / Advancement Data
+
+Should preserve:
+
+- skill ID/name
+- level/progression metadata needed by the planner
+- advancement-table references
+- progression rewards/attributes
+- raw identifiers for rewards whose semantics are not yet understood
+- enough metadata to determine which active-skill rewards apply at a selected skill level
+
+When the same combat skill is selected in both planner skill slots, downstream modifier aggregation must treat it as one active skill for skill-wide progression rewards.
+
 ### NormalizedAbility
 
 Should include:
@@ -82,6 +96,14 @@ Should include:
 - AoE metadata
 - effect links
 - raw fields needed for future interpretation
+
+### NormalizedTreasureProfile
+
+Should include:
+
+- profile/internal ID
+- references needed to determine which treasure powers can occur on an item/profile
+- raw profile constraints that are not yet semantically interpreted
 
 ### NormalizedTreasurePower
 
