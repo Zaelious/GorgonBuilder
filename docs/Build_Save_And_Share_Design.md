@@ -1,6 +1,6 @@
 # GorgonBuilder — Build Save and Share Design
 
-**Status:** Approved product contract; provider implementation pending  
+**Status:** Approved product contract; local draft persistence implemented in T0007; provider implementation pending  
 **Version:** 1.0  
 **Date:** 2026-10-31
 
@@ -162,3 +162,14 @@ A dedicated ticket will compare/select a small backend based on:
 A local draft should exist even before remote saving.
 
 Network failure must not destroy the user's in-progress build.
+
+### Implemented in T0007
+
+- `BuildDocument` schema v1 is defined in `src/core/build/document.ts`; validation and serialization are in `src/core/build/validation.ts`.
+- The draft stores top-level `schemaVersion` and `gameDataVersion`, optional app version, build title/notes, independent skill slots and ability bars, equipment/instances, candidate mods, Sparks, target settings and optional character-import reference metadata. Owner credentials are **not** part of the build document.
+- `createLocalPersistence` in `src/persistence/local/storage.ts` saves the draft to `gorgonbuilder.current-draft` and versioned preferences to `gorgonbuilder.preferences`. The current local APIs are `saveDraft`, `restoreDraft`, `updatePreferences`, and `restorePreferences`.
+- Missing or malformed storage returns a default with explicit recovery status, preserving original bytes until a subsequent explicit save. Unsupported versioned payloads cannot be overwritten by normal saves or autosave; an explicit migration/reset flow is future work.
+- `createDraftAutosave` in `src/persistence/local/autosave.ts` implements validated snapshots, default 500 ms debounce, flush/cancel and explicit retry. The T0008 editor will wire its lifecycle and user-facing error handling.
+- Existing local draft storage is **not** remote/public saved-build hosting or ownership token storage. Future T0018–T0020 work must preserve these separations.
+
+See [build domain README](../src/core/build/README.md) and [PR #10](https://github.com/Zaelious/GorgonBuilder/pull/10).
