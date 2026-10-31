@@ -134,3 +134,77 @@ After merge, update `docs/Repo_Current_State.md` and the manual verification/dat
 normalization documents to reference these contracts and checks. Those documents
 were left unchanged to stay within the requested allowed paths. No T0004,
 UI, deployment, merge or environment publication is part of this change.
+
+## T0004 — Abilities and dynamic ability data
+
+`abilities.ts` adds `NormalizedAbility`, `AbilityKeywordRule`, `AbilityDot`,
+`AbilitySpecialValue`, `AbilityAcquisitionSource`, reference/diagnostic types and
+`NormalizedAbilityData` (schema version 1). The pure `normalizeAbilities(input)`
+entry point in `../adapters/normalize-abilities.ts` accepts parsed `abilities`,
+`abilitykeywords`, `abilitydynamicdots`, `abilitydynamicspecialvalues` and
+`sources_abilities`, their version/URL/SHA-256 provenance, and T0003 normalized
+`progression` (`gameDataVersion`, `skills`, `effects`). It performs no I/O or
+calculation. Verify input bytes against the pin before calling it. Empty
+supporting arrays/maps are accepted; the caller supplies provenance for every
+input. No acquisition behavior, generated artifacts or runtime repository changes.
+
+- Official ability keys, `InternalName` and display `Name` remain distinct.
+  Published blank display names survive. `Level` is separate from explicit
+  string/numeric `Rank`; omitted Rank is null. Most player combat ranks are
+  represented by names and `UpgradeOf` links, **not** an explicit Rank value.
+  `UpgradeOf`, `Prerequisite` and `SharesResetTimerWith` resolve by internal name
+  to official IDs. No rank is parsed from a name or inferred from a level/link.
+- Original PvE Damage, HealthSpecificDamage, ArmorSpecificDamage,
+  ExtraDamageIfTargetVulnerable, CritDamageMod and ArmorMitigationRatio remain
+  distinct nullable values. ResetTime, delay-loop metadata, target, Range, AoE
+  and targeting requirements retain source values. Numeric sentinels survive.
+  AoE units/geometry/caps and cooldown semantics remain uninterpreted.
+- Keywords and conditional keywords remain separate from tooltip-only keywords.
+  `keywordRuleCandidates` uses published required/excluded ability keywords,
+  retaining conditional candidates, without evaluating effects, active skills,
+  unknown constraints or modifiers. All candidates have unevaluated applicability.
+  Attribute hooks and every unknown field remain available without interpretation.
+- Supporting datasets are anonymous ordered arrays: `sourceIndex` and
+  `source.recordId` (zero-based index string) are snapshot locators, **not**
+  invented official rule IDs. Identical published rules at indices 24 and 25
+  survive independently. Global dynamic records keep `ownerAbilityId: null` and
+  all Req* constraints; no per-ability dynamic link is fabricated. Embedded PvE
+  DoTs/SpecialValues have explicit owner IDs and nested record-path provenance.
+- Effect-keyword constraints resolve by exact membership in T0003 effect
+  `Keywords`, retaining all matching effect IDs as `keyword-membership-only`.
+  These are conditional associations, not applied effects or effect-ID references.
+  This pin publishes no genuine effect-ID reference fields in these datasets;
+  descriptions, names and unrecognized future fields never establish links.
+  Acquisition records resolve by exact ability ID while their entries remain raw.
+- Every record retains a canonical raw copy and provenance. Object keys and
+  lookup matches are sorted; published array order is preserved. Malformed
+  required fields, conflicting internal names/IDs, and mixed versions (including
+  T0003 references) throw `NormalizationError` with a source path. Missing
+  references instead remain in output with structured `integrityIssues`.
+  Duplicate object keys already lost during JSON parsing cannot be recovered.
+
+The verified v490 pin yields **5,972 abilities, 26 keyword rules, 2 global dynamic
+DoTs, 4 global dynamic special values and 4,063 acquisition records**. Abilities
+also preserve 1,757 embedded DoTs and 1,823 embedded special values. All 3,911
+upgrade, 3,699 prerequisite, 3,914 shared-timer and 4,063 acquisition links resolve.
+129 abilities publish explicit Rank; 4,440 skill references resolve.
+
+There are **1,546 diagnostics**, all retained source gaps: 1,532 `Skill: Unknown`
+references have no T0003 skill definition; effect Keywords lack `MindRevealed`
+(9 references), `HasRecentlyHeardBardSong` (4), and `TestEffect` (1). These do not
+make source records malformed and are not proof that the mechanics do not exist.
+No complete game-data reference-integrity claim is made; T0006 owns broader checks.
+
+Run `npx vitest run src/data/adapters/normalize-abilities.test.ts` for fixtures,
+pin-hash verification, raw/count preservation, reference diagnostics, exact
+field mapping and deterministic serialization. Representative inspections cover
+Psychology (114), Cow (103), Unarmed (142), Deer (104), different upgrade/level
+records, AoE, conditional effect constraints and embedded dynamics. Run the
+ticket quality suite (`npm ci`, offline `data:update -- --check`, lint, typecheck,
+full tests, build, `git diff --check`) as well. No UI testing is needed.
+
+After merge, the repository state, manual verification, and data normalization
+documents should reference this API and its source gaps; those paths remain
+unchanged for ticket scope. T0006 must preserve these diagnostics when generating
+runtime data; later calculation tickets must validate mechanics before applying
+these rules or values. T0005 and later work have not begun here.
