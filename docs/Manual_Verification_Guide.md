@@ -8,6 +8,18 @@ A passing build does not prove the feature works.
 
 Every ticket has its own manual verification steps in `Tickets.md`. This guide defines the common baseline.
 
+## Verification Classes
+
+Every ticket still receives automated verification appropriate to the current repository. Customer hands-on testing is targeted rather than mandatory for every internal ticket.
+
+- **Automated + architect review:** Codex runs the required quality checks and ChatGPT reviews the implementation/PR. Customer manual testing is optional.
+- **Customer quick check:** a brief UI sanity check.
+- **Customer hands-on:** the customer performs the ticket's listed user workflow because usability or real Project Gorgon behavior matters.
+- **Customer game-math validation required:** acceptance includes controlled in-game observations supplied by the customer.
+- **Customer milestone regression required:** a broader end-to-end pass before a release milestone.
+
+This keeps internal schema/normalization tickets from wasting customer time while preserving hands-on checks for planner UX, game math, imports, Sparks, sharing, comparison, and release.
+
 ## Baseline Frontend Verification
 
 Once applicable:
