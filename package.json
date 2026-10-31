@@ -14,7 +14,8 @@
     "test": "vitest run",
     "data:update": "node --use-env-proxy scripts/data-update.ts",
     "deploy": "npm run build && wrangler deploy",
-    "preview:cloudflare": "npm run build && wrangler preview"
+    "preview:cloudflare": "npm run build && wrangler preview",
+    "data:generate": "node --experimental-transform-types --import ./scripts/typescript-imports.ts scripts/data-generate.ts"
   },
   "dependencies": {
     "react": "^19.3.1",
