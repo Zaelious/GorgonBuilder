@@ -249,8 +249,8 @@ Do not rely on React component shape as persistence format.
 3. Manual ticket verification
    - required every ticket
 
-4. Later end-to-end smoke tests
-   - save/share/import flows after architecture stabilizes
+4. v1 end-to-end smoke tests
+   - T0021 covers critical planner, sanitized import, save/share, duplicate, comparison, and release flows after architecture stabilizes
 
 ## Performance Targets
 
