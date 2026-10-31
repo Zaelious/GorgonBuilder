@@ -95,6 +95,20 @@ T0006 is a data-only milestone; no new planner UI is expected. [PR #8 GitHub CI]
 
 Runtime assets total 3,269,457 bytes compressed and 72,009,523 decoded JSON bytes. Real browser heap/latency must be measured when UI first consumes these assets in T0008/T0009. See [runtime repository README](../src/data/repository/README.md).
 
+### T0007 build domain and local persistence checks
+
+T0007 is an internal schema/persistence ticket; automated tests and architect review replace manual UI testing. [PR #10 GitHub CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41246601530) passed; Cloudflare preview built and deployed successfully.
+
+1. Inspect a default `BuildDocument`: `schemaVersion: 1`, explicit `gameDataVersion`, separate empty skill slots and ability bars, empty equipment, and a neutral one-target configuration.
+2. Confirm one skill, two different skills, and the same skill in both slots; `getUniqueActiveSkillIds` must deduplicate IDs without merging different chosen levels or independent bar order/ranks.
+3. Inspect representative equipment selection, imported/manual instance metadata, composite TSys power/tier IDs, candidate mods without count limits, and Spark none/simulated/actual modes; verify JSON round-tripping.
+4. Check browser-local draft and preference save/restore with fresh persistence instances. The keys are `gorgonbuilder.current-draft` and `gorgonbuilder.preferences`; minimum equipment level defaults to 90 as a preference only, not a validated equip restriction.
+5. Confirm malformed JSON/structure, absent storage, blocked localStorage, quota failures and incompatible future schema versions produce explicit recovery/error results. Incompatible saved versions must **not** be overwritten, including by autosave.
+6. Check autosave snapshotting, 500 ms debounce, flush/cancel and explicit retry after a failed write. The React editor hooks are deferred to T0008.
+7. Run `npx vitest run src/core/build/document.test.ts src/persistence/local/storage.test.ts src/persistence/local/autosave.test.ts` (84 focused tests), followed by lint, typecheck, full tests (294) and build.
+
+See [build domain README](../src/core/build/README.md). No new UI or remote save/share capability is expected in T0007.
+
 ## Calculation Tickets
 
 Verify:
