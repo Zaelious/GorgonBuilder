@@ -46,6 +46,9 @@ Also review any specialized document named by the ticket.
 ## UI Rules
 
 - GorgonExplorer is a functional reference, not a visual clone.
+- **Simple by Default, Detailed on Demand:** Prioritize compact, readable, intuitive interfaces with the immediate task and primary controls visible first.
+- Keep advanced statistics, technical metadata, and secondary actions accessible through contextual tooltips, expandable details, dialogs, or other deliberate interactions.
+- Avoid redundant labels, unnecessary scrolling, repetitive non-actionable warnings, and large always-visible information panels. Keep important errors, data limitations, and safety-critical warnings visible and actionable.
 - Desktop-first editing is acceptable.
 - Shared/read-only builds should remain reasonably usable on smaller screens.
 - Item/mod search must be fast and understandable.
