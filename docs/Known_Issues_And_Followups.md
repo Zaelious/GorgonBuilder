@@ -42,13 +42,13 @@ Architecture intentionally uses a provider-agnostic `BuildRepository`.
 
 ## KI-0005 — Rotation Simulator Deferred
 
-**Status:** Planned next ticket series after T0050
+**Status:** Planned next ticket series after T0021
 
 DPS depends heavily on build-specific setup, buffs, debuffs, stacks, cooldowns, and priority choices.
 
-The first ticket series validates the underlying per-ability engine before implementing stateful rotation simulation.
+The condensed v1 ticket series validates the underlying per-ability engine and completes import validation, comparison, and save/share before implementing stateful rotation simulation.
 
-## Follow-Up Candidates After T0050
+## Follow-Up Candidates After T0021
 
 - Rotation Simulator explicit sequence
 - time/state engine
