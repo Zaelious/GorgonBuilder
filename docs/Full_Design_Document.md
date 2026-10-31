@@ -25,9 +25,11 @@ The design must prioritize correctness and traceability over pretending uncertai
 Official Project Gorgon public data is the canonical source for:
 
 - skills
+- advancement tables / skill progression rewards
 - abilities
 - items
 - treasure-system powers
+- treasure-system profiles / item eligibility
 - effects
 - attributes
 - sources where available
@@ -126,9 +128,9 @@ Core hand-written domain concepts:
 
 - schemaVersion
 - title
-- skillSlotA
-- skillSlotB
-- selectedAbilities
+- skillSlotA with skill ID and selected level
+- skillSlotB with skill ID and selected level
+- independent ability bar A and ability bar B with exact ability/rank IDs
 - equipment selections
 - candidate mods
 - Spark configurations
@@ -188,7 +190,9 @@ User-selected/imported concrete instance:
 
 ### Modifier
 
-Normalized calculation input:
+Normalized calculation input.
+
+Build-wide modifier aggregation must be able to combine the unique active-skill advancement rewards, fixed/innate item effects, imported existing TSys powers, user-staged candidate mods, and later Spark/buff sources without double-counting the same active skill when it is selected in both skill slots:
 
 - source ID
 - source type
@@ -352,7 +356,7 @@ Comparison layers:
 
 ## 12. Rotation Simulator — Later Architecture
 
-Not part of T0001–T0050 implementation.
+Not part of T0001–T0021 implementation. Rotation work begins in the next ticket series after the v1 per-ability calculator, import validation, comparison, and save/share workflows have been stabilized.
 
 It will consume:
 
@@ -402,7 +406,7 @@ No optimization feature may define its own separate damage rules.
 
 ## 15. Non-Goals for First Ticket Series
 
-T0001–T0050 do not attempt to fully implement:
+T0001–T0021 deliver the working v1 planner and do not attempt to fully implement:
 
 - stateful rotation simulation
 - public build gallery
