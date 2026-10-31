@@ -1,0 +1,26 @@
+{
+  "project": "GorgonBuilder",
+  "version": "documentation-pack-1.0",
+  "date": "2026-10-31",
+  "files": [
+    "AGENTS.md",
+    "README.md",
+    "docs/Build_Save_And_Share_Design.md",
+    "docs/Character_Import_And_Validation.md",
+    "docs/Codex_Prompt_Playbook.md",
+    "docs/Codex_Ticket_Handoff_Template.md",
+    "docs/Damage_And_DPS_Model.md",
+    "docs/Data_Source_And_Normalization.md",
+    "docs/Design_Update_Companion.md",
+    "docs/Full_Design_Document.md",
+    "docs/Known_Issues_And_Followups.md",
+    "docs/MVP_Technical_Design.md",
+    "docs/Manual_Verification_Guide.md",
+    "docs/Product_Decisions.md",
+    "docs/Project_Discovery_Notes.md",
+    "docs/Project_Workflow_and_File_Placement.md",
+    "docs/Prompt_Context_Pack.md",
+    "docs/Repo_Current_State.md",
+    "docs/Tickets.md"
+  ]
+}
