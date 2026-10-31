@@ -37,9 +37,22 @@ export function dataUrl(version: string, file: string): string {
 // The CDN root publishes an HTML refresh/link to the current versioned index.
 // No fallback version: discovery failure must not select an arbitrary snapshot.
 export function discoverVersion(html: string): string {
+  const references = [...html.matchAll(/\bhref\s*=\s*(["'])(.*?)\1/gi)].map((match) => match[2]!);
+  for (const [tag] of html.matchAll(/<meta\b[^>]*>/gi)) {
+    const kind = /\bhttp-equiv\s*=\s*(["'])(.*?)\1/i.exec(tag)?.[2];
+    if (kind?.toLowerCase() !== 'refresh') continue;
+    const content = /\bcontent\s*=\s*(["'])(.*?)\1/i.exec(tag)?.[2];
+    const target = content && /^\s*[0-9]+(?:\.[0-9]+)?\s*;\s*url\s*=\s*(.+?)\s*$/i.exec(content)?.[1];
+    if (target) references.push(target.replace(/^(["'])(.*)\1$/, '$2'));
+  }
   const versions = new Set<string>();
-  for (const match of html.matchAll(/(?:https?:\/\/cdn\.projectgorgon\.com)?\/(v[A-Za-z0-9]+)\/data\/index\.html/g)) {
-    if (match[1]) versions.add(match[1]);
+  for (const reference of references) {
+    let url: URL;
+    try { url = new URL(reference, OFFICIAL_ROOT); } catch { continue; }
+    if (!['http:', 'https:'].includes(url.protocol) || url.hostname !== 'cdn.projectgorgon.com' ||
+      url.port || url.username || url.password || url.search || url.hash) continue;
+    const version = /^\/(v[A-Za-z0-9]+)\/data\/index\.html$/.exec(url.pathname)?.[1];
+    if (version) versions.add(version);
   }
   if (versions.size !== 1) throw new Error('Official CDN discovery did not identify exactly one version');
   return [...versions][0]!;

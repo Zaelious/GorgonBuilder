@@ -24,6 +24,9 @@ versioned index such as <https://cdn.projectgorgon.com/v490/data/index.html>.
 The index is the authority for file availability. Dataset URLs are direct children
 of that exact version's `data/` directory. No permanent version is embedded in the
 pipeline. Use `--latest` or `--version` deliberately when upgrading.
+Discovery accepts only official-host links or meta-refresh targets pointing to an
+exact versioned index. Incidental version strings and third-party URLs do not
+select a snapshot.
 
 The official index also documents `http://client.projectgorgon.com/fileversion.txt`
 as a version source. This workflow uses the verified CDN root instead, keeping
@@ -94,6 +97,12 @@ examples, not a game snapshot. Records have been reduced; fixture IDs and omitte
 fields are not completeness or gameplay assertions. No live acquisition is
 claimed by an offline test run. The implementation report/PR records live fetch
 results and any remaining network restrictions.
+
+Publishing an environment allowlist change does not establish that an existing
+workspace has adopted it. If acquisition still fails, inspect the active runtime
+policy/readiness and its actual CDN response. Continue in a workspace using the
+published policy before claiming live verification. No `snapshot.json` should be
+committed until every published acquisition target has downloaded and validated.
 
 The official publication requires Elder Game attribution when game text becomes
 player-visible. This ticket leaves the frontend untouched; include that attribution

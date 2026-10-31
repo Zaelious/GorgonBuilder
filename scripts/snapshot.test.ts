@@ -51,8 +51,24 @@ describe('official version and publication selection', () => {
 
   it('requires exactly one discovered version', () => {
     expect(discoverVersion('<a href="http://cdn.projectgorgon.com/v490/data/index.html">latest</a>')).toBe('v490');
+    expect(discoverVersion('<a href="/v490/data/index.html">latest</a>')).toBe('v490');
     expect(() => discoverVersion('an error page')).toThrow();
-    expect(() => discoverVersion('/v490/data/index.html /v491/data/index.html')).toThrow();
+    expect(() => discoverVersion('<a href="/v490/data/index.html">one</a><a href="/v491/data/index.html">two</a>')).toThrow();
+  });
+
+  it.each([
+    '<a href="https://example.com/v490/data/index.html">foreign</a>',
+    '<a href="https://cdn.projectgorgon.com.example.com/v490/data/index.html">foreign</a>',
+    '<a href="https://user@cdn.projectgorgon.com/v490/data/index.html">credentials</a>',
+    '<a href="https://cdn.projectgorgon.com/v490/data/index.html?alias=latest">alias</a>',
+    '<a href="ftp://cdn.projectgorgon.com/v490/data/index.html">unsupported</a>',
+    'Error while locating /v490/data/index.html',
+  ])('does not discover a version from an untrusted or incidental reference: %s', (html) => {
+    expect(() => discoverVersion(html)).toThrow('exactly one version');
+  });
+
+  it('accepts the official meta refresh format and deduplicates its matching link', () => {
+    expect(discoverVersion('<meta content="0; URL=\'/v490/data/index.html\'" HTTP-EQUIV="Refresh"><a href="https://cdn.projectgorgon.com/v490/data/index.html">latest</a>')).toBe('v490');
   });
 
   it('discovers and pins once, then reuses without any network or writes', async () => {
@@ -65,7 +81,7 @@ describe('official version and publication selection', () => {
     const pinStat = await stat(pinPath);
     const rawStat = await stat(cachePath);
     download.mockClear();
-    responses.set(OFFICIAL_ROOT, Buffer.from('/v491/data/index.html'));
+    responses.set(OFFICIAL_ROOT, Buffer.from('<a href="/v491/data/index.html">latest</a>'));
     const second = await update();
     expect(download).not.toHaveBeenCalled();
     expect(second).toEqual({ manifest: first.manifest, reused: true });
@@ -79,7 +95,7 @@ describe('official version and publication selection', () => {
   it('only changes version by explicit request/latest, and can switch back to cached data', async () => {
     await update({ version: '490' });
     expect(download).not.toHaveBeenCalledWith(OFFICIAL_ROOT);
-    responses.set(OFFICIAL_ROOT, Buffer.from('/v491/data/index.html'));
+    responses.set(OFFICIAL_ROOT, Buffer.from('<a href="/v491/data/index.html">latest</a>'));
     expect((await update({ latest: true })).manifest.upstreamVersion).toBe('v491');
     download.mockClear();
     expect((await update({ version: 'v490' })).reused).toBe(true);
@@ -205,7 +221,7 @@ describe('manifest and raw cache trust', () => {
       download.mockImplementationOnce(async () => {
         resolve();
         await pending;
-        return Buffer.from('/v490/data/index.html');
+        return Buffer.from('<a href="/v490/data/index.html">latest</a>');
       });
     });
     const first = update();
