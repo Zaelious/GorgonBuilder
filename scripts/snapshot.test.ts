@@ -267,6 +267,14 @@ describe('verified source shapes', () => {
     }
   });
 
+  it('allows advancement Keywords metadata but rejects malformed keywords and level values', () => {
+    const dataset = DATASETS.find((entry) => entry.name === 'advancementtables')!;
+    expect(validateDataset(dataset, bytes({ Table: { Keywords: ['MastercraftingBonus'], Level_01: {} } }))).toBe(1);
+    for (const row of [{ Keywords: [1] }, { Keywords: {} }, { Level_01: [] }]) {
+      expect(() => validateDataset(dataset, bytes({ Table: row }))).toThrow('unexpected source shape');
+    }
+  });
+
   it('accepts a UTF-8 BOM while hashing and preserving the original bytes', () => {
     const bom = Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), bytes(fixtures.skills)]);
     expect(validateDataset(DATASETS[0], bom)).toBe(1);

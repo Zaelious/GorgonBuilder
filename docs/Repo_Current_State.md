@@ -16,7 +16,7 @@ T0001 project foundation is implemented and merged. The repository contains a wo
 
 ## Active Ticket
 
-None. T0002 has not started.
+**T0002 — Official Game Data Snapshot Pipeline** is implemented on `feature/t0002-game-data-snapshot` in draft [PR #3](https://github.com/Zaelious/GorgonBuilder/pull/3), pending architect review and merge. Official v490 acquisition and offline verification passed; see [verification evidence](T0002_Verification.md).
 
 ## Planned Next Ticket
 
@@ -40,6 +40,8 @@ Development dependencies: `@eslint/js`, `@types/node`, `@types/react`, `@types/r
 
 ## Available Scripts
 
+- `npm run data:update` — discover/pin or validate/reuse official raw data
+- `npm run data:update -- --check` — validate the pinned raw snapshot offline
 - `npm run dev` — Vite development server
 - `npm run lint` — ESLint with zero allowed warnings
 - `npm run typecheck` — TypeScript no-emit checking
@@ -110,6 +112,8 @@ These are implementation-agent test results, not a separate independent executio
 
 **Cloudflare configuration CI verification (2026-10-31, [run](https://github.com/Zaelious/GorgonBuilder/actions/runs/41230777053)):** `npm ci`, lint, typecheck, 1 test, build, and `npx wrangler deploy --dry-run` all passed on Node 24. Production deployment on Cloudflare after PR #2 merge should be verified in the Cloudflare dashboard; GitHub CI does not verify the live deployment.
 
+**T0002 continuation verification (2026-10-31):** official acquisition, deterministic cache reuse (hashes/bytes/mtimes), offline `--check`, lint, typecheck, 69 tests, and production build passed. See [T0002 verification](T0002_Verification.md).
+
 ## Hosting and Previews
 
 - Production URL: https://gorgonbuilder.zbailouz7.workers.dev
@@ -121,7 +125,7 @@ These are implementation-agent test results, not a separate independent executio
 
 ## Game Data
 
-No official Project Gorgon data snapshot or normalized data has been committed yet.
+The T0002 branch contains the official v490 raw snapshot: 13 datasets, 39,162,208 dataset bytes, original index, and SHA-256/count/provenance manifests under `src/data/raw/`. Acquisition is a development command; the frontend never fetches live data. No semantic normalization is implemented. The source adapter and snapshot workflow are in `src/data/adapters/official-source.ts` and `scripts/`.
 
 Official data ingestion/normalization is concentrated in T0002–T0006, including advancement tables, dynamic ability data, TSys profiles, completeness checks, and the runtime data repository.
 

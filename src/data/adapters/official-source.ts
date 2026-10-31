@@ -118,7 +118,8 @@ export function validateDataset(dataset: Dataset, bytes: Uint8Array): number {
       continue;
     }
     if (!isObject(row)) return fail();
-    if (dataset.shape === 'advancement' && !Object.values(row).every(isObject)) return fail();
+    if (dataset.shape === 'advancement' && !Object.entries(row).every(([key, value]) =>
+      key === 'Keywords' ? stringArray(value) : isObject(value))) return fail();
     if (dataset.shape === 'sources' && (!Array.isArray(row.entries) || !row.entries.every(isObject))) return fail();
   }
   return Object.keys(data).length;

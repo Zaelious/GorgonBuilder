@@ -47,7 +47,7 @@ retained without inventing a filename or replacement content. Progression reward
 remain inside the original skill and advancement records.
 
 Shapes differ: keywords/DoTs/special values are arrays of objects; treasure
-profiles map names to string arrays; advancement tables map names to level maps;
+profiles map names to string arrays; advancement tables map names to level maps with optional `Keywords` string-array metadata;
 sources map original IDs to objects with `entries` arrays; other datasets map
 original identifiers to objects. Validation checks structure, not gameplay rules
 or cross-dataset semantic references. Unknown fields are retained byte for byte.
@@ -63,8 +63,11 @@ It is both the pin and the reviewable source manifest:
   available files, SHA-256, original byte counts and top-level record counts
 - absent optional files carry an explicit reason, with no fabricated hashes/data
 
-Downloaded bytes, the index, and a copy of the manifest live in ignored
-`src/data/raw/cache/<version>/`. They are separate from hand-written adapters and
+Downloaded bytes, the index, and a copy of the manifest live in
+`src/data/raw/cache/<version>/`. The verified initial `v490` snapshot is committed
+(including its raw bytes) so a fresh checkout supports offline `--check`. Other
+version caches remain ignored; deliberately stage a complete validated version
+with `git add -f` when committing a new snapshot. They are separate from hand-written adapters and
 never imported by React. Downloads are validated in a temporary directory and
 published only when the whole snapshot passes. A directory lock rejects concurrent
 updates. An interrupted process may leave `.update-lock` or an ignored staging
@@ -79,8 +82,8 @@ and rerun with the pin intact. Republished upstream bytes that disagree with the
 pin are refused. An explicit different version may be selected independently.
 
 The official publisher only guarantees a few recent versions, so an old pin may
-become unavailable upstream. Keep the ignored raw directory in an external archive
-if long-term reproduction is needed. The local hashes detect corruption and changes
+become unavailable upstream. Keep committed raw bytes when retiring snapshots if
+long-term reproduction is needed; uncommitted caches need an external archive. The local hashes detect corruption and changes
 relative to the reviewed pin; they are not signatures from the publisher.
 
 ## Verification
@@ -107,3 +110,5 @@ committed until every published acquisition target has downloaded and validated.
 The official publication requires Elder Game attribution when game text becomes
 player-visible. This ticket leaves the frontend untouched; include that attribution
 when a later ticket displays data.
+
+Live acquisition and verification evidence: [T0002 verification](../../../docs/T0002_Verification.md).

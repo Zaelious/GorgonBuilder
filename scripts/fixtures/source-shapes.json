@@ -1,6 +1,6 @@
 {
   "skills": { "Alchemy": { "Id": 34, "Combat": false, "Rewards": { "10": { "Ability": "PoisonBlade1" } }, "PassiveAdvancementTable": "ModestPassive" } },
-  "advancementtables": { "1001_Skeleton": { "Level_01": { "MONSTER_VULNERABILITY_CHANCE": 0.2 } } },
+  "advancementtables": { "1001_Skeleton": { "Level_01": { "MONSTER_VULNERABILITY_CHANCE": 0.2 } }, "2401_ForetoldUniversalDirect": { "Keywords": ["MastercraftingBonus"], "Level_01": { "BOOST_UNIVERSAL_DIRECT": 1 } } },
   "abilities": { "Ability_1": { "PvE": {} } },
   "abilitykeywords": [{ "AttributesThatDeltaCritChance": ["DELTA_ANATOMY_CRITICAL_CHANCE"], "MustHaveAbilityKeywords": ["AnatomyCriticals"] }],
   "abilitydynamicdots": [{ "DamagePerTick": 0, "DamageType": "Poison", "Duration": 8, "NumTicks": 4, "ReqActiveSkill": "Druid" }],

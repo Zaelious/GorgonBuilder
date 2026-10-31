@@ -1,0 +1,555 @@
+<html>
+
+<head>
+    <title>Project: Gorgon 3rd-Party Tools Data</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<style>
+  body {
+    margin: 0;
+    padding: 2rem;
+    font-family: system-ui, sans-serif;
+    line-height: 1.6;
+    margin-inline: auto;
+  }
+
+  h1, h2, h3 {
+    line-height: 1.2;
+    margin-top: 2rem;
+  }
+
+  p, ul, ol {
+    margin: 1rem 0;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: underline;
+  }
+</style>
+<body>
+    <h1>Project: Gorgon 3rd-Party Tools Data</h1>
+
+    <h2>Welcome!</h2>
+    <p>You've found the CDN repository for Project: Gorgon's client data! This data is made available for third-party
+        reference websites and apps.
+        In general, you can use the contents of these data files in whatever tools you want to create, with the
+        following caveats:</p>
+    <ul>
+        <li>The copyright is retained by Elder Game, LLC. If you display player-visible text from these files (e.g. item
+            names, effect descriptions, etc.), please include a line similar to this: "Some portions copyright
+            &lt;current year&gt; Elder Game, LLC." in the footer or credits of your website or app.</li>
+        <li>Elder Game, LLC reserves the right to restrict these files' usage by specific individuals or for specific
+            purposes in the future as they see fit.</li>
+        <li>Remember that it is against the terms of service to alter the Project: Gorgon game client in any way.</li>
+        <li>You are free to link to these CDN files directly or to cache the data locally.</li>
+        <li>The format of these files is subject to change between versions!</li>
+        <li>Each version of the game's data is numbered. Only the previous three or four versions are guaranteed to
+            exist; older versions are periodically deleted.</li>
+    </ul>
+    <p><a href="#localization">Click here to jump to translation documentation.</a></p>
+
+    <h2>Available JSON Files:</h2>
+    <ul>
+        <li><a href="abilities.json">abilities.json</a></li>
+        <li><a href="abilitykeywords.json">abilitykeywords.json</a></li>
+        <li><a href="abilitydynamicdots.json">abilitydynamicdots.json</a></li>
+        <li><a href="abilitydynamicspecialvalues.json">abilitydynamicspecialvalues.json</a></li>
+        <li><a href="achievements.json">achievements.json</a></li>
+        <li><a href="advancementtables.json">advancementtables.json</a></li>
+        <li><a href="ai.json">ai.json</a></li>
+        <li><a href="areas.json">areas.json</a></li>
+        <li><a href="attributes.json">attributes.json</a></li>
+        <li><a href="directedgoals.json">directedgoals.json</a></li>
+        <li><a href="effects.json">effects.json</a></li>
+        <li><a href="items.json">items.json</a></li>
+        <li><a href="items_raw.json">items_raw.json</a></li>
+        <li><a href="itemuses.json">itemuses.json</a></li>
+        <li><a href="landmarks.json">landmarks.json</a></li>
+        <li><a href="lorebookinfo.json">lorebookinfo.json</a></li>
+        <li><a href="lorebooks.json">lorebooks.json</a></li>
+        <li><a href="npcs.json">npcs.json</a></li>
+        <li><a href="playertitles.json">playertitles.json</a></li>
+        <li><a href="quests.json">quests.json</a></li>
+        <li><a href="recipes.json">recipes.json</a></li>
+        <li><a href="skills.json">skills.json</a></li>
+        <li><a href="sources_abilities.json">sources_abilities.json</a></li>
+        <li><a href="sources_items.json">sources_items.json</a></li>
+        <li><a href="sources_recipes.json">sources_recipes.json</a></li>
+        <li><a href="storagevaults.json">storagevaults.json</a></li>
+        <li><a href="strings_all.json">strings_all.json</a></li>
+        <li><a href="tsysclientinfo.json">tsysclientinfo.json</a></li>
+        <li><a href="tsysprofiles.json">tsysprofiles.json</a></li>
+        <li><a href="xptables.json">xptables.json</a></li>
+        <li><a href="Translation.zip">Translation.zip</a> - a zip file of the contents of <code>Translation/</code>
+            folder.
+            See <a href="#localization"> Localization</a> for more info</li>
+        <li><a href="Translation/">Translation/</a> - this subdirectory contains the same files that are in
+            <code>Translation.zip</code>. e.g. <a
+                href="Translation/strings_skills.json">Translation/strings_skills.json</a> is an
+            exact copy of that file from the zip. See <a href="#localization"> Localization</a> for more info
+        </li>
+    </ul>
+
+    <h2>File-Specific Notes</h2>
+    <p>This document (and the game!) are a work in progress. You will need to look at each file to get an idea of
+        how it works. Most of the files reference content from other files when needed. Here's some file-specific
+        tips that may not be obvious from looking at them:</p>
+
+    <h3>abilities.json</h3>
+    <p>Each ability in this file has an ID number which is encoded into the key for the ability. (Ability_1 has the
+        ID of 1, etc.) The "PvE" section of each ability describes how the ability is used in player-versus-monster
+        combat. Abilities can also have a "PvP" section, which will list specific fields that are different from
+        the PvE version. <i>The PvP block lists only the "differences": fields not listed in the PvP section are
+            assumed to be the same as the ones in the PvE section.</i></p>
+    <p>Also, note that some abilities are only used by monsters. These abilities have the "Lint_MonsterAbility"
+        keyword.</p>
+
+    <h3>abilitykeywords.json</h3>
+    <p>Lists commonly-occurring ability keywords, and Attributes that apply to all abilities that have that keyword.
+        These attributes are combined with the attributes that are explicitly listed in abilities.json for that ability.
+    </p>
+
+    <h3>advancementtables.json</h3>
+    <p>These are mostly internal lists of attribute power-ups. There's not too much that's useful to tools here,
+        but one important use is when looking at skills.json. Each skill can reference an advancement table, and
+        if it does, the player gets the benefits of that advancement table as they level up in the skill.</p>
+
+    <h3>ai.json</h3>
+    <p>This is configuration info for monster/pet AIs. There isn't much here that's useful to tools, but one bit
+        of info you can glean from it is whether an ability is for monsters/pets or for players. If an ability name
+        is referenced by an AI entry, it's for monsters or pets. Otherwise it's for players.</p>
+
+    <h3>directedgoals.json</h3>
+    <p>This describes all the entries in the "stuff to do" pane of the Quest window. The file contains both the
+        categories of entries AND the actual entries for each category, lumped together for your inconvenience. If
+        an entry has IsCategoryGate set to true, then it's used as a category header; actual entries will have a
+        CategoryGateId that maps to one of the categories.</p>
+
+    <h3>effects.json</h3>
+    <p>This file contains client data for every buff, debuff, or other weird special effect that can happen to a
+        player, <i>IF the effect is visible in the client: an icon in the "effects" pane, a particle, a tooltip
+            entry, etc.</i> Some effects have no status indicator in the client, so they are not included here.</p>
+    <p>Each effect has an ID which is encoded into the key for the entry. The "DisplayMode" field indicates how
+        it's used:</p>
+    <ul>
+        <li>DisplayMode of "Effect" means this effect is represented in the game as an icon in the effects pane --
+            it's a buff or debuff.</li>
+        <li>DisplayMode of "AbilityModifier" means it is shown on the tooltips for certain abilities. It's listed
+            as an extra effect that the ability provides. (In this case, the "AbilityKeywords" array tells you
+            which abilities it applies to. Abilities need to have only one of the keywords in this array.)</li>
+        <li>DisplayMode of "Instant" means the client only knows about the effect in order to know what particle
+            effect to display (if any).</li>
+    </ul>
+    <p>The "Desc" field is normally shown to the player directly, but there is a special case to be aware of: if
+        "DisplayMode" is "AbilityModifier", the Desc field can optionally take the format "DamageType:&lt;Type&gt;"
+        where &lt;Type&gt; is replaced with a damage type such as Cold or Fire. The client interprets this to mean
+        that the Effect changes affected abilities' damage type to the specified type. If the string continues with
+        a semicolon, the rest of the string after the semicolon is displayed to the user as normal.
+        Examples: "DamageType:Cold", "DamageType:Darkness;Deals up to 50 extra random damage"</p>
+
+    <h3>items.json</h3>
+    <p>The items have IDs, which are encoded into the key for each item object. (Item_1 has the ID of 1, etc.) The
+        "EffectDescs" array describes the item's effects when equipped. These can be in plain-English or
+        attribute-description formats -- see the comments on tsysclientinfo.json below for more info.</p>
+
+    <h3>items_raw.json</h3>
+        <p>This is the "raw" version of <b>items.json</b> with embedded variables. See 
+            <a href="#variableReplacement">Variable Replacement</a> for more info. 
+            The following fields can have <code>&lt;&lt;&lt;TripleStab&gt;&gt;&gt;</code> variables in them:
+            <ul>
+                <li><code>EffectDescs</code></li>
+                <li><code>FoodDesc</code></li>
+                <li><code>DynamicCraftingSummary</code></li>
+            </ul>
+        </p>
+        <p>
+            This file, <b>items_raw.json</b>, is what the game uses for its item data. <b>items.json</b> is auto-generated for your convenience, 
+            replacing all the embedded variables with their English language strings. In most cases you can just reference <b>items.json</b> and 
+            ignore this file.
+        </p>
+        <p>
+            We included this file to give volunteer translators as much context as possible about where a string is referenced. It could also have
+            interesting tool uses.
+        </p>
+
+    <h3>itemuses.json</h3>
+    <p>This info is used by the game to create the "More Info" window for items. Note that the information in this
+        file is 100% redundant right now: the client could figure out which recipes involve the item just by
+        examining all recipes. So the file may go away at some point -- but more info may get added to it, making
+        it important. We'll have to see how things go.</p>
+
+    <h3>lorebookinfo.json</h3>
+    <p>Currently, this just contains the categories that lore books can be in.</p>
+
+    <h3>lorebooks.json</h3>
+    <p>This contains information about each lore book that can be found in-game. The text of some lore books is not
+        included here (or in the game client). For books that we want to keep "secret", the book entry will have
+        "IsClientLocal" set to false. In those cases, the server sends the client the book text when the player
+        actually obtains the book.</p>
+    <p>Secrets don't last in an MMO because information spreads. So this just prevents books from being "scraped"
+        moments after a game update. We will periodically "de-secretize" lore books when we feel they no longer
+        need to be hidden.</p>
+
+    <h3>npcs.json</h3>
+    <p>Each entry in this file describes an NPC in the game. The key value is the internal name of the NPC, and
+        this is what is used elsewhere to refer to the NPC (such as in storagevaults.json). You can use npcs.json
+        to find the "friendly name" of these NPCs.</p>
+    <p>The file also contains information about what each NPC likes and dislikes. The "Pref" field gives a general
+        idea of how much they like/dislike it (with negative numbers indicating dislike), but this information is
+        not sufficient to exactly calculate favor earned from a gift.</p>
+
+    <h3>playertitles.json</h3>
+    <p>Describes all the titles a player can earn.</p>
+
+    <h3>quests.json</h3>
+    <p>Describes each quest. Note that as of this writing, much of the information in this file is server info not
+        used by the client, and will be removed from this file eventually. Fields such as "Requirements" and
+        "InteractionFlags" are not used by the client.</p>
+
+    <h3>recipes.json</h3>
+    <p>Each recipe has an Ingredients array, and each ingredient can have either an "ItemCode" or an "ItemKeys"
+        field. The "ItemCode" field is the type ID of an item from items.json. <i>The name of this field will
+            change to "ItemTypeID" in a future version of this data.</i></p>
+    <p>Alternatively, some recipes don't have fixed ingredients; they let the user drag and drop in items. In that
+        case, they have an "ItemKeys" field. This is an array of item keywords which the dropped-in item must
+        have.</p>
+    <p>New addition: some recipes have a ProtoResultItems array which is exactly like the ResultItems array,
+        except that these "proto-items" are enchanted before being given to the player. (So the proto-items are the
+        unenchanted base items.) Recipes can have ProtoResultItems, ResultItems, both, or neither.</p>
+
+    <h3>storagevaults.json</h3>
+    <p>Describes each 'storage vault' in the game, where players can store items.</p>
+
+    <h3>skills.json</h3>
+    <p>Describes each skill. (Note that not all skills are accessible in-game yet.)</p>
+    <p>One thing to watch for is the Rewards array. The keys in the array are usually levels, such as "7"; players
+        get that reward when they reach level 7. But sometimes entries in the array also indicate races,
+        such as "7_Dwarf_Elf". In that case, only dwarves and elves would get this reward when they reach level 7;
+        other races would not.</p>
+    <p>Also note that skills can reference an Advancement Table, which will provide additional level-up rewards
+        (such as more Max Health). If a skill is a combat skill, the skill's Advancement Table is only applied when
+        the player is using that skill. If the skill is non-combat, the advancement table is always applied.</p>
+
+    <h3>sources_abilities.json and sources_recipes.json</h3>
+    <p>These have entries for the ability/recipe IDs described in abilities.json/recipes.json, and describe how
+        each ability or recipe can be obtained by players. (This data is not actually used in the game client as of
+        this writing, but will be used in the future to assist players in finding stuff.)</p>
+
+    <h3>strings_all.json</h3>
+    <p>Contains all the named localizable strings, with their English-language values. These same strings can be found 
+        in the Translations folder broken up into multiple files. This file combines all those strings into one for tool
+        convenience.</p>
+    <p>The game doesn't actually read this file; it's synthesized for your convenience. The intended use is to provide
+        replacement values for embedded in strings in <b>items_raw.json</b> and other "raw" JSON files.</p>
+
+    <h3>tsysclientinfo.json</h3>
+    <p>"TSys" stands for "Treasure System". This is the internal name for the random-loot-generation system. Each
+        entry is a possible treasure effect that can be found on loot (or via crafting). Each treasure effect has
+        one or more tiers of potency, described in the "Tiers" array for the entry.</p>
+    <p>The "SkillLevelPrereq" indicates the minimum skill-level needed to wield equipment with that tier of power.
+        (If the Skill for the power is "Unknown" or "AnySkill", there is not actually any level requirement; the
+        value is still provided because it often (90% of the time) corresponds to the intended power-level of
+        the tier, so it may be useful to tools.)</p>
+    <p>The "EffectDescs" sections describe what each tier does. These are strings in two possible formats: plain
+        English and attribute-describing:</p>
+    <ul>
+        <li><i>Plain-english EffectDescs</i>: these can sometimes start with icon information, which is always in
+            the form "&lt;icon=#&gt;". There may be any number of icons.</li>
+        <li><i>Attribute-descriptions:</i> these indicate how the treasure mod alters an attribute (as described
+            in attributes.json). They are in the format "{attributeName}{delta}{requiredSkill}". The first two are
+            always present; the third is optional. If it exists, it will be the name of a skill as listed in
+            skills.json. The player must have that skill active to get the buff.</li>
+    </ul>
+
+    <h3>tsysprofiles.json</h3>
+    <p>("TSys" stands for "Treasure System".) A "tsys profile" is just a list of treasure effects, as found in
+        tsysclientinfo.json. When an item in items.json has a "TSysProfile" field, that item will be randomly generated
+        with effects contained in that profile.</p>
+
+    <p>Each profile in this file lists its eligible effects; those effect names correspond to the "InternalName"
+        fields in tsysclientinfo.json.</p>
+
+    <h3>xptables.json</h3>
+    <p>Each skill can reference an XP table from this file. The XP table indicates how much XP needs to be earned
+        to level-up a skill. For some reason the keys are named "Level_1" etc. when a more intuitive name would
+        have been "XPTable_1" or something like that. So just imagine that's how they're named.</p>
+
+    <h2 id="variableReplacement">Variable Replacement</h2>
+    <p>
+        <b>Note:</b> this system helps us localize strings that originate from spreadsheets and scripts. It's pretty niche. 
+        If you don't care about localization you can ignore this section, along with the file that uses it 
+        (<b>items_raw.json</b>).
+    </p>
+    <p>
+        To facilitate localization, we've added a way to embed variables in JSON string fields. These embeds can thenselves have simple numeric variables.
+        Examples are probably the fastest explanation. This is a snippet from <b>items_raw.json</b>:
+        <pre><code>
+        "DynamicCraftingSummary": "&lt;&lt;&lt;Food_CheapMeatCraftingSummary>>>",
+        </code></pre>
+        Text contained in <code>&lt;&lt;&lt;TripleStabs>>></code> is a variable that needs replacing. You can find the replacements in
+        the file <b>strings_all.json</b>, where it's defined as:
+        <pre><code>
+        "Food_CheapMeatCraftingSummary": "This can be used in Cooking recipes that call for 'Cheap Meat.' In those recipes, all Cheap Meat behaves the same way, so use whatever you have handy.",
+        </code></pre>
+
+        So all we need do is replace &lt;&lt;&lt;Food_CheapMeatCraftingSummary>>> with that string. Easy! But the real point of this system is that the replacement itself can contain variables. Here's another snippet from <b>strings_all.json</b>:
+        <pre><code>
+        "Food_RestorePower" : "Restores {0} Power",
+        </code></pre>
+        The <code>{0}</code> in the string is a variable, and it needs to be replaced with a value. The replacement values are specified sort of like a function call:
+        <pre><code>
+        "&lt;&lt;&lt;Food_RestorePower(0=28)>>>"
+        </code></pre>
+        The parameters are declared within parentheses <code>()</code>. Each variable is a number starting at 0, then an equals sign <code>=</code>, then the value for that variable, which is always a number (a decimal number, possibly negative).
+        If there's more than one variable to replace, they are separated by a semicolon:
+        <pre><code>
+        "&lt;&lt;&lt;SomeMadeUpString(0=200;1=-13.4)>>>"
+        </code></pre>
+    </p>
+    <p>
+        As of this writing, no variable takes more than one parameter, and that parameter is always named <code>0</code>. But we'll eventually have need of a <code>1</code> variable, and if we get crazy with it, maybe even <code>2</code>.
+    </p>
+
+    <h2>Lint Keywords</h2>
+    <p>Most types of things (items, recipes, quests, etc.) have a Keywords array. Keywords that start with "Lint_"
+        are used by our data validation process. For instance, if an item has the "Lint_NotObtainable" keyword,
+        that means the item cannot be obtained via any regular in-game process such as quest rewards or loot.
+        (These items can still be created manually by admins, so they might be used as rewards in live events. The
+        items may also have been accessible in the past, so players might still have them, but they're retired now.
+        Or the items may just be new stuff that's not quite ready to be in the game yet.)</p>
+    <p>"Lint" is the name of an old programming tool that detects problems by analyzing source files. We have a
+        similar tool that analyzes the game's data. It would normally complain about an item that can't be
+        obtained, but if it sees that the item has the Lint_NotObtainable keyword, it knows it's on purpose.
+        "Lint_" keywords are used to tell the tool that something is behaving weirdly, but on purpose.</p>
+    <p>The client doesn't actually use these Lint keywords, but they are included here because they're probably
+        useful for 3rd-party tools.</p>
+
+    <h2>Versioning Info</h2>
+    <p>Each version of the game's data has a number or name. This is stored at
+        <a href="http://client.projectgorgon.com/fileversion.txt">http://client.projectgorgon.com/fileversion.txt</a>.
+        (Note that's client.projectgorgon.com, NOT cdn.projectgorgon.com!) The contents of this file will be an
+        integer or a word -- that is, a consecutive sequence of ascii letters and numbers. (If there is whitespace
+        at the end of the file, remove it.) The data for that version is found at
+        <b>http://cdn.projectgorgon.com/v{fileversion}/data</b> and the icons for that version are at
+        <b>http://cdn.projectgorgon.com/v{fileversion}/icons</b>. The icon filenames are based on the icons' IDs.
+        They are "icon_###.png", where ### is the icon ID number, as referenced in a JSON file.
+    </p>
+
+    <h1 id="localization">Localization</h1>
+    <p>The game's text is also stored as JSON and is provided here to serve as a basis for player-written translations.
+    </p>
+    <p>(IMPORTANT NOTE: only part of the game is localizable at this time. Making the game fully translatable is a
+        work in progress with many more steps to go.)</p>
+
+
+    <h2>How to Start Translating</h2>
+    <p>The game has a way to let volunteer players create translations of the game. Right now, there isn't a formal
+        repository of these translations (but there will be eventually). So for other people to use your translation,
+        you need to give them your translation manually and they have to store it on their hard drive at a certain
+        place.</p>
+    <p>The rest of these instructions are for volunteer translators.</p>
+
+    <p>The easiest way to start is by <a href="">downloading this zip</a>. It contains the English version of all the
+        localizable strings. Extract the zip to Project Gorgon's app data folder. In Windows, the easiest way to
+        find this is to paste this into Windows Explorer -- it should open the correct folder:
+        <br><br>
+        <code>%localappdata%low\Elder Game\Project Gorgon</code>
+        <br><br>
+        Extract all the files in that zip into a new sub-folder here. Name the sub-folder "Translation".
+    </p>
+
+    <p>Before starting the game, go ahead and change one of the strings so you can tell if it's working. Open
+        <code>strings_skills.json</code> in a text editor and change the value for "skill_Unarmed_Name" from "Unarmed"
+        to something else. (I picked Unarmed because all players have this skill from character-creation. But you can
+        change any string you want.)
+    </p>
+
+    <p>Now when you start the game, it will detect your translation. You should see a big message on startup asking if
+        you want to use the "Language Pack". If you click Yes and log into the game, you should be able to open the
+        Skill
+        window and see that the Unarmed skill has been renamed.</p>
+
+    <p>While the game is running you can use the chat-command <code>/reloadstrings</code> to reload all the JSON files
+        from the folder. This lets you edit the various strings_whatever.json files, and test without having to restart
+        the game. If you have a GUI window open when you use this command, you may need to change the selection before
+        the new strings are displayed. For instance, if viewing a quest, click on a different quest and then back to the
+        original.</p>
+
+    <h2>What's Going On Under the Hood</h2>
+    <p>When the game starts it checks to see if there is a folder named "Translation" in the game's app-data folder.
+        If there's a Translation folder here and it contains at least a file named <code>version.json</code>, we assume
+        there's a translation available.</p>
+
+    <p>The game then prompts the user to see if they actually want to use this translation.</p>
+
+    <p>Note: Advanced users can change where the game looks for the translation directory is by adding command-line
+        parameters to the game in the Steam initialization. If you add <code>-translationdir C:\MyTranslation</code> to
+        the parameters, it will look in the <code>C:\MyTranslation</code> folder for <code>version.json</code> and other
+        files.</p>
+
+    <p>The game next looks in that folder for a file named <code>checksums.json</code>. This file is included in the
+        zip, and you don't need to change it for anything. This file acts as a sort of versioning system. The checksums
+        in this file are for the English-language strings that you translated. If the game notices that the
+        English-language string has changed since it was translated, that string gets turned back into English.
+        <b>(Edit: this feature is not yet implemented; it runs too slowly on game startup right now.)</b>
+    </p>
+    <p>This feature is optional. The goal is to make sure outdated translations don't keep getting used when they're out
+        of date. (The idea is that someone will update the translation and replace <code>checksums.json</code> with the
+        latest version.) If you don't want to provide this feature to your users, just delete
+        <code>checksums.json</code>.
+    </p>
+
+    <p>Next the game searches that directory for any file that starts with "strings_" and ends with ".json" (or
+        ".jsonc", see below). It loads all the strings from these files and applies them to the game data. Any strings
+        that aren't found in the directory remain English strings.</p>
+
+    <p>Note: we generally recommend you use the same setup of JSON files that are provided in the English version here.
+        That will probably make it easier to manage changes in the future. But if you need to break up the strings into
+        more files while developing, you can create any file named string_whatever.json. The only caveat is that no two
+        files can contain the same string ID. If that happens, one is chosen at random! (If you are worried about this
+        use the <code>/reloadstrings</code> command in-game. It will print an error if the same string is found more
+        than once.)
+    </p>
+
+    <h2>JSON with Comments</h2>
+    <p>The format used by these files is JSON, which is a simple text format that you can learn very quickly with a
+        google search. If you're a coder by nature you may
+        end up wanting to create custom tools that use these JSON files, and that's great. But if you're edit the files
+        directly via a text editor like VS Code, it may be useful to
+        have comments. Comments are notes left to yourself or other readers which aren't processed by the game. The JSON
+        format doesn't have built in support for comments, but
+        it's a common extension to the format. The game understands single-line comments that start with double slashes,
+        like this:</p>
+
+    <pre>
+// from here until the end of the line is a comment -- the game will ignore it, so you can use it to leave yourself notes
+    </pre>
+
+    Or you can have multi-line comments by starting and ending with <code>/*</code> and <code>*/</code>:
+    <pre>
+/* everything from here is a comment
+
+
+even on multiple lines
+
+until we see this marker: */
+    </pre>
+
+    <p>There is one annoying problem here, which is that text-editors which enforce the JSON format will mark these
+        comments as errors. But if you rename the file's extension from <code>.json</code> to <code>.jsonc</code>
+        editors like VS Code will recognize this as "JSON with Comments" and parse it correctly. The game checks for
+        files with both the .json and .jsonc extension.</p>
+
+    <h2>The version.json File</h2>
+    <p>Before giving your translation to others, edit this file to name your translation and add any notes you want them
+        to see. This is shown to the user when they pick your translation, and again each time the game starts.</p>
+
+
+    <h2>Updating Your Translation</h2>
+        <p>Each version of the game has a separate set of strings. If you have partially-translated strings from the previous version, 
+        <a href="UpdateTranslationFiles.ps1">here is a script</a>  that will update your strings. It will add new strings to 
+        the bottom of each JSON file, and mark each changed string with a marker that you can search for in your text editor. Istructions:</p>
+
+        <p>1. BACK UP YOUR STRINGS:</p> 
+        <ul>
+            <li>Open an Explorer window and point it at <code>C:\Users\%USERNAME%\AppData\LocalLow\Elder Game\Project Gorgon</code></li>
+            <li>The <code>Translation</code> folder in here contain your strings. Copy it (Ctrl+C) and paste it (Ctrl+V). This will make a new copy named something like <code>Translation - Copy.</code></li>
+            <li>If anything goes wrong, you can now delete the <code>Translation</code> folder and rename <code>Translation - Copy</code> to <code>Translation</code>, and you'll be back where you started.</li>
+        </ul>
+
+        <p>2. Download script: https://cdn.projectgorgon.com/v466/data/UpdateTranslationFiles.ps1</p>
+
+        <p>3. Run script. You may need to right-click and do whatever stupid voodoo Windows requires to let you run the script. It can take several minutes to run.</p>
+
+        <p>4. Update your translations. Now, each JSON file has new English strings added to the bottom of the file. Search each file for <code>$CHECKME$</code>. This is added to any 
+            string who's English version has changed. The English version is added to the string, then your translated string is at the end. (Or the old English string if you haven't translated it yet.)
+            Make sure the translation matches the English. Then remove all the $CHECKME$ and the English translation text.</p>
+
+
+    <h2>Other Localization Tips</h2>
+    <ul>
+        <li>
+            There are a bajillion strings in this game! It's best to work with other volunteers if possible. And
+            prioritize the order that you translate the files, because a partial-translation is better than no
+            translation.
+        </li>
+        <li>
+            There are a lot of duplicate strings. That's on purpose: they're left in-place to provide context for
+            tooling, because some of the strings may not be exactly the same in every language. But the duplicates a
+            pain if you're working in a text editor. You may want to use your editor's search-and-replace feature when
+            you find duplicates.
+        </li>
+        <li>
+            If you're not using a programming editor like VS Code or Notepad++ you must be careful not to use fancy
+            quotes! JSON
+            syntax uses regular quotes, "like this". Non-coding editors (like Microsoft Word) like to change those
+            quotes into fancy
+            quotes “like this”. JSON doesn't understand fancy quotes and you will see very arcane errors! This is why a
+            programming
+            editor is recommended.
+        </li>
+        <li>
+            The files <code>strings_requested.json</code> and <code>strings_npcs.json</code> are in a very
+            "experimental" format.
+            We may need to restructure these files in a future version, so take that into account when prioritizing
+            translations.
+            There is also an annoying limitation: many of the strings in these files are used as "floating labels"
+            overtop monsters' and NPCs' heads in the 3D-world. The <code>/reloadstrings</code> in-game command currently
+            can't reload strings in the 3D world! So these floating names won't update until you use
+            <code>/reloadstrings</code> AND either log out and log back in, or teleport to a new game area.
+        </li>
+        <li>
+            Note the capitalization of filenames: the folder is called "Translation", but the individual files are all
+            lowercase, like "strings_areas.json". This detail doesn't actually matter on Windows, but it can matter on
+            other platforms, and you'll want your translation to work everywhere!
+        </li>
+        <li>
+            In JSON, certain characters are encoded specially. A very common special encoding is "\n". This means "new
+            line" and is similar to pressing Enter in a text editor -- it starts a new line of text. We use "\n\n" , two
+            new lines together, to start a new paragraph.
+        </li>
+        <li>
+            If a string isn't included in the JSON files, the game just uses the built-in English. So if you're only
+            translating a few strings, you can delete the other strings and untranslated JSON files. This will speed
+            up the game's start time on older computers.
+        </li>
+        <li>
+            During startup, the game tries its best to load all the strings and it just "deals with" any errors it
+            finds, doing the best it can to provide at least some part of the translation. But the in-game
+            <code>/reloadstrings</code> command doesn't work this way. Instead it acts as a validator. It will generate
+            an error if it finds something wrong. So if you see that <code>/reloadstrings</code> succeeded, that means
+            your data is relatively clean.
+        </li>
+        <li>
+            I use VS Code (Visual Studio Code by Microsoft) to edit JSON and JSONC files. It's a free editor with good
+            JSON support.
+        </li>
+        <li>
+            In many places in the game, you can embed faux-HTML symbols in the strings. In most cases, these tags use
+            TextMeshPro format -- Google "TextMeshPro HTML Tags" to find the most up-to-date documentation. In other
+            cases, we use an older Unity built-in edit-field which has more limited HTML options, so not everything is
+            available everywhere. In addition, the game simulates some tags such as &lt;em>&lt;/em> which aren't built
+            in to TextMeshPro. Feel free to use tags like &lt;b>&lt;/b> &lt;i>&lt;/i> or &lt;em>&lt;/em> to make text
+            clearer where necessary. BE VERY CAREFUL with fancier tags. It's possible to crash the game if you use
+            particularly bad parameters to some of those tags!
+        </li>
+        <li>
+            If there is a BOM (byte-order mark) at the start of a file, it is honored. If no BOM is found,
+            the game assumes it's a UTF-8 file. If this sounds like gibberish to you, ignore it -- your text editor
+            will do the right thing without you having to bother with any of this.
+        </li>
+        <li>
+            In case it's useful to know: the hashes in <code>checksums.json</code> are MD5 hashes of the corresponding
+            English-language string.
+        </li>
+    </ul>
+
+    <br />
+    <br />
+    <br />
+
+</body>
+
+</html>
