@@ -84,7 +84,7 @@ When the same combat skill is selected in both planner skill slots, downstream m
 
 ### T0003 implemented progression contracts
 
-`src/data/normalized/progression.ts` defines `NormalizedSkill`, `NormalizedAdvancementTable`, `NormalizedAttribute`, `NormalizedEffect`, `LevelProgression`, `ProgressionReward`, `AdvancementReference` and source/integrity types. The pure `normalizeProgression` function is in `src/data/adapters/normalize-progression.ts`; the [normalization README](../../src/data/normalized/README.md) documents the complete contract and verification.
+`src/data/normalized/progression.ts` defines `NormalizedSkill`, `NormalizedAdvancementTable`, `NormalizedAttribute`, `NormalizedEffect`, `LevelProgression`, `ProgressionReward`, `AdvancementReference` and source/integrity types. The pure `normalizeProgression` function is in `src/data/adapters/normalize-progression.ts`; the [normalization README](../src/data/normalized/README.md) documents the complete contract and verification.
 
 The pinned official v490 snapshot yields 188 skills, 588 advancement tables, 2,189 attributes and 23,282 effects. References such as `Balanced` resolve to official full IDs such as `3_Balanced`. Numeric levels, raw reward values, qualified reward keys and table `Keywords` are preserved. Each record retains source version, URL, hash and original definition. Missing advancement tables produce errors; unresolved attribute references are structured `integrityIssues`. No effect links are guessed from descriptions.
 
@@ -92,7 +92,7 @@ This layer does **not** decide reward stacking, qualifier applicability, modifie
 
 ### T0004 implemented ability and dynamic-data contracts
 
-`src/data/normalized/abilities.ts` defines `NormalizedAbility`, `AbilityKeywordRule`, `AbilityDot`, `AbilitySpecialValue`, `AbilityAcquisitionSource` and typed references/diagnostics. `normalizeAbilities(input): NormalizedAbilityData` in `src/data/adapters/normalize-abilities.ts` is pure and React-independent; it reuses T0003 normalized skills/effects. See the [normalization README](../../src/data/normalized/README.md).
+`src/data/normalized/abilities.ts` defines `NormalizedAbility`, `AbilityKeywordRule`, `AbilityDot`, `AbilitySpecialValue`, `AbilityAcquisitionSource` and typed references/diagnostics. `normalizeAbilities(input): NormalizedAbilityData` in `src/data/adapters/normalize-abilities.ts` is pure and React-independent; it reuses T0003 normalized skills/effects. See the [normalization README](../src/data/normalized/README.md).
 
 - Preserve official ID, `InternalName`, display `Name`, `Skill`, `Level`, and explicit `Rank` separately. Missing Rank remains null; no ranks are inferred from names or upgrade chains.
 - Resolve published `UpgradeOf`, `Prerequisite`, and `SharesResetTimerWith` by internal name; retain PvE damage components, reset/delay timing, target/range/AoE, attribute hooks, and original raw values without assigning unverified combat meaning.
@@ -106,7 +106,7 @@ No final damage/DoT/cooldown/AoE calculations or conditional applicability are i
 
 ### T0005 implemented item and treasure-system contracts
 
-`src/data/normalized/items-treasure.ts` defines versioned `NormalizedItemTreasureData`, `NormalizedItem`, `NormalizedTreasurePower`, `NormalizedTreasureTier`, `NormalizedTreasureProfile`, item acquisition, typed references and diagnostic contracts. Pure `normalizeItemsTreasure(input)` lives in `src/data/adapters/normalize-items-treasure.ts`; it reuses the T0003 normalized skills and source/value types. See the [normalization README](../../src/data/normalized/README.md).
+`src/data/normalized/items-treasure.ts` defines versioned `NormalizedItemTreasureData`, `NormalizedItem`, `NormalizedTreasurePower`, `NormalizedTreasureTier`, `NormalizedTreasureProfile`, item acquisition, typed references and diagnostic contracts. Pure `normalizeItemsTreasure(input)` lives in `src/data/adapters/normalize-items-treasure.ts`; it reuses the T0003 normalized skills and source/value types. See the [normalization README](../src/data/normalized/README.md).
 
 - Equippable items are selected by **published `EquipSlot`**, not an inferred `Equipment` keyword. All 19 observed slots, including shield, racial, mount and cosmetic equipment, remain distinct. Non-equipment item IDs are accounted for but not normalized as equipment.
 - The official dataset exposes **`CraftingTargetLevel`**, not a generic item `Level`. `NormalizedItem.level` copies this value and exposes `levelSource: 'CraftingTargetLevel'`. Absent values remain null. This is **not a validated equip-level restriction**; T0009's level-90+ UI must handle that ambiguity explicitly. Skill requirements remain separate.
