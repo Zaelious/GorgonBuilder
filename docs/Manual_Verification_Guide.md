@@ -57,6 +57,18 @@ For this data-only ticket, run focused tests and inspect normalized records rath
 - Inspect `integrityIssues` and remember it covers only implemented namespaces, not all possible cross-dataset links.
 - Run lint, typecheck, full tests and production build. See `Repo_Current_State.md` for the verified GitHub CI run.
 
+### T0004 ability/dynamic-data normalization checks
+
+T0004 is data-only; automated verification and architect review replace UI manual testing.
+
+- Run `npm run data:update -- --check` and `npx vitest run src/data/adapters/normalize-abilities.test.ts`.
+- Inspect Psychology, Cow, Unarmed and Deer abilities, including upgraded records, explicit Rank versus Level, damage, cooldown/target/AoE, keyword constraints and embedded dynamics.
+- Confirm counts: **5,972 abilities, 26 keyword rules, 2 global dynamic DoTs, 4 global dynamic special values, 4,063 acquisition records**, plus **1,757 embedded DoTs** and **1,823 embedded special values**.
+- Verify official internal-name links for `UpgradeOf`, `Prerequisite` and `SharesResetTimerWith`; never invent ranks or applied effect links.
+- Preserve anonymous rule indices only as snapshot locators; global dynamic rules have no invented per-ability owner. Preserve unknown fields and canonical raw values.
+- Inspect **1,546 integrity diagnostics**: 1,532 published `Skill: Unknown` references and 14 unmatched effect-keyword references. They are unresolved source gaps, not proven nonexistent mechanics; T0006 must retain/report them.
+- Run lint, typecheck, full tests and build. [PR #5 GitHub CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41240276925) passed.
+
 ## Calculation Tickets
 
 Verify:
