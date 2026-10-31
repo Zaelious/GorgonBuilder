@@ -6,7 +6,7 @@
 
 ## Current Status
 
-T0001–T0006 are merged. The repository contains the Vite/React/strict TypeScript app shell, Cloudflare Workers static-asset hosting, the verified official Project Gorgon v490 raw snapshot, React-independent T0003–T0005 normalization contracts, and T0006's deterministic compressed runtime artifacts, integrity manifest, and typed indexed runtime repository. Planner UI and build persistence are not yet implemented.
+T0001–T0007 are merged. The repository contains the Vite/React/strict TypeScript app shell, Cloudflare Workers static-asset hosting, the verified official Project Gorgon v490 raw snapshot, React-independent T0003–T0005 normalization contracts, T0006's deterministic compressed runtime artifacts and typed indexed runtime repository, and T0007's versioned BuildDocument plus browser-local draft/preferences persistence and debounced autosave. Planner UI and remote save/share are not yet implemented.
 
 ## Completed Tickets
 
@@ -18,15 +18,17 @@ T0001–T0006 are merged. The repository contains the Vite/React/strict TypeScri
 - **T0005 — Normalize Items and Treasure System** (merged 2026-10-31 via [PR #6](https://github.com/Zaelious/GorgonBuilder/pull/6); squash commit `3a3d02b865b6b469295b10d4ad6ff3136f5d708d`). Added pure item/TSys normalization, typed item/power/tier/profile contracts, provenance and structured diagnostics, with 42 focused tests. See [normalization README](../src/data/normalized/README.md).
 - **T0006 — Generated Dataset, Completeness Checks, and Runtime Repository** (merged 2026-10-31 via [PR #8](https://github.com/Zaelious/GorgonBuilder/pull/8); squash commit `4d29f7abf4056c6013558c5c62dc2c4f3b4f49c4`). Added deterministic compressed generated artifacts, a manifest with completeness and diagnostic checks, and typed indexed runtime lookups, with 37 focused tests. See [runtime repository README](../src/data/repository/README.md).
 
+- **T0007 — Build Domain and Local Persistence** (merged 2026-10-31 via [PR #10](https://github.com/Zaelious/GorgonBuilder/pull/10); squash commit `fa6eb4312e55defe9e4022de9f8e05a596347ccb`). Added BuildDocument schema v1, strict validation/serialization, unique active-skill IDs, local draft/preferences recovery, and debounced autosave (84 focused tests). See [build domain README](../src/core/build/README.md).
+
 **Deployment housekeeping completed** via [PR #2](https://github.com/Zaelious/GorgonBuilder/pull/2) (squash commit `9df290379b396f8bb4cc2717e154bbbca577af98`): explicit static-assets `wrangler.jsonc`, Wrangler 4.156.0 and synchronized lockfile, deploy/preview scripts, GitHub CI with Cloudflare dry-run, and deployment instructions.
 
 ## Active Ticket
 
-None. T0006 is merged; T0007 has not started.
+None. T0007 is merged; T0008 has not started.
 
 ## Planned Next Ticket
 
-**T0007 — Build Domain and Local Persistence**
+**T0008 — Skill and Ability Planner UI**
 
 The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/DPS deferred to the following ticket series.
 
@@ -37,7 +39,7 @@ The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/D
 - Vitest 5 with jsdom for a React shell smoke test
 - Shared CSS variables and responsive baseline styles
 - Cloudflare Workers Static Assets for the Vite frontend (no Cloudflare Vite plugin or backend yet)
-- Provider-agnostic persistence remains a design direction, not an implemented interface
+- T0007 browser-local persistence is implemented using an injected storage abstraction; remote provider-agnostic build saving remains a future design direction
 
 Runtime dependencies: `react`, `react-dom`.  
 Development dependencies: `@eslint/js`, `@types/node`, `@types/react`, `@types/react-dom`, `@vitejs/plugin-react`, `eslint`, `globals`, `jsdom`, `typescript`, `typescript-eslint`, `vite`, `vitest`, `wrangler` (pinned to 4.156.0).
@@ -68,7 +70,7 @@ src/
 │  ├─ App.tsx
 │  └─ routes/                 (placeholder)
 ├─ core/
-│  ├─ build/                 (placeholder)
+│  ├─ build/                 (BuildDocument v1, validation, serialization, tests, README)
 │  ├─ calculation/           (placeholder)
 │  ├─ import/                (placeholder)
 │  ├─ sparks/                (placeholder)
@@ -90,7 +92,7 @@ src/
 ├─ generated/
 │  └─ game-data/             (three compressed runtime data files + deterministic manifest)
 ├─ persistence/
-│  ├─ local/                 (placeholder)
+│  ├─ local/                 (draft/preferences storage, autosave, tests)
 │  └─ remote/                (placeholder)
 ├─ styles/
 │  └─ global.css
@@ -129,6 +131,8 @@ These are implementation-agent test results, not a separate independent executio
 **T0005 acceptance evidence (2026-10-31):** Codex reported pinned offline snapshot validation, **42 focused tests**, lint, strict typecheck, **173 total tests across 5 files**, production build, and whitespace checks passing. [GitHub Actions PR-head CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41241709925) independently passed dependency installation, lint, typecheck, tests, build, and Wrangler dry-run. Cloudflare preview build/deployment succeeded for PR #6. Architect reviewed the scoped four-file PR and squash-merged it. T0005 adds **96 diagnostics** (6 unresolved `Skill: Unknown` references; 90 unsupported `AnySkill` selectors); the existing **1,546 T0004 diagnostics** remain distinct and must be carried through T0006. `NormalizedItem.level` is explicitly the published `CraftingTargetLevel`, **not** a validated equip-level requirement; 500 equipment records lack it.
 
 **T0006 acceptance evidence (2026-10-31):** Codex reported offline v490 validation, two byte-identical data generations, **37 focused tests**, lint, typecheck, **210 total tests**, production build and whitespace checks passing. [GitHub Actions CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41245038034) independently passed dependency installation, lint, typecheck, tests, build and Wrangler dry-run; Cloudflare Workers Builds also succeeded. Architect reviewed, recorded acceptance, and squash-merged [PR #8](https://github.com/Zaelious/GorgonBuilder/pull/8). The generated manifest reports 1,546 T0004 and 96 T0005 diagnostics, keeping their category, identity, and source path. Three compressed data files total **3,269,457 bytes**; decoded JSON is **72,009,523 bytes** before runtime indexing. Their loading is lazy; browser heap/latency should be measured when planner UI first uses the dataset in T0008/T0009. See [runtime repository README](../src/data/repository/README.md).
+
+**T0007 acceptance evidence (2026-10-31):** Codex reported **84 focused tests**, lint, typecheck, **294 total tests across 10 files**, production build, and whitespace checks passing. [GitHub Actions CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41246601530) independently passed installation, lint, typecheck, tests, build, and Wrangler dry-run; Cloudflare's PR #10 preview build/deployment succeeded. Architect reviewed the nine-file implementation, recorded acceptance, and squash-merged [PR #10](https://github.com/Zaelious/GorgonBuilder/pull/10). Draft and preferences live at `gorgonbuilder.current-draft` and `gorgonbuilder.preferences`. Unsupported saved schema versions are protected from overwrite, and malformed/unavailable storage falls back with explicit status. T0008 will connect the editor to the existing autosave lifecycle; no UI was added by T0007.
 
 **Cloudflare PR preview warning:** Workers Builds checks failed on PRs #2, #3 and #4 despite successful GitHub CI; PR #5 and PR #6 Cloudflare checks passed. KI-0006 remains tracked until preview-build reliability is confirmed across branches. See [deployment troubleshooting](Cloudflare_Deployment.md).
 
