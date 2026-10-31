@@ -1,0 +1,69 @@
+:root {
+  color-scheme: dark;
+  --color-background: #151b1a;
+  --color-surface: #202a27;
+  --color-text: #edf1eb;
+  --color-muted: #b6c3b9;
+  --color-accent: #d2bd89;
+  --color-border: #3b4941;
+  --font-body: system-ui, sans-serif;
+  --font-heading: Georgia, 'Times New Roman', serif;
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+  --space-5: 4rem;
+  --radius: 0.5rem;
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background: var(--color-background);
+  font-synthesis: none;
+  line-height: 1.6;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 20rem; }
+h1, h2, p { margin: 0; }
+
+.app-shell {
+  width: min(100% - var(--space-4), 75rem);
+  margin-inline: auto;
+}
+
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.wordmark { font-weight: 700; }
+.project-label { color: var(--color-muted); font-size: 0.875rem; }
+.welcome { max-width: 48rem; padding-block: var(--space-5); }
+.eyebrow { color: var(--color-accent); font-size: 0.875rem; }
+
+h1 {
+  margin-block: var(--space-1) var(--space-2);
+  font-family: var(--font-heading);
+  font-weight: 400;
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  line-height: 1.15;
+}
+
+.introduction { color: var(--color-muted); font-size: 1.125rem; }
+
+.notice {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.notice h2 { margin-bottom: var(--space-1); font-size: 1.125rem; }
+.notice p { color: var(--color-muted); }
+
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
