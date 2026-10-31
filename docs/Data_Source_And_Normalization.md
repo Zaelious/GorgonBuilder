@@ -90,20 +90,19 @@ The pinned official v490 snapshot yields 188 skills, 588 advancement tables, 2,1
 
 This layer does **not** decide reward stacking, qualifier applicability, modifier meaning or damage formula ordering. T0006 will create generated runtime lookup artifacts. T0012 will determine applicable skill-wide modifiers without double-counting one skill selected twice.
 
-### NormalizedAbility
+### T0004 implemented ability and dynamic-data contracts
 
-Should include:
+`src/data/normalized/abilities.ts` defines `NormalizedAbility`, `AbilityKeywordRule`, `AbilityDot`, `AbilitySpecialValue`, `AbilityAcquisitionSource` and typed references/diagnostics. `normalizeAbilities(input): NormalizedAbilityData` in `src/data/adapters/normalize-abilities.ts` is pure and React-independent; it reuses T0003 normalized skills/effects. See the [normalization README](../../src/data/normalized/README.md).
 
-- ID/internal name
-- display name
-- skill
-- rank
-- damage components
-- damage types
-- cooldown/timing
-- AoE metadata
-- effect links
-- raw fields needed for future interpretation
+- Preserve official ID, `InternalName`, display `Name`, `Skill`, `Level`, and explicit `Rank` separately. Missing Rank remains null; no ranks are inferred from names or upgrade chains.
+- Resolve published `UpgradeOf`, `Prerequisite`, and `SharesResetTimerWith` by internal name; retain PvE damage components, reset/delay timing, target/range/AoE, attribute hooks, and original raw values without assigning unverified combat meaning.
+- Distinguish static, conditional and tooltip-only keywords. Keyword-rule candidates remain unevaluated; effect-keyword references mean **exact membership in T0003 effect Keywords**, not an applied effect or inferred effect-ID link.
+- Preserve anonymous keyword/dynamic rules using snapshot-local array indices, not invented official IDs. Global dynamic records keep `ownerAbilityId: null`; embedded PvE DoTs and special values retain their ability owners and nested provenance.
+- Acquisition sources link only by official ability ID; entries and unsupported fields remain raw. Store source version, URL, SHA-256, and canonical copies. Callers must independently verify input bytes against hashes; mixed versions and malformed records throw path-specific errors, while missing references produce `integrityIssues`.
+
+For the verified **v490** snapshot, T0004 normalizes **5,972 abilities, 26 keyword rules, 2 global dynamic DoTs, 4 global dynamic special values, 4,063 acquisition sources**, with **1,757 embedded DoTs** and **1,823 embedded special values**. All **3,911 upgrade**, **3,699 prerequisite**, **3,914 shared-timer**, and **4,063 acquisition** links resolve, alongside **4,440 skill** references. There are **1,546 unresolved source-reference diagnostics**: 1,532 published `Skill: Unknown` references and 14 unmatched effect-keyword references (`MindRevealed`: 9, `HasRecentlyHeardBardSong`: 4, `TestEffect`: 1). This does not establish complete game-data integrity.
+
+No final damage/DoT/cooldown/AoE calculations or conditional applicability are implemented. T0005 handles items/TSys; T0006 handles generated data and broader completeness checks.
 
 ### NormalizedTreasureProfile
 
