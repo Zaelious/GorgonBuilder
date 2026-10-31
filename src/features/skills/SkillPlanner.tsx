@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { AbilitySelection, SkillSlot } from '../../core/build/document';
 import type { GameDataRepository } from '../../data/repository/repository';
 import type { BuildEdit, Slot } from '../../app/editor/build-editor';
-import { AbilityBrowser, AbilityBar } from '../abilities/AbilityPlanner';
+import { AbilityBar } from '../abilities/AbilityPlanner';
 
 interface Props {
   slot: Slot;
@@ -11,6 +11,8 @@ interface Props {
   data: GameDataRepository;
   onEdit: (edit: BuildEdit) => void;
   readOnly: boolean;
+  detailSlot: Slot | null;
+  onDetailOpen: (slot: Slot) => void;
 }
 
 function SkillLevel({ slot, level, onEdit }: { slot: Slot; level: number; onEdit: Props['onEdit'] }) {
@@ -27,7 +29,7 @@ function SkillLevel({ slot, level, onEdit }: { slot: Slot; level: number; onEdit
     {!valid && <p id={`level-error-${slot}`} className="warning">Use a nonnegative whole number. The saved level is unchanged.</p>}</>;
 }
 
-export function SkillPlanner({ slot, skill, bar, data, onEdit, readOnly }: Props) {
+export function SkillPlanner({ slot, skill, bar, data, onEdit, readOnly, detailSlot, onDetailOpen }: Props) {
   const [query, setQuery] = useState('');
   const skills = useMemo(() => data.skills.filter(s => s.combat)
     .toSorted((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id)), [data]);
@@ -36,11 +38,9 @@ export function SkillPlanner({ slot, skill, bar, data, onEdit, readOnly }: Props
   const unavailable = skill.skillId !== null && !selected;
   return (
     <section className="skill-panel" aria-labelledby={`slot-${slot}`}>
-      <header className="panel-heading"><p className="eyebrow">Skill {slot}</p><h2 id={`slot-${slot}`}>{selected?.name ?? skill.skillId ?? 'Choose a combat skill'}</h2></header>
+      <h3 id={`slot-${slot}`} className="sr-only">Skill {slot}: {selected?.name ?? skill.skillId ?? 'Empty slot'}</h3>
       <fieldset disabled={readOnly} className="skill-controls">
         <legend className="sr-only">Skill {slot} configuration</legend>
-        <label htmlFor={`skill-search-${slot}`}>Filter skills by name</label>
-        <input id={`skill-search-${slot}`} type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search combat skills…" />
         <div className="skill-inputs">
           <div><label htmlFor={`skill-${slot}`}>Skill {slot}</label>
             <select id={`skill-${slot}`} value={skill.skillId ?? ''} onChange={e => onEdit({ type: 'skill', slot, skillId: e.target.value || null })}>
@@ -53,13 +53,16 @@ export function SkillPlanner({ slot, skill, bar, data, onEdit, readOnly }: Props
             <SkillLevel slot={slot} level={skill.level} onEdit={onEdit} />
           </div>
         </div>
-        {matches.length === 0 && <p className="muted">No combat skills match this filter.</p>}
+        <details className="skill-filter"><summary>Filter skills</summary>
+          <label htmlFor={`skill-search-${slot}`}>Filter skills by name</label>
+          <input id={`skill-search-${slot}`} type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search combat skills…" />
+          {matches.length === 0 && <p className="muted">No combat skills match this filter.</p>}
+        </details>
       </fieldset>
+      <AbilityBar key={skill.skillId ?? 'empty'} slot={slot} skill={skill} bar={bar} data={data} onEdit={onEdit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={onDetailOpen} />
       {unavailable && <p role="alert" className="warning">Official skill {skill.skillId} is unavailable. Your saved selection has been retained.</p>}
       {selected && !selected.combat && <p role="alert" className="warning">The saved skill is not marked as a combat skill in loaded data.</p>}
-      {selected?.description && <p className="skill-description">{selected.description}</p>}
-      <AbilityBar slot={slot} skill={skill} bar={bar} data={data} onEdit={onEdit} readOnly={readOnly} />
-      <AbilityBrowser key={skill.skillId ?? 'empty'} slot={slot} skill={skill} data={data} onEdit={onEdit} readOnly={readOnly} />
+
     </section>
   );
 }

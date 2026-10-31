@@ -5,7 +5,7 @@ import type { BuildDocument } from '../../core/build/document';
 import { createLocalPersistence } from '../../persistence/local/storage';
 import { loadPlannerFixture } from '../../test/planner-fixture';
 import { editBuild, selectionWarnings } from './build-editor';
-import { groupAbilities } from '../../features/abilities/groups';
+import { groupAbilities, highestTier } from '../../features/abilities/groups';
 
 let data: ReturnType<typeof loadPlannerFixture>;
 beforeAll(() => { data = loadPlannerFixture(); });
@@ -103,4 +103,31 @@ it('groups only UpgradeOf-connected abilities and keeps same-named unrelated rec
   const groups = groupAbilities(data.getAbilitiesForSkill('Psychology'));
   expect(groups.flatMap(g => g.abilities)).toHaveLength(data.getAbilitiesForSkill('Psychology').length);
   expect(groups.some(g => g.abilities.length > 1)).toBe(true);
+});
+
+it('limits new additions to six, retains overfull drafts and allows explicit replacement', () => {
+  let build = skill(empty(), 'A', 'Psychology');
+  for (let i = 0; i < 6; i++) build = editBuild(build, { type: 'add', slot: 'A', abilityId: 'ability_1201' }, data);
+  expect(editBuild(build, { type: 'add', slot: 'A', abilityId: 'ability_1201' }, data)).toBe(build);
+  const replacement = data.getAbilitiesForSkill('Psychology')[1]!;
+  const updated = editBuild(build, { type: 'replace', slot: 'A', index: 2, abilityId: replacement.id }, data);
+  expect(updated.abilityBarA).toHaveLength(6);
+  expect(updated.abilityBarA[2]).toEqual({ abilityId: replacement.id, rank: replacement.rank });
+  expect(updated.abilityBarB).toBe(build.abilityBarB);
+  expect(editBuild(build, { type: 'replace', slot: 'A', index: 6, abilityId: replacement.id }, data)).toBe(build);
+  const legacy = { ...build, abilityBarA: [...build.abilityBarA, ...build.abilityBarA] };
+  expect(skill(legacy, 'A', 'Cow').abilityBarA).toHaveLength(12);
+  expect(editBuild(legacy, { type: 'add', slot: 'A', abilityId: replacement.id }, data)).toBe(legacy);
+});
+
+it('quick-add uses published level with deterministic ID ties, independent of rank or array order', () => {
+  const template = data.getAbility('ability_1201')!;
+  const abilities = [
+    { ...template, id: 'ability_9', level: 100, rank: '1' },
+    { ...template, id: 'ability_2', level: 100, rank: null },
+    { ...template, id: 'ability_1', level: 1, rank: '99' },
+  ];
+  for (const members of [abilities, [...abilities].reverse()]) {
+    expect(highestTier({ id: 'family', name: 'Family', abilities: members }).id).toBe('ability_2');
+  }
 });

@@ -6,13 +6,21 @@ import { createDefaultBuildDocument } from '../core/build/document';
 import { loadGameDataRepository } from '../data/repository/load';
 import { DRAFT_STORAGE_KEY } from '../persistence/local/storage';
 import { loadPlannerFixture } from './planner-fixture';
+import { groupAbilities, highestTier } from '../features/abilities/groups';
+import { abilityIconUrl } from '../features/abilities/AbilityIcon';
 
 vi.mock('../data/repository/load', () => ({ loadGameDataRepository: vi.fn() }));
 const loader = vi.mocked(loadGameDataRepository);
 let data: ReturnType<typeof loadPlannerFixture>;
 let container: HTMLDivElement;
 let root: Root;
-beforeAll(() => { data = loadPlannerFixture(); });
+beforeAll(() => {
+  data = loadPlannerFixture();
+  Object.defineProperties(HTMLDialogElement.prototype, {
+    showModal: { configurable: true, value() { this.setAttribute('open', ''); } },
+    close: { configurable: true, value() { this.removeAttribute('open'); } },
+  });
+});
 beforeEach(() => {
   vi.useFakeTimers();
   localStorage.clear();
@@ -43,6 +51,8 @@ async function change(selector: string, value: string) {
 }
 async function click(selector: string) { await act(async () => { control<HTMLButtonElement>(selector).click(); }); }
 async function tick(ms = 500) { await act(async () => { vi.advanceTimersByTime(ms); }); }
+const openPicker = (slot: 'A' | 'B') => click(`[aria-label="Open ability picker for bar ${slot}"]`);
+const inspect = (slot: 'A' | 'B', index: number) => click(`.skill-panel:nth-child(${slot === 'A' ? 1 : 2}) .combat-slot:nth-child(${index}) .slot-button`);
 const draft = () => JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)!) as ReturnType<typeof createDefaultBuildDocument>;
 
 it('shows loading, then renders both empty slots without writing a draft', async () => {
@@ -53,8 +63,8 @@ it('shows loading, then renders both empty slots without writing a draft', async
   await act(async () => { resolve(data); });
   expect(control<HTMLSelectElement>('#skill-A').value).toBe('');
   expect(control<HTMLSelectElement>('#skill-B').value).toBe('');
-  expect(control('#bar-A').textContent).toContain('Ability bar A');
-  expect(control('#bar-B').textContent).toContain('Ability bar B');
+  expect(control('#bar-A').textContent).toContain('Combat bar A');
+  expect(control('#bar-B').textContent).toContain('Combat bar B');
   await tick();
   expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
 });
@@ -77,21 +87,24 @@ it('adds chosen official ranks to separate bars, reorders, removes and restores 
   await render();
   await change('#skill-A', 'Psychology');
   await change('#skill-B', 'Psychology');
-  const rankA = control<HTMLSelectElement>('select[id^="rank-A-"]');
-  const rankB = control<HTMLSelectElement>('select[id^="rank-B-"]');
-  const chosenA = rankA.options[rankA.options.length - 1]!.value;
-  const chosenB = rankB.options[0]!.value;
-  await change(`#${rankA.id}`, chosenA);
-  await click('.ability-results button');
-  await click('.ability-results button');
-  const browserB = control('#browser-B').parentElement!;
-  await act(async () => { browserB.querySelector<HTMLButtonElement>('.ability-results button')!.click(); });
-  // Add a distinct second ability, then move it to the start of A.
-  const cards = container.querySelectorAll<HTMLElement>('.skill-panel:first-child .ability-card');
-  const secondId = cards[1]!.querySelector<HTMLSelectElement>('select')!.value;
-  await act(async () => { cards[1]!.querySelector('button')!.click(); });
+  const groups = groupAbilities(data.getAbilitiesForSkill('Psychology'));
+  const chosenA = highestTier(groups[0]!).id;
+  const chosenB = groups[0]!.abilities[0]!.id;
+  await openPicker('A');
+  await click('.quick-add');
+  await openPicker('A');
+  await click('.quick-add');
+  await openPicker('B');
+  await click('.family summary');
+  await click('.tier button');
+  await openPicker('A');
+  await click('.family:nth-child(2) .quick-add');
+  const secondId = highestTier(groups[1]!).id;
+  await inspect('A', 3);
   await click('[aria-label="Move entry 3 up in bar A"]');
+  await inspect('A', 2);
   await click('[aria-label="Move entry 2 up in bar A"]');
+  await inspect('A', 3);
   await click('[aria-label="Remove entry 3 from bar A"]');
   await tick();
   const saved = draft();
@@ -100,8 +113,8 @@ it('adds chosen official ranks to separate bars, reorders, removes and restores 
   await act(async () => { root.unmount(); });
   root = createRoot(container);
   await render();
-  expect(container.querySelectorAll('.skill-panel:first-child .bar-entry')).toHaveLength(2);
-  expect(container.querySelectorAll('.skill-panel:nth-child(2) .bar-entry')).toHaveLength(1);
+  expect(container.querySelectorAll('.skill-panel:first-child [aria-haspopup="dialog"]')).toHaveLength(2);
+  expect(container.querySelectorAll('.skill-panel:nth-child(2) [aria-haspopup="dialog"]')).toHaveLength(1);
   expect(container.textContent).toContain('Local draft restored');
   expect(draft()).toEqual(saved);
 });
@@ -115,6 +128,7 @@ it('searches names and descriptions without autosaving transient controls', asyn
   await change('#skill-A', 'Psychology');
   await tick();
   const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
+  await openPicker('A');
   await change('#ability-search-A', 'no-such-ability');
   expect(container.textContent).toContain('No official abilities match');
   await tick();
@@ -132,6 +146,7 @@ it('retains incompatible selections visibly when A changes or clears, leaving B 
   localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build));
   await render();
   await change('#skill-A', 'Cow');
+  await inspect('A', 1);
   expect(container.textContent).toContain('does not belong to the selected skill');
   await change('#skill-A', '');
   await tick();
@@ -151,7 +166,9 @@ it('shows missing skill/ability IDs, rank and level mismatches without discardin
   localStorage.setItem(DRAFT_STORAGE_KEY, original);
   await render();
   expect(container.textContent).toContain('Official skill missing-skill is unavailable');
+  await inspect('A', 1);
   expect(container.textContent).toContain('Official ability missing-ability is unavailable');
+  await inspect('A', 2);
   expect(container.textContent).toContain('Saved rank differs');
   expect(container.textContent).toContain('exceeds configured skill level 0');
   await tick();
@@ -247,4 +264,161 @@ it('keeps empty or invalid level text transient and restores the saved level on 
   }
   await act(async () => { control('#level-A').dispatchEvent(new FocusEvent('focusout', { bubbles: true })); });
   expect(control<HTMLInputElement>('#level-A').value).toBe('85');
+});
+
+it('keeps the picker closed by default, shows six slots per bar and restores focus after cancel', async () => {
+  await render();
+  expect(container.querySelector('dialog')).toBeNull();
+  expect(container.querySelectorAll('.combat-slot')).toHaveLength(12);
+  await change('#skill-A', 'Psychology');
+  const opener = control<HTMLButtonElement>('[aria-label="Open ability picker for bar A"]');
+  opener.focus();
+  await openPicker('A');
+  expect(control<HTMLDialogElement>('dialog').open).toBe(true);
+  expect(document.activeElement?.id).toBe('ability-search-A');
+  await act(async () => { control('dialog').dispatchEvent(new Event('cancel', { bubbles: true, cancelable: true })); });
+  expect(container.querySelector('dialog')).toBeNull();
+  expect(document.activeElement).toBe(opener);
+});
+
+it('searches official upgrade families, expands exact tiers and quick-adds the highest published level', async () => {
+  await render();
+  await change('#skill-A', 'Psychology');
+  await openPicker('A');
+  await change('#ability-search-A', 'ability_1201');
+  expect(container.querySelectorAll('.family')).toHaveLength(1);
+  const group = groupAbilities(data.getAbilitiesForSkill('Psychology')).find(g => g.abilities.some(a => a.id === 'ability_1201'))!;
+  expect(control('.family summary').textContent).toContain(`${group.abilities.length} published tiers`);
+  expect(control<HTMLDetailsElement>('.family details').open).toBe(false);
+  await click('.family summary');
+  expect(control<HTMLDetailsElement>('.family details').open).toBe(true);
+  expect(container.querySelectorAll('.tier')).toHaveLength(group.abilities.length);
+  expect(container.textContent).toContain('Target needs 50% more Rage');
+  expect(container.textContent).toContain('Published base values');
+  await click('.quick-add');
+  await tick();
+  const highest = highestTier(group);
+  expect(draft().abilityBarA).toEqual([{ abilityId: highest.id, rank: highest.rank }]);
+  expect(control('.slot-warning')).toBeDefined();
+  await inspect('A', 1);
+  expect(container.textContent).toContain(`Published level ${highest.level} exceeds configured skill level 0`);
+});
+
+it('selects an explicit lower tier with the original published string rank', async () => {
+  await render();
+  await change('#skill-A', 'BattleChemistry');
+  await openPicker('A');
+  await change('#ability-search-A', 'ability_1707');
+  await click('.family summary');
+  await click('[aria-label$="ability_1708"]');
+  await tick();
+  expect(draft().abilityBarA).toEqual([{ abilityId: 'ability_1708', rank: '2' }]);
+});
+
+it('enforces six additions, shows a full message and replaces an occupied slot without growing the bar', async () => {
+  await render();
+  await change('#skill-A', 'Psychology');
+  for (let i = 0; i < 6; i++) { await openPicker('A'); await click('.quick-add'); }
+  expect(container.textContent).toContain('Bar A is full');
+  await openPicker('A');
+  expect(control<HTMLButtonElement>('.quick-add').disabled).toBe(true);
+  await click('[aria-label="Close ability picker"]');
+  await inspect('A', 3);
+  await click('.detail-actions button');
+  const groups = groupAbilities(data.getAbilitiesForSkill('Psychology'));
+  await click('.family:nth-child(2) .quick-add');
+  await tick();
+  expect(draft().abilityBarA).toHaveLength(6);
+  expect(draft().abilityBarA[2]?.abilityId).toBe(highestTier(groups[1]!).id);
+  expect(draft().abilityBarB).toEqual([]);
+});
+
+it('retains all overfull legacy entries and lets users remove excess entries explicitly', async () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  build.skillSlotA = { skillId: 'Psychology', level: 90 };
+  build.abilityBarA = Array.from({ length: 8 }, () => ({ abilityId: 'ability_1201', rank: null }));
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build));
+  await render();
+  expect(container.textContent).toContain('Legacy draft has 8 abilities');
+  expect(container.querySelectorAll('.skill-panel:first-child .combat-slot')).toHaveLength(8);
+  await tick();
+  expect(draft()).toEqual(build);
+  await inspect('A', 8);
+  await click('[aria-label="Remove entry 8 from bar A"]');
+  await tick();
+  expect(draft().abilityBarA).toHaveLength(7);
+});
+
+it('uses official versioned icons and falls back visibly for missing or broken images', async () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  build.skillSlotA.skillId = 'Psychology';
+  build.abilityBarA = [{ abilityId: 'ability_1201', rank: null }, { abilityId: 'missing', rank: null }];
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build));
+  await render();
+  const image = control<HTMLImageElement>('.combat-slot img');
+  expect(image.getAttribute('src')).toBe('https://cdn.projectgorgon.com/v490/icons/icon_2118.png');
+  expect(container.querySelectorAll('[aria-label="Ability icon unavailable"]')).toHaveLength(1);
+  await act(async () => { image.dispatchEvent(new Event('error')); });
+  expect(container.querySelectorAll('[aria-label="Ability icon unavailable"]')).toHaveLength(2);
+  expect(abilityIconUrl(null, 'v490')).toBeNull();
+  expect(abilityIconUrl(-1, 'v490')).toBeNull();
+  expect(abilityIconUrl(2118, '../bad')).toBeNull();
+  expect(container.textContent).toContain('Elder Game, LLC');
+});
+
+it('opens equipped details on hover, focus and click, supports Escape and exposes published base facts', async () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  build.skillSlotA.skillId = 'Psychology';
+  build.abilityBarA = [{ abilityId: 'ability_1201', rank: null }];
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build));
+  await render();
+  const trigger = control<HTMLButtonElement>('.slot-button');
+  await act(async () => { trigger.dispatchEvent(new MouseEvent('mouseover', { bubbles: true })); });
+  expect(control('[role="dialog"]').textContent).toContain('Psychoanalyze');
+  await act(async () => { trigger.dispatchEvent(new MouseEvent('mouseout', { bubbles: true })); vi.advanceTimersByTime(150); });
+  expect(container.querySelector('.ability-popover')).toBeNull();
+  await act(async () => { trigger.focus(); });
+  expect(control('[role="dialog"]').textContent).toContain('Base damage');
+  expect(container.textContent).toContain('Power cost');
+  expect(container.textContent).toContain('Reuse time');
+  expect(container.textContent).toContain('Range');
+  expect(container.textContent).toContain('Target needs 50% more Rage');
+  await act(async () => { trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
+  expect(container.querySelector('.ability-popover')).toBeNull();
+  await inspect('A', 1);
+  await act(async () => { document.body.dispatchEvent(new Event('pointerdown', { bubbles: true })); });
+  expect(container.querySelector('.ability-popover')).toBeNull();
+  await inspect('A', 1);
+  await click('[aria-label="Close ability details"]');
+  expect(container.querySelector('.ability-popover')).toBeNull();
+});
+
+it('keeps Tab and Shift+Tab inside the picker at the focus boundaries', async () => {
+  await render();
+  await change('#skill-A', 'Psychology');
+  await openPicker('A');
+  // jsdom has no layout; expose rendered rectangles for the focus-boundary check.
+  vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue({ length: 1 } as DOMRectList);
+  const first = control<HTMLButtonElement>('[aria-label="Close ability picker"]');
+  const last = [...container.querySelectorAll<HTMLButtonElement>('.quick-add')].at(-1)!;
+  await act(async () => { last.focus(); last.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })); });
+  expect(document.activeElement).toBe(first);
+  await act(async () => { first.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true })); });
+  expect(document.activeElement).toBe(last);
+});
+
+
+it('shows one equipped detail panel when switching between the independent bars', async () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  build.skillSlotA.skillId = 'Psychology';
+  build.skillSlotB.skillId = 'Deer';
+  build.abilityBarA = [{ abilityId: 'ability_1201', rank: null }];
+  build.abilityBarB = [{ abilityId: 'ability_1578', rank: null }];
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build));
+  await render();
+  await inspect('A', 1);
+  await inspect('B', 1);
+  expect(container.querySelectorAll('.ability-popover')).toHaveLength(1);
+  expect(control('.ability-popover').id).toBe('equipped-ability-detail-B');
+  expect(draft()).toEqual(build);
 });

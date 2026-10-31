@@ -392,3 +392,16 @@ describe('pinned official ability integration', () => {
     expect(JSON.stringify(normalizeAbilities(official))).toBe(JSON.stringify(normalized));
   });
 });
+
+it('adds only published IconID and SpecialInfo facts, with explicit missing and malformed cases', () => {
+  const input = fixture();
+  input.abilities.ability_1!.IconID = 2118;
+  input.abilities.ability_1!.SpecialInfo = 'Exact <uninterpreted> special text.';
+  const abilities = normalizeAbilities(input).abilities;
+  expect(abilities[0]).toMatchObject({ iconId: 2118, specialInfo: 'Exact <uninterpreted> special text.' });
+  expect(abilities[1]).toMatchObject({ iconId: null, specialInfo: null });
+  for (const value of [-1, 0.5, '2118']) {
+    input.abilities.ability_1!.IconID = value;
+    expect(() => normalizeAbilities(input)).toThrow(/IconID/);
+  }
+});

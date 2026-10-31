@@ -5,7 +5,7 @@ import type { GameDataRepository } from '../data/repository/repository';
 import { SkillPlanner } from '../features/skills/SkillPlanner';
 import { createDraftAutosave } from '../persistence/local/autosave';
 import { createLocalPersistence, type SaveResult } from '../persistence/local/storage';
-import { editBuild, type BuildEdit } from './editor/build-editor';
+import { editBuild, type BuildEdit, type Slot } from './editor/build-editor';
 import './planner.css';
 
 function saveError(result: Exclude<SaveResult, { ok: true }>): string {
@@ -25,6 +25,7 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
   });
   const [build, setBuild] = useState(session.restored.value);
   const current = useRef(build);
+  const [detailSlot, setDetailSlot] = useState<Slot | null>(null);
   const [recoveryVisible, setRecoveryVisible] = useState(true);
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
   const [saveState, setSaveState] = useState(session.restored.status === 'restored' ? 'Local draft restored' : 'No changes saved yet');
@@ -66,15 +67,15 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
 
   return <>
     <div className="planner-heading"><div><p className="eyebrow">Skill & ability planner</p><h1>{build.title}</h1></div><p className="save-status" role="status">{saveState}</p></div>
-    <p className="introduction">Choose two combat skills and plan their ability bars. Each slot keeps its own level and selections, even when both skills are the same.</p>
+    <p className="introduction">Choose your combat skills. Add up to six abilities to each bar; open a slot to inspect or change it.</p>
     {recoveryVisible && session.restored.status === 'fallback' && <p className="notice warning" role="alert">{saveError(session.restored.error)}</p>}
     {versionMismatch && <p className="notice warning" role="alert">This draft uses game data {build.gameDataVersion}; loaded data is {data.gameDataVersion}. The saved version and selections are preserved. Editing is disabled because the original snapshot is unavailable.</p>}
     {saveResult && !saveResult.ok && <div className="notice warning" role="alert"><p>{saveError(saveResult)}</p><button type="button" onClick={() => autosave.flush()}>Retry saving</button></div>}
-    <div className="planner-grid">
-      <SkillPlanner slot="A" skill={build.skillSlotA} bar={build.abilityBarA} data={data} onEdit={commit} readOnly={readOnly} />
-      <SkillPlanner slot="B" skill={build.skillSlotB} bar={build.abilityBarB} data={data} onEdit={commit} readOnly={readOnly} />
-    </div>
-    <footer className="planner-footer"><span>Draft game data: {build.gameDataVersion} · Loaded: {data.gameDataVersion} · Schema {build.schemaVersion}</span><span>Official Project Gorgon data · Local draft only</span></footer>
+    <section className="skills-section" aria-labelledby="skills-abilities-title"><div className="section-heading"><h2 id="skills-abilities-title">Skills &amp; Abilities</h2><span className="muted">Two independent combat bars</span></div><div className="planner-grid">
+      <SkillPlanner slot="A" skill={build.skillSlotA} bar={build.abilityBarA} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} />
+      <SkillPlanner slot="B" skill={build.skillSlotB} bar={build.abilityBarB} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} />
+    </div></section>
+    <footer className="planner-footer"><span>Draft game data: {build.gameDataVersion} · Loaded: {data.gameDataVersion} · Schema {build.schemaVersion}</span><span>Some portions copyright {new Date().getFullYear()} Elder Game, LLC. · Local draft only</span></footer>
   </>;
 }
 

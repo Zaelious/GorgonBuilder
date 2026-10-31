@@ -37,3 +37,9 @@ export function groupAbilities(abilities: readonly Ability[]): AbilityGroup[] {
 export function rankLabel(rank: Ability['rank']): string {
   return rank === null ? 'Rank not published' : `Rank ${rank}`;
 }
+
+/** Highest published Level, then lexicographically smallest canonical ID on ties.
+ * This is a picker default, not an inferred Rank or skill-level unlock rule. */
+export function highestTier(group: AbilityGroup): Ability {
+  return [...group.abilities].sort((a, b) => b.level - a.level || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))[0]!;
+}

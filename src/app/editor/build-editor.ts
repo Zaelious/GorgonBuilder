@@ -1,11 +1,13 @@
 import type { AbilitySelection, BuildDocument } from '../../core/build/document';
 import type { GameDataRepository } from '../../data/repository/repository';
 
+export const COMBAT_BAR_SIZE = 6;
 export type Slot = 'A' | 'B';
 export type BuildEdit =
   | { type: 'skill'; slot: Slot; skillId: string | null }
   | { type: 'level'; slot: Slot; level: number }
   | { type: 'add'; slot: Slot; abilityId: string }
+  | { type: 'replace'; slot: Slot; index: number; abilityId: string }
   | { type: 'remove'; slot: Slot; index: number }
   | { type: 'move'; slot: Slot; index: number; direction: -1 | 1 };
 
@@ -24,10 +26,17 @@ export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataR
     return { ...build, [skillKey]: { ...skill, level: edit.level } };
   }
   const bar = [...build[barKey]];
-  if (edit.type === 'add') {
+  if (edit.type === 'add' || edit.type === 'replace') {
     const ability = data.getAbility(edit.abilityId);
     if (!ability || skill.skillId === null || ability.skill.skillId !== skill.skillId) return build;
-    bar.push({ abilityId: ability.id, rank: ability.rank });
+    const selection = { abilityId: ability.id, rank: ability.rank };
+    if (edit.type === 'add') {
+      if (bar.length >= COMBAT_BAR_SIZE) return build;
+      bar.push(selection);
+    } else {
+      if (!Number.isInteger(edit.index) || edit.index < 0 || edit.index >= bar.length) return build;
+      bar[edit.index] = selection;
+    }
   } else {
     if (!Number.isInteger(edit.index) || edit.index < 0 || edit.index >= bar.length) return build;
     if (edit.type === 'remove') bar.splice(edit.index, 1);
