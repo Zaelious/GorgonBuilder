@@ -90,6 +90,8 @@ Serializable build examples:
 - Sparks
 - target configuration
 
+**Implemented in T0007:** `src/core/build/document.ts` defines the JSON-serializable `BuildDocument` schema v1 and factory; `validation.ts` defines strict validation/serialization and explicit unsupported-version results. The slots hold independent skill IDs and levels with separate ordered ability bars. Equipment holds canonical IDs or manual/imported instances, existing TSys powers, candidate mods and Spark configuration; targets and optional character-import metadata are stored without interpreting combat rules. `getUniqueActiveSkillIds` deduplicates skill IDs without reconciling different levels. T0008 must keep transient editor state outside the persisted document.
+
 ## Game Data
 
 Do not fetch a changing live dataset on every user visit.
@@ -203,6 +205,8 @@ Local persistence stores:
 
 Provide a storage abstraction so browser-storage details do not leak through UI components.
 
+**Implemented in T0007:** `createLocalPersistence` in `src/persistence/local/storage.ts` stores current draft under `gorgonbuilder.current-draft` and versioned preferences under `gorgonbuilder.preferences`. Storage is injected for tests or resolved lazily from browser `localStorage`. Missing or invalid data returns explicit fallback status without deleting original bytes; incompatible schema versions block accidental overwrite, and read/write/security/quota failures are reported. Preferences default to an unvalidated minimum equipment-level filter value of 90 (or null to disable); KI-0007/T0009 decides actual item filtering semantics. `createDraftAutosave` in `src/persistence/local/autosave.ts` provides a 500 ms debounced snapshot with flush/cancel and failed-save retry. T0008 connects its editor lifecycle. Owner tokens and recent-build references remain future work and must not enter the build JSON.
+
 ### Remote
 
 Illustrative REST-like contract:
@@ -229,6 +233,8 @@ Every saved build includes:
 - `gameDataVersion`
 - `createdWithAppVersion` when available
 - build payload
+
+**Current implementation:** Schema v1 is the `BuildDocument` itself, with top-level metadata, skill slots A/B, independent ability bars, equipment, target and optional character-import reference. Validation accepts only v1; upgrades require explicit future migrations. Saved game-data version is retained, not silently replaced with the currently loaded snapshot. Candidate mods and Sparks do not yet imply calculated mechanics or eligibility.
 
 Schema migrations should be explicit pure functions.
 
