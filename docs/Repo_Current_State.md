@@ -6,11 +6,13 @@
 
 ## Current Status
 
-T0001 project foundation is implemented and merged. The repository now contains a working Vite/React/strict TypeScript application shell plus development tooling and architecture placeholder directories. The actual Project Gorgon planner and data integrations are not yet implemented.
+T0001 project foundation is implemented and merged. The repository contains a working Vite/React/strict TypeScript app shell, development tooling, and architecture placeholders. Cloudflare Workers static-asset hosting is now explicitly configured and deployed from GitHub. The actual Project Gorgon planner and game-data integrations are not yet implemented.
 
 ## Completed Tickets
 
 - **T0001 — Project Foundation** (merged 2026-10-31 via [PR #1](https://github.com/Zaelious/GorgonBuilder/pull/1); squash commit `d38762e17d066909870b54cc7e269bac05fba3f8`).
+
+**Deployment housekeeping completed** via [PR #2](https://github.com/Zaelious/GorgonBuilder/pull/2) (squash commit `9df290379b396f8bb4cc2717e154bbbca577af98`): explicit static-assets `wrangler.jsonc`, Wrangler 4.156.0 and synchronized lockfile, deploy/preview scripts, GitHub CI with Cloudflare dry-run, and deployment instructions.
 
 ## Active Ticket
 
@@ -28,10 +30,11 @@ The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/D
 - ESLint 10 with TypeScript rules and core-layer import restrictions
 - Vitest 5 with jsdom for a React shell smoke test
 - Shared CSS variables and responsive baseline styles
+- Cloudflare Workers Static Assets for the Vite frontend (no Cloudflare Vite plugin or backend yet)
 - Provider-agnostic persistence remains a design direction, not an implemented interface
 
 Runtime dependencies: `react`, `react-dom`.  
-Development dependencies: `@eslint/js`, `@types/node`, `@types/react`, `@types/react-dom`, `@vitejs/plugin-react`, `eslint`, `globals`, `jsdom`, `typescript`, `typescript-eslint`, `vite`, `vitest`.
+Development dependencies: `@eslint/js`, `@types/node`, `@types/react`, `@types/react-dom`, `@vitejs/plugin-react`, `eslint`, `globals`, `jsdom`, `typescript`, `typescript-eslint`, `vite`, `vitest`, `wrangler` (pinned to 4.156.0).
 
 `package.json` requires Node `^22.22.2 || ^24.15.0 || >=26.0.0`; Codex tested with Node 24.19.0.
 
@@ -42,6 +45,9 @@ Development dependencies: `@eslint/js`, `@types/node`, `@types/react`, `@types/r
 - `npm run typecheck` — TypeScript no-emit checking
 - `npm test` — one-shot Vitest
 - `npm run build` — typecheck + Vite production build
+- `npm run deploy` — build and deploy to Cloudflare Workers
+- `npm run preview:cloudflare` — build and publish a Cloudflare Preview
+- `npx wrangler deploy --dry-run --outdir .wrangler/dry-run` — validate the Cloudflare bundle without deploying
 
 Install dependencies with `npm ci` using the committed lockfile.
 
@@ -84,7 +90,9 @@ src/
 └─ main.tsx
 ```
 
-Root application/configuration files include `index.html`, `package.json`, `package-lock.json`, `tsconfig.json`, `eslint.config.js`, `vite.config.ts`, and `.gitignore`.
+Root application/configuration files include `index.html`, `package.json`, `package-lock.json`, `tsconfig.json`, `eslint.config.js`, `vite.config.ts`, `.gitignore`, and `wrangler.jsonc`.
+
+GitHub CI: `.github/workflows/ci.yml` (npm install, lint, typecheck, test, build, Wrangler dry-run). Deployment instructions: `docs/Cloudflare_Deployment.md`.
 
 ## Build/Test Status
 
@@ -99,6 +107,17 @@ Root application/configuration files include `index.html`, `package.json`, `pack
 - Chromium UI smoke check — passed at 1440×900 and 375×812 without reported runtime/console errors or horizontal overflow
 
 These are implementation-agent test results, not a separate independent execution in this documentation update. PR #1 code and configuration were reviewed before merging.
+
+**Cloudflare configuration CI verification (2026-10-31, [run](https://github.com/Zaelious/GorgonBuilder/actions/runs/41230777053)):** `npm ci`, lint, typecheck, 1 test, build, and `npx wrangler deploy --dry-run` all passed on Node 24. Production deployment on Cloudflare after PR #2 merge should be verified in the Cloudflare dashboard; GitHub CI does not verify the live deployment.
+
+## Hosting and Previews
+
+- Production URL: https://gorgonbuilder.zbailouz7.workers.dev
+- Production branch: `main` (Cloudflare Workers Builds connected to GitHub)
+- Cloudflare dashboard commands: build `npm run build`, deploy `npx wrangler deploy`, preview `npx wrangler preview`
+- `wrangler.jsonc` serves `./dist` with single-page-app fallback.
+- Enable **Preview Builds** in Cloudflare's Branch control to receive URLs for feature-branch testing; preview enablement must be confirmed in the Cloudflare dashboard.
+- Deployment implementation is frontend-only and does not decide the T0018 backend provider.
 
 ## Game Data
 
