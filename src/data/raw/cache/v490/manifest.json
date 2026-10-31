@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "pipelineVersion": 1,
+  "upstreamVersion": "v490",
+  "fetchedAt": "2026-10-31T19:23:59.293Z",
+  "sourceIndex": {
+    "sourceUrl": "https://cdn.projectgorgon.com/v490/data/index.html",
+    "sha256": "a8bbb0f43d516e9ded40c4562620953f7552b6f0a54326a35755173604569f2b",
+    "bytes": 36689
+  },
+  "datasets": [
+    {
+      "name": "skills",
+      "required": true,
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/skills.json",
+      "availability": "available",
+      "integrity": {
+        "sha256": "b9c6629e8510c50228d5c1aababe24e2a52310a9cd64903dfeb8a0e348c42fa9",
+        "bytes": 318305
+      },
+      "records": 188
+    },
+    {
+      "name": "advancementtables",
+      "required": true,
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/advancementtables.json",
+      "availability": "available",
+      "integrity": {
+        "sha256": "831f6543297b19d56293b6977973d4f6742c3852904d2a738c0f9333b5f2acb9",
+        "bytes": 3623690
+      },
+      "records": 588
+    },
+    {
+      "name": "abilities",
+      "required": true,
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/abilities.json",
+      "availability": "available",
+      "integrity": {
+        "sha256": "c6062577fe8d0eeed6c6e9917e7101df3d420fb11ac4ebdb3ddf7c6f3fc60ead",
+        "bytes": 8937333
+      },
+      "records": 5972
+    },
+    {
+      "name": "abilitykeywords",
+      "required": true,
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/abilitykeywords.json",
+      "availability": "available",
+      "integrity": {
+        "sha256": "0bd489fe8d22e0d6f5b59fefeb8db009a3eba7aab0dca8394927749f4d2fbb75",
+        "bytes": 5666
+      },
+      "records": 26
+    },
+    {
+      "name": "abilitydynamicdots",
+      "required": false,
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/abilitydynamicdots.json",
+      "availability": "available",
+      "integrity": {
+        "sha256": "5c527e3e03ae203ea17480679288330b6911c9d64a381f38661bd2e22f747f1a",
+        "bytes": 701
+      },
+      "records": 2
+    },
+    {
+      "name": "abilitydynamicspecialvalues",
+      "required": false,
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/abilitydynamicspecialvalues.json",
+      "availability": "available",
+      "integrity": {
+        "sha256": "df7cb1fa5bfaf4da733f38554f74a554e322bda9d06c66da5f29b46d89a7d2d8",
+        "bytes": 1045
+      },
+      "records": 4
+    },
+    {
+      "name": "items",
+      "required": true,
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/items.json",
+      "availability": "available",
+      "integrity": {
+        "sha256": "5e777b89a6e4d68f793cda637935bd7acdf968c8419bede9d582b630cac1d4ce",
+        "bytes": 7167090
+      },
+      "records": 11209
+    },
+    {
+      "name": "tsysclientinfo",
+      "required": true,
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/tsysclientinfo.json",
+      "availability": "available",
+      "integrity": {
+        "sha256": "1e7296dab244ada727c2d2d8450a3afc3276c5b18c3142ab3d57786aa91337ad",
+        "bytes": 10480301
+      },
+      "records": 1947
+    },
+    {
+      "name": "tsysprofiles",
+      "required": true,
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/tsysprofiles.json",
+      "availability": "available",
+      "integrity": {
+        "sha256": "d4292e1f57bdff0ae2d876a85f102c7caa57e14b230261cc9f114417ad771a23",
+        "bytes": 237804
+      },
+      "records": 40
+    },
+    {
+      "name": "attributes",
+      "required": true,
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/attributes.json",
+      "availability": "available",
+      "integrity": {
+        "sha256": "cae0640db74087c6b7afc56924d9356ff19c4a1f183983f536451716f55e998f",
+        "bytes": 383466
+      },
+      "records": 2189
+    },
+    {
+      "name": "effects",
+      "required": true,
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/effects.json",
+      "availability": "available",
+      "integrity": {
+        "sha256": "c5116991c19bea5bd97f74bd3354ea198376509e7cd9c8d15bd245de873edb75",
+        "bytes": 6594856
+      },
+      "records": 23282
+    },
+    {
+      "name": "sources_items",
+      "required": false,
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/sources_items.json",
+      "availability": "available",
+      "integrity": {
+        "sha256": "6bdf5783371a5035a42b67f479b9dac748999e5af7b512922fedf1d00bbeba3e",
+        "bytes": 1015087
+      },
+      "records": 10068
+    },
+    {
+      "name": "sources_abilities",
+      "required": false,
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/sources_abilities.json",
+      "availability": "available",
+      "integrity": {
+        "sha256": "b66c6e01e0696f174da11fda8512466c3d741872ecac2ab0b74b91295f20ba09",
+        "bytes": 396864
+      },
+      "records": 4063
+    }
+  ]
+}

@@ -10,8 +10,9 @@
     "dev": "vite",
     "build": "npm run typecheck && vite build",
     "lint": "eslint . --max-warnings 0",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit --project scripts/tsconfig.json",
     "test": "vitest run",
+    "data:update": "node --use-env-proxy scripts/data-update.ts",
     "deploy": "npm run build && wrangler deploy",
     "preview:cloudflare": "npm run build && wrangler preview"
   },

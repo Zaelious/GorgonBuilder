@@ -4,3 +4,5 @@ coverage/
 *.local
 *.tsbuildinfo
 .wrangler/
+src/data/raw/cache/
+src/data/raw/snapshot.json.tmp

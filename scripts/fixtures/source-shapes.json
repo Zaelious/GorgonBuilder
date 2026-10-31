@@ -1,0 +1,15 @@
+{
+  "skills": { "Alchemy": { "Id": 34, "Combat": false, "Rewards": { "10": { "Ability": "PoisonBlade1" } }, "PassiveAdvancementTable": "ModestPassive" } },
+  "advancementtables": { "1001_Skeleton": { "Level_01": { "MONSTER_VULNERABILITY_CHANCE": 0.2 } }, "2401_ForetoldUniversalDirect": { "Keywords": ["MastercraftingBonus"], "Level_01": { "BOOST_UNIVERSAL_DIRECT": 1 } } },
+  "abilities": { "Ability_1": { "PvE": {} } },
+  "abilitykeywords": [{ "AttributesThatDeltaCritChance": ["DELTA_ANATOMY_CRITICAL_CHANCE"], "MustHaveAbilityKeywords": ["AnatomyCriticals"] }],
+  "abilitydynamicdots": [{ "DamagePerTick": 0, "DamageType": "Poison", "Duration": 8, "NumTicks": 4, "ReqActiveSkill": "Druid" }],
+  "abilitydynamicspecialvalues": [{ "Label": "Restores", "Value": 5, "Suffix": "Body Heat in cold environments" }],
+  "items": { "Item_1": { "EffectDescs": [] } },
+  "tsysclientinfo": { "fixture-power": { "Tiers": [] } },
+  "tsysprofiles": { "All": ["AccuracyBoost", "AcidArrowBoost"] },
+  "attributes": { "ABILITYDEBUFF_BOOST_MARKWEAKNESS": { "DefaultValue": 0, "DisplayType": "AsBuffMod" } },
+  "effects": { "Effect_1": { "DisplayMode": "Effect" } },
+  "sources_items": { "item_1": { "entries": [{ "npc": "NPC_SerHackley", "type": "Barter" }] } },
+  "sources_abilities": { "ability_1002": { "entries": [{ "skill": "Unarmed", "type": "Skill" }] } }
+}
