@@ -25,7 +25,9 @@ None.
 
 ## Planned Next Ticket
 
-**T0001 — Project Skeleton**
+**T0001 — Project Foundation**
+
+The current condensed v1 backlog is **T0001–T0021**. It replaces the earlier 50-ticket draft before implementation began.
 
 ## Intended Initial Stack
 
@@ -40,13 +42,13 @@ None.
 
 No application source tree exists yet.
 
-T0001 will create the project skeleton.
+T0001 will create the complete project foundation: Vite/React/strict TypeScript, quality tooling, baseline architecture folders, tests, and the initial app shell.
 
 ## Game Data
 
 No normalized game-data snapshot has been committed yet.
 
-Official Project Gorgon data will be ingested through the T0008–T0016 series.
+Official Project Gorgon data ingestion/normalization is now concentrated in T0002–T0006, including advancement tables, dynamic ability data, TSys profiles, completeness checks, and the runtime data repository.
 
 ## Character Import Research
 
