@@ -1,0 +1,46 @@
+.planner-main { padding-block: var(--space-4); }
+.planner-heading, .bar-heading, .card-footer { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; }
+.planner-heading h1 { font-size: clamp(2rem, 4vw, 3rem); }
+.save-status { color: var(--color-accent); font-size: 0.875rem; }
+.planner-main .introduction { max-width: 65rem; }
+.planner-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin-top: var(--space-4); align-items: start; }
+.skill-panel { min-width: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: var(--space-3); }
+.panel-heading { border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-2); margin-bottom: var(--space-2); }
+.panel-heading h2 { font-family: var(--font-heading); font-weight: 400; font-size: 1.75rem; }
+.skill-controls { border: 0; margin: 0; padding: 0; min-width: 0; }
+.skill-inputs { display: grid; grid-template-columns: minmax(0, 1fr) 7rem; gap: var(--space-2); margin-top: var(--space-2); }
+.planner-main label { display: block; color: var(--color-muted); font-size: 0.875rem; margin-bottom: 0.25rem; }
+.planner-main input, .planner-main select, .planner-main button { font: inherit; color: var(--color-text); background: var(--color-background); border: 1px solid var(--color-border); border-radius: 0.3rem; padding: 0.5rem 0.65rem; min-height: 2.75rem; }
+.planner-main input, .planner-main select { width: 100%; min-width: 0; }
+.planner-main button { cursor: pointer; border-color: var(--color-accent); }
+.planner-main button:hover:enabled { background: #354038; }
+.planner-main :disabled { opacity: 0.55; cursor: default; }
+.planner-main button:focus-visible, .planner-main input:focus-visible, .planner-main select:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+.muted, .skill-description, .ability-description { color: var(--color-muted); font-size: 0.875rem; }
+.skill-description { margin-top: var(--space-2); }
+.ability-description { white-space: pre-wrap; overflow-wrap: anywhere; }
+.ability-meta { font-size: 0.8rem; color: var(--color-accent); margin-block: 0.35rem; }
+.warning { color: #f2c588; font-size: 0.875rem; overflow-wrap: anywhere; }
+.empty-state { padding: var(--space-2); color: var(--color-muted); border: 1px dashed var(--color-border); border-radius: var(--radius); margin-top: var(--space-2); }
+.ability-bar, .ability-browser { margin-top: var(--space-3); padding-top: var(--space-2); border-top: 1px solid var(--color-border); }
+.ability-browser > label { margin-top: var(--space-2); }
+.ability-browser > .muted { margin-block: var(--space-1) var(--space-2); }
+.ability-bar h3, .ability-browser h3 { font-size: 1.1rem; }
+.ability-bar ol { margin: var(--space-2) 0 0; padding-left: 1.5rem; }
+.bar-entry { padding: var(--space-1); margin-bottom: var(--space-1); border: 1px solid var(--color-border); border-radius: var(--radius); }
+.bar-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-block: var(--space-1); }
+.bar-entry .warning { margin-top: 0.4rem; }
+.ability-results { display: grid; gap: var(--space-2); max-height: 48rem; overflow-y: auto; padding: 0.3rem; }
+.ability-card { min-width: 0; border: 1px solid var(--color-border); background: var(--color-background); border-radius: var(--radius); padding: var(--space-2); }
+.ability-card h4 { margin: 0 0 var(--space-1); font-size: 1rem; }
+.ability-card .warning { margin-top: var(--space-1); }
+.card-footer { margin-top: var(--space-2); }
+.planner-main code { overflow-wrap: anywhere; font-size: 0.75rem; color: var(--color-muted); }
+.planner-footer { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); justify-content: space-between; padding-block: var(--space-3); color: var(--color-muted); font-size: 0.8rem; }
+.notice button { margin-top: var(--space-2); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@media (max-width: 48rem) {
+  .planner-grid { grid-template-columns: minmax(0, 1fr); }
+  .skill-panel { padding: var(--space-2); }
+  .skill-inputs { grid-template-columns: minmax(0, 1fr) 6rem; gap: var(--space-1); }
+}
