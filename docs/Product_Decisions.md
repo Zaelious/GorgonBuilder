@@ -17,15 +17,17 @@ It should retain the approachable two-skill/gear/mod planning model of tools suc
 
 A build may contain:
 
-- Skill slot A
-- Skill slot B
+- Skill slot A with a selected skill level
+- Skill slot B with a selected skill level
 - One skill only, two different skills, or the same skill in both selectors
-- Selected abilities
+- Independent ability bar A and ability bar B with exact ability/rank selections
 - Real Project Gorgon items
 - Candidate treasure mods
 - Mastery Spark configuration
 - Target/dummy settings
 - Saved rotation profiles later
+
+Selecting the same combat skill in both skill slots must not double-apply skill-wide advancement/progression bonuses.
 
 The planner intentionally does **not** need to police the final number of treasure mods while planning. A user may add many candidate mods and remove the unwanted ones while comparing outcomes.
 
