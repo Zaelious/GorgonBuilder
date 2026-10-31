@@ -6,21 +6,22 @@
 
 ## Current Status
 
-T0001 project foundation is implemented and merged. The repository contains a working Vite/React/strict TypeScript app shell, development tooling, and architecture placeholders. Cloudflare Workers static-asset hosting is now explicitly configured and deployed from GitHub. The actual Project Gorgon planner and game-data integrations are not yet implemented.
+T0001 foundation and T0002 official data acquisition are merged. The repository contains the Vite/React/strict TypeScript app shell, Cloudflare Workers static-asset hosting, and a committed, verified official Project Gorgon v490 raw dataset snapshot with an offline integrity check. Semantic data normalization and actual planner UI are not yet implemented.
 
 ## Completed Tickets
 
 - **T0001 — Project Foundation** (merged 2026-10-31 via [PR #1](https://github.com/Zaelious/GorgonBuilder/pull/1); squash commit `d38762e17d066909870b54cc7e269bac05fba3f8`).
+- **T0002 — Official Game Data Snapshot Pipeline** (merged 2026-10-31 via [PR #3](https://github.com/Zaelious/GorgonBuilder/pull/3); squash commit `cbe635e0afe2f82a117c278a1bd684d1a05a932c`). The v490 pin and 13 raw datasets are committed. See [T0002 verification](T0002_Verification.md).
 
 **Deployment housekeeping completed** via [PR #2](https://github.com/Zaelious/GorgonBuilder/pull/2) (squash commit `9df290379b396f8bb4cc2717e154bbbca577af98`): explicit static-assets `wrangler.jsonc`, Wrangler 4.156.0 and synchronized lockfile, deploy/preview scripts, GitHub CI with Cloudflare dry-run, and deployment instructions.
 
 ## Active Ticket
 
-**T0002 — Official Game Data Snapshot Pipeline** is implemented on `feature/t0002-game-data-snapshot` in draft [PR #3](https://github.com/Zaelious/GorgonBuilder/pull/3), pending architect review and merge. Official v490 acquisition and offline verification passed; see [verification evidence](T0002_Verification.md).
+None. T0003 has not started.
 
 ## Planned Next Ticket
 
-**T0002 — Official Game Data Snapshot Pipeline**
+**T0003 — Normalize Skills, Advancement Tables, Attributes, and Effects**
 
 The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/DPS deferred to the following ticket series.
 
@@ -112,7 +113,7 @@ These are implementation-agent test results, not a separate independent executio
 
 **Cloudflare configuration CI verification (2026-10-31, [run](https://github.com/Zaelious/GorgonBuilder/actions/runs/41230777053)):** `npm ci`, lint, typecheck, 1 test, build, and `npx wrangler deploy --dry-run` all passed on Node 24. Production deployment on Cloudflare after PR #2 merge should be verified in the Cloudflare dashboard; GitHub CI does not verify the live deployment.
 
-**T0002 continuation verification (2026-10-31):** official acquisition, deterministic cache reuse (hashes/bytes/mtimes), offline `--check`, lint, typecheck, 69 tests, and production build passed. See [T0002 verification](T0002_Verification.md).
+**T0002 acceptance evidence (2026-10-31):** official v490 acquisition, deterministic cache reuse (hashes/bytes/mtimes), fresh pinned rehydration, offline `--check`, lint, typecheck, 69 tests, and production build passed, as reported and documented by Codex. GitHub [PR-head CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41234174663) passed. See [T0002 verification](T0002_Verification.md). The raw-source ingestion code and manifests were reviewed before merge.
 
 ## Hosting and Previews
 
@@ -125,7 +126,7 @@ These are implementation-agent test results, not a separate independent executio
 
 ## Game Data
 
-The T0002 branch contains the official v490 raw snapshot: 13 datasets, 39,162,208 dataset bytes, original index, and SHA-256/count/provenance manifests under `src/data/raw/`. Acquisition is a development command; the frontend never fetches live data. No semantic normalization is implemented. The source adapter and snapshot workflow are in `src/data/adapters/official-source.ts` and `scripts/`.
+**Committed on `main`:** the official Project Gorgon v490 raw snapshot (13 datasets, 39,162,208 dataset bytes), versioned official index, and SHA-256/count/provenance manifests under `src/data/raw/`. Acquisition is a development command; the frontend never fetches live data. No semantic normalization is implemented. The source adapter and snapshot workflow are in `src/data/adapters/official-source.ts` and `scripts/`. The initial cache is committed for offline reproducibility; future version upgrades must be explicit.
 
 Official data ingestion/normalization is concentrated in T0002–T0006, including advancement tables, dynamic ability data, TSys profiles, completeness checks, and the runtime data repository.
 
@@ -138,7 +139,7 @@ Feasibility was established from supplied Project Gorgon JSON reports.
 - `IsInInventory` is not definitive equipped status.
 - The report export timestamp determines snapshot freshness; an older example export does not make the report format intrinsically stale.
 
-No character import is implemented in T0001.
+Character import is not yet implemented.
 
 ## Known Issues
 
