@@ -1,0 +1,26 @@
+{
+  "v490": {
+    "counts": {
+      "skills": 188,
+      "advancementTables": 588,
+      "attributes": 2189,
+      "effects": 23282,
+      "abilities": 5972,
+      "keywordRules": 26,
+      "dynamicDots": 2,
+      "dynamicSpecialValues": 4,
+      "embeddedDots": 1757,
+      "embeddedSpecialValues": 1823,
+      "abilityAcquisitionSources": 4063,
+      "equipmentItems": 3078,
+      "nonEquipmentItems": 8131,
+      "treasurePowers": 1947,
+      "treasureTiers": 45634,
+      "treasureProfiles": 40,
+      "profileMemberships": 8649,
+      "itemAcquisitionSources": 10068,
+      "fixedEffects": 8460
+    },
+    "diagnosticsSha256": "dcf4fdc4c77d2e3bc6ace30958076abdaadb9544199e2cbf8d2c4de51952e36b"
+  }
+}
