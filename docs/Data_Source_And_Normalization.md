@@ -50,7 +50,7 @@ Conceptual steps:
 4. Normalize into GorgonBuilder contracts.
 5. Build search text/index fields.
 6. Write compact generated artifacts.
-7. Write manifest containing source version and generation timestamp.
+7. Write a deterministic manifest with source version, pinned-input and artifact hashes, counts, and diagnostics (no changing generation timestamp).
 8. Run normalization tests.
 
 ## Normalized Records
@@ -88,7 +88,7 @@ When the same combat skill is selected in both planner skill slots, downstream m
 
 The pinned official v490 snapshot yields 188 skills, 588 advancement tables, 2,189 attributes and 23,282 effects. References such as `Balanced` resolve to official full IDs such as `3_Balanced`. Numeric levels, raw reward values, qualified reward keys and table `Keywords` are preserved. Each record retains source version, URL, hash and original definition. Missing advancement tables produce errors; unresolved attribute references are structured `integrityIssues`. No effect links are guessed from descriptions.
 
-This layer does **not** decide reward stacking, qualifier applicability, modifier meaning or damage formula ordering. T0006 will create generated runtime lookup artifacts. T0012 will determine applicable skill-wide modifiers without double-counting one skill selected twice.
+This layer does **not** decide reward stacking, qualifier applicability, modifier meaning or damage formula ordering. T0006 creates generated runtime lookup artifacts. T0012 will determine applicable skill-wide modifiers without double-counting one skill selected twice.
 
 ### T0004 implemented ability and dynamic-data contracts
 
@@ -102,7 +102,7 @@ This layer does **not** decide reward stacking, qualifier applicability, modifie
 
 For the verified **v490** snapshot, T0004 normalizes **5,972 abilities, 26 keyword rules, 2 global dynamic DoTs, 4 global dynamic special values, 4,063 acquisition sources**, with **1,757 embedded DoTs** and **1,823 embedded special values**. All **3,911 upgrade**, **3,699 prerequisite**, **3,914 shared-timer**, and **4,063 acquisition** links resolve, alongside **4,440 skill** references. There are **1,546 unresolved source-reference diagnostics**: 1,532 published `Skill: Unknown` references and 14 unmatched effect-keyword references (`MindRevealed`: 9, `HasRecentlyHeardBardSong`: 4, `TestEffect`: 1). This does not establish complete game-data integrity.
 
-No final damage/DoT/cooldown/AoE calculations or conditional applicability are implemented. T0005 now implements items/TSys normalization; T0006 handles generated runtime data and broader completeness checks.
+No final damage/DoT/cooldown/AoE calculations or conditional applicability are implemented. T0005 now implements items/TSys normalization; T0006 implements generated runtime data and broader completeness checks.
 
 ### T0005 implemented item and treasure-system contracts
 
@@ -119,7 +119,15 @@ No final damage/DoT/cooldown/AoE calculations or conditional applicability are i
 
 Verified official **v490** counts: **3,078 equipment definitions**, **8,131 other item IDs**, **8,460 fixed-effect descriptions**, **1,947 powers**, **45,634 power-owned tiers**, **40 profiles**, **8,649 profile-to-power memberships**, and **10,068 item acquisition records**. All **2,578 item/profile** and **8,649 profile/power** references resolve, as do item acquisition references. **518 equipment records have published crafting target level 90+; 500 lack a published crafting target level.** T0005 retains **96 diagnostics** (6 unresolved `Skill: Unknown` references; 90 uninterpreted `AnySkill` selectors), independently of the **1,546 T0004 diagnostics**. The PR #6 quality suite passed **42 focused / 173 total tests**, lint, typecheck, build and Cloudflare dry-run in [CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41241709925).
 
-T0006 will create reproducible runtime artifacts, a consolidated lookup repository and cross-dataset integrity/completeness checks. T0009 handles user-facing searches and level semantics; T0010 handles context-sensitive mod eligibility; T0012 handles validated numerical effect mappings.
+T0006 implements reproducible runtime artifacts, a consolidated lookup repository and cross-dataset integrity/completeness checks. T0009 handles user-facing searches and level semantics; T0010 handles context-sensitive mod eligibility; T0012 handles validated numerical effect mappings.
+
+### T0006 implemented generated artifacts and runtime repository
+
+T0006 ([PR #8](https://github.com/Zaelious/GorgonBuilder/pull/8)) adds offline `npm run data:generate` using the validated pinned v490 raw snapshot and T0003–T0005 normalizers. It produces deterministic `src/generated/game-data/{progression,abilities,itemsTreasure}.json.gz` files and `manifest.json` with source provenance, integrity hashes, record counts and full diagnostics. Generation verifies record coverage, unique IDs, cross-dataset references, nested tier ownership and v490-specific diagnostic fingerprints. Known T0004/T0005 diagnostics remain distinct; later source versions are not constrained to v490 counts.
+
+The React-independent repository supplies typed official-ID lookups for skills, tables, abilities, equipment, treasure powers/tiers (composite power/tier IDs), profiles, attributes and effects. The lazy browser loader verifies compressed hashes, decompresses and indexes on demand. Original raw fields remain in the pinned snapshot and are traceable via `{dataset, recordId}` source locators; no unsupported meanings are inferred.
+
+Current three compressed artifacts total **3,269,457 bytes** and expand to **72,009,523 JSON bytes**. Actual browser heap after parsing/indexing may be substantially higher. The current app shell does not load the assets; T0008/T0009 should measure performance during actual planner use before optimizing. See [runtime repository README](../src/data/repository/README.md) for API examples, record counts, diagnostics and verification.
 
 ### NormalizedTreasureProfile
 

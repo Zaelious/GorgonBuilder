@@ -81,6 +81,20 @@ T0005 is data-only. Architect review and automated inspection replace UI manual 
 - Inspect T0005's **96 diagnostics**: 6 unresolved `Skill: Unknown` links and 90 `AnySkill` selectors with unsupported semantics. Preserve the distinct **1,546 T0004 diagnostics** for T0006.
 - Run lint, typecheck, the full test suite, and build. The [PR #6 GitHub CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41241709925) passed, with 42 focused tests and 173 total tests.
 
+### T0006 generated dataset and runtime repository checks
+
+T0006 is a data-only milestone; no new planner UI is expected. [PR #8 GitHub CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41245038034) passed alongside Cloudflare Workers Builds.
+
+1. Run `npm run data:update -- --check`.
+2. Run `npm run data:generate` twice and compare all four generated file hashes for byte-identical output, including the manifest.
+3. Inspect `src/generated/game-data/manifest.json` for v490 version, source SHA-256 provenance, artifact byte hashes, counts and diagnostic source paths.
+4. Verify 188 skills, 588 advancement tables, 2,189 attributes, 23,282 effects, 5,972 abilities, 3,078 equipment, 1,947 treasure powers, 45,634 power-owned tiers, 40 profiles and 8,649 profile memberships.
+5. Confirm separate known diagnostics: 1,546 from T0004 and 96 from T0005 (1,552 unresolved references and 90 unsupported selectors).
+6. Run `npx vitest run scripts/generate-data.test.ts src/data/repository/repository.test.ts` (37 focused tests), then lint, typecheck, full tests (210) and build.
+7. Spot-check Psychology/Cow/Unarmed/Deer, six representative items, and composite tier `power_129/id_120`. Do not infer equipment restrictions from `CraftingTargetLevel`.
+
+Runtime assets total 3,269,457 bytes compressed and 72,009,523 decoded JSON bytes. Real browser heap/latency must be measured when UI first consumes these assets in T0008/T0009. See [runtime repository README](../src/data/repository/README.md).
+
 ## Calculation Tickets
 
 Verify:
