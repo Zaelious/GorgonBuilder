@@ -179,4 +179,11 @@ Network failure must not destroy the user's in-progress build.
 - Pagehide/visibility flush and explicit retry report failures. Future-schema, unreadable storage and unavailable game-data snapshot drafts are protected from accidental overwrite.
 - No multi-build library, remote ownership tokens, public/private sharing, or backend is added; those remain T0018–T0020.
 
+### Implemented in T0009
+
+- The equipment planner saves official database item IDs and exact original slot names in `BuildDocument.equipment` through the T0008 immutable editor and 500 ms debounced autosave. The nine primary UI rows and collapsed Other slots are presentation-only; OffHand and OffHandShield stay distinct in stored data.
+- Equip, replace and clear retain unrelated skill bars, metadata and legacy/manual/imported selections. Explicit destructive instance replacement or removal of staged mods/Spark data requires confirmation. Candidate mods and Spark state are preserved on ordinary database-item replacement but **not validated for applicability** until later tickets.
+- The browser-local `minimumEquipmentLevel` schema-v1 preference defaults to 90; null disables the published target-level filter. Include-unknown and text queries are transient. Incompatible schema, unreadable storage, snapshot mismatches and failed-write retry protections remain in force.
+- See [T0009 verification](T0009_Verification.md) and [PR #18](https://github.com/Zaelious/GorgonBuilder/pull/18). There is still no backend save/share or ownership mechanism.
+
 See [build domain README](../src/core/build/README.md), [T0008 app README](../src/app/README.md), [PR #10](https://github.com/Zaelious/GorgonBuilder/pull/10) and [PR #12](https://github.com/Zaelious/GorgonBuilder/pull/12).
