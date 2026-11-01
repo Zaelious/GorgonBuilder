@@ -58,21 +58,21 @@ Cloudflare Workers Builds marked PR previews on PRs #2, #3 and #4 as failed on 2
 
 ## KI-0007 — Crafting Target Level Is Not a Validated Equipment Requirement
 
-**Status:** Data semantics to resolve for T0009 equipment filtering
+**Status:** Target-level filtering interpretation approved; implementation pending in T0009.
 
 T0005's official v490 `items` data exposes `CraftingTargetLevel`, not a generic item `Level`. Normalized `level` intentionally equals that source field with `levelSource` recorded. Of 3,078 equipment records, 518 have crafting target level 90+ and 500 omit the field.
 
 **Risk:** Using this field as an unqualified item-level/equip-level requirement could hide valid gear or communicate a false gameplay restriction. Imported concrete item-instance levels and published item `SkillReqs` are separate concepts.
 
-**Action:** Before implementing T0009's global minimum-level filter, establish and document intended filtering semantics from official data and/or controlled game evidence; preserve null/unknown levels rather than substituting zero. Do not redefine the T0005 source field without a documented design decision.
+**T0009 decision:** Use `CraftingTargetLevel` as a **base equipment target-level browsing filter**, not a validated equip-level requirement. UI: “Minimum target level”, default 90 from existing preferences, nullable threshold disabled by selecting any level, and a default-on include-unknown control. Keep unknown values null, and show `SkillReqs` and future item-instance levels separately. Test levels 89/90/91/null and snapshot-specific counts. [GorgonExplorer's April 8, 2026 changelog](https://www.gorgonexplorer.com/) is a secondary UI precedent only; official pinned data remains authoritative.
 
 ## KI-0008 — Vite Development/Preview Gzip Transport
 
-**Status:** Reproducible in T0008; resolve before T0009.
+**Status:** Narrow implementation requirements approved; fix PR pending before T0009.
 
 `npm run dev` / `vite preview` can serve the generated `.gz` assets with `Content-Encoding: gzip`. Browser fetch transparently decodes the response before T0006's loader verifies **compressed** byte lengths and SHA-256, so local Vite use fails with a byte mismatch. The production bundle worked via a static server and Cloudflare Workers local assets; PR #12's remote preview deployment succeeded, although its live runtime was not independently fetched by the implementation environment.
 
-**Action:** Fix the loader/asset-serving transport contract in a narrowly scoped follow-up, without weakening integrity checks or altering unrelated gameplay code.
+**Implementation contract:** Use the [pre-T0009 KI-0008 work item in Tickets.md](Tickets.md#pre-t0009-prerequisite--ki-0008-vite-gzip-transport-fix). Browser `fetch().arrayBuffer()` must receive original compressed bytes (manifest-matching length/hash) for all three generated `.json.gz` files in both Vite dev and Vite preview. Prefer restricting response handling to these assets (no `Content-Encoding: gzip` when the loader expects compressed bytes). Preserve explicit decompression, corrupt-data detection and normal production behavior. [Vite issue #12266](https://github.com/vitejs/vite/issues/12266) documents a matching symptom, not a guaranteed drop-in solution.
 
 ## KI-0009 — Runtime Repository Memory and Load Cost
 
