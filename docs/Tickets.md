@@ -445,6 +445,8 @@ Guidelines:
 
 ## T0009 — Equipment Search and Planner
 
+**Status:** Completed and customer-accepted 2026-11-01; merged via [PR #18](https://github.com/Zaelious/GorgonBuilder/pull/18), squash commit `7cd03eef7aaf4bea7bf79fcb3850bf7d6d03746d`. [Verification, screenshots and browser checks](T0009_Verification.md). The accepted revision adds nine always-visible equipment rows, official item icons, collapsed other slots and safe X/Escape picker dismissal. Optional backdrop dismissal is a nonblocking follow-up (KI-0010); T0010 is separate.
+
 **Complexity:** Standard
 
 **Verification:** Customer hands-on
