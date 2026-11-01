@@ -6,7 +6,7 @@
 
 ## Current Status
 
-T0001–T0008 are merged. The first customer-accepted compact skill/ability planner now runs on the verified v490 snapshot, normalized runtime repository and versioned BuildDocument/local autosave. It supports two independent skill/level selections, official ability browsing and icon-based six-slot bars, inline build title editing, protected local draft recovery, and responsive details. Equipment, damage calculations, character import and remote save/share remain future work.
+T0001–T0009 are merged and customer-accepted. The planner runs on verified v490 data, normalized runtime lookups and BuildDocument v1/local autosave. T0008 supplies independent skill/ability bars; T0009 adds nine always-visible primary equipment rows, official item icons with fallbacks, collapsed other slots, slot-specific searchable picker, exact OffHand/OffHandShield handling and persistent equip/replace/clear. Treasure-mod editing, damage calculations, character import and remote save/share remain future work.
 
 ## Completed Tickets
 
@@ -20,16 +20,17 @@ T0001–T0008 are merged. The first customer-accepted compact skill/ability plan
 
 - **T0007 — Build Domain and Local Persistence** (merged 2026-10-31 via [PR #10](https://github.com/Zaelious/GorgonBuilder/pull/10); squash commit `fa6eb4312e55defe9e4022de9f8e05a596347ccb`). Added BuildDocument schema v1, strict validation/serialization, unique active-skill IDs, local draft/preferences recovery, and debounced autosave (84 focused tests). See [build domain README](../src/core/build/README.md).
 - **T0008 — Skill and Ability Planner UI** (merged 2026-11-01 via [PR #12](https://github.com/Zaelious/GorgonBuilder/pull/12); squash commit `dd268dea8e539480f2ec14d237a313165dcb9da3`). Two compact six-slot skill bars, official ability icons/tier selection/facts, title editing, isolated bar-clearing on skill changes and local autosave/recovery; customer hands-on accepted, 345 tests passed. See [app README](../src/app/README.md).
+- **T0009 — Equipment Search and Planner** (merged 2026-11-01 via [PR #18](https://github.com/Zaelious/GorgonBuilder/pull/18); squash commit `7cd03eef7aaf4bea7bf79fcb3850bf7d6d03746d`). Customer accepted the revised nine-slot equipment UI, official icon display/fallbacks, exact canonical slot selection, searchable fixed effects and target-level preferences, saved equip/replace/clear and a collapsed Other slots area. See [T0009 verification](T0009_Verification.md).
 
 **Deployment housekeeping completed** via [PR #2](https://github.com/Zaelious/GorgonBuilder/pull/2) (squash commit `9df290379b396f8bb4cc2717e154bbbca577af98`): explicit static-assets `wrangler.jsonc`, Wrangler 4.156.0 and synchronized lockfile, deploy/preview scripts, GitHub CI with Cloudflare dry-run, and deployment instructions.
 
 ## Active Ticket
 
-None. T0008 and prerequisite KI-0008 are merged; T0009 has not started. KI-0007's published target-level equipment filter contract is already documented in T0009. T0009 can now begin.
+None. T0009 is customer-accepted and merged as PR #18. T0010 has not started.
 
 ## Planned Next Ticket
 
-**T0009 — Equipment Search and Planner**
+**T0010 — Treasure Mod Planner**
 
 The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/DPS deferred to the following ticket series.
 
@@ -37,7 +38,7 @@ The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/D
 
 - Vite 8, React 19, strict TypeScript 6
 - ESLint 10 with TypeScript rules and core-layer import restrictions
-- Vitest 5 with jsdom for 352 tests, including 50 focused editor/UI tests and seven Vite transport integration tests; optional Chromium/Playwright layout and transport smoke
+- Vitest 5 with jsdom for 408 tests at accepted T0009 head, including equipment-focused tests and seven Vite transport integration tests; optional Chromium/Playwright layout, transport and equipment smoke
 - Shared CSS variables and responsive baseline styles
 - Cloudflare Workers Static Assets for the Vite frontend (no Cloudflare Vite plugin or backend yet)
 - T0008 connects T0007's injected local draft/autosave to the actual planner; remote provider-agnostic saving remains future work
@@ -83,11 +84,11 @@ src/
 │  ├─ normalized/            (progression.ts, abilities.ts, items-treasure.ts contracts, README.md)
 │  ├─ raw/                   (pinned snapshot + v490 cache)
 │  ├─ repository/            (typed contracts, integrity, loader, indexed lookups, tests, README)
-│  └─ search/                (placeholder)
+│  └─ search/                (pure equipment name/effect/slot/target-level filters)
 ├─ features/
 │  ├─ abilities/             (picker, six-slot bars, official icons, source facts)
 │  ├─ comparison/            (placeholder)
-│  ├─ equipment/             (placeholder)
+│  ├─ equipment/             (nine-slot planner, picker, official icons, tests/browser smoke)
 │  ├─ import/                (placeholder)
 │  ├─ mods/                  (placeholder)
 │  ├─ skills/                (compact combat-skill/level controls)
@@ -141,6 +142,8 @@ These are implementation-agent test results, not a separate independent executio
 
 **KI-0008 acceptance evidence (2026-11-01):** [PR #16](https://github.com/Zaelious/GorgonBuilder/pull/16) fixed Vite dev/preview gzip transport for the three generated assets while preserving the T0006 integrity contract, generated files, and loader. Codex verified compressed manifest byte counts and hashes in real Chromium for both serving modes, corruption/retry of each file, normal planner flows, and reported byte-identical production output; **352 total tests across 12 files** passed, including seven new transport tests. [PR-head GitHub Actions CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41319056007) and Cloudflare Workers preview build checks passed. Architect reviewed all seven changed files and squash-merged it at `b9b75f286d460c706f127b895bf1bb7ae4ff69eb`. The live deployed Cloudflare runtime was not independently verified. See [KI-0008 verification](KI-0008_Verification.md). T0009 is unblocked.
 
+**T0009 acceptance evidence (2026-11-01):** [PR #18](https://github.com/Zaelious/GorgonBuilder/pull/18) at `6bbe60f` passed pinned source validation, regenerated v490 artifact integrity, **408 tests**, lint, typecheck, build, Wrangler dry-run and Codex's Chromium dev/preview equipment and gzip checks. [GitHub CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41326379167) and the Cloudflare preview build passed. After the customer accepted the revised UI, architect reviewed and squash-merged PR #18 at `7cd03ee`. Nine primary rows, official `IconId` for all 3,078 equipment definitions, default-on unknown targets, exact OffHand/OffHandShield semantics and protected autosave are implemented. No treasure-mod or Spark editing yet; optional backdrop-click dismissal is tracked separately as KI-0010. See [verification report](T0009_Verification.md).
+
 **Cloudflare PR preview warning:** Workers Builds checks failed on PRs #2, #3 and #4 despite successful GitHub CI; PR #5 and PR #6 Cloudflare checks passed. KI-0006 remains tracked until preview-build reliability is confirmed across branches. See [deployment troubleshooting](Cloudflare_Deployment.md).
 
 ## Hosting and Previews
@@ -171,7 +174,7 @@ Character import is not yet implemented.
 
 ## Known Issues
 
-See `docs/Known_Issues_And_Followups.md`. T0004/T0005 source diagnostics remain visible in generated data. KI-0007 has a documented T0009 target-level filtering decision (implementation pending), and KI-0008 is resolved and merged as PR #16. Continue monitoring KI-0009 browser memory/load. Historical Cloudflare build failures are retained under KI-0006 despite PR #12's successful preview.
+See `docs/Known_Issues_And_Followups.md`. T0004/T0005 source diagnostics remain visible in generated data. KI-0007's approved target-level search semantics are implemented in T0009, and KI-0008 is resolved. Continue monitoring KI-0009 browser memory/load and optional KI-0010 backdrop usability. Historical Cloudflare build failures are retained under KI-0006 despite PR #12's successful preview.
 
 ## Documentation Rule
 
