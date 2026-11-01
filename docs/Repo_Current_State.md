@@ -26,11 +26,11 @@ T0001–T0009 are merged and customer-accepted. The planner runs on verified v49
 
 ## Active Ticket
 
-None. T0009 is customer-accepted and merged as PR #18. T0010 has not started.
+None. T0009 was customer-accepted and merged as PR #18, but a post-merge product-owner usability/slot-consistency issue is documented as T0009-F1; that follow-up has **not** been implemented. T0010 has not started.
 
 ## Planned Next Ticket
 
-**T0010 — Treasure Mod Planner**
+**T0009-F1 — Compact Equipment Details and Exclusive Offhand Position** (small post-merge correction; T0010 follows after acceptance).
 
 The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/DPS deferred to the following ticket series.
 
@@ -142,7 +142,7 @@ These are implementation-agent test results, not a separate independent executio
 
 **KI-0008 acceptance evidence (2026-11-01):** [PR #16](https://github.com/Zaelious/GorgonBuilder/pull/16) fixed Vite dev/preview gzip transport for the three generated assets while preserving the T0006 integrity contract, generated files, and loader. Codex verified compressed manifest byte counts and hashes in real Chromium for both serving modes, corruption/retry of each file, normal planner flows, and reported byte-identical production output; **352 total tests across 12 files** passed, including seven new transport tests. [PR-head GitHub Actions CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41319056007) and Cloudflare Workers preview build checks passed. Architect reviewed all seven changed files and squash-merged it at `b9b75f286d460c706f127b895bf1bb7ae4ff69eb`. The live deployed Cloudflare runtime was not independently verified. See [KI-0008 verification](KI-0008_Verification.md). T0009 is unblocked.
 
-**T0009 acceptance evidence (2026-11-01):** [PR #18](https://github.com/Zaelious/GorgonBuilder/pull/18) at `6bbe60f` passed pinned source validation, regenerated v490 artifact integrity, **408 tests**, lint, typecheck, build, Wrangler dry-run and Codex's Chromium dev/preview equipment and gzip checks. [GitHub CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41326379167) and the Cloudflare preview build passed. After the customer accepted the revised UI, architect reviewed and squash-merged PR #18 at `7cd03ee`. Nine primary rows, official `IconId` for all 3,078 equipment definitions, default-on unknown targets, exact OffHand/OffHandShield semantics and protected autosave are implemented. No treasure-mod or Spark editing yet; optional backdrop-click dismissal is tracked separately as KI-0010. See [verification report](T0009_Verification.md).
+**Post-merge product-owner correction:** The current expanded equipment row repeats the icon/name already shown in its summary. More importantly, official `OffHand` and `OffHandShield` are separate item types but the customer requires them to share **one mutually exclusive loadout position**. Current T0009 implementation allows both selections concurrently; correct this in scoped T0009-F1 without rewriting canonical IDs or silently discarding restored legacy entries. No change has been implemented yet. See Tickets and KI-0011.\n\n**T0009 acceptance evidence (2026-11-01):** [PR #18](https://github.com/Zaelious/GorgonBuilder/pull/18) at `6bbe60f` passed pinned source validation, regenerated v490 artifact integrity, **408 tests**, lint, typecheck, build, Wrangler dry-run and Codex's Chromium dev/preview equipment and gzip checks. [GitHub CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41326379167) and the Cloudflare preview build passed. After the customer accepted the revised UI, architect reviewed and squash-merged PR #18 at `7cd03ee`. Nine primary rows, official `IconId` for all 3,078 equipment definitions, default-on unknown targets, exact OffHand/OffHandShield semantics and protected autosave are implemented. No treasure-mod or Spark editing yet; optional backdrop-click dismissal is tracked separately as KI-0010. See [verification report](T0009_Verification.md).
 
 **Cloudflare PR preview warning:** Workers Builds checks failed on PRs #2, #3 and #4 despite successful GitHub CI; PR #5 and PR #6 Cloudflare checks passed. KI-0006 remains tracked until preview-build reliability is confirmed across branches. See [deployment troubleshooting](Cloudflare_Deployment.md).
 
