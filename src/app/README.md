@@ -1,9 +1,32 @@
 # T0008 — Skill and Ability Planner UI
 
 Continues the existing `feature/t0008-skill-ability-planner` branch and PR #12.
-Implements the [latest customer usability review](https://github.com/Zaelious/GorgonBuilder/pull/12#pullrequestreview-5725481849)
-and the requested inline build-title editor. Customer usability acceptance remains
+Implements the [latest customer layout review](https://github.com/Zaelious/GorgonBuilder/pull/12#pullrequestreview-5727514978)
+under the **Simple by Default, Detailed on Demand** rule read from main
+`6603e12` / PR #13. Earlier accepted title, skill-switch, picker and detail behavior
+remains intact. Customer usability acceptance remains
 pending; do not merge or begin T0009.
+
+## Current layout revision
+
+The desktop editor measures **212 CSS px tall** for both rows combined, with
+**80/81 px rows**, at 1440×900, 1920×1080 and 2560×1440. Empty, partial and full
+bars have the same footprint. The section begins approximately **101 px from
+the top**, the editable title is **24 px**, and six **48 px** icons with **4 px**
+gaps align horizontally with each skill selector, compact Lv input and + action.
+
+The repeated page eyebrow/introduction and visible combat-bar heading/count
+rows have been removed. Instructions are in a Help disclosure; skill filtering
+opens from a labeled search icon, focuses its input and closes with Escape.
+Screen-reader labels, bar counts and full-capacity guidance remain associated
+with their controls. A full bar's + action opens the existing picker guidance.
+Blocking errors, unresolved data and legacy-overflow warnings stay visible and
+are allowed to grow the section; nothing is clipped to force a height target.
+Mobile keeps at least 44 px slot/add hit targets. At 375 px, six slots and + fit
+on one line; the 320 px layout wraps the icon grid rather than overflowing.
+
+No saved-build logic, domain model, data, official icon mapping, title-editing
+behavior or autosave implementation changed in this revision.
 
 ## Current interaction
 
@@ -81,19 +104,17 @@ neutral fallback for failures. Elder Game credit remains visible.
 
 ## Files changed in this revision
 
-- `src/app/App.tsx`: connect the inline title to the committed editor path.
-- `src/app/editor/BuildTitle.tsx`: title editing, commit/cancel/validation and focus.
-- `src/app/editor/build-editor.ts` and `.test.ts`: atomic skill/bar changes,
-  title edits and quieter source diagnostics.
-- `src/features/abilities/AbilityFacts.tsx`: compact source facts and disclosures.
-- `src/features/abilities/AbilityPicker.tsx`: compact tier rows and one full detail
-  expansion on demand.
-- `src/features/abilities/AbilityPlanner.tsx`: compact header/actions, disclosure
-  positioning and removal of normal level warnings.
-- `src/app/planner.css`: compact details/picker and responsive inline title styles.
-- `src/test/App.test.tsx`: updated skill-switch expectations, disclosure/quiet-level
-  checks and focused title/autosave/refresh tests.
-- This README: current completion and verification handoff.
+- `src/app/App.tsx`: compact title/status row and on-demand instructions.
+- `src/app/planner.css`: compact desktop rows/header, responsive slot sizes and
+  positioned search/help disclosures; no fixed-height clipping.
+- `src/features/skills/SkillPlanner.tsx`: horizontal accessible labels, compact
+  level field and keyboard-operable search affordance.
+- `src/features/abilities/AbilityPlanner.tsx`: retain accessible bar heading/count
+  and capacity guidance without an extra visible label row.
+- `src/test/App.test.tsx`: help/filter accessibility and full-bar guidance checks.
+- `src/test/planner-layout.smoke.py`: reproducible real-browser screenshots and
+  dimension/alignment assertions for empty/partial/full bars and mobile/touch.
+- This README: measured results and current completion handoff.
 
 ## Verification
 
@@ -102,31 +123,51 @@ Node 24.19.0; existing dependencies/test infrastructure, no package changes.
 - `npm run data:update -- --check` — passed; official v490 pin intact.
 - `npm run lint` — passed with no warnings.
 - `npm run typecheck` — passed for both strict TypeScript projects.
-- `npm test` — **343 tests across 11 files passed** (335 previously).
-- Focused editor/UI tests — **48 passed**, including title Enter/blur/trim/cancel/
+- `npm test` — **345 tests across 11 files passed** (343 previously).
+- Focused editor/UI tests — **50 passed**, including title Enter/blur/trim/cancel/
   blank rejection/refresh, same-ID retention, isolated skill clearing and restore,
   compact disclosures and no noisy level warnings.
 - `npm run build` and `git diff --check` — passed.
 - Wrangler dry-run and final-head CI/Cloudflare deployment results are recorded
   in the PR completion report after pushing this revision.
 
-### Browser checks
+### Reproducible layout/browser checks
 
-Chromium passed the workflows below on the final production bundle, including
-real official icons. The normal Hook Shot panel measured **360 px wide × 322 px
-client height**, with **322 px scroll height** (no internal scrolling). Desktop
-1440×900 and mobile 375×812 passed without horizontal overflow or unexpected
-console/page errors. Mobile checks used a touch-enabled context and verified
-title blur commit, detail/picker touch controls and keyboard Escape.
+After building, run:
 
-Verify a normal Hook Shot detail fully readable without its own scroll, optional
-More/Edit disclosures, the longest official combat description (Trigger Golem,
-333 characters) with explicit expansion, compact family/tier browsing, one tier's
-full details at a time, six-slot capacity and removal, Animal Handling → Archery
-clearing only A, same-ID retention and refresh, and mobile touch/keyboard behavior.
-Title checks cover Enter and blur, trimmed values, Escape, blank rejection and
-refresh restoration. Screenshots are local review artifacts from the production
-bundle at desktop 1440×900 and mobile 375×812.
+```sh
+python src/test/planner-layout.smoke.py --output /tmp/gorgonbuilder-layout
+```
+
+This optional verification tool uses the available Python Playwright and an
+installed Chromium (or a Playwright-managed browser), with Python's standard
+static HTTP server for the production bundle. It introduces no npm/runtime
+package dependency and preserves normal HTTPS certificate checks. In this
+sandbox Chromium needs writable access to its existing NSS certificate database
+so it can use the provided proxy CA trust.
+
+The committed check asserts 190–250 px total section height, 70–95 px rows,
+horizontal center alignment, 44–48 px icons, a compact title and section near
+the top. All nine desktop viewport/state combinations passed:
+
+| Viewport | States | Section | Rows | Section top |
+| --- | --- | --- | --- | --- |
+| 1440×900 | Empty, partial, full | 212 px | 80/81 px | 101.4 px |
+| 1920×1080 | Empty, partial, full | 212 px | 80/81 px | 101.4 px |
+| 2560×1440 | Empty, partial, full | 212 px | 80/81 px | 101.4 px |
+
+It saves screenshots and raw `measurements.json`, checks actual 64×64 official
+CDN images, keyboard filter focus/Escape, ability detail/picker operation,
+inline-title save/refresh, retained legacy overflow, and a touch-enabled 375×812
+viewport with at least 44 px slots/add buttons. The 320 px narrow layout also
+passed without horizontal overflow. No unexpected console/page errors occurred.
+No browser screenshot/measurement is simulated by jsdom; the unit suite checks
+behavior and this separate browser pass checks geometry.
+
+Earlier accepted detailed workflows remain covered by the full suite and prior
+browser passes: title Enter/blur/trim/cancel/blank protection, same-ID retention,
+Animal Handling → Archery clearing only A, exact rank IDs, highest-tier quick-add,
+More/Edit disclosures, refresh, storage recovery and snapshot protection.
 
 ## Risks and follow-up
 
@@ -146,6 +187,6 @@ bundle at desktop 1440×900 and mobile 375×812.
 - After acceptance and merge, synchronize Repo_Current_State, Tickets,
   Manual_Verification_Guide, MVP_Technical_Design, Build_Save_And_Share_Design and
   Known_Issues_And_Followups in the planned documentation-only follow-up. Include
-  the revised clearing/title behavior and current disclosure UX.
+  the compact measured layout, clearing/title behavior and current disclosure UX.
 
 No equipment/mod UI, remote saving, future tabs or T0009 work is introduced.

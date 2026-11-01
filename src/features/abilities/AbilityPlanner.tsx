@@ -131,7 +131,7 @@ export function AbilityBar({ slot, skill, bar, data, onEdit, readOnly, detailSlo
   }
   const activeSelection = active === null ? undefined : bar[active];
   return <section className="ability-bar" aria-labelledby={`bar-${slot}`}>
-    <div className="bar-heading"><h3 id={`bar-${slot}`}>Combat bar {slot}</h3><span className="muted">{bar.length} / {COMBAT_BAR_SIZE}</span></div>
+    <div className="bar-heading sr-only"><h3 id={`bar-${slot}`}>Combat bar {slot}</h3><span id={`bar-count-${slot}`}>{bar.length} / {COMBAT_BAR_SIZE} abilities selected</span></div>
     <ol className="combat-slots">
       {Array.from({ length: Math.max(COMBAT_BAR_SIZE, bar.length) }, (_, index) => {
         const selection = bar[index];
@@ -154,8 +154,8 @@ export function AbilityBar({ slot, skill, bar, data, onEdit, readOnly, detailSlo
         </li>;
       })}
     </ol>
-    <button type="button" className="open-picker" disabled={readOnly || skill.skillId === null} onClick={() => openPicker(null)} aria-label={`Open ability picker for bar ${slot}`}>+ <span>Abilities</span></button>
-    {full && <p className="bar-message warning">{bar.length > COMBAT_BAR_SIZE
+    <button type="button" className="open-picker" disabled={readOnly || skill.skillId === null} onClick={() => openPicker(null)} aria-label={`Open ability picker for bar ${slot}`} aria-describedby={full ? `bar-capacity-${slot}` : `bar-count-${slot}`}><span aria-hidden="true">+</span></button>
+    {full && <p id={`bar-capacity-${slot}`} className={bar.length > COMBAT_BAR_SIZE ? 'bar-message warning' : 'sr-only'}>{bar.length > COMBAT_BAR_SIZE
       ? `Legacy draft has ${bar.length} abilities in bar ${slot}; all are retained. Remove entries to return to six.`
       : `Bar ${slot} is full. Remove or replace an equipped ability to make room.`}</p>}
     {bar.some(s => selectionWarnings(s, skill.skillId, data).length > 0) && <p className="bar-message warning">Marked slots need review. Open a slot for details; saved selections are retained.</p>}

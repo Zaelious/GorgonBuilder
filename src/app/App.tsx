@@ -67,12 +67,17 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
   }
 
   return <>
-    <div className="planner-heading"><div><p className="eyebrow">Skill & ability planner</p><BuildTitle title={build.title} readOnly={readOnly} onCommit={title => commit({ type: 'title', title })} /></div><p className="save-status" role="status">{saveState}</p></div>
-    <p className="introduction">Choose your combat skills. Add up to six abilities to each bar; open a slot to inspect or change it.</p>
+    <div className="planner-heading"><BuildTitle title={build.title} readOnly={readOnly} onCommit={title => commit({ type: 'title', title })} /><p className="save-status" role="status">{saveState}</p></div>
     {recoveryVisible && session.restored.status === 'fallback' && <p className="notice warning" role="alert">{saveError(session.restored.error)}</p>}
     {versionMismatch && <p className="notice warning" role="alert">This draft uses game data {build.gameDataVersion}; loaded data is {data.gameDataVersion}. The saved version and selections are preserved. Editing is disabled because the original snapshot is unavailable.</p>}
     {saveResult && !saveResult.ok && <div className="notice warning" role="alert"><p>{saveError(saveResult)}</p><button type="button" onClick={() => autosave.flush()}>Retry saving</button></div>}
-    <section className="skills-section" aria-labelledby="skills-abilities-title"><div className="section-heading"><h2 id="skills-abilities-title">Skills &amp; Abilities</h2><span className="muted">Two independent combat bars</span></div><div className="planner-grid">
+    <section className="skills-section" aria-labelledby="skills-abilities-title"><div className="section-heading"><h2 id="skills-abilities-title">Skills &amp; Abilities</h2>
+      <details className="planner-help" onKeyDown={e => {
+        if (e.key === 'Escape') { e.preventDefault(); e.currentTarget.open = false; e.currentTarget.querySelector<HTMLElement>('summary')?.focus(); }
+      }}><summary aria-label="Planner help">?</summary><div className="planner-help-content">
+        <p>Select skills and levels, then use + to browse abilities. Open an equipped icon for details and bar controls. Changing a skill clears only its bar. Both slots can use the same skill.</p>
+      </div></details>
+    </div><div className="planner-grid">
       <SkillPlanner slot="A" skill={build.skillSlotA} bar={build.abilityBarA} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} />
       <SkillPlanner slot="B" skill={build.skillSlotB} bar={build.abilityBarB} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} />
     </div></section>

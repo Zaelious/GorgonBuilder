@@ -525,3 +525,43 @@ it.each(['', '   '])('rejects a blank title on Enter and blur while keeping the 
   expect(control('h1').textContent).toBe('Untitled build');
   expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
 });
+
+it('keeps help and skill filtering on demand while preserving accessible controls', async () => {
+  await render();
+  expect(container.querySelector('.planner-heading .eyebrow')).toBeNull();
+  expect(container.querySelector('.introduction')).toBeNull();
+  const help = control<HTMLDetailsElement>('.planner-help');
+  const filter = control<HTMLDetailsElement>('.skill-filter');
+  expect(help.open).toBe(false);
+  expect(filter.open).toBe(false);
+  expect(control('#level-A').getAttribute('aria-label')).toBe('Skill A level');
+  expect(control('.skill-filter summary').getAttribute('aria-label')).toBe('Filter skills for Skill A');
+  await click('.planner-help summary');
+  expect(help.open).toBe(true);
+  await act(async () => { help.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); });
+  expect(help.open).toBe(false);
+  await click('.skill-filter summary');
+  expect(filter.open).toBe(true);
+  await change('#skill-search-A', 'psych');
+  expect(control<HTMLSelectElement>('#skill-A').options).toHaveLength(2);
+  await act(async () => { filter.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); });
+  expect(filter.open).toBe(false);
+  expect(document.activeElement).toBe(control('.skill-filter summary'));
+  await tick();
+  expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
+});
+
+it('associates full-bar guidance with the add action without a separate visible count row', async () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  build.skillSlotA.skillId = 'Psychology';
+  build.abilityBarA = Array.from({ length: 6 }, () => ({ abilityId: 'ability_1201', rank: null }));
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build));
+  await render();
+  const add = control<HTMLButtonElement>('[aria-label="Open ability picker for bar A"]');
+  const guidance = control('#bar-capacity-A');
+  expect(add.getAttribute('aria-describedby')).toBe(guidance.id);
+  expect(guidance.textContent).toContain('Bar A is full');
+  await openPicker('A');
+  expect(control('dialog [role="status"]').textContent).toContain('Bar A is full');
+  expect(control<HTMLButtonElement>('.quick-add').disabled).toBe(true);
+});
