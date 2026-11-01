@@ -25,11 +25,11 @@ T0001–T0008 are merged. The first customer-accepted compact skill/ability plan
 
 ## Active Ticket
 
-None. T0008 is merged; T0009 has not started. KI-0007's published target-level filtering contract is documented for T0009. Complete the separate KI-0008 local Vite gzip repair PR before starting T0009.
+None. T0008 and prerequisite KI-0008 are merged; T0009 has not started. KI-0007's published target-level equipment filter contract is already documented in T0009. T0009 can now begin.
 
 ## Planned Next Ticket
 
-**KI-0008 — Narrow Vite gzip asset transport fix**, then **T0009 — Equipment Search and Planner**
+**T0009 — Equipment Search and Planner**
 
 The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/DPS deferred to the following ticket series.
 
@@ -37,7 +37,7 @@ The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/D
 
 - Vite 8, React 19, strict TypeScript 6
 - ESLint 10 with TypeScript rules and core-layer import restrictions
-- Vitest 5 with jsdom for 345 tests, including 50 focused editor/UI tests; optional Chromium/Playwright layout smoke
+- Vitest 5 with jsdom for 352 tests, including 50 focused editor/UI tests and seven Vite transport integration tests; optional Chromium/Playwright layout and transport smoke
 - Shared CSS variables and responsive baseline styles
 - Cloudflare Workers Static Assets for the Vite frontend (no Cloudflare Vite plugin or backend yet)
 - T0008 connects T0007's injected local draft/autosave to the actual planner; remote provider-agnostic saving remains future work
@@ -53,6 +53,7 @@ Development dependencies: `@eslint/js`, `@types/node`, `@types/react`, `@types/r
 - `npm run data:update -- --check` — validate the pinned raw snapshot offline
 - `npm run data:generate` — generate deterministic v490 runtime data artifacts from pinned local input
 - `npm run dev` — Vite development server
+- `npm run preview` — local Vite preview of a production build
 - `npm run lint` — ESLint with zero allowed warnings
 - `npm run typecheck` — TypeScript no-emit checking
 - `npm test` — one-shot Vitest
@@ -138,6 +139,8 @@ These are implementation-agent test results, not a separate independent executio
 
 **T0008 acceptance evidence (2026-11-01):** [PR #12](https://github.com/Zaelious/GorgonBuilder/pull/12) received customer hands-on acceptance after revisions; the compact desktop section measures **212 CSS px** with 80/81 px rows and 48 px icons. Codex reported **345 tests across 11 files** (50 focused editor/UI tests), pinned-data checks, lint, typecheck, build, Wrangler dry-run, and responsive Chromium smoke tests. [Final-head CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41297214856) and Cloudflare preview checks succeeded at `b6f90ad`; architect reviewed and squash-merged it at `dd268dea`. Official ability normalization now adds exact published IconID and optional SpecialInfo for display; source/provenance/integrity remain verified. Initial unthrottled desktop heap observations: **195–239 MB**. See [app README](../src/app/README.md). T0014's proposed optional Respect Skill Level picker mode is future work, not implemented in T0008.
 
+**KI-0008 acceptance evidence (2026-11-01):** [PR #16](https://github.com/Zaelious/GorgonBuilder/pull/16) fixed Vite dev/preview gzip transport for the three generated assets while preserving the T0006 integrity contract, generated files, and loader. Codex verified compressed manifest byte counts and hashes in real Chromium for both serving modes, corruption/retry of each file, normal planner flows, and reported byte-identical production output; **352 total tests across 12 files** passed, including seven new transport tests. [PR-head GitHub Actions CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41319056007) and Cloudflare Workers preview build checks passed. Architect reviewed all seven changed files and squash-merged it at `b9b75f286d460c706f127b895bf1bb7ae4ff69eb`. The live deployed Cloudflare runtime was not independently verified. See [KI-0008 verification](KI-0008_Verification.md). T0009 is unblocked.
+
 **Cloudflare PR preview warning:** Workers Builds checks failed on PRs #2, #3 and #4 despite successful GitHub CI; PR #5 and PR #6 Cloudflare checks passed. KI-0006 remains tracked until preview-build reliability is confirmed across branches. See [deployment troubleshooting](Cloudflare_Deployment.md).
 
 ## Hosting and Previews
@@ -168,7 +171,7 @@ Character import is not yet implemented.
 
 ## Known Issues
 
-See `docs/Known_Issues_And_Followups.md`. T0004/T0005 source diagnostics remain visible in generated data. KI-0007 now has a documented T0009 target-level filtering decision (implementation pending); KI-0008 requires a separate small Vite gzip transport fix before T0009. Continue monitoring KI-0009 browser memory/load. Historical Cloudflare build failures are retained under KI-0006 despite PR #12's successful preview.
+See `docs/Known_Issues_And_Followups.md`. T0004/T0005 source diagnostics remain visible in generated data. KI-0007 has a documented T0009 target-level filtering decision (implementation pending), and KI-0008 is resolved and merged as PR #16. Continue monitoring KI-0009 browser memory/load. Historical Cloudflare build failures are retained under KI-0006 despite PR #12's successful preview.
 
 ## Documentation Rule
 
