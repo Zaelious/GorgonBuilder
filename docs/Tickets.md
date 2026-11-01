@@ -395,6 +395,52 @@ Guidelines:
 3. Change levels and ability ranks, reorder bars, refresh, and confirm restoration.
 4. Check console and run the quality suite.
 
+## Pre-T0009 Prerequisite — KI-0008 Vite Gzip Transport Fix
+
+**Type:** Separate narrow technical work item, not a new numbered product ticket.
+
+**Complexity:** Small
+
+**Verification:** Automated + architect review and real-browser smoke check
+
+**Goal:** Make the three generated `.json.gz` assets load in local Vite dev and preview without weakening T0006 compressed-byte verification.
+
+**Dependencies:** T0006,T0008
+
+**Suggested branch:** `fix/ki-0008-vite-gzip`
+
+**Allowed areas:**
+- `vite.config.ts` and minimal Vite asset serving configuration
+- `src/data/repository/load.ts` only if strictly needed
+- focused transport/integration tests and local-development docs
+
+**Do not touch:**
+- raw official data, normalizers, generated artifacts or their manifest
+- build schema, existing skill/ability UI, equipment, treasure mods or calculators
+- unrelated static routes, hosting architecture or dependencies
+
+**Requirements:**
+- Reproduce the mismatch using a real browser in both `npm run dev` and `npm run build && npm run preview`; record each gzip response's headers, `fetch().arrayBuffer()` byte count, and expected manifest byte count/hash.
+- Ensure exactly the three generated game-data `.json.gz` assets reach JavaScript as the **original compressed bytes**. Prefer a path-restricted Vite serving fix with `Content-Type: application/gzip` and **no** `Content-Encoding: gzip`; verify that the solution actually works in the installed Vite version rather than assuming middleware order.
+- Preserve compressed length + SHA-256 verification, explicit `DecompressionStream('gzip')`, decoded JSON length verification, and existing schema/version checks. Never bypass integrity validation or silently accept decoded bytes in place of compressed ones.
+- Preserve other static assets, production output, Cloudflare Workers behavior and exact pinned data; do not add new runtime dependencies.
+- Add regression tests including corrupted gzip bytes still failing verification, and a browser smoke test loading the existing skill/ability planner in both local modes.
+
+**Non-goals:**
+- No loader redesign, new compression format, CDN migration, equipment UI or future-ticket work.
+
+**Acceptance criteria:**
+- Both Vite modes load all three assets and show the current working planner without browser errors.
+- Browser-received compressed bytes match manifest size and hash, and corrupted assets are rejected.
+- Unrelated assets and deployed Cloudflare behavior do not regress.
+- Pinned-data check, lint, typecheck, full tests, build and Wrangler dry-run pass.
+- Implementation remains in one small PR and is reviewed/merged before T0009 begins.
+
+**Manual verification:**
+1. Run `npm run dev`, open the planner, inspect generated gzip response headers and received byte lengths.
+2. Run `npm run build && npm run preview` and repeat the same browser checks.
+3. Run corruption tests, pinned-data check and quality suite; report before/after headers and manifest hashes.
+
 ## T0009 — Equipment Search and Planner
 
 **Complexity:** Standard
@@ -403,11 +449,13 @@ Guidelines:
 
 **Goal:** Let users search and equip real Project Gorgon items from the normalized database.
 
-**Dependencies:** T0006,T0007
+**Dependencies:** T0006,T0007,T0008; KI-0008 prerequisite must be merged first.
 
 **Allowed areas:**
 - src/data/search
 - src/features/equipment
+- src/app and build-editor equipment integration
+- src/persistence/local preferences integration (avoid incompatible schema changes)
 - build editor
 - tests
 
@@ -419,7 +467,10 @@ Guidelines:
 
 **Requirements:**
 - Build normalized item search text from item names, official effect text, tags, and explicit tested synonyms.
-- Support global minimum item level with 90+ as the primary/default planning use case.
+- Implement a **minimum published target-level** filter based on nullable `NormalizedItem.level` (exactly official `CraftingTargetLevel`), **not** an assumed equip requirement. Label the UI “Minimum target level” (not unqualified “Item level” or “Required level”). Use the existing `minimumEquipmentLevel` preference: default 90, `null` disables threshold filtering.
+- Provide an explicit **Include unknown target level** control, on by default. For a positive threshold, include records with `level: null` only when enabled; never convert null to zero. Identify unknown-level items in results and explain the choice. Keep this control transient unless a backward-compatible preferences change is justified.
+- Display published `SkillReqs` separately from target level where available. Do not infer actual item-instance level, legal equip level, rarity or treasure-tier eligibility from `CraftingTargetLevel`.
+- Keep target-level predicates and combinations with slot/text search testable outside React. Apply the filter to base equipment definitions, not imported item instances.
 - Support slot filtering and replacement/clear actions.
 - Support searches such as lightning/electricity, psychic, taunt, kick, and combat refresh when source text/synonyms support them.
 - Show important fixed/innate item effects in results.
@@ -429,16 +480,23 @@ Guidelines:
 - No fuzzy-search dependency unless measured as necessary.
 - No treasure-effect candidate editing.
 - No imported My Items tab.
+- No inferred item equippability gate, treasure tier picker or redefinition of T0005 normalization.
 
 **Acceptance criteria:**
 - Representative effect-text searches return expected items.
 - Wrong-slot items are excluded when selecting for a slot.
 - Equip/replace/clear survives reload.
+- With a 90+ threshold, known levels 89/90/91 behave as excluded/included/included. Null levels obey the include-unknown toggle; no threshold includes all levels. Slot and text filters compose correctly.
+- Default level 90 and persisted changes round-trip via the existing preferences API; neither draft nor preference protections regress.
+- UI distinguishes “target level”, “unknown target level” and published skill requirements. It makes no unsupported equip-level claims.
+- For pinned v490, the unfiltered equipment subset has **518** definitions with target level 90+ and **500** with missing target level; check these as snapshot-specific regression counts, not immutable gameplay facts.
 
 **Manual verification:**
-1. Set minimum level 90+ and search several known terms.
-2. Equip items into multiple slots, replace and clear them, then refresh.
-3. Run the quality suite.
+1. Open equipment search at target level 90+, toggle unknowns on/off, and verify boundary cases 89/90/91/null.
+2. Test 80+, no minimum, search terms and slots; refresh to check persistence of the minimum preference.
+3. Inspect an item with published `SkillReqs` and an unknown-level item; verify labeling.
+4. Equip, replace, clear and refresh without changing skill bars or other draft fields.
+5. Run pinned-data check, lint, typecheck, tests and build, plus local dev/preview smoke after the KI-0008 fix.
 
 ## T0010 — Treasure Mod Planner
 
