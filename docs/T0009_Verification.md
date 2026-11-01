@@ -131,6 +131,10 @@ Final revision run, measured alongside the test suite: dev load 2,027 ms and pre
 7. Equip multiple slots, replace and clear, refresh after each, and verify both ability bars, title, notes and other equipment persist. Existing manual/imported/duplicate selections must remain unless explicitly changed; associated-data confirmation still applies.
 8. Review the forced-404 fallback evidence and repeat common actions on a narrow screen. Final architectural review and customer acceptance were subsequently completed; see the status at the top of this report.
 
+## Post-merge product-owner correction (not yet implemented)
+
+After accepting and merging T0009, the customer identified two further issues: an expanded item row repeats its own summary's icon/name, and OffHand versus OffHandShield must be alternative item types in one mutually exclusive offhand loadout position. The merged version currently permits both canonical types to be selected at once, so this is a **known follow-up**, not a passed acceptance claim. T0009-F1 documents the fix; no modifications to the merged code are claimed. Preserve both entries of legacy dual-selection drafts until deliberate resolution, and preserve exact official slot strings. See KI-0011.
+
 ## Risks, assumptions, follow-ups and documentation
 
 - Official CDN artwork can be missing or unavailable; the category fallback is deliberate. All pinned equipment records have IconId, so absent metadata is covered by synthetic unit tests rather than an invented official record.
