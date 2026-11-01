@@ -1,6 +1,6 @@
 # T0009 — Equipment Search and Planner verification
 
-Status: revised implementation proposed on `feature/t0009-equipment-planner`, updating existing draft [PR #18](https://github.com/Zaelious/GorgonBuilder/pull/18). Awaiting renewed architectural review and customer hands-on acceptance. Do not merge or mark T0009 complete. T0010 has not started.
+**Status: Completed and customer-accepted 2026-11-01.** [PR #18](https://github.com/Zaelious/GorgonBuilder/pull/18) passed final architectural review at head `6bbe60f` and was squash-merged to `main` as `7cd03eef7aaf4bea7bf79fcb3850bf7d6d03746d`. The customer accepted the revised live equipment layout after the earlier functional checklist passed. T0010 has not started. Optional click-outside-to-close is a nonblocking future UX follow-up (KI-0010); the accepted picker continues using X/Escape.
 
 ## Review and scope
 
@@ -129,7 +129,7 @@ Final revision run, measured alongside the test suite: dev load 2,027 ms and pre
 5. Inspect item_45640: target level 90, separate Knife Fighting 60 requirement, fixed effects, description and official source. Check that target level is not presented as an equip requirement.
 6. Drag search text outside the dialog and click its backdrop: it stays open. Close with X/Escape and verify focus returns. Page through results using the keyboard.
 7. Equip multiple slots, replace and clear, refresh after each, and verify both ability bars, title, notes and other equipment persist. Existing manual/imported/duplicate selections must remain unless explicitly changed; associated-data confirmation still applies.
-8. Review the forced-404 fallback evidence and repeat common actions on a narrow screen. Provide renewed architectural review and customer acceptance before any merge/status update.
+8. Review the forced-404 fallback evidence and repeat common actions on a narrow screen. Final architectural review and customer acceptance were subsequently completed; see the status at the top of this report.
 
 ## Risks, assumptions, follow-ups and documentation
 
@@ -140,4 +140,4 @@ Final revision run, measured alongside the test suite: dev load 2,027 ms and pre
 - T0010 mod candidate selection/tier editing, skill/profile eligibility, numeric stats, Spark simulation, damage calculations, imports and remote persistence remain out of scope. No new unrelated issue was implemented.
 - Browser coverage is local Chromium, not all engines, low-end hardware or the live Cloudflare runtime. Wrangler dry-run validates bundling; it is not a live runtime test.
 
-This report and the normalization README are updated now. After renewed architectural/customer acceptance and merge, documentation owners should synchronize Tickets, Repo_Current_State, Manual_Verification_Guide, MVP_Technical_Design, Build_Save_And_Share_Design, Data_Source_And_Normalization, and KI-0007's pending status while retaining KI-0009 monitoring. T0009 remains unmerged and incomplete pending that review.
+Final architectural review and customer acceptance were recorded on [PR #18](https://github.com/Zaelious/GorgonBuilder/pull/18). The merge and subsequent documentation synchronization update Tickets, Repo_Current_State, Manual_Verification_Guide, MVP_Technical_Design, Build_Save_And_Share_Design, Data_Source_And_Normalization and KI-0007, while retaining KI-0009 monitoring. A new nonblocking KI-0010 records the accepted X/Escape behavior and optional safe click-outside design. No T0010 feature work is included.
