@@ -122,6 +122,21 @@ See [build domain README](../src/core/build/README.md). No new UI or remote save
 
 See [T0008 app README](../src/app/README.md) for detailed evidence.
 
+### KI-0008 pre-T0009 gzip transport checks
+
+This is a separate narrow preflight PR, not part of T0009's equipment UI.
+
+1. In a real browser, inspect each generated `.json.gz` response under both `npm run dev` and `npm run build && npm run preview`: verify `fetch().arrayBuffer()` returns manifest-matching **compressed** size and SHA-256, without transparent HTTP decoding.
+2. Confirm the existing skill/ability planner loads correctly in both Vite modes and displays no loader errors; intentionally corrupted bytes must still fail verification.
+3. Verify other assets/production output are unaffected; run `npm run data:update -- --check`, lint, typecheck, tests, build and Wrangler dry-run.
+
+### T0009 minimum target-level search checks
+
+1. Confirm “Minimum target level” defaults to 90 from the existing preference; test level 89 excluded, 90/91 included and unknown/null included only when the explicit default-on toggle is enabled.
+2. Test 80+, no threshold, and combination with slot/text search. Unknown-target results must be visibly marked, never zero-filled.
+3. Compare official `SkillReqs` versus `CraftingTargetLevel`; neither is a universal equip-level assertion. Changing the filter must not silently unequip existing selections.
+4. Equip/replace/clear, refresh and verify the existing skill/ability planner and saved draft fields remain intact.
+
 ## Calculation Tickets
 
 Verify:

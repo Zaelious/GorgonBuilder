@@ -25,11 +25,11 @@ T0001–T0008 are merged. The first customer-accepted compact skill/ability plan
 
 ## Active Ticket
 
-None. T0008 is accepted/merged; T0009 has not started. First resolve KI-0007 equipment-level semantics and KI-0008 Vite gzip transport.
+None. T0008 is merged; T0009 has not started. KI-0007's published target-level filtering contract is documented for T0009. Complete the separate KI-0008 local Vite gzip repair PR before starting T0009.
 
 ## Planned Next Ticket
 
-**T0009 — Equipment Search and Planner**
+**KI-0008 — Narrow Vite gzip asset transport fix**, then **T0009 — Equipment Search and Planner**
 
 The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/DPS deferred to the following ticket series.
 
@@ -168,7 +168,7 @@ Character import is not yet implemented.
 
 ## Known Issues
 
-See `docs/Known_Issues_And_Followups.md`. T0004/T0005 source diagnostics remain visible in generated data. Resolve KI-0007 (equipment-level semantics) and KI-0008 (Vite gzip loader transport) before T0009; monitor KI-0009 (browser memory/load). Historical Cloudflare build failures are retained under KI-0006 despite PR #12's successful preview.
+See `docs/Known_Issues_And_Followups.md`. T0004/T0005 source diagnostics remain visible in generated data. KI-0007 now has a documented T0009 target-level filtering decision (implementation pending); KI-0008 requires a separate small Vite gzip transport fix before T0009. Continue monitoring KI-0009 browser memory/load. Historical Cloudflare build failures are retained under KI-0006 despite PR #12's successful preview.
 
 ## Documentation Rule
 
