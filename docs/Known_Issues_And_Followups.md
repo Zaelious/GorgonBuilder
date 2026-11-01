@@ -68,11 +68,11 @@ T0005's official v490 `items` data exposes `CraftingTargetLevel`, not a generic 
 
 ## KI-0008 — Vite Development/Preview Gzip Transport
 
-**Status:** Scoped fix implemented and locally verified; review/merge required before T0009. See [KI-0008 verification](KI-0008_Verification.md) for before/after headers, hashes, regression coverage and environment notes.
+**Status:** Resolved and merged 2026-11-01 in [PR #16](https://github.com/Zaelious/GorgonBuilder/pull/16) (`b9b75f286d460c706f127b895bf1bb7ae4ff69eb`). All 352 tests, GitHub Actions CI, Cloudflare preview build, and Codex's real-browser dev/preview checks passed. See [KI-0008 verification](KI-0008_Verification.md) for complete before/after headers, hashes, and environment notes.
 
 `npm run dev` / `vite preview` can serve the generated `.gz` assets with `Content-Encoding: gzip`. Browser fetch transparently decodes the response before T0006's loader verifies **compressed** byte lengths and SHA-256, so local Vite use fails with a byte mismatch. The production bundle worked via a static server and Cloudflare Workers local assets; PR #12's remote preview deployment succeeded, although its live runtime was not independently fetched by the implementation environment.
 
-**Implementation contract:** Use the [pre-T0009 KI-0008 work item in Tickets.md](Tickets.md#pre-t0009-prerequisite--ki-0008-vite-gzip-transport-fix). Browser `fetch().arrayBuffer()` must receive original compressed bytes (manifest-matching length/hash) for all three generated `.json.gz` files in both Vite dev and Vite preview. Prefer restricting response handling to these assets (no `Content-Encoding: gzip` when the loader expects compressed bytes). Preserve explicit decompression, corrupt-data detection and normal production behavior. [Vite issue #12266](https://github.com/vitejs/vite/issues/12266) documents a matching symptom, not a guaranteed drop-in solution.
+**Resolution:** A narrow Vite 8 middleware intercepts only the three original gzip files under both `configureServer` and `configurePreviewServer`, serving `Content-Type: application/gzip` with no `Content-Encoding`. Browser-received bytes match pinned manifest compressed sizes and SHA-256. Existing loader/decompression/integrity validations remain unchanged; corrupted responses still fail and Retry recovers. All 10 production output files were reported byte-identical to pre-fix `main`. Live Cloudflare runtime was not independently browser-tested; the Cloudflare preview build check passed. [Vite issue #12266](https://github.com/vitejs/vite/issues/12266) matches the original symptom.
 
 ## KI-0009 — Runtime Repository Memory and Load Cost
 

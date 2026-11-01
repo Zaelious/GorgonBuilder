@@ -397,6 +397,8 @@ Guidelines:
 
 ## Pre-T0009 Prerequisite — KI-0008 Vite Gzip Transport Fix
 
+**Status:** Completed and merged 2026-11-01 via [PR #16](https://github.com/Zaelious/GorgonBuilder/pull/16). T0009 is unblocked; retain these requirements as the verification record.
+
 **Type:** Separate narrow technical work item, not a new numbered product ticket.
 
 **Complexity:** Small
