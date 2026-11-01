@@ -169,7 +169,14 @@ Network failure must not destroy the user's in-progress build.
 - The draft stores top-level `schemaVersion` and `gameDataVersion`, optional app version, build title/notes, independent skill slots and ability bars, equipment/instances, candidate mods, Sparks, target settings and optional character-import reference metadata. Owner credentials are **not** part of the build document.
 - `createLocalPersistence` in `src/persistence/local/storage.ts` saves the draft to `gorgonbuilder.current-draft` and versioned preferences to `gorgonbuilder.preferences`. The current local APIs are `saveDraft`, `restoreDraft`, `updatePreferences`, and `restorePreferences`.
 - Missing or malformed storage returns a default with explicit recovery status, preserving original bytes until a subsequent explicit save. Unsupported versioned payloads cannot be overwritten by normal saves or autosave; an explicit migration/reset flow is future work.
-- `createDraftAutosave` in `src/persistence/local/autosave.ts` implements validated snapshots, default 500 ms debounce, flush/cancel and explicit retry. The T0008 editor will wire its lifecycle and user-facing error handling.
+- `createDraftAutosave` in `src/persistence/local/autosave.ts` implements validated snapshots, default 500 ms debounce, flush/cancel and explicit retry. The T0008 editor wires its lifecycle and user-facing error handling.
 - Existing local draft storage is **not** remote/public saved-build hosting or ownership token storage. Future T0018–T0020 work must preserve these separations.
 
-See [build domain README](../src/core/build/README.md) and [PR #10](https://github.com/Zaelious/GorgonBuilder/pull/10).
+### Implemented in T0008
+
+- The planner edits one browser-local draft: title, two independent skill levels/selections, exact ability IDs/ranks and ordered bars. Switching a skill clears only that bar; unrelated build fields remain intact.
+- The existing 500 ms autosave saves committed edits and restores them on refresh; title keystrokes, searches, tooltips and dialogs are transient.
+- Pagehide/visibility flush and explicit retry report failures. Future-schema, unreadable storage and unavailable game-data snapshot drafts are protected from accidental overwrite.
+- No multi-build library, remote ownership tokens, public/private sharing, or backend is added; those remain T0018–T0020.
+
+See [build domain README](../src/core/build/README.md), [T0008 app README](../src/app/README.md), [PR #10](https://github.com/Zaelious/GorgonBuilder/pull/10) and [PR #12](https://github.com/Zaelious/GorgonBuilder/pull/12).
