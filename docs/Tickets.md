@@ -504,7 +504,7 @@ Guidelines:
 
 ## T0009-F1 — Compact Equipment Details and Exclusive Offhand Position
 
-**Status:** Approved product-owner follow-up identified after T0009 customer acceptance and merge; **not implemented**. Complete before starting T0010.
+**Status:** Completed, customer-accepted and squash-merged 2026-11-01 via [PR #20](https://github.com/Zaelious/GorgonBuilder/pull/20), commit `09257ce95ae7e6e5500d10cdfbf58ace9ad84b75`. [Verification](T0009_F1_Verification.md) records 418 passing tests, browser checks, exclusive OffHand/OffHandShield swaps and explicit legacy-conflict recovery. T0010 is next and has not started.
 
 **Complexity:** Small
 

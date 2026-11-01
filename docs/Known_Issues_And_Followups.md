@@ -92,7 +92,7 @@ The T0009 picker deliberately closes via X/Escape, not by clicking its backdrop,
 
 ## KI-0011 — Duplicate Equipment Detail Header and Nonexclusive Offhand UI
 
-**Status:** Confirmed product-owner feedback after merged T0009, 2026-11-01; correction planned under **T0009-F1**. No implementation yet.
+**Status:** Resolved and customer-accepted 2026-11-01 under **T0009-F1**, merged via [PR #20](https://github.com/Zaelious/GorgonBuilder/pull/20) at `09257ce`. See [verification](T0009_F1_Verification.md).
 
 Expanded equipment information repeats the already-visible selected item icon and name, wasting vertical space. The current T0009 OffHand row exposes two independent selectors for official `OffHand` and `OffHandShield`; the customer clarified they are alternatives for **one physical player loadout position**, not two simultaneously occupiable positions. Existing BuildDocument saves distinguish the official source strings, which must be preserved.
 

@@ -1,6 +1,6 @@
 # T0009-F1 — Compact Equipment Details and Exclusive Offhand Position
 
-Status: proposed implementation; awaiting architectural review and customer hands-on acceptance. Do not merge, mark T0009-F1 complete or start T0010.
+**Status: Completed and customer-accepted 2026-11-01.** [PR #20](https://github.com/Zaelious/GorgonBuilder/pull/20) was reviewed at head `d90cbcd` and squash-merged into `main` as `09257ce95ae7e6e5500d10cdfbf58ace9ad84b75`. The customer confirmed “this is good, go ahead and commit/merge.” T0010 has not started.
 
 Branch: `fix/t0009-f1-equipment-ui`, created from latest fetched main at `e0a02a7`. Merged T0009 was confirmed in GitHub and local history: PR #18, squash commit `7cd03eef7aaf4bea7bf79fcb3850bf7d6d03746d` (reviewed head `6bbe60f`).
 
@@ -112,4 +112,4 @@ Actual production-preview captures are committed for review:
 - Browser evidence covers local Chromium, not all engines, low-end hardware or the deployed Cloudflare runtime. The Wrangler dry-run is not a live runtime test.
 - No new unrelated issue was implemented. KI-0010 optional backdrop dismissal remains unchanged; KI-0009 monitoring remains open. Treasure-mod editing, Spark editing/simulation, calculations, imports and remote persistence remain untouched.
 
-After architectural/customer acceptance and merge, documentation owners should synchronize T0009-F1 status in Tickets, Repo_Current_State, Manual_Verification_Guide and KI-0011, plus clarify the implemented offhand position in MVP/build-save design notes. Those acceptance/status documents are not marked complete by this implementation.
+After acceptance, the architectural review on PR #20 found no blocking issues, CI and Cloudflare checks passed, and the PR was squash-merged. A separate documentation synchronization records completion in Tickets, Repo_Current_State, Manual_Verification_Guide and KI-0011, and clarifies the exclusive offhand position in MVP/build-save design notes. The optional backdrop-click improvement (KI-0010) remains a separate nonblocking follow-up.
