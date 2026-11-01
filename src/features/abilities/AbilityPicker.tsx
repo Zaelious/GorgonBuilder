@@ -20,6 +20,7 @@ interface Props {
 export function AbilityPicker({ slot, skill, data, full, replaceIndex, returnFocus, onChoose, onClose }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [query, setQuery] = useState('');
+  const [expandedTier, setExpandedTier] = useState<string | null>(null);
   const groups = useMemo(() => groupAbilities(skill.skillId === null ? [] : data.getAbilitiesForSkill(skill.skillId)), [data, skill.skillId]);
   const search = query.trim().toLocaleLowerCase();
   const matches = groups.filter(g => g.abilities.some(a => `${a.displayName} ${a.description} ${a.id}`.toLocaleLowerCase().includes(search)));
@@ -66,12 +67,18 @@ export function AbilityPicker({ slot, skill, data, full, replaceIndex, returnFoc
             <details>
               <summary><AbilityIcon ability={highest} version={data.gameDataVersion} /><span className="family-title">{group.name}<small>{group.abilities.length} published {group.abilities.length === 1 ? 'tier' : 'tiers'}</small></span></summary>
               <div className="family-tiers">{group.abilities.map(ability => <article className="tier" key={ability.id}>
-                <h3>{ability.displayName}</h3>
-                <AbilityFacts ability={ability} />
-                {ability.level > skill.level && <p className="warning">Published level {ability.level} exceeds configured skill level {skill.level}. You can still select it.</p>}
-                <button type="button" disabled={blocked} onClick={() => onChoose(ability)} aria-label={`Select ${ability.displayName}, ${rankLabel(ability.rank)}, level ${ability.level}, ${ability.id}`}>
-                  {replaceIndex === null ? 'Add this tier' : 'Use this tier'}
-                </button>
+                <div className="tier-row"><div className="tier-identity"><h3>{ability.displayName}</h3>
+                  <p className="tier-stats">{ability.rank !== null && `Rank ${ability.rank} · `}Lv {ability.level} · {ability.pve.powerCost} power{ability.damage.damage !== null && ` · Base ${ability.damage.damage} ${ability.damage.damageType}`}</p>
+                </div><div className="tier-controls">
+                  <button type="button" className="tier-add" disabled={blocked} onClick={() => onChoose(ability)} aria-label={`Select ${ability.displayName}, ${rankLabel(ability.rank)}, level ${ability.level}, ${ability.id}`}>
+                    {replaceIndex === null ? 'Add' : 'Use'}
+                  </button>
+                  <button type="button" className="tier-details-toggle" aria-expanded={expandedTier === ability.id} aria-controls={`tier-detail-${slot}-${ability.id}`}
+                    aria-label={`Details for ${ability.displayName}`} onClick={() => setExpandedTier(current => current === ability.id ? null : ability.id)}>Details</button>
+                </div></div>
+                <div id={`tier-detail-${slot}-${ability.id}`} hidden={expandedTier !== ability.id}>
+                  {expandedTier === ability.id && <AbilityFacts ability={ability} />}
+                </div>
               </article>)}</div>
             </details>
             <button type="button" className="quick-add" disabled={blocked} onClick={() => onChoose(highest)}

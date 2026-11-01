@@ -135,29 +135,45 @@ it('searches names and descriptions without autosaving transient controls', asyn
   expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(saved);
 });
 
-it('retains incompatible selections visibly when A changes or clears, leaving B intact', async () => {
+it('clears only the affected bar when Animal Handling changes to Archery or an empty skill', async () => {
   const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
-  build.skillSlotA = { skillId: 'Psychology', level: 0 };
+  build.skillSlotA = { skillId: 'AnimalHandling', level: 0 };
   build.skillSlotB = { skillId: 'Deer', level: 60 };
-  build.abilityBarA = [{ abilityId: 'ability_1201', rank: null }];
+  const initial = data.getAbilitiesForSkill('AnimalHandling')[0]!;
+  build.abilityBarA = [{ abilityId: initial.id, rank: initial.rank }];
   build.abilityBarB = [{ abilityId: 'ability_1578', rank: null }];
   build.equipment = [{ slot: 'MainHand', item: { kind: 'database', itemId: 'item_45640' }, candidateMods: [], sparks: { mode: 'none' } }];
   build.target = { count: 5, damageTypes: {}, metadata: { retained: true } };
   localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build));
   await render();
-  await change('#skill-A', 'Cow');
-  await inspect('A', 1);
-  expect(container.textContent).toContain('does not belong to the selected skill');
+  await change('#skill-A', 'AnimalHandling');
+  expect(container.querySelectorAll('.skill-panel:first-child [aria-haspopup]')).toHaveLength(1);
+  await change('#skill-A', 'Archery');
+  expect(container.querySelectorAll('.skill-panel:first-child [aria-haspopup]')).toHaveLength(0);
+  await tick();
+  expect(draft().skillSlotA.skillId).toBe('Archery');
+  expect(draft().abilityBarA).toEqual([]);
+  await act(async () => { root.unmount(); });
+  root = createRoot(container);
+  await render();
+  expect(container.querySelectorAll('.skill-panel:first-child [aria-haspopup]')).toHaveLength(0);
+  await openPicker('A');
+  await click('.quick-add');
   await change('#skill-A', '');
   await tick();
-  expect(draft().abilityBarA).toEqual(build.abilityBarA);
+  expect(draft().abilityBarA).toEqual([]);
   expect(draft().abilityBarB).toEqual(build.abilityBarB);
   expect(draft().skillSlotB).toEqual(build.skillSlotB);
   expect(draft().equipment).toEqual(build.equipment);
   expect(draft().target).toEqual(build.target);
+  await act(async () => { root.unmount(); });
+  root = createRoot(container);
+  await render();
+  expect(container.querySelectorAll('.skill-panel:first-child [aria-haspopup]')).toHaveLength(0);
+  expect(draft().abilityBarA).toEqual([]);
 });
 
-it('shows missing skill/ability IDs, rank and level mismatches without discarding saved data', async () => {
+it('shows missing official IDs without noisy warnings for an unpublished rank or chosen level', async () => {
   const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
   build.skillSlotA = { skillId: 'missing-skill', level: 0 };
   const high = data.getAbilitiesForSkill('Psychology').find(a => a.level > 0)!;
@@ -169,8 +185,8 @@ it('shows missing skill/ability IDs, rank and level mismatches without discardin
   await inspect('A', 1);
   expect(container.textContent).toContain('Official ability missing-ability is unavailable');
   await inspect('A', 2);
-  expect(container.textContent).toContain('Saved rank differs');
-  expect(container.textContent).toContain('exceeds configured skill level 0');
+  expect(container.textContent).not.toContain('exceeds configured skill level');
+  expect(container.textContent).not.toContain('Saved rank differs');
   await tick();
   expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(original);
 });
@@ -192,6 +208,7 @@ it('protects future-schema drafts and makes fallback editing unavailable', async
   await render();
   expect(container.textContent).toContain('protected from overwrite');
   expect(control('#skill-A').matches(':disabled')).toBe(true);
+  expect(control('.title-button').matches(':disabled')).toBe(true);
   await tick();
   expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(original);
 });
@@ -202,6 +219,7 @@ it('retains the saved game-data version and disables edits for an unavailable sn
   await render();
   expect(container.textContent).toContain('original snapshot is unavailable');
   expect(control('#skill-A').matches(':disabled')).toBe(true);
+  expect(control('.title-button').matches(':disabled')).toBe(true);
   await tick();
   expect(draft().gameDataVersion).toBe('old-snapshot');
 });
@@ -226,6 +244,7 @@ it('reports blocked storage reads without blindly overwriting the unreadable dra
   await render();
   expect(container.textContent).toContain('could not be read');
   expect(control('#skill-A').matches(':disabled')).toBe(true);
+  expect(control('.title-button').matches(':disabled')).toBe(true);
   await change('#skill-A', 'Cow');
   await tick();
   expect(writes).not.toHaveBeenCalled();
@@ -293,15 +312,21 @@ it('searches official upgrade families, expands exact tiers and quick-adds the h
   await click('.family summary');
   expect(control<HTMLDetailsElement>('.family details').open).toBe(true);
   expect(container.querySelectorAll('.tier')).toHaveLength(group.abilities.length);
+  expect(container.querySelectorAll('.tier .ability-facts')).toHaveLength(0);
+  await click('.tier-details-toggle');
+  expect(container.querySelectorAll('.tier .ability-facts')).toHaveLength(1);
   expect(container.textContent).toContain('Target needs 50% more Rage');
-  expect(container.textContent).toContain('Published base values');
+  await click('.tier:nth-child(2) .tier-details-toggle');
+  expect(container.querySelectorAll('.tier .ability-facts')).toHaveLength(1);
   await click('.quick-add');
   await tick();
   const highest = highestTier(group);
   expect(draft().abilityBarA).toEqual([{ abilityId: highest.id, rank: highest.rank }]);
-  expect(control('.slot-warning')).toBeDefined();
+  expect(container.querySelector('.slot-warning')).toBeNull();
   await inspect('A', 1);
-  expect(container.textContent).toContain(`Published level ${highest.level} exceeds configured skill level 0`);
+  expect(container.textContent).toContain('Min Level');
+  expect(container.textContent).not.toContain('exceeds configured skill level');
+  expect(container.textContent).not.toContain('Rank not published');
 });
 
 it('selects an explicit lower tier with the original published string rank', async () => {
@@ -324,7 +349,8 @@ it('enforces six additions, shows a full message and replaces an occupied slot w
   expect(control<HTMLButtonElement>('.quick-add').disabled).toBe(true);
   await click('[aria-label="Close ability picker"]');
   await inspect('A', 3);
-  await click('.detail-actions button');
+  await click('.bar-edit-actions summary');
+  await click('.bar-edit-actions button');
   const groups = groupAbilities(data.getAbilitiesForSkill('Psychology'));
   await click('.family:nth-child(2) .quick-add');
   await tick();
@@ -379,8 +405,8 @@ it('opens equipped details on hover, focus and click, supports Escape and expose
   expect(container.querySelector('.ability-popover')).toBeNull();
   await act(async () => { trigger.focus(); });
   expect(control('[role="dialog"]').textContent).toContain('Base damage');
-  expect(container.textContent).toContain('Power cost');
-  expect(container.textContent).toContain('Reuse time');
+  expect(container.textContent).toContain('Power');
+  expect(container.textContent).toContain('Reuse');
   expect(container.textContent).toContain('Range');
   expect(container.textContent).toContain('Target needs 50% more Rage');
   await act(async () => { trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
@@ -421,4 +447,81 @@ it('shows one equipped detail panel when switching between the independent bars'
   expect(container.querySelectorAll('.ability-popover')).toHaveLength(1);
   expect(control('.ability-popover').id).toBe('equipped-ability-detail-B');
   expect(draft()).toEqual(build);
+});
+
+
+it('keeps technical facts behind More details and explicitly expands a long description', async () => {
+  const ability = data.abilities.find(a => a.description.length > 240 && data.getSkill(a.skill.skillId ?? '')?.combat)!;
+  const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  build.skillSlotA.skillId = ability.skill.skillId;
+  build.abilityBarA = [{ abilityId: ability.id, rank: ability.rank }];
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build));
+  await render();
+  await inspect('A', 1);
+  const more = control<HTMLDetailsElement>('.supplementary-facts');
+  const description = control<HTMLDetailsElement>('.full-description');
+  expect(more.open).toBe(false);
+  expect(description.open).toBe(false);
+  expect(control('.official-id').closest('details')).toBe(more);
+  expect(control('.ability-description > p').textContent!.length).toBeLessThan(245);
+  await click('.full-description summary');
+  expect(description.open).toBe(true);
+  expect(control('.full-description > p').textContent).toBe(ability.description);
+  await click('.supplementary-facts summary');
+  expect(more.open).toBe(true);
+});
+
+it('commits a title with Enter through the existing 500 ms autosave and restores it on remount', async () => {
+  await render();
+  await click('.title-button');
+  await change('[aria-label="Build title"]', '  Psychology / Deer  ');
+  await tick();
+  expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
+  await act(async () => { control('[aria-label="Build title"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })); });
+  await tick(499);
+  expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
+  await tick(1);
+  expect(draft().title).toBe('Psychology / Deer');
+  await act(async () => { root.unmount(); });
+  root = createRoot(container);
+  await render();
+  expect(control('h1').textContent).toBe('Psychology / Deer');
+});
+
+it('commits a title on blur without disturbing build selections', async () => {
+  await render();
+  await change('#skill-A', 'Psychology');
+  await openPicker('A');
+  await click('.quick-add');
+  await tick();
+  const before = draft();
+  await click('.title-button');
+  await change('[aria-label="Build title"]', 'My combat build');
+  await act(async () => { control('[aria-label="Build title"]').dispatchEvent(new FocusEvent('focusout', { bubbles: true })); });
+  await tick();
+  expect(draft()).toEqual({ ...before, title: 'My combat build' });
+});
+
+it('cancels title edits with Escape without a save or a later blur commit', async () => {
+  await render();
+  await click('.title-button');
+  await change('[aria-label="Build title"]', 'Discard this title');
+  const input = control('[aria-label="Build title"]');
+  await act(async () => { input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); });
+  await act(async () => { input.dispatchEvent(new FocusEvent('focusout', { bubbles: true })); });
+  await tick();
+  expect(control('h1').textContent).toBe('Untitled build');
+  expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
+});
+
+it.each(['', '   '])('rejects a blank title on Enter and blur while keeping the existing title', async text => {
+  await render();
+  await click('.title-button');
+  await change('[aria-label="Build title"]', text);
+  await act(async () => { control('[aria-label="Build title"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })); });
+  expect(control('[aria-label="Build title"]').getAttribute('aria-invalid')).toBe('true');
+  await act(async () => { control('[aria-label="Build title"]').dispatchEvent(new FocusEvent('focusout', { bubbles: true })); });
+  await tick();
+  expect(control('h1').textContent).toBe('Untitled build');
+  expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
 });

@@ -36,7 +36,7 @@ function DetailPopover({ id, selection, anchor, warnings, data, onClose, onEnter
     function position() {
       if (!anchor) return;
       const rect = anchor.getBoundingClientRect();
-      const width = Math.min(400, window.innerWidth - 32);
+      const width = Math.min(360, window.innerWidth - 32);
       element.style.width = `${width}px`;
       const desiredHeight = element.scrollHeight + 2;
       const below = Math.max(0, window.innerHeight - rect.bottom - 24);
@@ -65,18 +65,20 @@ function DetailPopover({ id, selection, anchor, warnings, data, onClose, onEnter
     window.addEventListener('scroll', position, true);
     document.addEventListener('pointerdown', onOutsidePointer, true);
     document.addEventListener('keydown', onEscape);
+    element.addEventListener('toggle', position, true);
     return () => {
       window.removeEventListener('resize', position);
       window.removeEventListener('scroll', position, true);
       document.removeEventListener('pointerdown', onOutsidePointer, true);
       document.removeEventListener('keydown', onEscape);
+      element.removeEventListener('toggle', position, true);
     };
   }, [anchor, selection.abilityId, warnings.length]);
   return <div ref={popup} id={id} className="ability-popover" popover="manual" role="dialog" aria-label={`Ability details: ${ability?.displayName ?? selection.abilityId}`}
     onMouseEnter={onEnter} onMouseLeave={onLeave}
     onBlur={e => { if (!(e.relatedTarget instanceof Node) || (!e.currentTarget.contains(e.relatedTarget) && e.relatedTarget !== anchor)) onClose(); }}
     onKeyDown={e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose(true); } }}>
-    <div className="detail-heading"><AbilityIcon ability={ability} version={data.gameDataVersion} /><div><h3>{ability?.displayName ?? selection.abilityId}</h3><p className="muted">Selected: {rankLabel(selection.rank)}</p></div><button type="button" aria-label="Close ability details" onClick={() => onClose(true)}>×</button></div>
+    <div className="detail-heading"><AbilityIcon ability={ability} version={data.gameDataVersion} /><div><h3>{ability?.displayName ?? selection.abilityId}</h3>{ability && ability.rank !== null && <p className="detail-rank">{rankLabel(ability.rank)}</p>}</div><button type="button" aria-label="Close ability details" onClick={() => onClose(true)}>×</button></div>
     {ability && <AbilityFacts ability={ability} />}
     {warnings.map(w => <p key={w} className="warning">{w}</p>)}
     <div className="detail-actions">{children}</div>
@@ -128,14 +130,13 @@ export function AbilityBar({ slot, skill, bar, data, onEdit, readOnly, detailSlo
     requestAnimationFrame(() => triggers.current.get(index + direction)?.focus());
   }
   const activeSelection = active === null ? undefined : bar[active];
-  const aboveLevel = bar.some(s => (data.getAbility(s.abilityId)?.level ?? -1) > skill.level);
   return <section className="ability-bar" aria-labelledby={`bar-${slot}`}>
     <div className="bar-heading"><h3 id={`bar-${slot}`}>Combat bar {slot}</h3><span className="muted">{bar.length} / {COMBAT_BAR_SIZE}</span></div>
     <ol className="combat-slots">
       {Array.from({ length: Math.max(COMBAT_BAR_SIZE, bar.length) }, (_, index) => {
         const selection = bar[index];
         const ability = selection && data.getAbility(selection.abilityId);
-        const warnings = selection ? selectionWarnings(selection, skill.skillId, skill.level, data) : [];
+        const warnings = selection ? selectionWarnings(selection, skill.skillId, data) : [];
         return <li key={index} className={`combat-slot ${index >= COMBAT_BAR_SIZE ? 'legacy-slot' : ''}`}>
           {selection ? <button type="button" className="slot-button" ref={element => { if (element) triggers.current.set(index, element); else triggers.current.delete(index); }}
             aria-label={`Bar ${slot} slot ${index + 1}: ${ability?.displayName ?? selection.abilityId}${warnings.length ? ' (needs review)' : ''}`}
@@ -157,13 +158,15 @@ export function AbilityBar({ slot, skill, bar, data, onEdit, readOnly, detailSlo
     {full && <p className="bar-message warning">{bar.length > COMBAT_BAR_SIZE
       ? `Legacy draft has ${bar.length} abilities in bar ${slot}; all are retained. Remove entries to return to six.`
       : `Bar ${slot} is full. Remove or replace an equipped ability to make room.`}</p>}
-    {bar.some(s => selectionWarnings(s, skill.skillId, skill.level, data).length > 0) && <p className="bar-message warning">{aboveLevel && `Some selections exceed configured skill level ${skill.level}. `}Marked slots need review. Open a slot for details; saved selections are retained.</p>}
+    {bar.some(s => selectionWarnings(s, skill.skillId, data).length > 0) && <p className="bar-message warning">Marked slots need review. Open a slot for details; saved selections are retained.</p>}
     {detailSlot === slot && activeSelection && active !== null && <DetailPopover id={`equipped-ability-detail-${slot}`} key={`${slot}-${active}`} selection={activeSelection} anchor={triggers.current.get(active)}
-      warnings={selectionWarnings(activeSelection, skill.skillId, skill.level, data)} data={data} onClose={closeDetail} onEnter={cancelLeave} onLeave={leaveDetail}>
+      warnings={selectionWarnings(activeSelection, skill.skillId, data)} data={data} onClose={closeDetail} onEnter={cancelLeave} onLeave={leaveDetail}>
+      <details className="bar-edit-actions"><summary>Edit bar</summary><div>
       <button type="button" disabled={readOnly} onClick={() => openPicker(active)}>Replace</button>
       <button type="button" disabled={readOnly || active === 0} onClick={() => move(active, -1)} aria-label={`Move entry ${active + 1} up in bar ${slot}`}>← Move earlier</button>
       <button type="button" disabled={readOnly || active === bar.length - 1} onClick={() => move(active, 1)} aria-label={`Move entry ${active + 1} down in bar ${slot}`}>Move later →</button>
-      <button type="button" disabled={readOnly} onClick={() => { closeDetail(); onEdit({ type: 'remove', slot, index: active }); requestAnimationFrame(() => triggers.current.get(Math.max(0, active - 1))?.focus()); }} aria-label={`Remove entry ${active + 1} from bar ${slot}`}>Remove</button>
+      </div></details>
+      <button type="button" className="remove-ability" disabled={readOnly} onClick={() => { closeDetail(); onEdit({ type: 'remove', slot, index: active }); requestAnimationFrame(() => triggers.current.get(Math.max(0, active - 1))?.focus()); }} aria-label={`Remove entry ${active + 1} from bar ${slot}`}>Remove</button>
     </DetailPopover>}
     {picker && <AbilityPicker slot={slot} skill={skill} data={data} full={full} replaceIndex={picker.replaceIndex} returnFocus={picker.returnFocus} onClose={() => setPicker(null)}
       onChoose={ability => {

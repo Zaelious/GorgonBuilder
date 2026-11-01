@@ -40,10 +40,9 @@ it('keeps duplicate-skill bars independent through add, remove, reorder and skil
   expect(build.abilityBarA.map(a => a.abilityId)).toEqual([abilities[2]!.id, abilities[1]!.id]);
   expect(build.abilityBarB).toBe(originalB);
   build = skill(build, 'A', 'Cow');
-  expect(build.abilityBarA).toHaveLength(2);
-  expect(selectionWarnings(build.abilityBarA[0]!, 'Cow', 90, data).join(' ')).toContain('does not belong');
+  expect(build.abilityBarA).toEqual([]);
   build = skill(build, 'A', null);
-  expect(build.abilityBarA).toHaveLength(2);
+  expect(build.abilityBarA).toEqual([]);
   expect(build.abilityBarB).toBe(originalB);
   expect(build.skillSlotB.skillId).toBe('Psychology');
   const originalA = build.abilityBarA;
@@ -61,10 +60,10 @@ it('rejects unavailable, noncombat, incompatible and malformed edits without cha
   expect(editBuild(build, { type: 'remove', slot: 'A', index: 0 }, data)).toBe(build);
 });
 
-it('reports missing IDs, rank differences and above-level abilities without replacing selections', () => {
-  expect(selectionWarnings({ abilityId: 'missing', rank: 9 }, 'Psychology', 0, data).join(' ')).toContain('unavailable');
-  const ability = data.getAbilitiesForSkill('Psychology').find(a => a.level > 0)!;
-  expect(selectionWarnings({ abilityId: ability.id, rank: 'unpublished' }, 'Psychology', 0, data)).toHaveLength(2);
+it('reports unresolved IDs but treats absent ranks and chosen levels as ordinary source facts', () => {
+  expect(selectionWarnings({ abilityId: 'missing', rank: 9 }, 'Psychology', data).join(' ')).toContain('unavailable');
+  const ability = data.getAbilitiesForSkill('Psychology').find(a => a.level > 0 && a.rank === null)!;
+  expect(selectionWarnings({ abilityId: ability.id, rank: null }, 'Psychology', data)).toEqual([]);
 });
 
 it('round-trips the edited draft with unrelated fields and original ordering intact', () => {
@@ -116,7 +115,8 @@ it('limits new additions to six, retains overfull drafts and allows explicit rep
   expect(updated.abilityBarB).toBe(build.abilityBarB);
   expect(editBuild(build, { type: 'replace', slot: 'A', index: 6, abilityId: replacement.id }, data)).toBe(build);
   const legacy = { ...build, abilityBarA: [...build.abilityBarA, ...build.abilityBarA] };
-  expect(skill(legacy, 'A', 'Cow').abilityBarA).toHaveLength(12);
+  expect(skill(legacy, 'A', 'Psychology').abilityBarA).toHaveLength(12);
+  expect(skill(legacy, 'A', 'Cow').abilityBarA).toEqual([]);
   expect(editBuild(legacy, { type: 'add', slot: 'A', abilityId: replacement.id }, data)).toBe(legacy);
 });
 
@@ -130,4 +130,30 @@ it('quick-add uses published level with deterministic ID ties, independent of ra
   for (const members of [abilities, [...abilities].reverse()]) {
     expect(highestTier({ id: 'family', name: 'Family', abilities: members }).id).toBe('ability_2');
   }
+});
+
+
+it('atomically clears only the changed Animal Handling bar and preserves a reselected skill', () => {
+  const original = skill(skill(empty(), 'A', 'AnimalHandling'), 'B', 'Psychology');
+  const ability = data.getAbilitiesForSkill('AnimalHandling')[0]!;
+  original.abilityBarA = [{ abilityId: ability.id, rank: ability.rank }];
+  original.abilityBarB = [{ abilityId: 'ability_1201', rank: null }];
+  original.notes = 'Keep this';
+  original.target = { count: 3, damageTypes: {} };
+  expect(skill(original, 'A', 'AnimalHandling')).toBe(original);
+  const changed = skill(original, 'A', 'Archery');
+  expect(changed.abilityBarA).toEqual([]);
+  expect(changed.abilityBarB).toBe(original.abilityBarB);
+  expect(changed.skillSlotB).toBe(original.skillSlotB);
+  expect(changed.target).toBe(original.target);
+  expect(changed.notes).toBe('Keep this');
+  expect(skill(original, 'A', null).abilityBarA).toEqual([]);
+});
+
+it('commits a trimmed title without modifying other fields and rejects blank or unchanged titles', () => {
+  const original = empty();
+  for (const title of ['', '   ', original.title]) expect(editBuild(original, { type: 'title', title }, data)).toBe(original);
+  expect(editBuild(original, { type: 'title', title: '  My build  ' }, data)).toEqual({ ...original, title: 'My build' });
+  const oldSnapshot = { ...original, gameDataVersion: 'old' };
+  expect(editBuild(oldSnapshot, { type: 'title', title: 'Do not overwrite' }, data)).toBe(oldSnapshot);
 });

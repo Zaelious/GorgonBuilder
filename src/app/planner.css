@@ -1,6 +1,7 @@
 .planner-main { padding-block: var(--space-4); }
 .planner-heading, .section-heading, .bar-heading, .dialog-heading, .detail-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
 .planner-heading { flex-wrap: wrap; }
+.planner-heading > div { min-width: 0; flex: 1 1 24rem; }
 .planner-heading h1 { font-size: clamp(2rem, 4vw, 3rem); }
 .save-status { color: var(--color-accent); font-size: 0.875rem; }
 .planner-main .introduction { font-size: 1rem; }
@@ -53,32 +54,53 @@
 .picker-help { margin-block: var(--space-1) var(--space-2); }
 .picker-results { display: grid; gap: var(--space-1); }
 .family { position: relative; border: 1px solid var(--color-border); border-radius: var(--radius); }
-.family summary { display: flex; align-items: center; gap: var(--space-2); min-height: 4.5rem; padding: 0.6rem 4.25rem 0.6rem 0.75rem; cursor: pointer; list-style: none; }
-.family summary::after { content: '▾'; color: var(--color-muted); margin-left: auto; }
-.family details[open] summary::after { content: '▴'; }
-.family summary::-webkit-details-marker { display: none; }
-.family summary .ability-icon { flex: 0 0 2.75rem; width: 2.75rem; height: 2.75rem; border-radius: 0.3rem; }
+.family > details > summary { display: flex; align-items: center; gap: 0.65rem; min-height: 3.5rem; padding: 0.4rem 4rem 0.4rem 0.65rem; cursor: pointer; list-style: none; }
+.family > details > summary::after { content: '▾'; color: var(--color-muted); margin-left: auto; }
+.family > details[open] > summary::after { content: '▴'; }
+.family > details > summary::-webkit-details-marker { display: none; }
+.family > details > summary .ability-icon { flex: 0 0 2.25rem; width: 2.25rem; height: 2.25rem; border-radius: 0.3rem; }
 .family-title { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
 .family-title small { display: block; color: var(--color-muted); font-size: 0.75rem; font-weight: 400; }
-.planner-main .quick-add { position: absolute; top: 0.9rem; right: 0.65rem; color: var(--color-accent); border-color: var(--color-accent); font-size: 1.25rem; width: 2.75rem; padding: 0; }
+.planner-main .quick-add { position: absolute; top: 0.4rem; right: 0.65rem; color: var(--color-accent); border-color: var(--color-accent); font-size: 1.25rem; width: 2.75rem; padding: 0; }
 .family-tiers { border-top: 1px solid var(--color-border); padding-inline: var(--space-2); }
-.tier { padding-block: var(--space-2); }
+.tier { padding-block: 0.55rem; }
 .tier + .tier { border-top: 1px solid var(--color-border); }
-.tier h3 { font-size: 1rem; }
-.tier > button { margin-top: var(--space-1); border-color: var(--color-accent); }
-.base-label { margin-block: var(--space-2) var(--space-1); font-size: 0.7rem; color: var(--color-accent); }
-.base-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1) var(--space-2); margin: 0; font-size: 0.8rem; }
+.tier-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.tier-identity { min-width: 0; }
+.tier h3 { font-size: 0.85rem; line-height: 1.35; font-weight: 600; }
+.tier-stats { color: var(--color-muted); font-size: 0.72rem; line-height: 1.4; margin-top: 0.2rem; }
+.tier-controls { display: flex; flex-shrink: 0; gap: 0.3rem; }
+.planner-main .tier-controls button { min-height: 2rem; font-size: 0.75rem; padding: 0.25rem 0.45rem; }
+.planner-main .tier-add { border-color: var(--color-accent); }
+.tier .ability-facts { margin-top: 0.5rem; padding: 0.55rem; background: var(--color-background); border-radius: 0.3rem; }
+.ability-facts .ability-description { font-size: 0.8rem; line-height: 1.4; margin-block: 0.4rem 0.5rem; }
+.base-stats { display: grid; gap: 0.15rem; margin: 0.5rem 0; font-size: 0.8rem; line-height: 1.35; }
+.base-stats > div { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.5rem; }
 .base-stats dt { color: var(--color-muted); }
-.base-stats dd { margin: 0; }
-.special-text { font-size: 0.8rem; margin-top: var(--space-1); }
-.official-id { margin-top: var(--space-2); color: var(--color-muted); font-size: 0.7rem; }
-.ability-popover { position: fixed; inset: auto; margin: 0; max-height: calc(100dvh - 2rem); overflow-y: auto; color: var(--color-text); background: #1a2320; border: 1px solid var(--color-accent); border-radius: var(--radius); padding: var(--space-2); box-shadow: 0 10px 40px #0009; }
-.detail-heading { gap: 0.7rem; align-items: start; }
-.detail-heading h3 { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 400; }
-.detail-heading > .ability-icon { width: 3rem; height: 3rem; flex-shrink: 0; border-radius: 0.3rem; }
-.detail-heading > div { flex: 1; }
-.detail-actions { margin-top: var(--space-2); display: flex; flex-wrap: wrap; gap: var(--space-1); }
-.detail-actions button { font-size: 0.8rem; }
+.base-stats dd { margin: 0; overflow-wrap: anywhere; }
+.special-text { font-size: 0.8rem; line-height: 1.4; margin-top: 0.4rem; }
+.official-id, .facts-provenance { margin-top: 0.4rem; color: var(--color-muted); font-size: 0.7rem; }
+.supplementary-facts summary, .full-description summary, .bar-edit-actions summary { cursor: pointer; width: fit-content; color: var(--color-muted); font-size: 0.75rem; line-height: 1.8; }
+.supplementary-facts[open] { margin-top: 0.4rem; }
+.supplementary-facts > p { font-size: 0.75rem; }
+.full-description[open] > p { margin-top: 0.4rem; }
+.ability-popover { position: fixed; inset: auto; margin: 0; max-height: calc(100dvh - 2rem); overflow-y: auto; color: var(--color-text); background: #1a2320; border: 1px solid var(--color-accent); border-radius: var(--radius); padding: 0.65rem; box-shadow: 0 10px 40px #0009; font-size: 0.8rem; line-height: 1.35; }
+.detail-heading { gap: 0.45rem; align-items: center; }
+.detail-heading h3 { font-family: var(--font-body); font-size: 1rem; line-height: 1.2; font-weight: 600; }
+.detail-heading > .ability-icon { width: 1.75rem; height: 1.75rem; flex-shrink: 0; border-radius: 0.25rem; }
+.detail-heading > div { flex: 1; min-width: 0; }
+.detail-rank { color: var(--color-muted); font-size: 0.7rem; }
+.planner-main .ability-popover button { min-height: 1.9rem; padding: 0.25rem 0.45rem; font-size: 0.75rem; }
+.planner-main .detail-heading > button { min-width: 1.75rem; min-height: 1.75rem; padding: 0; font-size: 1rem; }
+.detail-actions { margin-top: 0.5rem; display: flex; align-items: start; justify-content: space-between; gap: 0.35rem; }
+.bar-edit-actions > div { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
+.build-title { max-width: 45rem; }
+.planner-main .title-button { display: inline-flex; align-items: center; gap: 0.65rem; max-width: 100%; min-height: 0; padding: 0; border-color: transparent; background: transparent; font-family: var(--font-heading); font-size: inherit; font-weight: inherit; line-height: inherit; text-align: left; }
+.title-button > span { min-width: 0; overflow-wrap: anywhere; }
+.title-pencil { width: 1.1rem; height: 1.1rem; flex-shrink: 0; color: var(--color-muted); opacity: 0.65; }
+.title-button:hover .title-pencil { color: var(--color-accent); opacity: 1; }
+.planner-main .build-title input { font-family: var(--font-heading); font-size: inherit; line-height: inherit; padding: 0.1rem 0.3rem; }
+.title-help { font-size: 0.75rem; color: var(--color-muted); }
 .planner-footer { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); justify-content: space-between; padding-block: var(--space-3); color: var(--color-muted); font-size: 0.75rem; }
 .notice button { margin-top: var(--space-2); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
@@ -98,5 +120,14 @@
   .combat-slots { gap: 0.35rem; }
   .open-picker span { display: none; }
   .planner-main .open-picker { min-width: 2.75rem; }
-  .family summary { gap: 0.6rem; padding-left: 0.5rem; }
+  .family > details > summary { gap: 0.6rem; padding-left: 0.5rem; }
 }
+
+@media (pointer: coarse), (max-width: 30rem) {
+  .planner-main .ability-popover button, .planner-main .tier-controls button { min-height: 2.75rem; min-width: 2.75rem; }
+  .supplementary-facts summary, .full-description summary, .bar-edit-actions summary { min-height: 2.25rem; display: flex; align-items: center; }
+}
+
+.planner-main .title-button:hover:enabled { background: transparent; border-color: transparent; }
+
+.ability-description:has(> .full-description[open]) > .description-preview { display: none; }

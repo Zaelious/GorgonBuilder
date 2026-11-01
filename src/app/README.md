@@ -1,165 +1,151 @@
 # T0008 — Skill and Ability Planner UI
 
-This implementation includes the customer's [UX revision on PR #12](https://github.com/Zaelious/GorgonBuilder/pull/12#pullrequestreview-5725377907).
-The feature stays on `feature/t0008-skill-ability-planner`; customer hands-on
-acceptance is required before merge. T0009 has not started.
+Continues the existing `feature/t0008-skill-ability-planner` branch and PR #12.
+Implements the [latest customer usability review](https://github.com/Zaelious/GorgonBuilder/pull/12#pullrequestreview-5725481849)
+and the requested inline build-title editor. Customer usability acceptance remains
+pending; do not merge or begin T0009.
 
-## Planner behavior
+## Current interaction
 
-Skills & Abilities is a compact section containing two horizontal skill rows.
-Each row retains its own combat-skill selector/filter, editable level and six
-ordered icon slots. Empty slots and the + control open that bar's native modal
-ability picker. No large ability list is displayed on the main page. Mobile
-stacks each skill's settings above its six slots, with the + control in the bar
-heading to preserve usable touch targets.
+Skills & Abilities has two independent combat-skill rows, each with a selector,
+editable level, six ordered icon slots and an on-demand searchable picker.
+Blank, different and duplicate skill combinations retain independent levels and
+bar order. New additions fill the next open position up to six; full bars explain
+replacement/removal. Overfull legacy drafts remain intact on restoration.
 
-The searchable picker shows official `UpgradeOf` families, their icons and tier
-counts. Native disclosure rows reveal exact official tiers, descriptions and
-published base values. Quick-add chooses the **highest published Level**, breaking
-ties by the **lexicographically smallest canonical ability ID**. It never uses
-names or Rank to invent progression, and never silently lowers a selection to
-the configured skill level. Selecting a lower tier explicitly stores that exact
-record ID and its published string/number/null Rank.
+**Changing a skill ID, including clearing it, atomically clears only that slot's
+ability bar.** Selecting the same ID is a no-op and preserves its bar. The other
+skill/level/bar and unrelated document fields are unchanged. The clear uses the
+same committed edit and autosave path as the skill selection, so stale abilities
+do not return after refresh. There is no confirmation dialog or extra undo state.
 
-New additions append to the next open position, up to six. Full bars show an
-explanation; replacement, removal and reordering remain available. Old drafts
-with more than six entries are **retained in full**, visibly marked as overfull,
-and can be reviewed and reduced explicitly. BuildDocument v1 remains unchanged;
-capacity is an editor rule, not a destructive schema-validation change.
+The picker shows official UpgradeOf families, icons, tier counts and highest-level
+quick-add. Highest published Level wins, with lexicographically smallest official
+ID on ties; configured skill level does not constrain the choice. Expanding a
+family shows compact tier rows: exact name, optional published rank, level,
+power, base damage and Add/Use. An individual Details button expands the full
+facts for **one tier at a time**, rather than rendering a full card per tier.
+Exact official IDs and published string/number/null ranks are saved unchanged.
 
-Hover, focus or click an equipped icon to open its interactive detail popover.
-It shows the selected rank, official description/level, published base power
-cost, reuse time, range, damage/type, health/armor-specific values when supplied,
-SpecialInfo prose and embedded special values/DoTs. These are source values,
-without equipment/modifier calculations or inferred combat semantics. Controls
-support remove, replace, move earlier/later, close and Escape. Native popovers
-associate their invoker for keyboard navigation; native dialogs trap focus and
-return it when closed. Missing IDs, incompatible skills, changed ranks and
-above-level selections remain marked and inspectable, without substitution.
+Equipped slots open an accessible, viewport-aware detail panel on hover/focus/
+click/touch. The compact desktop panel is 360 px wide (bounded on mobile), with
+small icon/name, short description and stacked Min Level, Power, Reuse, Range
+and Base damage/type rows. Short explicit SpecialInfo text stays visible.
+Unpublished ranks are omitted. More details contains official ID, provenance,
+supplemental damage components, special values/DoTs and longer special notes.
+Descriptions over 240 characters have an explicit Read full description control;
+expansion replaces the preview rather than repeating it. Normal facts should be
+readable without internal scrolling; expanded content is bounded to the viewport.
 
-Changing or clearing one skill retains that bar's selections for review and
-does not change the other slot. Blank, different and duplicate skills still keep
-independent levels and bars. Searches, disclosures, picker state and popovers
-remain transient.
+Remove remains a compact primary action. Replace and move earlier/later are in
+an Edit bar disclosure. Native disclosures, bounded modal Tab traversal, focus
+return, Escape/close/outside dismissal and invoker-linked popover navigation remain
+keyboard accessible. One equipped detail panel is active across the two bars.
 
-## Persistence and recovery
+**Above-level selections and unpublished ranks produce no yellow badges or
+warning paragraphs.** Level remains a source reference, not an unlock engine.
+Truly unresolved IDs, incompatible restored selections, explicit conflicting
+published ranks, snapshot/schema incompatibility and storage failures remain
+visible and actionable. Six-slot capacity feedback and legacy overflow are
+retained.
 
-`App.tsx` reuses `loadGameDataRepository()`, `createLocalPersistence()` and
-`createDraftAutosave()` unchanged. Committed edits schedule the existing 500 ms
-debounce; pagehide, hidden visibility and unmount flush pending work. Failed
-writes retain work for retry. Initial render and transient interaction never
-schedule a draft write.
+## Inline build title
 
-Malformed drafts show explicit recovery before any edit replaces invalid bytes.
-Future-schema and unreadable drafts disable editing to prevent overwrite. Restore
-storage access and reload to recover an unreadable draft. Saved game-data
-versions are retained; an unavailable original snapshot is shown read-only.
-Equipment, target, title/notes, import metadata, mods and Sparks remain intact.
+Click the heading or subtle pencil to edit. Enter or blur commits a trimmed,
+nonempty title through `BuildDocument.title` and the existing 500 ms local
+autosave. Escape cancels without a later blur commit. Blank Enter stays in the
+editor with a clear error; blank blur keeps the previous title. Uncommitted text
+is transient. Refresh restores the saved title. Protected/read-only drafts also
+disable title editing. No build library, Manage tab or remote saving is added.
 
-## Minimal official display-data extension
+## Persistence and data integrity
 
-The review explicitly permits additive icon mapping. Inspection of the verified
-v490 raw `abilities.json` found **5,972 exact `IconID` values**, all nonnegative
-integers, and **2,029 optional `SpecialInfo` strings**. Normalization now exposes
-`iconId` and `specialInfo` as display facts, with null for omitted fields and
-strict rejection of malformed published icon identifiers. No IDs, ranks,
-relationships, formulas or previously normalized values are changed.
+The implementation reuses `loadGameDataRepository()`, `createLocalPersistence()`
+and `createDraftAutosave()` unchanged. BuildDocument v1 is unchanged. Committed
+edits schedule the existing 500 ms debounce; pagehide, hidden visibility and
+unmount flush pending work. Failed writes retain work for retry. Initial render,
+search, disclosures, picker/popover state and title keystrokes do not save.
 
-The pinned official `index.html` documents `/v{version}/icons/icon_{id}.png`.
-`AbilityIcon.tsx` combines only that version and the published IconID; it does
-not infer icon identity from names, families or keywords. For example,
-`ability_1201` has IconID 2118, and the matching v490 URL returns a 64×64 PNG.
-Missing/unavailable icons show a visible neutral fallback. The footer carries
-“Some portions copyright 2026 Elder Game, LLC.”
+Malformed draft recovery remains explicit. Future-schema and unreadable drafts
+are protected from editing/overwrite; restore storage access and reload to retry
+an unreadable draft. Original saved data versions remain intact; unavailable
+snapshots are read-only. Equipment, targets, title/notes, import metadata, mods
+and Sparks are preserved except the field explicitly edited.
 
-Only `abilities.json.gz` and its integrity entry in `manifest.json` changed on
-regeneration. All raw sources, counts, diagnostic identities and unrelated
-artifacts remain unchanged. The ability artifact is now **566,143 compressed
-bytes / 16,214,378 decoded JSON bytes**. SHA-256/byte checks remain enforced.
-Focused pipeline tests compare every runtime icon/text field against the pin;
-the existing tests verify deterministic regeneration and committed asset hashes.
+This usability pass does **not** change normalization, raw inputs, generated
+artifacts, source facts, canonical IDs, rank selection or integrity checks. The
+previous approved display extension still exposes the 5,972 exact v490 IconID
+values and 2,029 optional SpecialInfo strings. The pinned official index documents
+`/v{version}/icons/icon_{id}.png`; icons use that exact version/ID mapping and a
+neutral fallback for failures. Elder Game credit remains visible.
 
-## Changed areas
+## Files changed in this revision
 
-- `src/app/App.tsx`, `planner.css`: compact section, responsive layout and credit.
-- `src/app/editor/build-editor.ts` and tests: six-addition limit, replacement,
-  retained legacy overflow and deterministic tier selection checks.
-- `src/features/skills/SkillPlanner.tsx`: compact independent selectors/levels.
-- `src/features/abilities/AbilityPlanner.tsx`: icon bars and interactive popovers.
-- `AbilityPicker.tsx`, `AbilityFacts.tsx`, `AbilityIcon.tsx`, `groups.ts`: searchable
-  modal, published facts, official icon mapping/fallback and highest-tier default.
-- `src/test/App.test.tsx`: existing acceptance/recovery tests adapted to the
-  compact workflow, plus focused picker, icon, detail and capacity checks.
-- `src/data/normalized/abilities.ts`, `src/data/adapters/normalize-abilities.ts`
-  and focused tests, `scripts/generate-data.test.ts`: additive official display
-  facts and source-to-runtime verification.
-- `src/generated/game-data/abilities.json.gz`, `manifest.json`: regenerated data.
-- This README: current implementation, verification and follow-up handoff.
+- `src/app/App.tsx`: connect the inline title to the committed editor path.
+- `src/app/editor/BuildTitle.tsx`: title editing, commit/cancel/validation and focus.
+- `src/app/editor/build-editor.ts` and `.test.ts`: atomic skill/bar changes,
+  title edits and quieter source diagnostics.
+- `src/features/abilities/AbilityFacts.tsx`: compact source facts and disclosures.
+- `src/features/abilities/AbilityPicker.tsx`: compact tier rows and one full detail
+  expansion on demand.
+- `src/features/abilities/AbilityPlanner.tsx`: compact header/actions, disclosure
+  positioning and removal of normal level warnings.
+- `src/app/planner.css`: compact details/picker and responsive inline title styles.
+- `src/test/App.test.tsx`: updated skill-switch expectations, disclosure/quiet-level
+  checks and focused title/autosave/refresh tests.
+- This README: current completion and verification handoff.
 
 ## Verification
 
-Node 24.19.0, existing dependencies and test infrastructure; no package changes.
+Node 24.19.0; existing dependencies/test infrastructure, no package changes.
 
 - `npm run data:update -- --check` — passed; official v490 pin intact.
-- `npm run data:generate` — passed, retaining 1,546 ability and 96 item/treasure
-  diagnostics. Full tests verify repeated byte-identical generation.
 - `npm run lint` — passed with no warnings.
 - `npm run typecheck` — passed for both strict TypeScript projects.
-- `npm test` — **335 tests across 11 files passed** (322 previously).
-- Focused editor/UI tests — **40 passed**; additive normalizer and pipeline tests
-  also pass in the full suite.
+- `npm test` — **343 tests across 11 files passed** (335 previously).
+- Focused editor/UI tests — **48 passed**, including title Enter/blur/trim/cancel/
+  blank rejection/refresh, same-ID retention, isolated skill clearing and restore,
+  compact disclosures and no noisy level warnings.
 - `npm run build` and `git diff --check` — passed.
-- Wrangler dry-run and final-head CI/Cloudflare preview status are recorded in
-  the PR's updated completion report after pushing the feature branch.
+- Wrangler dry-run and final-head CI/Cloudflare deployment results are recorded
+  in the PR completion report after pushing this revision.
 
-### Browser and customer usability check
+### Browser checks
 
-The final Chromium smoke pass on the production bundle passed the workflows
-below, including real 64×64 official CDN icons, native focus traversal into detail
-actions, bounded modal Tab traversal, replacement/reordering without covering
-neighboring slots, and a single active detail panel across bars. Desktop
-1440×900 and mobile 375×812 were checked; mobile slots were at least 44 px wide,
-pickers/popovers stayed within the viewport, and there was no horizontal overflow
-or unexpected console/page error. Full, lower-tier, duplicate-skill, refresh and
-legacy-overflow workflows passed. The latest local load observation was about
-2.5 seconds while other verification was running; it is not a performance target.
+Chromium passed the workflows below on the final production bundle, including
+real official icons. The normal Hook Shot panel measured **360 px wide × 322 px
+client height**, with **322 px scroll height** (no internal scrolling). Desktop
+1440×900 and mobile 375×812 passed without horizontal overflow or unexpected
+console/page errors. Mobile checks used a touch-enabled context and verified
+title blur commit, detail/picker touch controls and keyboard Escape.
 
-Use the feature-branch Cloudflare preview linked on PR #12 for the customer
-check. Local Chromium tests use the production bundle through a static server
-or Cloudflare Workers local assets; the Vite transport issue below remains
-separate. Screenshots are saved as local review artifacts during the run.
+Verify a normal Hook Shot detail fully readable without its own scroll, optional
+More/Edit disclosures, the longest official combat description (Trigger Golem,
+333 characters) with explicit expansion, compact family/tier browsing, one tier's
+full details at a time, six-slot capacity and removal, Animal Handling → Archery
+clearing only A, same-ID retention and refresh, and mobile touch/keyboard behavior.
+Title checks cover Enter and blur, trimmed values, Escape, blank rejection and
+refresh restoration. Screenshots are local review artifacts from the production
+bundle at desktop 1440×900 and mobile 375×812.
 
-Verify Psychology/Deer, Cow/Unarmed, A-only and Psychology/Psychology; independent
-levels/bars; picker closed by default, searching, family expansion and exact
-lower-tier selection; highest-level quick-add with level warnings; real icons
-and fallback; hover/focus/click details and touch; modal Tab containment,
-Escape/close and focus return; six-slot full feedback, replacement/removal/
-reordering; refresh restoration; retained legacy overflow; and desktop/mobile
-layouts without horizontal overflow. Battle Chemistry is a useful explicit Rank
-example: `ability_1708` preserves the publisher's string Rank `"2"`.
+## Risks and follow-up
 
-## Risks and follow-ups
+- Customer hands-on acceptance on the refreshed Cloudflare preview remains
+  required. This sandbox's outbound policy blocks direct access to the Workers
+  preview hostname; deployment is confirmed through Cloudflare's PR bot, while
+  browser smoke tests use the local production bundle with real official CDN
+  icons and normal TLS verification.
+- Keep the existing **Vite gzip transport issue separate**: Vite dev/preview
+  auto-decompresses artifacts before T0006's compressed-byte checks. Fix normal
+  dev/preview before T0009 without weakening integrity checks. No loader/hosting
+  workaround is included.
+- Icons depend on the versioned official CDN and have explicit failure fallbacks.
+  Only the current data snapshot is bundled; no historical-snapshot loader or
+  implicit migration is added. Full-repository memory/latency remains a T0006
+  follow-up (original local observation: roughly 195–239 MB JS heap).
+- After acceptance and merge, synchronize Repo_Current_State, Tickets,
+  Manual_Verification_Guide, MVP_Technical_Design, Build_Save_And_Share_Design and
+  Known_Issues_And_Followups in the planned documentation-only follow-up. Include
+  the revised clearing/title behavior and current disclosure UX.
 
-- The existing **Vite gzip transport issue remains separate**, as requested by
-  the architect: `npm run dev` and `vite preview` serve gzip assets using
-  Content-Encoding gzip, so fetch decompresses before T0006's compressed-byte
-  checks. Use Cloudflare Workers local assets or a static server for this
-  ticket's browser verification. Fix normal dev/preview before T0009 while
-  retaining integrity checking; no loader/hosting workaround is included here.
-- Icons load from the versioned official CDN and have explicit failure fallbacks.
-  Network/cache availability affects display; it never changes saved selections.
-- Only the current bundled data snapshot is available; no historical-snapshot
-  loader or implicit build migration is added.
-- T0006 still loads the complete repository. The original local measurements were
-  about 1.7–1.8 seconds preparation and 195–239 MB JS heap; these are unthrottled
-  desktop observations, not guarantees for low-memory/mobile devices.
-- Sandbox networking may prevent fetching the public Workers preview directly.
-  Cloudflare's bot comment/checks establish deployment; the customer's preview
-  visit remains the final usability and remote-runtime acceptance check.
-
-After merge, synchronize `Repo_Current_State.md`, `Tickets.md`,
-`Manual_Verification_Guide.md`, `MVP_Technical_Design.md`,
-`Build_Save_And_Share_Design.md` and `Known_Issues_And_Followups.md` in the planned
-documentation-only follow-up. Include the revised UX, additive display facts,
-Vite follow-up and measured runtime cost. No equipment, mods, management,
-remote saving or later-ticket controls are introduced.
+No equipment/mod UI, remote saving, future tabs or T0009 work is introduced.

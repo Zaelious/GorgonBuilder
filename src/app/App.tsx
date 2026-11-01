@@ -6,6 +6,7 @@ import { SkillPlanner } from '../features/skills/SkillPlanner';
 import { createDraftAutosave } from '../persistence/local/autosave';
 import { createLocalPersistence, type SaveResult } from '../persistence/local/storage';
 import { editBuild, type BuildEdit, type Slot } from './editor/build-editor';
+import { BuildTitle } from './editor/BuildTitle';
 import './planner.css';
 
 function saveError(result: Exclude<SaveResult, { ok: true }>): string {
@@ -66,7 +67,7 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
   }
 
   return <>
-    <div className="planner-heading"><div><p className="eyebrow">Skill & ability planner</p><h1>{build.title}</h1></div><p className="save-status" role="status">{saveState}</p></div>
+    <div className="planner-heading"><div><p className="eyebrow">Skill & ability planner</p><BuildTitle title={build.title} readOnly={readOnly} onCommit={title => commit({ type: 'title', title })} /></div><p className="save-status" role="status">{saveState}</p></div>
     <p className="introduction">Choose your combat skills. Add up to six abilities to each bar; open a slot to inspect or change it.</p>
     {recoveryVisible && session.restored.status === 'fallback' && <p className="notice warning" role="alert">{saveError(session.restored.error)}</p>}
     {versionMismatch && <p className="notice warning" role="alert">This draft uses game data {build.gameDataVersion}; loaded data is {data.gameDataVersion}. The saved version and selections are preserved. Editing is disabled because the original snapshot is unavailable.</p>}

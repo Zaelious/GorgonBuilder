@@ -4,6 +4,7 @@ import type { GameDataRepository } from '../../data/repository/repository';
 export const COMBAT_BAR_SIZE = 6;
 export type Slot = 'A' | 'B';
 export type BuildEdit =
+  | { type: 'title'; title: string }
   | { type: 'skill'; slot: Slot; skillId: string | null }
   | { type: 'level'; slot: Slot; level: number }
   | { type: 'add'; slot: Slot; abilityId: string }
@@ -11,15 +12,20 @@ export type BuildEdit =
   | { type: 'remove'; slot: Slot; index: number }
   | { type: 'move'; slot: Slot; index: number; direction: -1 | 1 };
 
-/** Only the addressed slot/bar changes. Incompatible saved entries stay reviewable. */
+/** Each committed edit preserves unrelated fields. Skill switches clear only their own bar. */
 export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataRepository): BuildDocument {
   if (build.gameDataVersion !== data.gameDataVersion) return build;
+  if (edit.type === 'title') {
+    const title = edit.title.trim();
+    return title && title !== build.title ? { ...build, title } : build;
+  }
   const skillKey = edit.slot === 'A' ? 'skillSlotA' : 'skillSlotB';
   const barKey = edit.slot === 'A' ? 'abilityBarA' : 'abilityBarB';
   const skill = build[skillKey];
   if (edit.type === 'skill') {
     if (edit.skillId !== null && !data.getSkill(edit.skillId)?.combat) return build;
-    return { ...build, [skillKey]: { ...skill, skillId: edit.skillId } };
+    if (edit.skillId === skill.skillId) return build;
+    return { ...build, [skillKey]: { ...skill, skillId: edit.skillId }, [barKey]: [] };
   }
   if (edit.type === 'level') {
     if (!Number.isSafeInteger(edit.level) || edit.level < 0) return build;
@@ -49,12 +55,11 @@ export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataR
   return { ...build, [barKey]: bar };
 }
 
-export function selectionWarnings(selection: AbilitySelection, skillId: string | null, level: number, data: GameDataRepository): string[] {
+export function selectionWarnings(selection: AbilitySelection, skillId: string | null, data: GameDataRepository): string[] {
   const ability = data.getAbility(selection.abilityId);
   if (!ability) return [`Official ability ${selection.abilityId} is unavailable in loaded data.`];
   const warnings: string[] = [];
   if (skillId === null || ability.skill.skillId !== skillId) warnings.push('This ability does not belong to the selected skill. Remove it or restore its skill.');
-  if (ability.rank !== selection.rank) warnings.push('Saved rank differs from the published rank. The saved selection has been retained.');
-  if (ability.level > level) warnings.push(`Published level ${ability.level} exceeds configured skill level ${level}.`);
+  if (ability.rank !== null && selection.rank !== null && ability.rank !== selection.rank) warnings.push('Saved rank differs from the published rank. The saved selection has been retained.');
   return warnings;
 }
