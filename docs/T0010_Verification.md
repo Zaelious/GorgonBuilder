@@ -1,10 +1,89 @@
-# T0010 — Treasure Mod Planner: percent format, readable effects, full-width desktop
+# T0010 — Treasure Mod Planner: final customer UI corrections
 
 **Status: Revised on the existing PR #22 for architectural review and customer acceptance. Not merged or marked complete.**
 
-Branch: `feature/t0010-treasure-mod-planner`. The initial implementation at `62d8116` passed architectural review, but the Product Owner requested a different UI in [the latest customer revision review](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729510750). The subsequent [rendering/density review at c13d9f5](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729721042) requires actual official icons, readable effects and substantially denser lists. The [customer acceptance review at 8f6f4a2](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729847590) then required four further corrections: player-facing percentages, unclipped mod effects, use of the desktop viewport and visible three-digit skill levels. The section immediately below describes that revision; later sections keep the earlier rendering, category and tier-policy evidence, updated where this revision changed it. Existing domain/persistence work remains in place.
+Branch: `feature/t0010-treasure-mod-planner`. The initial implementation at `62d8116` passed architectural review, but the Product Owner requested a different UI in [the latest customer revision review](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729510750). The subsequent [rendering/density review at c13d9f5](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729721042) requires actual official icons, readable effects and substantially denser lists. The [customer acceptance review at 8f6f4a2](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729847590) then required four further corrections: player-facing percentages, unclipped mod effects, use of the desktop viewport and visible three-digit skill levels. The [final customer review](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730246516) and its [addendum](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730252983) then required six more corrections, described in the first section below. Later sections keep the earlier evidence, marked where this revision supersedes it. Existing domain/persistence work remains in place.
 
-## Latest customer acceptance corrections (review at 8f6f4a2)
+## Final customer UI corrections (reviews at d8f195a)
+
+### Why repeated Druid entries appeared, and the grouping key
+
+The pinned v490 `tsysclientinfo.json` publishes **65 Druid powers**. The previous Available list showed every power associated with an active skill, ranked by slot/profile relevance but never filtered by them. Each row already showed only one tier per power, so the "repeats" were **distinct power IDs meant for other slots**. Same-effect variants such as `BrambleSkinMaxArmorBoost` (OffHand) and `BrambleSkinMaxArmorBoostB` (Chest), or `BrambleSkinMaxHealthBoost` (Legs) and `…B` (Necklace), were listed side by side.
+
+**Exactly 11 Druid powers publish `Chest` in `Slots`**, and all 11 are members of the `All` profile used by ordinary Chest armor. That matches the GorgonExplorer reference count, so nothing is hard-coded:
+
+`power_14005` DruidBoostIndirectPoison · `power_14012` HeartThornNatureDoT · `power_14051` RotskinDamageBoost · `power_14052` RotskinDoT · `power_14101` DeleriumDamageBoost · `power_14154` BrambleSkinMaxArmorBoostB · `power_14159` BrambleSkinMod · `power_14201` CosmicStrikeDamage · `power_14351` RegrowthHealing · `power_14501` CloudSightInsects · `power_14602` HealingSanctuaryArmor.
+
+The grouping key is the **official power ID**: one Available row per power, whose tiers are its level variants. A power is listed normally when:
+1. its published `Slots` include the item's slot; and
+2. where the item publishes a resolved `TSysProfile`, that profile (`tsysprofiles.json`) lists the power.
+
+Slot evidence:
+- **One evidenced alias:** `OffHandShield` items (profile `Shield`) use the `OffHand` treasure slot. All 325 `Shield`-profile powers publish `OffHand`.
+- **Unknown signals never exclude.** If there is no item definition, the power publishes no slots, or the item has no profile, the signal is treated as unknown.
+
+Category evidence:
+- **Endurance and Shamanic Infusions use slot only.** Their powers belong only to the `Redwall`, `Brewing` and `Shamanic` profiles, and no v490 item references those profiles. Profile filtering would hide them for every item.
+- **Druid + `item_42705` (Fae Soldier Jumpsuit, Chest, profile `All`) groups:** Druid **11**, Generic **19**, Endurance **6**, Shamanic Infusions **4** (`power_30101`–`power_30104`).
+
+Same-effect checks across the data:
+- **Skill groups:** after slot/profile filtering, no two powers in any skill group share a number-stripped effect template.
+- **Generic (AnySkill):** a few same-attribute pairs remain, e.g. `PowerBoostVeryWeak` (tiers 0–170) vs `ShoddyPowerBoost` (0–150), and `InventoryBoostVeryWeak` vs `InventorySlotBoost`. These are separate official records with different tier tables, so they are **kept as distinct entries**, never merged by text similarity.
+- **Exploration:** "Other slots & profiles" turns filtering off and shows all 65 Druid powers. "All skills" still adds other skills' groups.
+
+**Max / 100:** at Max each row previews its highest published minimum-level tier. Entering 100 changes only each row's preview tier/effect, so Druid + Chest stays at 11 rows. Example: `power_14005` is `id_25` **Indirect Poison Damage +58%** at Max, and a tier whose published range contains 100 at target 100. Other tiers remain under ⋯ Details.
+
+### Mutually exclusive Available / Selected
+
+- Available excludes any power already staged on that item (any tier, including null).
+- Clicking an Available row stages its exact displayed `(powerId, tierId)`. The row disappears and the effect appears in Selected and in STATS immediately. Removing it from Selected restores the row at the current target preview.
+- New adds carry `unique: true`. The pure edit returns the unchanged document if the power is already staged, so a double click or a stale handler can never create a copy.
+- Target changes never re-add or rewrite staged powers; the mismatch flag remains.
+- Legacy drafts with duplicate entries keep every saved entry, each with its own edit/remove control. The power returns to Available only after its last entry is removed. There is still no count limit.
+
+### Skill changes clear the departed skill's staged mods
+
+- A `skill` edit computes the **departed** skill: the slot's previous skill, but only if the other slot isn't using it.
+- In the same immutable edit (one document and one autosave), every equipment entry drops staged candidates whose power has an **officially resolved** association with that skill. Other equipment entries keep their object identity.
+- Kept: Generic/AnySkill, Endurance, Shamanic Infusions, unresolved or unknown associations, unknown power IDs, imported/manual existing powers, fixed effects, Sparks, other skills' mods, the other slot/bar, equipment and all unrelated fields.
+- A=B=Druid: clearing one slot keeps Druid mods; clearing the last Druid slot removes them. Druid → Psychology removes Druid mods and keeps the rest.
+- The skills panel shows **"Removed N staged Druid mods from M items."** with an **Undo** button (restores the exact previous document, including the skill and bar) and a dismiss button. The notice is a polite live region and retires on the next edit. Read-only and version-mismatch drafts cannot change.
+
+### STATS panel and fixed effects
+
+- Each equipped item has one compact **STATS** panel: all published fixed effects (chip **Base**), then imported existing powers (dashed chip **◇ Skill**), then planned mods (filled chip **Skill**).
+- Every row is a two-column grid with a fixed chip column, so effects start at one aligned x position (asserted in Chromium). Skill chips use a deterministic accessible hue per skill (Druid renders blue). Generic, Endurance and Shamanic have fixed hues. Unknown associations get a dashed neutral chip.
+- Official icons and complete, unclamped descriptions are kept. The word **CANDIDATE** and the loose list are gone; a small legend explains Base / ◇ Imported / Planned.
+- `ItemFacts.tsx` no longer cuts fixed effects at three behind a "more fixed effects" dropdown. **All** published fixed effects are shown immediately: 1,247 v490 equipment items have more than three, up to nine. **Description & official source** remains an optional expandable section, and it still lists the exact raw fixed-effect strings.
+
+### Readable fixed item effects (source format inspected first)
+
+Equipment `EffectDescs` in `items.json` contain 8,460 lines:
+- **8,248 `{ATTRIBUTE}{value}` templates**, only the two-argument form, with no required skill.
+- **212 prose lines.**
+- No unknown attributes and no `DisplayRule: Never` attributes.
+
+The format matches the treasure-tier template, so the **shared** `presentEffect` formatter is reused. One extra type appears in fixed effects: **AsBool** (40 lines, every value `1`), now shown as e.g. **Signature Support abilities work while stunned: Yes**.
+
+Examples:
+
+| Published | Shown |
+| --- | --- |
+| `{VULN_ELECTRICITY}{-0.2}` (AsDebuffMod) | **Vulnerability to Electricity -20%** |
+| `{VULN_NATURE}{-0.1}` | **Vulnerability to Nature -10%** |
+| `{MAX_ARMOR}{120}` (AsInt) | **Max Armor +120** |
+| `{MAX_HEALTH}{37}` (AsInt; formatter test, no item publishes 37) | **Max Health +37** |
+| `{COMBAT_REFRESH_ARMOR_DELTA}{45}` (AsBuffDelta) | **Armor from Combat Refresh Abilities +45** (the official label; the review's "Combat Refresh Armor" was shorthand) |
+| `{FALLING_DAMAGE_MOD}{-0.1}` (AsPercent) | **Falling Damage -10%** |
+
+A test formats every published fixed effect and checks that none produces a raw token, `NaN` or a required skill.
+
+**Confidence (addresses the architectural note on inferred conversions):** the internal `verified` boolean is replaced by `confidence`:
+- **confirmed:** AsBuffMod and AsPercent (player-facing references), AsDebuffMod (now matched to the Product Owner's `-0.2 → -20%` example), and signed additive types.
+- **inferred:** `%`-labelled AsDoubleTimes100 and AsBool. The value carries a `data-confidence` attribute and a tooltip saying it is inferred from the official type and not yet matched against the game.
+- **unverified:** shown with the visible "(scale unverified)" flag.
+
+## Earlier customer acceptance corrections (review at 8f6f4a2)
 
 ### 1. Player-facing attribute formatting (source evidence)
 
@@ -24,7 +103,8 @@ How strong the evidence is for each type:
 
 - **AsBuffMod: confirmed by player-facing references.** The pinned tiers `power_12192/id_25` = `{MOD_ELECTRICITY_DIRECT}{0.25}{AnimalHandling}`, `{MOD_FIRE}{0.25}{AnimalHandling}` and `power_12194/id_25` = `{MOD_PSYCHIC}{0.23}{AnimalHandling}`, `{MOD_CRUSHING_DIRECT}{0.23}{AnimalHandling}` appear in the customer's GorgonExplorer reference and on [GorgonCodex Animal Handling](https://www.gorgoncodex.com/guides/skills/animalhandling) as +25%/+25% and +23%/+23%. [GorgonCodex Archery](https://www.gorgoncodex.com/guides/skills/archery) also shows the pinned `ArcheryBoost id_12` (`{MOD_SKILL_ARCHERY}{0.6}`) as **Archery Base Damage +60%**, `HeavyShotBoost id_25` (`0.625`) as **+62.5%**, `AimedShotBoost id_25` (`0.6`) as **+60%** and `LongShotBoost id_25` (`0.91`) as **+91%**.
 - **AsPercent: confirmed.** The same Archery reference shows the pinned `{DELTA_ANATOMY_CRITICAL_CHANCE}{0.04}` as **Anatomy-Based Critical Hit Chance +4%**.
-- **AsDebuffMod and `%`-labelled AsDoubleTimes100: inferred from official structure, not independently confirmed.** AsDebuffMod attributes have the same multiplier encoding as AsBuffMod (`DefaultValue: 1`, `%` label, fractional deltas, e.g. `VULN_NATURE -0.18`). AsDoubleTimes100 names its ×100 display in the type itself, and the converted attributes carry `%` labels (e.g. `ACCURACY_BOOST_RANGED 0.08`, shown as +8%). No third-party page was found that renders these particular tiers. Together they cover 99 of 20,649 template lines.
+- *Updated in the final revision:* AsDebuffMod is now treated as confirmed by the Product Owner's fixed-effect example (`-0.2 → -20%`). AsDoubleTimes100 remains inferred and is marked as such in the UI.
+- **AsDebuffMod and `%`-labelled AsDoubleTimes100 (as originally assessed): inferred from official structure, not independently confirmed.** AsDebuffMod attributes have the same multiplier encoding as AsBuffMod (`DefaultValue: 1`, `%` label, fractional deltas, e.g. `VULN_NATURE -0.18`). AsDoubleTimes100 names its ×100 display in the type itself, and the converted attributes carry `%` labels (e.g. `ACCURACY_BOOST_RANGED 0.08`, shown as +8%). No third-party page was found that renders these particular tiers. Together they cover 99 of 20,649 template lines.
 - Third-party pages corroborate the result only. They are not imported or used as a data source; the conversion rule lives in `src/features/mods/effect-description.ts` and is keyed on the official DisplayType and Label alone.
 
 Conversion uses exact decimal-string shifting rather than floating point (`0.035 → 3.5`, `0.625 → 62.5`, `-0.01 → -1`, `12.5 → 1250`). Signs are kept (`+`/`-`). A test checks that every pinned template formats without `NaN` or raw tokens, and that only `%`-labelled attributes become percentages. Delta/int/double types are never multiplied. Malformed or unknown templates keep the explicit **unformatted official effect** fallback. No stacking, baseline or damage formula is implied, and saved IDs and source strings are never changed.
@@ -73,14 +153,14 @@ The revised Chromium smoke checks actual `img.complete` and **`naturalWidth > 0`
 | Request | Result |
 | --- | --- |
 | Inline Available / Selected | Every expanded equipped-item row has a compact two-column editor, stacked at mobile widths. Effect buttons add immediately; Selected keeps remove visible and exposes inline tier/order controls through ⋯. The modal, view tabs, staging menus and large power cards are removed. |
-| Immediate item effects | Published base facts are labelled BASE, saved instance powers EXISTING, and new visible effect lines CANDIDATE plus their source association. Add/edit/remove updates those lines immediately, with no numeric aggregation or damage math. |
-| Skill-driven groups | No selected combat skills means no Available powers and a brief prompt. Unique active skills provide groups such as Archery Mods; A+A produces one group. Skill changes refresh Available without clearing candidates. |
+| Immediate item effects | *Superseded:* now one STATS panel with Base / ◇ Imported / Planned skill chips (see the first section). Add/edit/remove updates rows immediately, with no numeric aggregation or damage math. |
+| Skill-driven groups | No selected combat skills means no Available powers and a brief prompt. Unique active skills provide groups such as Archery Mods; A+A produces one group. *Superseded:* skill changes now clear the departed skill's staged mods, with Undo. |
 | Extra categories | Independent default-checked Generic, Endurance and Shamanic Infusions toggles use the exact source mappings documented below. Missing source associations have an Unknown group. All skills provides broader exploration. |
 | Max / 90 / 100 | An independent transient target input defaults to Max, suggests 90/100 and accepts nonnegative whole levels. Available effect values refresh immediately. Clicking adds the exact displayed official tier. Saved IDs/nulls remain unchanged until explicit edits. |
 | Detailed on demand | Rows emphasize safely formatted published effect descriptions. IDs, names, flags, source metadata, level/rarity facts and alternative tiers are available through inline Details. Overlapping tiers have an explicit options count. |
 | Skill selector cleanup | Removed the magnifier, filter popover/state and related CSS. The full alphabetic native dropdown, valid skill-level inputs and ability picker/search remain. |
 
-Profile membership and exact published slot matches guide order within each group. They do not establish complete equipment legality or exclude exploratory candidates. All skills includes other published skill associations; the three special category toggles remain independent. Filtering only changes Available. Existing candidates always remain visible, including candidates from another skill or missing official records.
+*Superseded:* published slot and item profile now filter the normal Available list (see the first section). Exploration is available through Other slots & profiles. These remain published-data filters, not complete legality. All skills includes other published skill associations; the three special category toggles remain independent. Filtering only changes Available. Existing candidates remain visible in Selected and STATS, including missing official records, unless a skill change clears a departed skill's resolved candidates.
 
 Only expanded equipment rows mount the Available editor, avoiding hidden full lists for every equipped item. Scrolling is bounded separately within Available and Selected. Native effect buttons support Enter/Space; keyboard focus follows moved/removed candidates. Details are inline, without an additional dialog stage.
 
@@ -117,9 +197,22 @@ Changing target level never edits gear, saved skill levels, base-item CraftingTa
 
 ## Preservation
 
-Schema-v1 BuildDocument, exact `(powerId, tierId)` identities/nulls, duplicate powers, unrestricted candidate counts, immutable build edits, 500 ms autosave, recovery, protected/read-only drafts and snapshot mismatch handling remain unchanged. Candidate changes preserve the selected canonical item slot/ID, imported/manual existing powers and metadata, Sparks, both skill bars, other equipment and unrelated document fields. Legacy conflicting offhand occupants remain intact until explicit resolution; candidates can be edited for a specific retained entry. Existing replace/clear/resolution confirmation rules and equipment picker X/Escape/backdrop behavior remain intact. No new dependencies, generated artifacts, loader/persistence/schema changes, formulas or future-ticket features were introduced.
+Schema-v1 BuildDocument, exact `(powerId, tierId)` identities/nulls, saved legacy duplicate entries (new adds are unique per power), unrestricted counts of different candidates, immutable build edits, 500 ms autosave, recovery, protected/read-only drafts and snapshot mismatch handling remain unchanged. Candidate changes preserve the selected canonical item slot/ID, imported/manual existing powers and metadata, Sparks, both skill bars, other equipment and unrelated document fields. Legacy conflicting offhand occupants remain intact until explicit resolution; candidates can be edited for a specific retained entry. Existing replace/clear/resolution confirmation rules and equipment picker X/Escape/backdrop behavior remain intact. No new dependencies, generated artifacts, loader/persistence/schema changes, formulas or future-ticket features were introduced.
 
-## Files changed in the latest revision (8f6f4a2 review)
+## Files changed in the final revision
+
+- `src/data/search/treasure.ts`: `treasureSlot` (OffHandShield → OffHand) used by slot relevance.
+- `src/data/search/treasure-planning.ts`: `powerCategoryId`, `treasureChipLabel`, `fitsItem` and `availableTreasurePowers` (slot/profile filter plus staged exclusion).
+- `src/core/build/candidate-mods.ts`, `src/app/editor/build-editor.ts`: `unique` adds, plus `candidateBelongsToSkill` and `pruneCandidateModsForSkill` applied atomically in the `skill` edit.
+- `src/app/App.tsx`, `src/app/planner.css`: cleared-mods notice with Undo and dismiss; updated planner help text.
+- `src/features/mods/ItemStats.tsx`, `item-stats.css` (new): the STATS panel. `EquipmentMods.tsx` now only hosts Sparks and the editor; obsolete CANDIDATE/EXISTING list CSS was removed.
+- `src/features/equipment/ItemFacts.tsx`, `EquipmentPlanner.tsx`: every fixed effect shown through the shared formatter, and STATS embedded in item facts.
+- `src/features/mods/effect-description.ts`, `EffectDescription.tsx`: the `confidence` model, AsBool, and the inferred-value tooltip.
+- `src/features/mods/ModPlanner.tsx`, `CandidateList.tsx`: filtered/exclusive Available, the Other slots & profiles toggle, updated guidance, and "Planned mod" wording in details.
+- Tests: `treasure-planning.test.ts`, `mod-editor.test.ts`, `EffectDescription.test.tsx`, `ModPlanner.test.tsx`; smoke: `mods.smoke.py`.
+- Screenshots: new `druid-chest-desktop.png` and `druid-chest-mobile.png`; the inline, page and paired captures were refreshed.
+
+## Files changed in the revision for the 8f6f4a2 review
 
 - `src/features/mods/effect-description.ts`: evidence-keyed percent/additive presentation, exact decimal shift, required-skill extraction, plain-text summaries.
 - `src/features/mods/EffectDescription.tsx`, `effect-description.css`, `PowerFacts.tsx`: comma-joined tier effects, full-text tooltip, “Requires … active” note, “(scale unverified)” flag.
@@ -142,7 +235,7 @@ Schema-v1 BuildDocument, exact `(powerId, tierId)` identities/nulls, duplicate p
 
 ## Automated checks
 
-Latest revision: Node 22.23.4 / npm 10.9.9 (within the `engines` range). Passed:
+Final revision: Node 22.23.4 / npm 10.9.9 (within the `engines` range). Passed:
 
 ```bash
 npm run data:update -- --check
@@ -158,7 +251,18 @@ python3 src/test/vite-transport.smoke.py --output <scratch>/transport
 python3 src/test/planner-layout.smoke.py --output <scratch>/layout
 ```
 
-Latest revision: **486 passing tests across 20 files**. It replaces the obsolete “source value” assertions with 6 new formatting tests (verified percents, flat/negative values, unverified scale, paired joining with the requirement note, mixed supported/unsupported tiers, whole-dataset check) plus a rewritten exact decimal-shift contract test and adds an App test for the paired Animal Handling flow. Python Playwright 1.64.1 was installed locally for the smoke scripts (not a project dependency), driving the preinstalled Chromium 153.0.8010.12.
+Final revision: **496 passing tests across 20 files**. New and updated coverage:
+- **Pure data tests:** exact Druid + Chest power IDs (11), staged exclusion, the 65-power exploration count, Endurance/Shamanic slot-only behavior, the OffHandShield alias and unknown signals.
+- **Edit tests:** unique adds versus legacy adds; departed-skill pruning (resolved associations only, A=B, snapshot protection).
+- **Formatter tests:** fixed-effect labels (signed percents, flat values, negatives, booleans, inferred/unverified) and a format check over every fixed effect.
+- **App tests:**
+  - Available ↔ Selected moves with STATS rows and no CANDIDATE text.
+  - More than six different exact candidates, plus autosave at 499/500 ms and reload.
+  - Druid Chest 11 rows at Max/100 and the full STATS panel with 8 readable fixed effects.
+  - Skill clearing with notice, Undo, A=B and exact preservation.
+  - Legacy duplicates, unknown IDs, read-only snapshots and legacy offhand.
+
+Revision for the 8f6f4a2 review: **486 passing tests across 20 files**. It replaces the obsolete “source value” assertions with 6 new formatting tests (verified percents, flat/negative values, unverified scale, paired joining with the requirement note, mixed supported/unsupported tiers, whole-dataset check) plus a rewritten exact decimal-shift contract test and adds an App test for the paired Animal Handling flow. Python Playwright 1.64.1 was installed locally for the smoke scripts (not a project dependency), driving the preinstalled Chromium 153.0.8010.12.
 
 Previous revision: **481 passing tests across 20 files**. Focused T0010 coverage: **63 tests** — 10 pure search/relevance, 14 source-category/preview cases, 7 immutable editor/persistence tests, 14 App component workflows and 18 new effect-renderer tests. Renderer coverage verifies actual DOM images, multiple icon markers, text before/after, malformed IDs, invalid versions, missing-image recovery, inert untrusted HTML, supported attribute labels, unchanged numeric source values, unknown fallback and exact technical source text. An additional App test checks the same image component across all five required surfaces and confirms the exact staged power/tier identity. The App workflows also verify no write at 499 ms and exact autosave at 500 ms; more than six candidates; exact Max/90/100 effects/tier keys; immediate add/edit/remove effect output; null tiers; preserved ordering/reload; no-skill/A+B/A+A behavior; independent category toggles/all-skills exploration; explicit overlapping alternatives; invalid targets; unknown IDs/base definitions; read-only/protected drafts; and legacy offhand preservation. Existing skill/ability/equipment/autosave/transport tests remain passing.
 
@@ -166,7 +270,18 @@ All 13 pinned raw datasets validate offline. No official-data regeneration was p
 
 ## Real-browser verification and screenshots
 
-Latest revision: Chromium 153.0.8010.12 re-ran the full mods workflow below in Vite dev and production preview, plus the new paired-effect, readability and overlap checks, with zero unexpected console errors. The layout smoke covered 1440/1920/2560 at 100% zoom, the 80% zoom secondary check and 320/375 touch. Equipment and transport smokes passed unchanged.
+Final revision: Chromium 153.0.8010.12 ran the updated mods smoke in Vite dev **and** production preview with zero unexpected console errors or page exceptions:
+- **Slot fit:** Head/Ring/OffHand Available rows each publish the item's slot, with no repeated IDs.
+- **Moves:** a double click stages one copy; Available ↔ Selected moves keep STATS in sync; the mismatch flag survives target changes; removal restores the row at the current preview.
+- **Different powers:** nine distinct powers staged, then edited, reordered, nulled, reloaded and compared exactly.
+- **Skill clearing:** A=B keeps mods; removing the last Archery slot clears 8 mods, shows the notice and saves; Undo restores them exactly.
+- **Druid + Chest:** the exact 11 IDs at Max; at 100, previews change but the count stays 11; 8 readable base rows including -20% vulnerability; 3 staged Druid mods with aligned blue chips; Druid → Psychology clears them and Undo restores them.
+- **Captures and layout:** desktop and 375px Druid Chest captures with no overflow.
+- **Regressions:** icons, paired +25% effects, overlap/clipping, icon-404 fallback (two expected resource messages per mode, from the Available row and the imported STATS row) and mismatched-snapshot protection.
+
+The equipment, transport and layout smokes also passed.
+
+Revision for the 8f6f4a2 review: Chromium 153.0.8010.12 re-ran the full mods workflow below in Vite dev and production preview, plus the new paired-effect, readability and overlap checks, with zero unexpected console errors. The layout smoke covered 1440/1920/2560 at 100% zoom, the 80% zoom secondary check and 320/375 touch. Equipment and transport smokes passed unchanged.
 
 Previous revision: Chromium 154.0.8037.57 exercised Vite dev and production preview at **1440×900** and **375×812**:
 
@@ -182,6 +297,10 @@ Both mod-workflow modes check for zero unexpected console errors/page exceptions
 
 Artifacts and JSON measurements were written to the session scratch directory (not committed). Measurements are unthrottled local Chromium observations, not guarantees for low-end devices, other engines or live Cloudflare runtime.
 
+![Druid + Chest: complete STATS panel and Available/Selected](screenshots/t0010/druid-chest-desktop.png)
+
+![Druid + Chest at 375px](screenshots/t0010/druid-chest-mobile.png)
+
 ![Inline Available and Selected on desktop](screenshots/t0010/inline-desktop.png)
 
 ![Stacked inline editor at 375px](screenshots/t0010/inline-mobile.png)
@@ -194,17 +313,27 @@ Artifacts and JSON measurements were written to the session scratch directory (n
 
 ## Customer acceptance checklist
 
-1. Equip gear with no combat skills: Available should prompt for a skill. Existing saved candidates must still show.
-2. Select Archery and Cow, then A+A; check distinct/unique group headings. Toggle Generic, Endurance and Shamanic Infusions independently. Inspect the explicit AnySkill/Unknown caveats.
-3. Compare item contexts. Use All skills and the inline effect/name/ID search for broader exploration.
-4. Check actual inline game icons and player-facing percentages (e.g. select Animal Handling: **Direct Electricity Damage +25%, Fire Damage (Direct & Per-Tick) +25%** visible in full without ⋯; hover for “Requires Animal Handling active”), open ⋯ to read full text/source or edit a tier. Set Max, 90 and 100. Observe changed Available effect values; click one to add exactly that displayed tier. Inspect overlapping alternatives in Details.
-5. Add more than six candidates, including duplicates. Check immediate CANDIDATE effect lines separately from BASE and EXISTING. Edit/null a tier, move and remove candidates; check immediate reversal.
-6. Change the target again: saved tiers must remain unchanged, with a small preview-difference flag where applicable. Wait for Saved, refresh and verify exact order/IDs/nulls and canonical item slot.
-7. Check both ability bars, other equipment, existing imported/manual powers and Sparks. Verify the skill dropdown and levels still work without the magnifier; ability search remains available.
-8. Repeat by keyboard and at 375px. Confirm inline columns stack and controls/effects fit without horizontal scrolling.
-9. At your normal monitor width and **100% browser zoom**, confirm the planner uses the width (up to 1600px), effects are readable without ⋯, and Skill A/B levels 100, 110 and 125 are fully visible and editable.
+1. At 100% zoom choose Skill A **Druid**, leave B empty and equip a **Chest** (e.g. Fae Soldier Jumpsuit). Druid Mods should list **11** distinct entries, with no level copies. Set Max, then 100: values change and the count does not.
+2. Click a Druid mod: it leaves Available and appears in Selected and as a blue **DRUID** STATS row. Remove it: it returns. Repeat after changing the target and after a refresh.
+3. Check STATS: every fixed effect is shown without a dropdown (e.g. **Vulnerability to Electricity -20%**, **Max Armor +216**), with no CANDIDATE labels and aligned chips.
+4. Change Druid to another skill or clear it: Druid mods clear on every item, a notice appears, and Undo restores them. With Druid in both slots, clearing one keeps the mods.
+5. Equip gear with no combat skills: Available should prompt for a skill. Existing saved candidates must still show.
+6. Select Archery and Cow, then A+A; check distinct/unique group headings. Toggle Generic, Endurance and Shamanic Infusions independently. Inspect the explicit AnySkill/Unknown caveats.
+7. Compare item contexts. Use All skills, Other slots & profiles and the inline effect/name/ID search for broader exploration.
+8. Check actual inline game icons and player-facing percentages (e.g. select Animal Handling: **Direct Electricity Damage +25%, Fire Damage (Direct & Per-Tick) +25%** visible in full without ⋯; hover for “Requires Animal Handling active”), open ⋯ to read full text/source or edit a tier. Set Max, 90 and 100. Observe changed Available effect values; click one to add exactly that displayed tier. Inspect overlapping alternatives in Details.
+9. Add more than six different candidates. Check immediate Planned STATS rows separately from Base and ◇ Imported. Edit/null a tier, move and remove candidates; check immediate reversal.
+10. Change the target again: saved tiers must remain unchanged, with a small preview-difference flag where applicable. Wait for Saved, refresh and verify exact order/IDs/nulls and canonical item slot.
+11. Check both ability bars, other equipment, existing imported/manual powers and Sparks. Verify the skill dropdown and levels still work without the magnifier; ability search remains available.
+12. Repeat by keyboard and at 375px. Confirm inline columns stack and controls/effects fit without horizontal scrolling.
+13. At your normal monitor width and **100% browser zoom**, confirm the planner uses the width (up to 1600px), effects are readable without ⋯, and Skill A/B levels 100, 110 and 125 are fully visible and editable.
 
 ## Risks and follow-ups
+
+Final-revision ambiguities:
+- **Slot/profile filtering is published data, not full legality.** Item profiles describe random generation. Endurance and Shamanic powers have no item-referenced profile, so only their slot is used.
+- **Generic keeps same-attribute pairs** with different official tier tables (e.g. PowerBoostVeryWeak vs ShoddyPowerBoost) as separate entries.
+- **The Druid Chest count of 11 is derived from the data, not hard-coded.**
+- **Inferred formats:** AsDoubleTimes100 percentages and AsBool Yes/No are marked inferred.
 
 AnySkill cannot prove a universally eligible Generic category, overlapping tier ranges/rarities do not identify a unique legal tier, and Max cannot prove numeric effect strength. The UI and pure logic keep these limitations explicit. Raw source remains byte-exact. Percent presentation is confirmed by external player-facing references for AsBuffMod and AsPercent. AsDebuffMod (28 lines) and `%`-labelled AsDoubleTimes100 (71 lines) are inferred from official structure and type naming. 19 non-`%` AsDoubleTimes100 lines (mount acceleration) keep unchanged values with an explicit “scale unverified” flag. If the Product Owner finds an in-game display that differs for these less common types, it is a one-line change to the display-type sets. No damage math is added.
 

@@ -3,7 +3,7 @@ import type { EquipmentSelection } from '../../core/build/document';
 import type { CandidateModEdit } from '../../core/build/candidate-mods';
 import type { GameDataRepository } from '../../data/repository/repository';
 import { browseTreasurePowers, indexTreasurePowers, powerName, treasureRelevance, type TreasureContext, type TreasurePower, type TreasureRelevance } from '../../data/search/treasure';
-import { groupTreasurePowers, orderTreasureTiers, previewTreasureTiers, type ModCategories, type ModTargetLevel, type TreasureTier } from '../../data/search/treasure-planning';
+import { availableTreasurePowers, groupTreasurePowers, orderTreasureTiers, previewTreasureTiers, type ModCategories, type ModTargetLevel, type TreasureTier } from '../../data/search/treasure-planning';
 import { EffectDescriptions } from './EffectDescription';
 import { CandidateList } from './CandidateList';
 import { PowerFacts, TierFacts } from './PowerFacts';
@@ -49,11 +49,15 @@ export function ModPlanner({ selection, equipmentIndex, context, data, onEdit, r
   const [targetText, setTargetText] = useState('Max');
   const validTarget = targetText.trim().toLowerCase() === 'max' || (/^\d+$/u.test(targetText.trim()) && Number.isSafeInteger(Number(targetText)));
   const [allSkills, setAllSkills] = useState(false);
+  const [allSlots, setAllSlots] = useState(false);
   const [categories, setCategories] = useState<ModCategories>({ generic: true, endurance: true, shamanic: true });
   const index = useMemo(() => indexTreasurePowers(data.treasurePowers), [data]);
   const relevance = useMemo(() => new Map(data.treasurePowers.map(power => [power.id, treasureRelevance(power, context, data)])), [data, context]);
-  const matches = useMemo(() => browseTreasurePowers(index, query, relevance, 'relevant'), [index, query, relevance]);
+  const staged = useMemo(() => new Set(selection.candidateMods.map(mod => mod.powerId)), [selection.candidateMods]);
+  const matches = useMemo(() => availableTreasurePowers(browseTreasurePowers(index, query, relevance, 'relevant'), relevance, staged, allSlots, data),
+    [index, query, relevance, staged, allSlots, data]);
   const groups = useMemo(() => groupTreasurePowers(matches, context.skillIds, categories, allSkills, data), [matches, context.skillIds, categories, allSkills, data]);
+  const profile = context.item?.treasureProfile?.status === 'resolved' ? context.item.treasureProfile.profileId : null;
   const active = context.skillIds.some(skill => data.getSkill(skill)?.combat);
   return <section className="mod-planner" aria-label={`Mods for equipment ${equipmentIndex + 1}`}>
     <div className="mod-toolbar">
@@ -71,15 +75,17 @@ export function ModPlanner({ selection, equipmentIndex, context, data, onEdit, r
     {!validTarget && <p className="warning">Use Max or a nonnegative whole target level. The previous preview is retained.</p>}
     <div className="mod-category-toggles">{([['generic', 'Generic'], ['endurance', 'Endurance'], ['shamanic', 'Shamanic Infusions']] as const).map(([key, label]) => <label key={key}>
       <input type="checkbox" checked={categories[key]} onChange={event => setCategories(previous => ({ ...previous, [key]: event.target.checked }))} />{label}
-    </label>)}<label><input type="checkbox" checked={allSkills} onChange={event => setAllSkills(event.target.checked)} />All skills</label></div>
+    </label>)}<label><input type="checkbox" checked={allSkills} onChange={event => setAllSkills(event.target.checked)} />All skills</label>
+      <label title="Explore powers whose published slot or item profile does not list this item"><input type="checkbox" checked={allSlots} onChange={event => setAllSlots(event.target.checked)} />Other slots &amp; profiles</label></div>
     <div className="mod-columns">
       <section className="mod-available" aria-labelledby={`${id}-available`}><h3 id={`${id}-available`}>Available</h3>
         {!active ? <p className="muted">Select a combat skill to view mods.</p> : <div className="mod-available-scroll">
-          {groups.length === 0 && <p className="muted">No matching powers. Try a shorter search or All skills.</p>}
+          {groups.length === 0 && <p className="muted">No matching powers. Try a shorter search, All skills, or Other slots &amp; profiles.</p>}
+          {!context.item && <p className="muted">Item definition unavailable: slot/profile filtering is off.</p>}
           {groups.map(group => <section key={group.id} data-mod-group={group.id} aria-label={group.label}>
             <h4>{group.label} <small>({group.powers.length})</small></h4>
             <ul>{group.powers.map(power => <AvailablePower key={power.id} power={power} relevance={relevance.get(power.id)!} context={context} target={target} data={data} readOnly={readOnly}
-              onAdd={tierId => { if (!readOnly) onEdit({ type: 'mod-add', equipmentIndex, powerId: power.id, tierId }); }} />)}</ul>
+              onAdd={tierId => { if (!readOnly) onEdit({ type: 'mod-add', equipmentIndex, powerId: power.id, tierId, unique: true }); }} />)}</ul>
           </section>)}
         </div>}
       </section>
@@ -90,7 +96,7 @@ export function ModPlanner({ selection, equipmentIndex, context, data, onEdit, r
     {readOnly && <p className="warning">This draft is read-only. Candidate changes are disabled.</p>}
     <details className="mod-more mod-guidance"><summary>Categories, target levels &amp; relevance</summary>
       <p>Generic lists the published AnySkill selector; its skill association and eligibility are unknown. Endurance and Shamanic Infusions use exact published skill associations. Missing associations have their own Unknown group.</p>
-      <p>Item profile {context.item?.treasureProfile?.profileId ?? 'unknown'}: profile membership, then exact slot matches guide order within each group. These are relevance signals, not full legality. All skills enables broader exploration. No final mod-count limit is imposed.</p>
+      <p>Each official power appears once. Available lists powers whose published slots include {context.item ? context.item.slot : 'this item\'s slot'}{profile ? ` and whose published profile list includes item profile ${profile}` : ' (this item publishes no treasure profile)'}; Endurance and Shamanic Infusions use slot only, because their published profiles are not referenced by any item. Selecting a power moves it to Selected; removing it restores it. These are published-data filters, not full legality. All skills and Other slots &amp; profiles enable broader exploration. No final mod-count limit is imposed.</p>
       <p>Target changes only the available preview, never saved candidates, item target level or skill levels. Max uses the highest published minimum level, not calculated effect strength. Overlapping ranges/rarities remain explicit tier alternatives. Effects are exact published text, without damage math.</p>
     </details>
   </section>;

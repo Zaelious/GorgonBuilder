@@ -2,8 +2,8 @@
 import { beforeAll, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { loadPlannerFixture } from '../../test/planner-fixture';
-import { browseTreasurePowers, indexTreasurePowers, treasureRelevance } from './treasure';
-import { candidateTargetMismatch, groupTreasurePowers, orderTreasureTiers, previewTreasureTiers, treasureCategoryLabel, type ModCategories } from './treasure-planning';
+import { browseTreasurePowers, indexTreasurePowers, treasureRelevance, treasureSlot } from './treasure';
+import { availableTreasurePowers, candidateTargetMismatch, fitsItem, groupTreasurePowers, orderTreasureTiers, previewTreasureTiers, treasureCategoryLabel, type ModCategories } from './treasure-planning';
 let data: ReturnType<typeof loadPlannerFixture>;
 beforeAll(() => { data = loadPlannerFixture(); });
 const enabled: ModCategories = { generic: true, endurance: true, shamanic: true };
@@ -55,7 +55,7 @@ it('allows all-skills exploration while keeping special category toggles indepen
 });
 it('preserves item-profile/slot relevance order within skill groups without excluding exploratory rows', () => {
   const index = indexTreasurePowers(data.treasurePowers);
-  const lists = ['item_45722', 'item_45052'].map(id => {
+  const lists = ['item_45722', 'item_49070'].map(id => {
     const context = { item: data.getItem(id), skillIds: ['Archery'] };
     const relevance = new Map(data.treasurePowers.map(power => [power.id, treasureRelevance(power, context, data)]));
     const ordered = browseTreasurePowers(index, '', relevance, 'relevant');
@@ -86,4 +86,31 @@ it('uses source levels for the nonstandard id_120 key and marks preview differen
   expect(candidateTargetMismatch(power, null, 90)).toBe(false);
   expect(candidateTargetMismatch(power, 'missing', 90)).toBe(false);
   expect(candidateTargetMismatch(undefined, 'id_1', 'max')).toBe(false);
+});
+
+it('lists exactly the 11 official Druid Chest powers for an All-profile Chest, one entry each, and excludes staged powers', () => {
+  const context = { item: data.getItem('item_42705'), skillIds: ['Druid'] };
+  const relevance = new Map(data.treasurePowers.map(power => [power.id, treasureRelevance(power, context, data)]));
+  const druid = (staged: Set<string>, explore = false) => groupTreasurePowers(availableTreasurePowers(data.treasurePowers, relevance, staged, explore, data),
+    context.skillIds, enabled, false, data).find(g => g.id === 'Druid')?.powers.map(p => p.id) ?? [];
+  const ids = druid(new Set());
+  expect([...ids].sort()).toEqual(['power_14005', 'power_14012', 'power_14051', 'power_14052', 'power_14101', 'power_14154', 'power_14159', 'power_14201', 'power_14351', 'power_14501', 'power_14602']);
+  expect(druid(new Set(['power_14005']))).toEqual(ids.filter(id => id !== 'power_14005'));
+  expect(druid(new Set(), true)).toHaveLength(65);
+  // Endurance/Shamanic use slot only (their published profiles are not item profiles); AnySkill also needs the item profile.
+  const groups = groupTreasurePowers(availableTreasurePowers(data.treasurePowers, relevance, new Set(), false, data), context.skillIds, enabled, false, data);
+  expect(groups.find(g => g.id === 'ShamanicInfusion')!.powers.map(p => p.id).sort()).toEqual(['power_30101', 'power_30102', 'power_30103', 'power_30104']);
+  expect(groups.find(g => g.id === 'Endurance')!.powers).toHaveLength(6);
+  expect(groups.find(g => g.id === 'AnySkill')!.powers.every(p => relevance.get(p.id)!.profile === 'match')).toBe(true);
+});
+it('maps OffHandShield items to the published OffHand treasure slot and never excludes unknown signals', () => {
+  expect(treasureSlot('OffHandShield')).toBe('OffHand');
+  expect(treasureSlot('Chest')).toBe('Chest');
+  const shield = { item: data.getItem('item_45052'), skillIds: [] };
+  expect(treasureRelevance(data.getTreasurePower('power_12301')!, shield, data).slot).toBe('match');
+  const power = data.getTreasurePower('power_14005')!;
+  expect(fitsItem(power, { profile: 'unknown', slot: 'unknown', skill: 'unknown' }, data)).toBe(true);
+  expect(fitsItem(power, { profile: 'different', slot: 'match', skill: 'match' }, data)).toBe(false);
+  expect(fitsItem(power, { profile: 'match', slot: 'different', skill: 'match' }, data)).toBe(false);
+  expect(fitsItem(data.getTreasurePower('power_30101')!, { profile: 'different', slot: 'match', skill: 'unknown' }, data)).toBe(true);
 });

@@ -1,4 +1,4 @@
-import { editCandidateMods, type CandidateModEdit } from '../../core/build/candidate-mods';
+import { editCandidateMods, pruneCandidateModsForSkill, type CandidateModEdit } from '../../core/build/candidate-mods';
 import type { AbilitySelection, BuildDocument } from '../../core/build/document';
 import type { GameDataRepository } from '../../data/repository/repository';
 
@@ -22,7 +22,8 @@ export function isOffhandSlot(slot: string): boolean {
   return slot === 'OffHand' || slot === 'OffHandShield';
 }
 
-/** Each committed edit preserves unrelated fields. Skill switches clear only their own bar. */
+/** Each committed edit preserves unrelated fields. A skill switch clears its own bar and, atomically, staged
+ * candidates resolved to the departed skill once neither slot still uses it. */
 export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataRepository): BuildDocument {
   if (build.gameDataVersion !== data.gameDataVersion) return build;
   if (edit.type === 'mod-add' || edit.type === 'mod-tier' || edit.type === 'mod-remove' || edit.type === 'mod-move') {
@@ -75,7 +76,10 @@ export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataR
   if (edit.type === 'skill') {
     if (edit.skillId !== null && !data.getSkill(edit.skillId)?.combat) return build;
     if (edit.skillId === skill.skillId) return build;
-    return { ...build, [skillKey]: { ...skill, skillId: edit.skillId }, [barKey]: [] };
+    const other = edit.slot === 'A' ? build.skillSlotB : build.skillSlotA;
+    const departed = skill.skillId !== null && skill.skillId !== other.skillId ? skill.skillId : null;
+    const equipment = departed === null ? build.equipment : pruneCandidateModsForSkill(build.equipment, departed, data);
+    return { ...build, [skillKey]: { ...skill, skillId: edit.skillId }, [barKey]: [], equipment };
   }
   if (edit.type === 'level') {
     if (!Number.isSafeInteger(edit.level) || edit.level < 0) return build;

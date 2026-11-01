@@ -1,0 +1,22 @@
+/* Compact STATS panel: aligned chip column + full readable effect text. */
+.item-stats { margin-block: 0.5rem; padding: 0.3rem 0.6rem 0.4rem; border: 1px solid var(--color-border); border-radius: 0.3rem; background: var(--color-background); }
+.item-stats-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; padding-bottom: 0.2rem; }
+.item-stats-heading h4 { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); }
+.item-stats-legend { display: flex; gap: 0.6rem; font-size: 10.5px; color: var(--color-muted); }
+.item-stats-legend .legend-planned::before { content: ''; display: inline-block; width: 0.6rem; height: 0.6rem; margin-right: 0.25rem; vertical-align: -1px; border-radius: 2px; background: hsl(205 45% 30%); }
+.stat-rows { list-style: none; margin: 0; padding: 0; }
+.stat-row { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); align-items: baseline; gap: 0.6rem; padding-block: 3px; font-size: 13px; line-height: 19px; }
+.stat-row + .stat-row { border-top: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent); }
+.stat-base + .stat-imported, .stat-base + .stat-planned, .stat-imported + .stat-planned { border-top-color: var(--color-border); }
+.stat-text { min-width: 0; overflow-wrap: break-word; }
+.stat-base .stat-text { color: var(--color-text); }
+.stat-chip { justify-self: start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 6px; border-radius: 3px; font-size: 10.5px; line-height: 17px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
+.stat-chip-planned { color: hsl(var(--chip-hue) 85% 84%); background: hsl(var(--chip-hue) 45% 26%); border: 1px solid hsl(var(--chip-hue) 45% 40%); }
+.stat-chip-imported { color: hsl(var(--chip-hue) 70% 78%); background: transparent; border: 1px dashed hsl(var(--chip-hue) 40% 45%); }
+.stat-chip-base { color: var(--color-muted); background: #ffffff0d; border: 1px solid var(--color-border); }
+.stat-chip-unknown { color: var(--color-muted); background: transparent; border: 1px dashed var(--color-border); }
+.stat-empty { display: block; font-size: 12px; }
+@media (max-width: 30rem) {
+  .stat-row { grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.4rem; font-size: 12.5px; }
+  .item-stats { padding-inline: 0.45rem; }
+}

@@ -1,27 +1,40 @@
 import type { GameDataRepository } from '../../data/repository/repository';
 
+/** How the player-facing presentation of an attribute display type is evidenced. */
+export type FormatConfidence = 'confirmed' | 'inferred' | 'unverified';
+
 export type EffectPresentation =
   | { kind: 'prose'; text: string }
   | {
     kind: 'attribute'; label: string; value: string; displayType: string;
-    /** false when the pinned data does not establish this display type's player-facing scale. */
-    verified: boolean;
+    /**
+     * confirmed: matched against player-facing references or Product Owner examples;
+     * inferred: derived from official DisplayType naming/structure only;
+     * unverified: the unchanged source number is shown with an explicit flag.
+     */
+    confidence: FormatConfidence;
     /** Official third argument: the player must have this skill active to get the buff. */
     requiredSkill: string | null;
   }
   | { kind: 'unsupported' };
 
 /**
- * Official tsysclientinfo notes: attribute descriptions are `{attributeName}{delta}{requiredSkill}`;
- * the optional skill "must be active" for the buff. Display types below are only those whose
- * player-facing presentation is evidenced (see docs/T0010_Verification.md):
+ * Shared by treasure-power tiers and fixed item effects. Both publish `{attributeName}{delta}`;
+ * treasure tiers may add `{requiredSkill}`, which the player "must have active" (official notes).
+ * Display rules (see docs/T0010_Verification.md):
  * - Percent display: the attribute label ends in `%` and its DisplayType is a multiplier/percent
- *   mode. The delta is a fraction, shown as delta × 100 with a sign (0.25 → +25%, 0.625 → +62.5%).
+ *   mode. The delta is a fraction, shown as delta × 100 with a sign (0.25 → +25%, -0.2 → -20%).
  * - Additive display: integer/delta modes with non-% labels show the signed delta unchanged.
+ * - Boolean display: AsBool with delta 1/0 shows Yes/No.
  * Anything else keeps the unchanged source number with an explicit "scale unverified" flag.
  * This is presentation only; no stacking, baselines or damage formulas are implied.
  */
-const PERCENT_DISPLAY_TYPES = new Set(['AsBuffMod', 'AsDebuffMod', 'AsPercent', 'AsDoubleTimes100']);
+const PERCENT_DISPLAY_TYPES: ReadonlyMap<string, FormatConfidence> = new Map([
+  ['AsBuffMod', 'confirmed'], ['AsPercent', 'confirmed'],
+  // Product Owner reference: published {VULN_ELECTRICITY}{-0.2} reads "Vulnerability to Electricity -20%".
+  ['AsDebuffMod', 'confirmed'],
+  ['AsDoubleTimes100', 'inferred'],
+]);
 const ADDITIVE_DISPLAY_TYPES = new Set(['AsBuffDelta', 'AsDebuffDelta', 'AsInt', 'AsDouble']);
 const NUMBER = /^([+-]?)(\d*)(?:\.(\d*))?$/u;
 
@@ -61,12 +74,13 @@ export function presentEffect(description: string, data: GameDataRepository): Ef
   const label = attribute.label.replace(/\s*%$/u, '');
   const raw = match[2]!;
   const base = { kind: 'attribute' as const, label, displayType: attribute.displayType, requiredSkill };
-  if (percentLabel && PERCENT_DISPLAY_TYPES.has(attribute.displayType)) {
-    const shifted = signed(shiftDecimal(raw, 2)!);
-    return { ...base, value: `${shifted}%`, verified: true };
+  const percent = PERCENT_DISPLAY_TYPES.get(attribute.displayType);
+  if (percentLabel && percent) return { ...base, value: `${signed(shiftDecimal(raw, 2)!)}%`, confidence: percent };
+  if (!percentLabel && ADDITIVE_DISPLAY_TYPES.has(attribute.displayType)) return { ...base, value: signed(raw)!, confidence: 'confirmed' };
+  if (attribute.displayType === 'AsBool' && /^[01]$/u.test(raw)) {
+    return { ...base, label: label.replace(/\s*\?$/u, ''), value: raw === '1' ? 'Yes' : 'No', confidence: 'inferred' };
   }
-  if (!percentLabel && ADDITIVE_DISPLAY_TYPES.has(attribute.displayType)) return { ...base, value: signed(raw)!, verified: true };
-  return { ...base, value: raw, verified: false };
+  return { ...base, value: raw, confidence: 'unverified' };
 }
 
 /** Plain-text rendering of a whole tier (comma-joined), for tooltips and accessible names. */

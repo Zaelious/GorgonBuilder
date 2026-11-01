@@ -22,8 +22,10 @@ function InlineText({ text, version }: { text: string; version: string }) {
 }
 
 function AttributeText({ presentation }: { presentation: Extract<EffectPresentation, { kind: 'attribute' }> }) {
-  return <>{presentation.label} {presentation.value}
-    {!presentation.verified && <small className="effect-value-note" title={`Published ${presentation.displayType} value unchanged; this display type's player-facing scale is not established by the pinned data. See exact source in Details.`}> (scale unverified)</small>}
+  const bool = presentation.displayType === 'AsBool' && presentation.confidence !== 'unverified';
+  return <>{presentation.label}{bool ? ': ' : ' '}<span className="effect-value" data-confidence={presentation.confidence}
+    title={presentation.confidence === 'inferred' ? `Display inferred from the official ${presentation.displayType} type; not yet matched against an in-game rendering.` : undefined}>{presentation.value}</span>
+    {presentation.confidence === 'unverified' && <small className="effect-value-note" title={`Published ${presentation.displayType} value unchanged; this display type's player-facing scale is not established by the pinned data. See exact source in Details.`}> (scale unverified)</small>}
   </>;
 }
 

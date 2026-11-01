@@ -27,7 +27,7 @@ export function CandidateList({ mods, data, equipmentIndex, onEdit, readOnly, ta
         {candidateTargetMismatch(power, mod.tierId, target) && <span className="mod-mismatch" role="img" aria-label="Differs from target preview" title="Differs from target preview. Saved tier retained; change explicitly if desired.">◦</span>}
         <details className="candidate-details mod-more"><summary aria-label={`Details and tier for candidate ${index + 1}`} title="Details, tier and ordering"><span aria-hidden="true">⋯</span></summary>
           <div className="candidate-detail-content">
-            <p>CANDIDATE · {power ? treasureCategoryLabel(power, data) : 'Unknown association'} · {mod.powerId} / {mod.tierId ?? 'No tier chosen'}</p>
+            <p>Planned mod · {power ? treasureCategoryLabel(power, data) : 'Unknown association'} · {mod.powerId} / {mod.tierId ?? 'No tier chosen'}</p>
             {tier && <TierFacts tier={tier} data={data} />}
             {power && <p>Published slots: {power.slots.join(', ') || 'unknown'} · Profiles: {data.getProfilesForPower(power.id).map(profile => profile.id).join(', ') || 'none listed'}</p>}
             <div className="candidate-controls"><TierSelect power={power} tierId={mod.tierId} disabled={readOnly}

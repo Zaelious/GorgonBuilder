@@ -96,7 +96,7 @@ it('retains byte-exact original strings only in deliberately expanded technical 
 it('uses the pinned attribute contract; conversion is exact decimal text, not floating point', () => {
   expect(data.getAttribute('MOD_SKILL_ARCHERY')!.label).toBe('Archery Base Damage %');
   expect(data.getAttribute('MOD_SKILL_ARCHERY')!.displayType).toBe('AsBuffMod');
-  expect(presentEffect('{MOD_SKILL_ARCHERY}{0.600}', data)).toMatchObject({ value: '+60%', verified: true, requiredSkill: null });
+  expect(presentEffect('{MOD_SKILL_ARCHERY}{0.600}', data)).toMatchObject({ value: '+60%', confidence: 'confirmed', requiredSkill: null });
   expect(presentEffect('{MOD_ELECTRICITY_DIRECT}{0.25}{AnimalHandling}', data)).toMatchObject({ value: '+25%', requiredSkill: 'Animal Handling' });
   expect(['0.25', '0.23', '0.625', '0.035', '-0.01', '.5', '12.5', '3', '0.001', '-0.17', '0'].map(value => shiftDecimal(value, 2)))
     .toEqual(['25', '23', '62.5', '3.5', '-1', '50', '1250', '300', '0.1', '-17', '0']);
@@ -110,7 +110,34 @@ it('formats every published template in the pinned data without NaN or raw token
     if (presentation.kind !== 'attribute') continue;
     attributes += 1;
     expect(presentation.value).not.toMatch(/NaN|[{}]/u);
-    if (presentation.verified && presentation.value.endsWith('%')) expect(data.getAttribute(/^\{([A-Z_0-9]+)\}/u.exec(description)![1]!)!.label).toMatch(/%$/u);
+    if (presentation.confidence !== 'unverified' && presentation.value.endsWith('%')) expect(data.getAttribute(/^\{([A-Z_0-9]+)\}/u.exec(description)![1]!)!.label).toMatch(/%$/u);
   }
   expect(attributes).toBeGreaterThan(20000);
+});
+it('formats fixed item effects with official labels: signed percents, flat values and booleans', async () => {
+  for (const [source, text] of [
+    ['{VULN_ELECTRICITY}{-0.2}', 'Vulnerability to Electricity -20%'], ['{VULN_ELECTRICITY}{0.2}', 'Vulnerability to Electricity +20%'],
+    ['{VULN_NATURE}{-0.1}', 'Vulnerability to Nature -10%'], ['{MAX_ARMOR}{120}', 'Max Armor +120'], ['{MAX_HEALTH}{37}', 'Max Health +37'],
+    ['{COMBAT_REFRESH_ARMOR_DELTA}{45}', 'Armor from Combat Refresh Abilities +45'], ['{FALLING_DAMAGE_MOD}{-0.1}', 'Falling Damage -10%'],
+    ['{MOD_SKILL_SHIELD}{0.12}', 'Shield Mastery Base Damage +12%'], ['{SPRINT_BOOST}{1.5}', 'Sprint Speed Boost +1.5'],
+    ['{ABILITY_COST_DELTA_SIGNATUREDEBUFF}{-5}', 'Signature Debuff Power Cost -5'],
+    ['{ABILITY_WORKSWHILESTUNNED_DELTA_SIGNATURESUPPORT}{1}', 'Signature Support abilities work while stunned: Yes'],
+  ] as const) { await render(source); expect(container.textContent).toBe(text); }
+  expect(presentEffect('{VULN_ELECTRICITY}{-0.2}', data)).toMatchObject({ confidence: 'confirmed', displayType: 'AsDebuffMod' });
+  expect(presentEffect('{ACCURACY_BOOST_RANGED}{0.1}', data)).toMatchObject({ value: '+10%', confidence: 'inferred' });
+  await render('{ACCURACY_BOOST_RANGED}{0.1}');
+  expect(container.querySelector('.effect-value')!.getAttribute('title')).toContain('inferred');
+  expect(presentEffect('{ABILITY_WORKSWHILESTUNNED_DELTA_SIGNATURESUPPORT}{2}', data)).toMatchObject({ value: '2', confidence: 'unverified' });
+});
+it('formats every published fixed item effect without raw tokens, NaN or a skill requirement', () => {
+  let templates = 0;
+  for (const item of data.items) for (const effect of item.fixedEffects ?? []) {
+    const presentation = presentEffect(effect.description, data);
+    expect(presentation.kind).not.toBe('unsupported');
+    if (presentation.kind !== 'attribute') continue;
+    templates += 1;
+    expect(presentation.value).not.toMatch(/NaN|[{}]/u);
+    expect(presentation.requiredSkill).toBeNull();
+  }
+  expect(templates).toBeGreaterThan(8000);
 });

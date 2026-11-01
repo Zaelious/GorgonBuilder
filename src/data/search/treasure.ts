@@ -31,13 +31,19 @@ export function indexTreasurePowers(powers: readonly TreasurePower[]) {
   ].join(' ')) }));
 }
 
+/** Item EquipSlot → treasure `Slots` value. The only alias is OffHandShield → OffHand: in v490 every one of
+ * the 325 powers in the Shield profile (used by OffHandShield items) publishes the OffHand slot. */
+export function treasureSlot(itemSlot: string): string {
+  return itemSlot === 'OffHandShield' ? 'OffHand' : itemSlot;
+}
+
 /** Independent published facts, never an equipment-legality decision. */
 export function treasureRelevance(power: TreasurePower, context: TreasureContext, data: GameDataRepository): TreasureRelevance {
   const reference = context.item?.treasureProfile;
   const profile = reference?.status === 'resolved' ? data.getTreasureProfile(reference.profileId) : undefined;
   return {
     profile: profile ? (profile.powers.some(ref => ref.status === 'resolved' && ref.powerId === power.id) ? 'match' : 'different') : 'unknown',
-    slot: context.item && power.slots.length ? (power.slots.includes(context.item.slot) ? 'match' : 'different') : 'unknown',
+    slot: context.item && power.slots.length ? (power.slots.includes(treasureSlot(context.item.slot)) ? 'match' : 'different') : 'unknown',
     skill: power.skill.status === 'resolved' && power.skill.skillId !== null && data.getSkill(power.skill.skillId) && context.skillIds.length
       ? (context.skillIds.includes(power.skill.skillId) ? 'match' : 'different') : 'unknown',
   };

@@ -23,7 +23,6 @@
 .mod-more[open] > summary::before { content: '▾'; }
 .mod-more > summary::-webkit-details-marker { display: none; }
 .mod-more p { margin-block: 0.35rem; }
-.mod-source-label { display: block; font-size: 0.65rem; letter-spacing: 0.03em; color: var(--color-accent); }
 .mod-tier-facts { font-size: 0.75rem; }
 .mod-tier-facts ul { padding-left: 1rem; }
 .mod-tier-alternatives button { text-align: left; width: 100%; font-size: 0.75rem; }
@@ -37,9 +36,6 @@
 .candidate-controls .mod-tier-select { flex: 1; min-width: 0; }
 .candidate-controls .mod-actions { flex-wrap: nowrap; margin: 0; }
 .mod-mismatch { display: block; font-size: 0.7rem; color: #f2c588; }
-.equipment-candidate-effects { list-style: none; margin-block: 0.5rem; padding: 0; }
-.equipment-candidate-effects li { margin-block: 0.25rem; overflow-wrap: anywhere; }
-.existing-powers > ul { list-style: none; padding: 0; }
 .mod-guidance { margin-top: 0.35rem; }
 @media (max-width: 42rem) {
   .mod-columns { grid-template-columns: minmax(0, 1fr); }
@@ -52,7 +48,7 @@
 .mod-available-power { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 26px; align-items: start; }
 .planner-main .available-effect { min-height: 30px; padding: 4px 3px; font-size: 13px; line-height: 20px; }
 /* Readable by default: short/medium effects show in full; long ones wrap to two lines, full text on demand. */
-.available-effect-text, .candidate-effect, .equipment-candidate-effects li > span:last-child { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; min-width: 0; overflow: hidden; white-space: normal; overflow-wrap: break-word; }
+.available-effect-text, .candidate-effect { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; min-width: 0; overflow: hidden; white-space: normal; overflow-wrap: break-word; }
 .available-details { grid-column: 2; }
 .available-details > summary, .candidate-details > summary { position: absolute; top: 1px; right: 0; width: 26px; min-height: 28px; justify-content: center; font-size: 18px; }
 .available-details > summary::before, .candidate-details > summary::before, .saved-power-details > summary::before { content: none; }
@@ -77,9 +73,6 @@
 .saved-power-details { display: inline-block; vertical-align: middle; }
 .saved-power-details > summary { display: inline-flex; justify-content: center; width: 24px; min-height: 24px; font-size: 18px; }
 .saved-power-details[open] { display: block; }
-.equipment-candidate-effects { font-size: 12px; line-height: 1.4; }
-.equipment-candidate-effects li { display: flex; gap: 0.3rem; margin-block: 1px; }
-.equipment-candidate-effects .mod-source-label { flex: 0 0 auto; font-size: 10px; line-height: inherit; letter-spacing: 0; }
 @media (pointer: coarse), (max-width: 30rem) {
   .planner-main .available-effect { min-height: 44px; padding-block: 10px; }
   .candidate-effect { align-self: center; margin-block: 12px; }
@@ -90,5 +83,4 @@
   .planner-main .candidate-remove { min-height: 44px; }
   .mod-mismatch { right: 89px; }
   .mod-available-scroll, .candidate-list { max-height: 300px; }
-  .equipment-candidate-effects li { display: block; }
 }
