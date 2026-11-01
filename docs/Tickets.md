@@ -647,6 +647,7 @@ Guidelines:
 - Add target enemy count 1-20 and supported vulnerability/resistance inputs.
 - For AoE abilities, show per-target damage and total affected-target damage when target-cap data is known.
 - Never assume infinite target cap when unknown.
+- Add an optional **Respect Skill Level** toggle in the ability picker, off by default. With it enabled, family quick-add selects the highest published ability Level at or below the selected skill's configured level (canonical ID ascending to break ties); with it disabled, the existing highest-published-tier quick-add remains unchanged. If no tier qualifies, explain this without preventing unrestricted manual tier selection. Changing skill levels must not auto-replace equipped abilities. Preserve exact official IDs/ranks; the toggle is transient UI state, not a BuildDocument v1 schema change.
 
 **Non-goals:**
 - No live DPS meter.
@@ -658,12 +659,14 @@ Guidelines:
 - Target changes affect only relevant calculation stages.
 - Unsupported mechanics are visibly marked.
 - AoE shows per-target and total values where supported.
+- Ability quick-add chooses the correct tier with Respect Skill Level off/on; equal-level ties, no-match feedback, unrestricted manual selections and unchanged already-equipped bars are tested.
 
 **Manual verification:**
 1. Use a known Psychology or Cow/Unarmed build and inspect expanded math.
 2. Change one mod/item and verify the explained delta.
 3. Test 1 and multiple enemies.
-4. Run the quality suite.
+4. Try the optional Respect Skill Level toggle at different skill levels, confirm default highest tier versus highest eligible tier, and verify manual override and unchanged equipped abilities.
+5. Run the quality suite.
 
 ## T0015 — Mastery Spark Simulation, UI, and Damage Integration
 
