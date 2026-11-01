@@ -157,3 +157,18 @@
 .relevant-source { color: var(--color-muted); font-size: 10.5px; white-space: nowrap; }
 .relevant-mods .muted { font-size: 0.75rem; }
 .technical-details { margin-top: 0.4rem; }
+
+/* Compact aligned primary stats (two pairs per row when the popover is wide enough). */
+.ability-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.1rem 1rem; margin: 0.45rem 0; font-size: 0.8rem; line-height: 1.4; }
+.ability-stats > div { display: grid; grid-template-columns: 6.25rem minmax(0, 1fr); gap: 0.4rem; }
+.ability-stats dt { color: var(--color-muted); }
+.ability-stats dd { margin: 0; overflow-wrap: anywhere; }
+.ability-popover .ability-description { font-size: 0.8rem; line-height: 1.4; margin-block: 0.35rem 0; }
+.ability-popover .relevant-mods { margin-top: 0.35rem; }
+.technical-records { margin: 0.2rem 0; padding-left: 1rem; font-size: 0.7rem; }
+.technical-records code { white-space: normal; overflow-wrap: anywhere; }
+@media (max-width: 26rem) { .ability-stats { grid-template-columns: minmax(0, 1fr); } }
+.technical-details > summary { list-style: none; }
+.technical-details > summary::-webkit-details-marker { display: none; }
+.technical-details > summary::before { content: '▸'; margin-right: 0.3rem; }
+.technical-details[open] > summary::before { content: '▾'; }

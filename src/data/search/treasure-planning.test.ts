@@ -3,7 +3,7 @@ import { beforeAll, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { loadPlannerFixture } from '../../test/planner-fixture';
 import { browseTreasurePowers, indexTreasurePowers, treasureRelevance, treasureSlot } from './treasure';
-import { availableTreasurePowers, candidateTargetMismatch, fitsItem, groupPlannedMods, groupTreasurePowers, skillTone, orderTreasureTiers, previewTreasureTiers, treasureCategoryLabel, type ModCategories } from './treasure-planning';
+import { availableTreasurePowers, candidateTargetMismatch, fitsItem, groupPlannedMods, groupTreasurePowers, itemFit, skillTone, orderTreasureTiers, previewTreasureTiers, treasureCategoryLabel, type ModCategories } from './treasure-planning';
 let data: ReturnType<typeof loadPlannerFixture>;
 beforeAll(() => { data = loadPlannerFixture(); });
 const enabled: ModCategories = { generic: true, endurance: true, shamanic: true };
@@ -140,4 +140,32 @@ it('groups planned mods by skill for display only, stable within groups and keep
   expect(order('Druid', 'Druid')).toEqual([0, 5, 3, 8, 7, 2, 4, 9, 1, 6]);
   expect(groupPlannedMods(mods, 'Druid', 'Archery', data).map(row => row.mod)).toEqual([0, 5, 2, 3, 8, 7, 4, 9, 1, 6].map(i => mods[i]));
   expect(JSON.stringify(mods)).toBe(frozen);
+});
+it('keeps both active skills discoverable on MainHand: Druid outside a Sword profile is flagged, not hidden', () => {
+  const groupsFor = (itemId: string, skills: string[], explore = false) => {
+    const context = { item: data.getItem(itemId), skillIds: skills };
+    const relevance = new Map(data.treasurePowers.map(power => [power.id, treasureRelevance(power, context, data)]));
+    const groups = groupTreasurePowers(availableTreasurePowers(data.treasurePowers, relevance, new Set(), explore, data, skills), skills, enabled, false, data);
+    return { groups, fits: (id: string) => groups.find(g => g.id === id)?.powers.map(p => itemFit(p, relevance.get(p.id)!, data)) ?? [] };
+  };
+  // item_46107 Marvelous Military Sword: MainHand, profile Sword (lists 0 of 12 Druid MainHand powers, 13 of 13 Archery).
+  const sword = groupsFor('item_46107', ['Druid', 'Archery']);
+  expect(sword.fits('Druid')).toEqual(Array(12).fill('outside-profile'));
+  expect(sword.fits('Archery')).toEqual(Array(13).fill('listed'));
+  // item_47152 Marvelous Priest Staff: profile Staff lists all 12 Druid and 13 Archery MainHand powers.
+  const staff = groupsFor('item_47152', ['Druid', 'Archery']);
+  expect(staff.fits('Druid')).toEqual(Array(12).fill('listed'));
+  expect(staff.fits('Archery')).toEqual(Array(13).fill('listed'));
+  // A=B and swap give the same membership; no duplicates.
+  const swapped = groupsFor('item_46107', ['Archery', 'Druid']);
+  expect(swapped.fits('Druid')).toHaveLength(12);
+  for (const { groups } of [sword, staff, swapped]) for (const g of groups) expect(new Set(g.powers.map(p => p.id)).size).toBe(g.powers.length);
+  // Non-active skills and Generic powers outside the profile stay hidden unless exploring.
+  expect(sword.groups.some(g => g.id === 'Psychology')).toBe(false);
+  expect(sword.groups.find(g => g.id === 'AnySkill')!.powers.every(p => itemFit(p, treasureRelevance(p, { item: data.getItem('item_46107'), skillIds: [] }, data), data) === 'listed')).toBe(true);
+  expect(groupsFor('item_46107', []).groups).toEqual([]);
+  // Druid Chest normal list remains exactly the 11 listed powers.
+  expect(groupsFor('item_42705', ['Druid', 'Archery']).fits('Druid')).toEqual(Array(11).fill('listed'));
+  // Exploring shows other-slot powers too.
+  expect(groupsFor('item_46107', ['Druid'], true).fits('Druid')).toContain('other-slot');
 });

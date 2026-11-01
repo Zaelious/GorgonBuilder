@@ -219,9 +219,14 @@ it('leaves Available empty without combat skills and preserves saved candidates 
 
 it('updates unique skill groups for A+B/A+A', async () => {
   seed(); await render(); await open();
-  // Official v490: no Archery power is in the Shield profile; 10 Deer OffHand powers are.
-  expect(container.querySelectorAll(`${editor} [data-mod-group="Archery"]`)).toHaveLength(0);
-  expect(container.querySelectorAll(`${editor} [data-mod-group="Deer"]`)).toHaveLength(1);
+  // Official v490: no Archery power is in the Shield profile (10 Deer OffHand powers are). Archery is an active skill,
+  // so its slot-compatible powers stay discoverable, each flagged outside the item profile.
+  expect(container.querySelectorAll(`${editor} [data-mod-group="Archery"]`)).toHaveLength(1);
+  const archery = [...container.querySelectorAll<HTMLElement>(`${editor} [data-mod-group="Archery"] [data-power-id]`)];
+  expect(archery.length).toBeGreaterThan(0);
+  expect(archery.every(row => row.dataset.fit === 'outside-profile' && row.querySelector('.mod-fit-flag')!.textContent === 'outside profile')).toBe(true);
+  expect(control(`${editor} [data-mod-group="Archery"] h4`).textContent).toContain(`${archery.length} outside item profile`);
+  expect(container.querySelectorAll(`${editor} [data-mod-group="Deer"] [data-fit="listed"]`).length).toBe(container.querySelectorAll(`${editor} [data-mod-group="Deer"] [data-power-id]`).length);
   await explore();
   expect(container.querySelectorAll(`${editor} [data-mod-group="Archery"]`)).toHaveLength(1);
   await change('#skill-B', 'Archery');
@@ -368,7 +373,8 @@ it('renders paired Animal Handling attributes as one readable +25%/+25% effect i
   const row = control(`${editor} [data-power-id="power_12192"]`);
   expect(row.dataset.previewTier).toBe('id_25');
   const expected = 'Direct Electricity Damage +25%, Fire Damage (Direct & Per-Tick) +25%';
-  expect(row.querySelector('.available-effect-text')!.textContent).toBe(expected);
+  expect(row.querySelector('.available-effect-text .effect-description')!.textContent).toBe(expected);
+  expect(row.querySelector('.mod-fit-flag')!.textContent).toBe('other slot'); // Head-only power explored on a Shield
   expect(row.textContent).not.toMatch(/modifier|source value|context:|\{MOD_/u);
   await add('power_12192');
   expect(control(`${editor} .candidate-effect`).textContent).toBe(expected);
@@ -405,4 +411,26 @@ it('groups planned STATS rows by skill (Druid, Druid, Archery) with A blue / B g
   await remount();
   await click('[data-equipment-row="Chest"] > summary');
   expect(rows().map(row => row.querySelector('.stat-chip')!.textContent)).toEqual(['Druid', 'Archery']);
+});
+
+it('shows Druid MainHand powers outside a Sword profile beside listed Archery powers, and stages them normally', async () => {
+  const build = seed(); build.skillSlotA = { skillId: 'Druid', level: 125 }; build.skillSlotB = { skillId: 'Archery', level: 125 };
+  build.abilityBarA = []; build.abilityBarB = [];
+  build.equipment.push({ slot: 'MainHand', item: { kind: 'database', itemId: 'item_46107' }, candidateMods: [], sparks: { mode: 'none' } });
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build)); await render();
+  await click('[data-equipment-row="MainHand"] > summary');
+  const main = '[data-selection-index="2"] .mod-planner';
+  const druid = () => [...container.querySelectorAll<HTMLElement>(`${main} [data-mod-group="Druid"] [data-power-id]`)];
+  const archery = () => [...container.querySelectorAll<HTMLElement>(`${main} [data-mod-group="Archery"] [data-power-id]`)];
+  expect(druid()).toHaveLength(12);
+  expect(druid().every(row => row.dataset.fit === 'outside-profile')).toBe(true);
+  expect(druid()[0]!.querySelector('.mod-fit-flag')!.getAttribute('title')).toContain('(Sword). Equipment eligibility unconfirmed.');
+  expect(archery()).toHaveLength(13);
+  expect(archery().every(row => row.dataset.fit === 'listed' && !row.querySelector('.mod-fit-flag'))).toBe(true);
+  const first = druid()[0]!; const powerId = first.dataset.powerId!; const tierId = first.dataset.previewTier!;
+  await click(`${main} [data-power-id="${powerId}"] > .available-effect`);
+  expect(druid()).toHaveLength(11);
+  expect(control('[data-selection-index="2"] .item-stats [data-candidate-effect="0"] .stat-chip').textContent).toBe('Druid');
+  await tick();
+  expect(saved().equipment[2]!.candidateMods).toEqual([{ powerId, tierId }]);
 });

@@ -42,7 +42,7 @@ function DetailPopover({ id, selection, anchor, warnings, data, equipment, onClo
     function position() {
       if (!anchor) return;
       const rect = anchor.getBoundingClientRect();
-      const width = Math.min(360, window.innerWidth - 32);
+      const width = Math.min(440, window.innerWidth - 32);
       element.style.width = `${width}px`;
       const desiredHeight = element.scrollHeight + 2;
       const below = Math.max(0, window.innerHeight - rect.bottom - 24);
@@ -85,8 +85,7 @@ function DetailPopover({ id, selection, anchor, warnings, data, equipment, onClo
     onBlur={e => { if (!(e.relatedTarget instanceof Node) || (!e.currentTarget.contains(e.relatedTarget) && e.relatedTarget !== anchor)) onClose(); }}
     onKeyDown={e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose(true); } }}>
     <div className="detail-heading"><AbilityIcon ability={ability} version={data.gameDataVersion} /><div><h3>{ability?.displayName ?? selection.abilityId}</h3>{ability && ability.rank !== null && <p className="detail-rank">{rankLabel(ability.rank)}</p>}</div><button type="button" aria-label="Close ability details" onClick={() => onClose(true)}>×</button></div>
-    {ability && <AbilityFacts ability={ability} />}
-    {ability && <RelevantMods ability={ability} equipment={equipment} data={data} />}
+    {ability && <AbilityFacts ability={ability} afterStats={<RelevantMods ability={ability} equipment={equipment} data={data} />} />}
     {warnings.map(w => <p key={w} className="warning">{w}</p>)}
     <div className="detail-actions">{children}</div>
   </div>;

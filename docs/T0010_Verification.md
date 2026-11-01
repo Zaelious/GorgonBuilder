@@ -2,7 +2,82 @@
 
 **Status: Revised on the existing PR #22 for architectural review and customer acceptance. Not merged or marked complete.**
 
-Branch: `feature/t0010-treasure-mod-planner`. The initial implementation at `62d8116` passed architectural review, but the Product Owner requested a different UI in [the latest customer revision review](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729510750). The subsequent [rendering/density review at c13d9f5](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729721042) requires actual official icons, readable effects and substantially denser lists. The [customer acceptance review at 8f6f4a2](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729847590) then required four further corrections: player-facing percentages, unclipped mod effects, use of the desktop viewport and visible three-digit skill levels. The [ability-details addendum at 68e2fa7](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730552251) then asked for visible ability facts and a Relevant Mods section, described first below. Before that, the [architectural re-review at dd781c0](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730438882) then asked for two visual fixes: slot-based skill colours and grouped STATS rows, described first below. Before that, the [final customer review](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730246516) and its [addendum](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730252983) then required six more corrections, described in the first section below. Later sections keep the earlier evidence, marked where this revision supersedes it. Existing domain/persistence work remains in place.
+Branch: `feature/t0010-treasure-mod-planner`. The initial implementation at `62d8116` passed architectural review, but the Product Owner requested a different UI in [the latest customer revision review](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729510750). The subsequent [rendering/density review at c13d9f5](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729721042) requires actual official icons, readable effects and substantially denser lists. The [customer acceptance review at 8f6f4a2](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729847590) then required four further corrections: player-facing percentages, unclipped mod effects, use of the desktop viewport and visible three-digit skill levels. The [acceptance review at 63dd16e](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730658550) then reported three remaining issues: MainHand Druid mods, Acid Arrow Relevant Mods and popover clarity. They are described first below. Before that, the [ability-details addendum at 68e2fa7](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730552251) then asked for visible ability facts and a Relevant Mods section, described first below. Before that, the [architectural re-review at dd781c0](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730438882) then asked for two visual fixes: slot-based skill colours and grouped STATS rows, described first below. Before that, the [final customer review](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730246516) and its [addendum](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730252983) then required six more corrections, described in the first section below. Later sections keep the earlier evidence, marked where this revision supersedes it. Existing domain/persistence work remains in place.
+
+## MainHand Druid mods, Acid Arrow matching and a compact popover (review at 63dd16e)
+
+### 1. Druid mods missing on MainHand: root cause and fix
+- **Root cause (verified in v490 data):** Druid publishes **12** MainHand powers, but they belong only to the `Staff`, `Club`, `Lute`, `MeleeStaff`, `FireStaff`, `FireStaffBeaker` and `All` profiles. MainHand items with profile `Sword` (58 items), `Dagger` (49), `Hammer` (33), `FistWeapon` (29), `Beaker` (17), `Rapier`, `IceDagger` or `StaffBeaker` list **0** of them.
+  - The previous `fitsItem` excluded any power whose profile was `different`, so Druid disappeared on those items.
+  - Archery's 13 MainHand powers are listed by every MainHand profile except `NewbSword` and `Rapier`, which is why only Archery appeared.
+- **Profile is not proof of ineligibility.** The official notes describe a TSysProfile as the pool an item is *randomly generated* with.
+- **New rule:** `itemFit` classifies each power as one of:
+  - **listed:** slot match, plus profile match or unknown profile.
+  - **outside profile:** slot match, but the item's profile doesn't list it.
+  - **other slot:** shown only while exploring.
+- **Normal list:** shows listed powers, plus **outside-profile powers of the active combat skills (A or B)**.
+  - Each outside-profile row carries a dashed **outside profile** flag. Its tooltip reads "Not listed in this item's published treasure profile (Sword). Equipment eligibility unconfirmed."
+  - The group heading adds e.g. **"12 outside item profile"**.
+  - Generic, Unknown and non-active skills stay strict, so no clutter returns.
+- **Slots stay strict.** Druid + Chest still lists exactly the **11** listed powers, with Max/100 unchanged.
+- **Examples:**
+  - Marvelous Military Sword (`item_46107`, Sword profile): Druid 12 flagged + Archery 13 listed.
+  - Marvelous Priest Staff (`item_47152`, Staff profile): Druid 12 + Archery 13, all listed.
+  - Shield (`item_45052`): Archery's OffHand powers now appear, all flagged, because the Shield profile lists no Archery powers.
+
+### 2. Acid Arrow Damage +110% missing: root cause and fix
+- **Data:** `AcidArrowBoost` is `power_10302` (MainHand/Legs). Its max tier `id_25` publishes `{MOD_ABILITY_ACIDARROW}{1.1}` → **Acid Arrow Damage +110%** (label "Acid Arrow Damage %", AsBuffMod).
+- **The rank hooks were not the problem.** Every Acid Arrow rank (`ability_2571` … `ability_2627` Acid Arrow 13, family `AcidArrow1`) publishes `MOD_ABILITY_ACIDARROW` in `AttributesThatModDamage`.
+- **The real exclusion reason:** 14 families reference the attribute. Besides `AcidArrow1` and `OrcAcidArrow1`, there are 12 internal treasure-proc abilities, `TSysBonusAcidCloud1–12` (`InternalAbility: true`, skill `Unknown`, no `UpgradeOf`). That pushed the count over the ≤3 family threshold.
+- **Fix (narrow, source-evidenced):**
+  - **Hooks:** attribute templates now check the **union of hooks across the whole family** (all ranks).
+  - **Label fallback:** an attribute also matches when its **official attributes.json label names the family as a whole phrase**. Families whose name is also an official skill name are excluded (e.g. `FIRSTAID_COST_MOD` "First Aid Ability Power Cost %").
+  - **Why labels:** the runtime data doesn't keep `InternalAbility` or the attribute `IconIds`, so the label is the evidence available without regenerating game data.
+  - **What it adds across v490:** exactly 9 single-ability attributes, namely Acid Arrow, Flamestrike (Boost/Mod), Mark Weakness (Boost/Mod), Mindworm (Boost/Mod), Song of Discord and Stake the Heart.
+  - **Still not attributed to one ability:** skill-wide or group labels such as "Crossbow Damage" and "All Shield Bash Abilities".
+- **Prose fallback:** `AcidArrowDoT` ("Acid Arrow deals 465 Poison damage after a 6-second delay") is published with Poison Arrow's icon (3301), so the icon + name rule missed it.
+  - When **no** family matches by icon + name, a description that **begins with exactly one family's full name** now matches that family.
+  - Across v490 this adds 9 correct matches: AcidArrowDoT, Shield Team ×2 and Fill With Bile ×7.
+  - It deliberately does not match the generic "Bite attacks…" (20 families named Bite). "Pound to Slag"/"Rib Shatter" mods do not leak to "Pound"/"Rib", because those already match their own family by icon.
+- **Acid Arrow 13 now matches:**
+  - **Included:** AcidArrowBoost (+110%), ElementalArrowBoost (Fire/Poison/Acid Arrow +50%), AcidArrowMeltArmor, AcidArrowReduceRage, AcidArrowDoT, and FireArrowFaster ("Acid Arrow and Poison Arrow hasten…").
+  - **Not included:** general Archery (`MOD_SKILL_ARCHERY`), projectile-wide, ArcheryBoostPoisonAndAcid, ArcheryCritAcidBomb and Fire-only mods.
+  - **Brambleskin:** unchanged at exactly 8 powers for every rank.
+
+### 3. Compact ability popover
+- **Order:**
+  1. Icon, name, rank and description (compact 0.8rem).
+  2. An **aligned two-column stats grid**: Min level, Power cost, Reuse, Range, Damage (e.g. `529 Acid`), plus Health damage, Armor damage and If vulnerable when published.
+  3. **Relevant Mods directly beneath the stats.**
+  4. **Ability effects**, only when meaningful.
+  5. Technical details.
+- **Ability effects** lists only non-zero published entries, in plain wording without enums, e.g. Brambleskin: "Melee Damagers Suffer 310 Nature damage". Multi-tick DoTs read "… damage per tick × N over D s". `SpecialInfo` and non-zero special values are shown as published.
+- **Zero-value or conditional DoT records** (Acid Arrow's `0 Poison … BuffActivated, DelayedDamage` and `On Critical Hit: 0 Poison …`) are **not** shown as damage. They stay with exact values under **Technical details**, next to ID, internal name, rank, CritDamageMod and keywords, under the heading "Published PvE records (source conditions not interpreted)". No source data is deleted, and there is no claim that the triggers never apply.
+- **Sizing:**
+  - **Width:** the desktop popover is **440px** (was 360), constrained to the viewport minus 32px.
+  - **Narrow screens:** the stats grid collapses to one column below 26rem.
+  - **Unchanged:** existing overflow-safe positioning, hover/focus/click/Escape behaviour and touch targets.
+  - **Disclosure marker:** Technical details shows a ▸/▾ marker at every width.
+
+### Tests and browser evidence
+- **Pure tests:**
+  - Druid + Archery on the Sword (Druid 12 outside-profile, Archery 13 listed) and the Staff (both listed). A/B swap, no skills, no duplicates, Generic and non-active skills strict, Druid Chest still 11, and exploring shows other-slot powers.
+  - Acid Arrow's 13 ranks match +110% despite the 14-family count. The Acid Arrow 13 set includes and excludes the powers listed above, and First Aid is not label-scoped.
+  - Prose fallback boundaries and Brambleskin unchanged.
+  - Ability-effect formatting: zero-value DoTs move to technical records with exact values, plain DoT wording, and no enums in player effects.
+- **App tests:**
+  - Druid + Archery MainHand Sword: 12 flagged Druid rows with the Sword tooltip, 13 unflagged Archery rows, and staging a flagged Druid power works and saves its exact ID.
+  - Acid Arrow 13: stage +110% on MainHand; compact stats (`Damage 529 Acid`, `Armor damage 529 Acid`); Relevant Mods directly after the stats showing "Acid Arrow Damage +110% · MainHand" (`power_10302`/`id_25`); no visible zero DoTs or enums; exact technical records; removal shows the empty state and saves.
+  - Brambleskin: the Ability effects wording and Relevant Mods placement.
+- **Chromium smoke (dev and production preview, zero unexpected errors):**
+  - The Shield's Archery rows are all flagged.
+  - MainHand Sword shows Druid 12 flagged (with the heading count) and Archery 13 listed.
+  - Staging +110% shows it under Acid Arrow 13 (MainHand) with no zero-DoT text; the popover is 440px with Relevant Mods fully visible.
+  - Removal updates the popover immediately, and re-staging works.
+  - At 375px and 320px the popover stays inside the viewport with no overflow.
+  - The Brambleskin, Druid Chest and earlier stages still pass.
+- **Screenshots:** `acid-arrow-popover-desktop.png`, `acid-arrow-popover-mobile.png`, `mainhand-druid-archery.png`; the other captures were refreshed.
+- **Totals:** 513 tests across 24 files; the equipment, transport and layout smokes also passed.
 
 ## Ability details and Relevant Mods (addendum at 68e2fa7)
 
@@ -382,6 +457,12 @@ Previous revision: Chromium 154.0.8037.57 exercised Vite dev and production prev
 Both mod-workflow modes check for zero unexpected console errors/page exceptions; the deliberate icon-404 fallback case is recorded separately. Existing equipment/offhand smoke passed canonical swaps/reloads, legacy conflict preservation/cancel/confirmed resolution, instance-replacement confirmations, candidate/Spark preservation, equipment filter/preferences and picker drag/backdrop/X/Escape behavior. Its deliberate icon-404 fallback recorded only the expected resource message. Transport smoke passed compressed lengths/hashes/headers, corruption/retry and existing skill/ability workflows in both modes. The separate layout regression covers desktop sizes through 2560px, touch at 375/320px, native skill dropdowns, ability search/details and persisted titles.
 
 Artifacts and JSON measurements were written to the session scratch directory (not committed). Measurements are unthrottled local Chromium observations, not guarantees for low-end devices, other engines or live Cloudflare runtime.
+
+![Acid Arrow 13: compact stats and Relevant Mods with +110% from MainHand](screenshots/t0010/acid-arrow-popover-desktop.png)
+
+![Acid Arrow 13 popover at 375px](screenshots/t0010/acid-arrow-popover-mobile.png)
+
+![Druid (flagged outside the Sword profile) and Archery on MainHand](screenshots/t0010/mainhand-druid-archery.png)
 
 ![Brambleskin 13 with Relevant Mods](screenshots/t0010/relevant-mods-desktop.png)
 

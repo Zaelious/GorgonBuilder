@@ -325,7 +325,7 @@ it('searches official upgrade families, expands exact tiers and quick-adds the h
   expect(draft().abilityBarA).toEqual([{ abilityId: highest.id, rank: highest.rank }]);
   expect(container.querySelector('.slot-warning')).toBeNull();
   await inspect('A', 1);
-  expect(container.textContent).toContain('Min Level');
+  expect(container.textContent).toContain('Min level');
   expect(container.textContent).not.toContain('exceeds configured skill level');
   expect(container.textContent).not.toContain('Rank not published');
 });
@@ -405,8 +405,8 @@ it('opens equipped details on hover, focus and click, supports Escape and expose
   await act(async () => { trigger.dispatchEvent(new MouseEvent('mouseout', { bubbles: true })); vi.advanceTimersByTime(150); });
   expect(container.querySelector('.ability-popover')).toBeNull();
   await act(async () => { trigger.focus(); });
-  expect(control('[role="dialog"]').textContent).toContain('Base damage');
-  expect(container.textContent).toContain('Power');
+  expect(control('[role="dialog"]').textContent).toContain('Damage');
+  expect(container.textContent).toContain('Power cost');
   expect(container.textContent).toContain('Reuse');
   expect(container.textContent).toContain('Range');
   expect(container.textContent).toContain('Target needs 50% more Rage');

@@ -84,3 +84,6 @@
   .mod-mismatch { right: 89px; }
   .mod-available-scroll, .candidate-list { max-height: 300px; }
 }
+.mod-fit-flag { display: inline-block; margin-left: 0.35rem; padding: 0 5px; border: 1px dashed #c9a24a; border-radius: 3px; color: #f2c588; font-size: 10.5px; line-height: 15px; white-space: nowrap; vertical-align: 1px; }
+.mod-fit-flag.fit-other-slot { border-color: var(--color-border); color: var(--color-muted); }
+.mod-columns h4 .mod-fit-note { color: #f2c588; font-weight: 400; }

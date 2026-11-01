@@ -58,7 +58,11 @@ it('shows Brambleskin 13 facts, effects and an always-visible Relevant Mods sect
   const build = seed(); await render(); await inspect();
   const popover = control('.ability-popover');
   expect(popover.querySelector('h3')!.textContent).toBe('Brambleskin 13');
-  expect(control('.ability-effects').textContent).toContain('Melee Damagers Suffer 310 Nature per tick');
+  expect(control('.ability-effects').textContent).toContain('Melee Damagers Suffer 310 Nature damage');
+  expect(control('.ability-effects').textContent).not.toMatch(/DelayedDamage|BuffActivated|per tick/u);
+  expect(control('.technical-records').textContent).toContain('SpecialRules DelayedDamage');
+  // Relevant Mods sits directly after the primary stats.
+  expect(control('.ability-stats').nextElementSibling!.classList.contains('relevant-mods')).toBe(true);
   const section = control('.relevant-mods');
   expect(section.closest('details')).toBeNull();
   expect(section.querySelector('h4')!.textContent).toBe('Relevant Mods');
@@ -98,4 +102,39 @@ it('says no ability-specific mods are identified when equipped gear has none for
   localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build)); await render(); await inspect();
   expect(rows()).toHaveLength(0);
   expect(control('.relevant-mods').textContent).toContain('No ability-specific equipped mods identified.');
+});
+
+it('shows Acid Arrow Damage +110% from MainHand under Acid Arrow 13 immediately, with compact stats and no zero-value DoTs', async () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  build.skillSlotA = { skillId: 'Druid', level: 125 }; build.skillSlotB = { skillId: 'Archery', level: 125 };
+  build.abilityBarB = [{ abilityId: 'ability_2627', rank: data.getAbility('ability_2627')!.rank }];
+  build.equipment = [{ slot: 'MainHand', item: { kind: 'database', itemId: 'item_46107' }, candidateMods: [], sparks: { mode: 'none' } }];
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build)); await render();
+  await click('[data-equipment-row="MainHand"] > summary');
+  const main = '[data-selection-index="0"] .mod-planner';
+  expect(control(`${main} [data-power-id="power_10302"]`).dataset.previewTier).toBe('id_25');
+  await click(`${main} [data-power-id="power_10302"] > .available-effect`);
+  const open = () => click('.skill-panel:nth-child(2) .combat-slot:nth-child(1) .slot-button');
+  await open();
+  expect(control('.ability-popover h3').textContent).toBe('Acid Arrow 13');
+  const stats = Object.fromEntries([...container.querySelectorAll('.ability-stats > div')].map(row => [row.querySelector('dt')!.textContent, row.querySelector('dd')!.textContent]));
+  expect(stats).toMatchObject({ 'Min level': '125', 'Power cost': '70', Reuse: '10s', Range: '30', Damage: '529 Acid', 'Armor damage': '529 Acid' });
+  expect(rows().map(row => [row.querySelector('.relevant-effect')!.textContent, row.querySelector('.relevant-source')!.textContent, row.dataset.powerId, row.dataset.tierId]))
+    .toEqual([['Acid Arrow Damage +110%', 'MainHand', 'power_10302', 'id_25']]);
+  expect(control('.ability-stats').nextElementSibling!.classList.contains('relevant-mods')).toBe(true);
+  // Zero-value conditional DoTs are not shown as damage; exact values remain in Technical details.
+  expect(container.querySelector('.ability-popover .ability-effects')).toBeNull();
+  const visible = [...control('.ability-popover').children].filter(child => !child.matches('.technical-details')).map(child => {
+    const clone = child.cloneNode(true) as HTMLElement; clone.querySelector('.technical-details')?.remove(); return clone.textContent; }).join(' ');
+  expect(visible).not.toMatch(/0 Poison|per tick|BuffActivated|DelayedDamage/u);
+  const technical = control('.ability-popover .technical-records').textContent!;
+  expect(technical).toContain('DamagePerTick 0 · Poison · NumTicks 1 · Duration 6 s · SpecialRules BuffActivated, DelayedDamage');
+  expect(technical).toContain('On Critical Hit: DamagePerTick 0 · Poison · NumTicks 6 · Duration 12 s · SpecialRules BuffActivated');
+  expect(control<HTMLDetailsElement>('.ability-popover .technical-details').open).toBe(false);
+  // Removing the staged mod updates the popover immediately.
+  await click(`${main} [aria-label="Remove candidate 1"]`);
+  await open();
+  expect(rows()).toHaveLength(0);
+  expect(control('.relevant-mods').textContent).toContain('No ability-specific equipped mods identified.');
+  await tick(); expect(JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)!).equipment[0].candidateMods).toEqual([]);
 });

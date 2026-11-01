@@ -160,7 +160,9 @@ def main():
                             assert all(treasure_slot in slots_by_power[i] for i in ids), (slot, ids)
                             assert len(ids) == len(set(ids)), ids
                             profile_orders.append(ids)
-                        assert profile_orders[0] != profile_orders[1] and profile_orders[2] == []  # Archery has no Shield-profile powers
+                        assert profile_orders[0] != profile_orders[1] and profile_orders[2]
+                        # Archery has no Shield-profile powers: they stay discoverable, all flagged outside the item profile.
+                        assert editor(2).locator('[data-mod-group="Archery"] [data-power-id]').evaluate_all('(es) => es.every(e => e.dataset.fit === "outside-profile")')
                         # Max and each numeric target stage the exact visible tier.
                         inline_search('power_10001')
                         expect(power()).to_have_attribute('data-preview-tier', 'id_12')
@@ -380,12 +382,14 @@ def main():
                         druid_build = copy.deepcopy(baseline)
                         druid_build['skillSlotA'] = {'skillId': 'Druid', 'level': 100}
                         druid_build['skillSlotB'] = {'skillId': 'Archery', 'level': 100}
-                        druid_build['abilityBarA'] = [{'abilityId': 'ability_5386', 'rank': None}]; druid_build['abilityBarB'] = []
+                        druid_build['abilityBarA'] = [{'abilityId': 'ability_5386', 'rank': None}]; druid_build['abilityBarB'] = [{'abilityId': 'ability_2627', 'rank': None}]
                         for entry in druid_build['equipment']:
                             if entry['slot'] == 'Head':
                                 entry['item'] = {'kind': 'imported', 'instance': {'baseItemId': head['id'], 'existingPowers': [{'powerId': 'power_14159', 'tierId': 'id_25'}]}}
                         druid_build['equipment'] = [e for e in druid_build['equipment'] if e['slot'] != 'Chest'] + [{'slot': 'Chest', 'item': {'kind': 'database', 'itemId': 'item_42705'}, 'candidateMods': [], 'sparks': {'mode': 'none'}}]
                         chest_index = len(druid_build['equipment']) - 1
+                        druid_build['equipment'].append({'slot': 'MainHand', 'item': {'kind': 'database', 'itemId': 'item_46107'}, 'candidateMods': [], 'sparks': {'mode': 'none'}})
+                        main_index = chest_index + 1
                         page.evaluate('([key, build]) => localStorage.setItem(key, JSON.stringify(build))', [key, druid_build])
                         page.reload(); page.locator('.equipment-section').wait_for(); expand('Chest')
                         chest = page.locator(f'[data-selection-index="{chest_index}"]')
@@ -441,7 +445,7 @@ def main():
                         bramble_slot.click()
                         popover = page.locator('#equipped-ability-detail-A')
                         expect(popover.locator('h3')).to_have_text('Brambleskin 13')
-                        expect(popover.locator('.ability-effects')).to_contain_text('Melee Damagers Suffer 310 Nature per tick')
+                        expect(popover.locator('.ability-effects')).to_contain_text('Melee Damagers Suffer 310 Nature damage')
                         expect(popover.locator('.technical-details')).not_to_have_attribute('open', '')
                         relevant = popover.locator('.relevant-mods [data-relevant-mod]')
                         expect(popover.locator('.relevant-mods h4')).to_have_text('Relevant Mods')
@@ -469,6 +473,55 @@ def main():
                         page.keyboard.press('Escape')
                         page.set_viewport_size({'width': 1440, 'height': 900})
                         wait_saved(); assert saved()['equipment'][chest_index]['candidateMods'] == druid_mods
+                        # MainHand (item_46107, Sword profile): Druid 12 flagged outside profile + Archery 13 listed; Acid Arrow 13 +110%.
+                        expand('MainHand')
+                        main_editor = page.locator(f'[data-selection-index="{main_index}"] .mod-planner')
+                        main_druid = main_editor.locator('[data-mod-group="Druid"] [data-power-id]')
+                        expect(main_druid).to_have_count(12)
+                        assert main_druid.evaluate_all('(es) => es.every(e => e.dataset.fit === "outside-profile")')
+                        expect(main_editor.locator('[data-mod-group="Druid"] h4')).to_contain_text('12 outside item profile')
+                        main_archery = main_editor.locator('[data-mod-group="Archery"] [data-power-id]')
+                        expect(main_archery).to_have_count(13)
+                        assert main_archery.evaluate_all('(es) => es.every(e => e.dataset.fit === "listed")')
+                        expect(main_editor.locator('[data-power-id="power_10302"]')).to_have_attribute('data-preview-tier', 'id_25')
+                        main_editor.locator('[data-power-id="power_10302"] > .available-effect').click()
+                        acid_slot = page.locator('.skill-panel').nth(1).locator('.slot-button').first
+                        acid_slot.click()
+                        acid_popover = page.locator('#equipped-ability-detail-B')
+                        expect(acid_popover.locator('h3')).to_have_text('Acid Arrow 13')
+                        acid_rows = acid_popover.locator('.relevant-mods [data-relevant-mod]')
+                        expect(acid_rows).to_have_count(1)
+                        expect(acid_rows.locator('.relevant-effect')).to_have_text('Acid Arrow Damage +110%')
+                        expect(acid_rows.locator('.relevant-source')).to_have_text('MainHand')
+                        visible = acid_popover.evaluate("(e) => { const c = e.cloneNode(true); c.querySelector('.technical-details')?.remove(); return c.textContent; }")
+                        assert '0 Poison' not in visible and 'BuffActivated' not in visible and 'DelayedDamage' not in visible, visible
+                        expect(acid_popover.locator('.ability-stats')).to_contain_text('Damage529 Acid')
+                        box = acid_popover.bounding_box(); stats_box = acid_popover.locator('.relevant-mods').bounding_box()
+                        assert 420 <= box['width'] <= 441 and stats_box['y'] + stats_box['height'] <= box['y'] + box['height'] + 1, (box, stats_box)
+                        acid_popover.screenshot(path=str(output / f'{mode}-acid-arrow-popover-desktop.png'))
+                        page.keyboard.press('Escape')
+                        main_editor.get_by_label('Remove candidate 1', exact=True).click()
+                        acid_slot.click()
+                        expect(acid_rows).to_have_count(0)
+                        expect(acid_popover.locator('.relevant-mods')).to_contain_text('No ability-specific equipped mods identified.')
+                        page.keyboard.press('Escape')
+                        main_editor.locator('[data-power-id="power_10302"] > .available-effect').click()
+                        page.set_viewport_size({'width': 375, 'height': 812})
+                        acid_slot.click()
+                        expect(acid_rows).to_have_count(1)
+                        assert acid_popover.evaluate('(e) => { const r = e.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; }')
+                        no_overflow()
+                        acid_popover.screenshot(path=str(output / f'{mode}-acid-arrow-popover-mobile.png'))
+                        page.keyboard.press('Escape')
+                        page.set_viewport_size({'width': 320, 'height': 700})
+                        acid_slot.click()
+                        assert acid_popover.evaluate('(e) => { const r = e.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; }')
+                        page.keyboard.press('Escape')
+                        page.set_viewport_size({'width': 1440, 'height': 900})
+                        page.locator(f'[data-selection-index="{main_index}"]').scroll_into_view_if_needed()
+                        main_editor.locator('.mod-available-scroll, .candidate-list').evaluate_all('(es) => es.forEach(e => e.scrollTop = 0)')
+                        page.locator('[data-equipment-row="MainHand"]').screenshot(path=str(output / f'{mode}-mainhand-druid-archery.png'))
+                        wait_saved(); assert saved()['equipment'][main_index]['candidateMods'] == [{'powerId': 'power_10302', 'tierId': 'id_25'}]
                         # A mismatched snapshot is inspectable but never writable.
                         rich['gameDataVersion'] = 'other-version'
                         page.evaluate('([key, build]) => localStorage.setItem(key, JSON.stringify(build))', [key, rich])

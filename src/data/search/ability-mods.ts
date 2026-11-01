@@ -6,12 +6,17 @@ type Tier = NonNullable<ReturnType<GameDataRepository['getTreasureTier']>>;
 
 /**
  * Source-backed links between treasure effects and an ability family (abilities connected by official UpgradeOf):
- * - Attribute templates `{ATTR}{value}` match when ATTR appears in the ability's published `AttributesThat*` hooks
- *   (ability, PvE, DoT or special-value level) AND at most MAX_FAMILIES_PER_ATTRIBUTE families reference ATTR.
- *   Attributes referenced by more families (e.g. MOD_SKILL_DRUID: 22, ABILITY_RESETTIME_DELTA: 1,935) are skill-wide
- *   or global, so they are not labelled as specific to one ability.
- * - Prose effects match when they contain an official `<icon=N>` equal to an IconID used by the family AND the
- *   family's root display name appears as a whole phrase (case-insensitive; apostrophes ignored).
+ * - Attribute templates `{ATTR}{value}` require ATTR in the family's published `AttributesThat*` hooks (union over
+ *   every rank: ability, PvE, DoT and special-value levels) AND one of:
+ *   a) at most MAX_FAMILIES_PER_ATTRIBUTE families reference ATTR, or
+ *   b) ATTR's official attributes.json label names this family as a whole phrase (e.g. MOD_ABILITY_ACIDARROW
+ *      "Acid Arrow Damage %"), unless the family name is also an official skill name (e.g. First Aid).
+ *   (b) is needed because internal treasure-proc abilities (InternalAbility, e.g. TSysBonusAcidCloud1–12) also
+ *   reference ability attributes and inflate the family count. Skill-wide/global attributes (MOD_SKILL_DRUID,
+ *   ABILITY_RESETTIME_DELTA, "Crossbow Damage", "All Shield Bash Abilities…") are not attributed to one ability.
+ * - Prose effects match a family when the text has an official `<icon=N>` used by the family AND names the family as
+ *   a whole phrase (case-insensitive; apostrophes ignored). Only when no family matches that way, a description that
+ *   *begins* with exactly one family's name (e.g. "Acid Arrow deals…", published with Poison Arrow's icon) matches it.
  * Nothing else is inferred: no damage math, legality or stacking.
  */
 export const MAX_FAMILIES_PER_ATTRIBUTE = 3;
@@ -22,7 +27,12 @@ export interface AbilityModIndex {
   familyOf(ability: Ability): string;
   familyName(family: string): string;
   familyIcons(family: string): ReadonlySet<number>;
+  familyHooks(family: string): ReadonlySet<string>;
   attributeFamilies(attribute: string): number;
+  /** Families an attribute is explicitly scoped to by its official label (see rule b). */
+  labelledFamilies(attribute: string): ReadonlySet<string>;
+  /** Families a prose description references (icon + name, else unique leading name). */
+  proseFamilies(description: string): ReadonlySet<string>;
 }
 
 function hooksOf(ability: Ability): Set<string> {
@@ -37,12 +47,11 @@ function hooksOf(ability: Ability): Set<string> {
   return out;
 }
 
-const hookCache = new WeakMap<Ability, Set<string>>();
-function cachedHooks(ability: Ability) {
-  let hooks = hookCache.get(ability);
-  if (!hooks) { hooks = hooksOf(ability); hookCache.set(ability, hooks); }
-  return hooks;
-}
+const normalizeName = (text: string) => text.replace(/['’]/gu, '').toLowerCase().replace(/\s+/gu, ' ').trim();
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+const phrase = (name: string) => new RegExp(`(?<![\\p{L}\\p{N}])${escape(name)}(?![\\p{L}\\p{N}])`, 'u');
+const add = <K, V>(map: Map<K, Set<V>>, key: K, value: V) => { (map.get(key) ?? map.set(key, new Set()).get(key)!).add(value); };
+const EMPTY: ReadonlySet<never> = new Set();
 
 /** Built once per repository; never rescans all powers on hover. */
 export function buildAbilityModIndex(data: GameDataRepository): AbilityModIndex {
@@ -61,39 +70,83 @@ export function buildAbilityModIndex(data: GameDataRepository): AbilityModIndex 
     return current.id;
   }
   const icons = new Map<string, Set<number>>();
+  const iconFamilies = new Map<number, Set<string>>();
+  const hooks = new Map<string, Set<string>>();
   const attributeFamilies = new Map<string, Set<string>>();
   for (const ability of data.abilities) {
     const family = familyOf(ability);
-    if (ability.iconId !== null) (icons.get(family) ?? icons.set(family, new Set()).get(family)!).add(ability.iconId);
-    for (const attribute of cachedHooks(ability)) (attributeFamilies.get(attribute) ?? attributeFamilies.set(attribute, new Set()).get(attribute)!).add(family);
+    if (ability.iconId !== null) { add(icons, family, ability.iconId); add(iconFamilies, ability.iconId, family); }
+    for (const attribute of hooksOf(ability)) { add(hooks, family, attribute); add(attributeFamilies, attribute, family); }
   }
+  const names = new Map<string, string>();
+  for (const family of hooks.keys()) names.set(family, normalizeName(data.getAbility(family)?.displayName ?? ''));
+  for (const family of icons.keys()) if (!names.has(family)) names.set(family, normalizeName(data.getAbility(family)?.displayName ?? ''));
+  const skillNames = new Set(data.skills.map(skill => normalizeName(skill.name ?? skill.id)));
+  const familyName = (family: string) => data.getAbility(family)?.displayName ?? family;
+
+  const labelled = new Map<string, ReadonlySet<string>>();
+  function labelledFamilies(attribute: string): ReadonlySet<string> {
+    const cached = labelled.get(attribute);
+    if (cached) return cached;
+    const label = normalizeName((data.getAttribute(attribute)?.label ?? '').replace(/\s*%$/u, ''));
+    const result = new Set<string>();
+    if (label) for (const family of attributeFamilies.get(attribute) ?? []) {
+      const name = names.get(family) ?? '';
+      if (name && !skillNames.has(name) && phrase(name).test(label)) result.add(family);
+    }
+    labelled.set(attribute, result);
+    return result;
+  }
+
+  const prose = new Map<string, ReadonlySet<string>>();
+  function proseFamilies(description: string): ReadonlySet<string> {
+    const cached = prose.get(description);
+    if (cached) return cached;
+    const iconIds = [...description.matchAll(/<icon=(\d+)>/gu)].map(match => Number(match[1]));
+    const result = new Set<string>();
+    if (iconIds.length > 0) {
+      const text = normalizeName(description.replace(/<icon=\d+>/gu, ' '));
+      for (const id of iconIds) for (const family of iconFamilies.get(id) ?? []) {
+        const name = names.get(family) ?? '';
+        if (name && phrase(name).test(text)) result.add(family);
+      }
+      if (result.size === 0) {
+        // Narrow fallback: the effect's subject is exactly one family's full name.
+        let best = 0; let leading: string[] = [];
+        for (const [family, name] of names) {
+          if (!name || name.length < best || !text.startsWith(name) || /[\p{L}\p{N}]/u.test(text.charAt(name.length))) continue;
+          if (name.length > best) { best = name.length; leading = []; }
+          leading.push(family);
+        }
+        const distinct = new Set(leading.map(family => names.get(family)));
+        if (leading.length === 1 && distinct.size === 1) result.add(leading[0]!);
+      }
+    }
+    prose.set(description, result);
+    return result;
+  }
+
   return {
     familyOf,
-    familyName: family => data.getAbility(family)?.displayName ?? family,
-    familyIcons: family => icons.get(family) ?? new Set(),
+    familyName,
+    familyIcons: family => icons.get(family) ?? EMPTY,
+    familyHooks: family => hooks.get(family) ?? EMPTY,
     attributeFamilies: attribute => attributeFamilies.get(attribute)?.size ?? 0,
+    labelledFamilies,
+    proseFamilies,
   };
 }
 
-const normalizeName = (text: string) => text.replace(/['’]/gu, '').toLowerCase();
-const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-
 export function matchAbilityEffect(ability: Ability, description: string, index: AbilityModIndex): AbilityModMatch | null {
+  const family = index.familyOf(ability);
   const template = /^\{([A-Z_0-9]+)\}\{[^{}]*\}(?:\{[^{}]*\})?$/u.exec(description);
   if (template) {
     const attribute = template[1]!;
+    if (!index.familyHooks(family).has(attribute)) return null;
     const families = index.attributeFamilies(attribute);
-    return cachedHooks(ability).has(attribute) && families > 0 && families <= MAX_FAMILIES_PER_ATTRIBUTE ? 'attribute' : null;
+    return (families > 0 && families <= MAX_FAMILIES_PER_ATTRIBUTE) || index.labelledFamilies(attribute).has(family) ? 'attribute' : null;
   }
-  const iconIds = [...description.matchAll(/<icon=(\d+)>/gu)].map(match => Number(match[1]));
-  if (iconIds.length === 0) return null;
-  const family = index.familyOf(ability);
-  const familyIcons = index.familyIcons(family);
-  if (!iconIds.some(id => familyIcons.has(id))) return null;
-  const name = normalizeName(index.familyName(family)).trim();
-  if (!name) return null;
-  const text = normalizeName(description.replace(/<icon=\d+>/gu, ' '));
-  return new RegExp(`(?<![\\p{L}\\p{N}])${escape(name)}(?![\\p{L}\\p{N}])`, 'u').test(text) ? 'prose' : null;
+  return index.proseFamilies(description).has(family) ? 'prose' : null;
 }
 
 export interface RelevantMod {

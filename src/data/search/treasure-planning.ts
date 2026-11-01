@@ -51,23 +51,43 @@ export function treasureChipLabel(power: TreasurePower | undefined, data: GameDa
 }
 
 /**
- * Normal Available list: powers whose published Slots include the item's slot and, where the item publishes a
- * resolved TSysProfile, that profile lists the power. Endurance and ShamanicInfusion powers are only members of
- * the Redwall/Brewing/Shamanic profiles, which no v490 item references, so for them only the slot applies.
- * Unknown signals (no item definition, no published slots/profile) never exclude. Not a legality decision.
+ * How a power relates to the equipped item, from published data only (never a legality decision):
+ * - 'listed': published Slots include the item's slot and, where the item publishes a resolved TSysProfile, that
+ *   profile lists the power. Endurance and ShamanicInfusion powers are only members of the Redwall/Brewing/Shamanic
+ *   profiles, which no v490 item references, so for them only the slot applies. Unknown signals never exclude.
+ * - 'outside-profile': slot-compatible, but the item's profile does not list it. Item profiles are treasure-generation
+ *   pools, not proof of ineligibility, so powers of an active combat skill stay discoverable here with a visible
+ *   "outside item profile · eligibility unconfirmed" flag (e.g. Druid MainHand powers on a Sword-profile MainHand).
+ * - 'other-slot': the published Slots do not include the item's slot (only shown when exploring).
  */
-export function fitsItem(power: TreasurePower, relevance: TreasureRelevance, data: GameDataRepository): boolean {
-  if (relevance.slot === 'different') return false;
+export type ItemFit = 'listed' | 'outside-profile' | 'other-slot';
+
+export function itemFit(power: TreasurePower, relevance: TreasureRelevance, data: GameDataRepository): ItemFit {
+  if (relevance.slot === 'different') return 'other-slot';
   const category = powerCategoryId(power, data);
-  if (category === 'Endurance' || category === 'ShamanicInfusion') return true;
-  return relevance.profile !== 'different';
+  if (category === 'Endurance' || category === 'ShamanicInfusion') return 'listed';
+  return relevance.profile === 'different' ? 'outside-profile' : 'listed';
 }
 
-/** One normal entry per official power: staged powers move to Selected; others must fit the item unless exploring. */
+/** Strict normal-list fit (slot + profile). */
+export function fitsItem(power: TreasurePower, relevance: TreasureRelevance, data: GameDataRepository): boolean {
+  return itemFit(power, relevance, data) === 'listed';
+}
+
+const UNKNOWN_RELEVANCE: TreasureRelevance = { profile: 'unknown', slot: 'unknown', skill: 'unknown' };
+
+/**
+ * One normal entry per official power: staged powers move to Selected. Without exploration, powers must be 'listed',
+ * or 'outside-profile' when they belong to one of the active combat skills, so both selected skills stay discoverable.
+ */
 export function availableTreasurePowers(powers: readonly TreasurePower[], relevance: ReadonlyMap<string, TreasureRelevance>,
-  stagedPowerIds: ReadonlySet<string>, exploreAllSlots: boolean, data: GameDataRepository): TreasurePower[] {
-  return powers.filter(power => !stagedPowerIds.has(power.id) &&
-    (exploreAllSlots || fitsItem(power, relevance.get(power.id) ?? { profile: 'unknown', slot: 'unknown', skill: 'unknown' }, data)));
+  stagedPowerIds: ReadonlySet<string>, exploreAllSlots: boolean, data: GameDataRepository, activeSkillIds: readonly string[] = []): TreasurePower[] {
+  return powers.filter(power => {
+    if (stagedPowerIds.has(power.id)) return false;
+    if (exploreAllSlots) return true;
+    const fit = itemFit(power, relevance.get(power.id) ?? UNKNOWN_RELEVANCE, data);
+    return fit === 'listed' || (fit === 'outside-profile' && activeSkillIds.includes(powerCategoryId(power, data)));
+  });
 }
 
 /** Input order preserves the existing profile/slot relevance ranking within groups. */
