@@ -86,3 +86,63 @@ it('retains duplicate saved slots and clears only the explicitly selected entry'
   expect(next.equipment).toHaveLength(2);
   expect(editBuild(next, { type: 'equipment-clear', index: 1 }, data).equipment).toEqual([build.equipment[0]]);
 });
+
+it('swaps weapon/shield types through explicit edits, preserving exact IDs, slot data and unrelated fields across reload', () => {
+  const original = populated();
+  original.equipment.push({ slot: 'OffHand', item: { kind: 'database', itemId: 'item_45722' },
+    candidateMods: [{ powerId: 'power_10001', tierId: 'id_9' }],
+    sparks: { mode: 'simulated', input: { category: 'skill-damage', skillId: 'Psychology', count: 12, seed: 'retain' } } });
+  let build = original;
+  const storage = memory();
+  for (const itemId of ['item_45052', 'item_45722']) {
+    const item = data.getItem(itemId)!;
+    const next = editBuild(build, { type: 'equipment-equip', itemId, slot: item.slot, index: 1 }, data);
+    expect(next.equipment).toHaveLength(2);
+    expect(next.equipment[1]).toEqual({ ...original.equipment[1], slot: item.slot, item: { kind: 'database', itemId } });
+    expect(next.equipment[1]!.candidateMods).toBe(original.equipment[1]!.candidateMods);
+    expect(next.equipment[1]!.sparks).toBe(original.equipment[1]!.sparks);
+    expect(next.equipment[0]).toBe(original.equipment[0]);
+    for (const field of ['skillSlotA', 'skillSlotB', 'abilityBarA', 'abilityBarB', 'target', 'notes', 'title', 'characterImport'] as const) expect(next[field]).toBe(original[field]);
+    const local = createLocalPersistence({ gameDataVersion: data.gameDataVersion, storage });
+    const save = createDraftAutosave(local);
+    save.schedule(next); expect(save.flush()).toEqual({ ok: true });
+    const restored = createLocalPersistence({ gameDataVersion: data.gameDataVersion, storage }).restoreDraft();
+    expect(restored.value).toEqual(next);
+    expect(restored.value.schemaVersion).toBe(1);
+    expect(restored.value.equipment.filter(selection => ['OffHand', 'OffHandShield'].includes(selection.slot))).toHaveLength(1);
+    build = next;
+  }
+});
+
+it.each(['OffHand', 'OffHandShield'])('rejects implicit additions into an occupied %s position and invalid cross-slot replacements', slot => {
+  const build = populated();
+  const currentId = slot === 'OffHand' ? 'item_45722' : 'item_45052';
+  const otherId = slot === 'OffHand' ? 'item_45052' : 'item_45722';
+  const other = data.getItem(otherId)!;
+  build.equipment.push({ slot, item: { kind: 'database', itemId: currentId }, candidateMods: [], sparks: { mode: 'none' } });
+  expect(editBuild(build, { type: 'equipment-equip', slot: other.slot, itemId: otherId, index: null }, data)).toBe(build);
+  expect(editBuild(build, { type: 'equipment-equip', slot: other.slot, itemId: otherId, index: 0 }, data)).toBe(build);
+  expect(editBuild(build, { type: 'equipment-equip', slot, itemId: otherId, index: 1 }, data)).toBe(build);
+  expect(editBuild(build, { type: 'equipment-equip', slot: 'Ring', itemId: 'item_49070', index: 1 }, data)).toBe(build);
+});
+
+it('retains legacy dual-offhand payloads and rejects ordinary equip operations until an explicit resolution', () => {
+  const original = populated();
+  original.equipment.push(
+    { ...original.equipment[0]!, slot: 'OffHand', item: { kind: 'manual', instance: { baseItemId: 'item_45722', displayName: 'Manual weapon', existingPowers: [], metadata: { keep: true } } } },
+    { ...original.equipment[0]!, slot: 'OffHandShield', item: { kind: 'imported', instance: { baseItemId: 'item_45052', existingPowers: [{ powerId: 'power_129', tierId: 'id_120' }], metadata: { untouched: true } } } },
+  );
+  const storage = memory();
+  const local = createLocalPersistence({ gameDataVersion: data.gameDataVersion, storage });
+  expect(local.saveDraft(original)).toEqual({ ok: true });
+  expect(local.restoreDraft().value).toEqual(original);
+  for (const index of [null, 1, 2]) expect(editBuild(original, { type: 'equipment-equip', slot: 'OffHandShield', itemId: 'item_45052', index }, data)).toBe(original);
+  expect(editBuild(original, { type: 'title', title: 'Another title' }, data).equipment).toBe(original.equipment);
+  const resolved = editBuild(original, { type: 'equipment-resolve-offhand', keepIndex: 2 }, data);
+  expect(resolved.equipment).toEqual([original.equipment[0], original.equipment[2]]);
+  expect(resolved.equipment[1]).toBe(original.equipment[2]);
+  expect(local.saveDraft(resolved)).toEqual({ ok: true });
+  expect(local.restoreDraft().value).toEqual(resolved);
+  for (const keepIndex of [-1, 0, 1.5, 10]) expect(editBuild(original, { type: 'equipment-resolve-offhand', keepIndex }, data)).toBe(original);
+  expect(editBuild({ ...original, gameDataVersion: 'other' }, { type: 'equipment-resolve-offhand', keepIndex: 2 }, data).equipment).toBe(original.equipment);
+});

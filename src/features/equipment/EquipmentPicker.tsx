@@ -3,6 +3,7 @@ import type { GameDataRepository } from '../../data/repository/repository';
 import { filterEquipment } from '../../data/search/equipment';
 import { ItemFacts } from './ItemFacts';
 import { EquipmentIcon } from './EquipmentIcon';
+import { isOffhandSlot } from '../../app/editor/build-editor';
 
 interface Props {
   slot: string;
@@ -28,7 +29,9 @@ export function EquipmentPicker({ slot, data, minimum, preferenceProtected, pref
   const [page, setPage] = useState(0);
   // 3,078 definitions: measured before adding an index/cache. Only 10 results
   // render at once; the already loaded repository is the only data source.
-  const matches = filterEquipment(data.items, { slot, query, minimumTargetLevel: minimum, includeUnknownTargetLevel: includeUnknown });
+  const offhand = isOffhandSlot(slot);
+  const candidates = offhand ? data.items.filter(item => isOffhandSlot(item.slot)) : data.items;
+  const matches = filterEquipment(candidates, { slot: offhand ? undefined : slot, query, minimumTargetLevel: minimum, includeUnknownTargetLevel: includeUnknown });
   const lastPage = Math.max(0, Math.ceil(matches.length / PAGE_SIZE) - 1);
   const currentPage = Math.min(page, lastPage);
   const results = matches.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
@@ -73,11 +76,13 @@ export function EquipmentPicker({ slot, data, minimum, preferenceProtected, pref
       </div>
       <p id="target-level-help" className="muted picker-help">Published crafting target level; not a confirmed equip requirement. Clear the minimum to show all levels, including unknowns. Filters keep your equipped items.</p>
       {preferenceNotice}
+      {offhand && <p className="muted picker-help">Offhand weapons and shields share one position. Choosing either replaces the current item and retains its official slot type.</p>}
       {replacing && <p className="muted picker-help">Replacing changes this item only. Staged mods and Spark settings are retained.</p>}
       <p className="equipment-results-title muted" tabIndex={-1} aria-live="polite">{matches.length} matching {matches.length === 1 ? 'item' : 'items'}{matches.length > PAGE_SIZE && ` · Page ${currentPage + 1} of ${lastPage + 1}`}</p>
       {matches.length === 0 && <p className="empty-state">No official equipment matches. Try another search, a lower minimum, or include unknown target levels.</p>}
       <div className="equipment-results">{results.map(item => <article className="equipment-result" key={item.id}>
         <div className="equipment-result-heading"><EquipmentIcon slot={item.slot} iconId={item.iconId} version={data.gameDataVersion} /><h3>{item.displayName}</h3><button type="button" disabled={readOnly} onClick={() => onChoose(item.id)} aria-label={`Equip ${item.displayName}, ${item.id}`}>{replacing ? 'Replace' : 'Equip'}</button></div>
+        {offhand && <p className="item-meta">{item.slot === 'OffHandShield' ? 'Shield' : 'Offhand weapon'} · {item.slot}</p>}
         <ItemFacts item={item} data={data} query={query} />
       </article>)}</div>
       {matches.length > PAGE_SIZE && <nav className="equipment-pages" aria-label="Equipment results pages">

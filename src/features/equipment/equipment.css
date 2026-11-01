@@ -10,12 +10,11 @@
 .has-equipment > summary .equipment-row-name { color: var(--color-text); font-weight: 600; }
 .equipment-row > summary small { color: var(--color-accent); font-size: 0.7rem; }
 .equipment-row-content { padding: 0.375rem 0.75rem 0.75rem; }
-.equipment-canonical-slot + .equipment-canonical-slot { border-top: 1px solid var(--color-border); margin-top: 0.75rem; padding-top: 0.75rem; }
 .equipment-selection + .equipment-selection { border-top: 1px solid var(--color-border); margin-top: 0.75rem; padding-top: 0.75rem; }
-.equipment-selection-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
-.equipment-selection-heading h3, .canonical-slot-heading { font-size: 0.85rem; margin: 0; }
-.equipment-selection-heading .muted { font-size: 0.75rem; }
-.canonical-slot-heading, .offhand-help { margin-bottom: 0.5rem; }
+.equipment-selection-type { font-size: 0.75rem; }
+.equipment-entry-label { font-size: 0.85rem; font-weight: 600; }
+.offhand-help { margin-bottom: 0.5rem; }
+.equipment-row > summary small.warning { color: #f2c588; }
 .equipment-other > summary { min-height: 2.75rem; padding: 0.5rem 0.75rem; border-top: 1px solid var(--color-border); color: var(--color-muted); font-size: 0.85rem; cursor: pointer; list-style: none; }
 .equipment-other > summary::before { content: '▸'; margin-right: 0.5rem; }
 .equipment-other[open] > summary::before { content: '▾'; }

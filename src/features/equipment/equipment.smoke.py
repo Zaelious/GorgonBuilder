@@ -73,7 +73,7 @@ def main():
                         cdp.send('HeapProfiler.collectGarbage')
                         loaded_heap = heap()
                         expect(page.locator('.equipment-primary > .equipment-row')).to_have_count(9)
-                        expect(page.locator('[data-equipment-slot]')).to_have_count(19)
+                        expect(page.locator('[data-equipment-slot]')).to_have_count(18)
                         assert not page.locator('.equipment-other').evaluate('(element) => element.open')
                         expect(page.locator('.equipment-primary .equipment-row-name')).to_have_text(['No gear selected'] * 9)
                         for row in page.locator('.equipment-primary > .equipment-row').all():
@@ -105,6 +105,8 @@ def main():
 
                         def browse(slot):
                             nonlocal last_opener
+                            if slot == 'OffHandShield':
+                                slot = 'OffHand'
                             row = page.locator(f'[data-equipment-row="{"OffHand" if slot == "OffHandShield" else slot}"]')
                             if row.locator('xpath=ancestor::details[contains(@class,"equipment-other")]').count() and not page.locator('.equipment-other').evaluate('(element) => element.open'):
                                 page.locator('#other-equipment-summary').click()
@@ -197,10 +199,21 @@ def main():
                         search(replacement['id'])
                         page.locator('.equipment-result-heading button').click()
                         wait_saved()
-                        browse('OffHandShield')
-                        search('item_45052')
-                        page.locator('.equipment-result-heading button').click()
-                        wait_saved()
+                        # The same picker searches both canonical types. Every swap
+                        # and reload must leave exactly one physical-position occupant.
+                        offhand_swaps = []
+                        for item_id, canonical_slot in [('item_45722', 'OffHand'), ('item_45052', 'OffHandShield'), ('item_45722', 'OffHand'), ('item_45052', 'OffHandShield')]:
+                            browse('OffHand')
+                            search(item_id)
+                            expect(page.locator('dialog .item-meta').first).to_contain_text(canonical_slot)
+                            page.locator('.equipment-result-heading button').click()
+                            wait_saved()
+                            page.reload()
+                            page.locator('.equipment-section').wait_for()
+                            offhands = [entry for entry in saved()['equipment'] if entry['slot'] in ['OffHand', 'OffHandShield']]
+                            assert len(offhands) == 1, offhands
+                            assert offhands[0]['slot'] == canonical_slot and offhands[0]['item'] == {'kind': 'database', 'itemId': item_id}, offhands
+                            offhand_swaps.append({'itemId': item_id, 'slot': canonical_slot, 'occupantsAfterReload': len(offhands)})
                         shield_icon = page.locator('[data-equipment-row="OffHand"] > summary img')
                         expect(shield_icon).to_have_attribute('src', 'https://cdn.projectgorgon.com/v490/icons/icon_14009.png')
                         expect(shield_icon).to_have_js_property('naturalWidth', 64)
@@ -229,6 +242,19 @@ def main():
                         expect(last_opener).to_be_focused()
                         page.locator('#other-equipment-summary').click()
                         page.screenshot(path=str(output / f'{mode}-overview-desktop.png'), full_page=True)
+
+                        # Expanded normal rows keep identity/artwork only in the
+                        # persistent summary. Facts and edit actions remain available.
+                        for slot in ['Head', 'Ring', 'MainHand', 'OffHand']:
+                            row = page.locator(f'[data-equipment-row="{slot}"]')
+                            row.locator(':scope > summary').click()
+                            expect(row.locator('.equipment-icon')).to_have_count(1)
+                            expect(row.locator('.equipment-row-content .equipment-icon, .equipment-selection-heading, h3')).to_have_count(0)
+                            expect(row.locator('.item-facts')).to_be_visible()
+                            expect(row.locator('.equipment-actions button')).to_have_count(2)
+                            if slot == 'OffHand':
+                                page.screenshot(path=str(output / f'{mode}-compact-offhand-desktop.png'), full_page=True)
+                            row.locator(':scope > summary').click()
 
                         # Empty/multi-page filtering and native keyboard focus containment.
                         browse('MainHand')
@@ -268,6 +294,8 @@ def main():
                         row = page.locator('[data-equipment-row="OffHand"]')
                         if not row.evaluate('(element) => element.open'):
                             row.locator(':scope > summary').click()
+                        assert not page.evaluate('document.documentElement.scrollWidth > innerWidth')
+                        page.screenshot(path=str(output / f'{mode}-compact-offhand-mobile.png'), full_page=True)
                         page.get_by_role('button', name='Clear OffHandShield', exact=True).click()
                         wait_saved()
                         page.reload()
@@ -284,7 +312,83 @@ def main():
                             'searchInteractions': timings, 'compressedAssets': responses, 'browserErrors': errors,
                             'chromiumVersion': browser.version,
                             'heapBytes': {'loadedAfterGc': loaded_heap, 'afterWorkflowBeforeGc': workflow_heap, 'afterWorkflowAfterGc': retained_heap},
-                            'workflow': 'nine keyboard-actionable primary rows; 19 exact slots; official Head/Ring/MainHand/OffHandShield icons; advanced slots; drag and backdrop retention; unknown/level/search/persistence; pagination; focus/Escape/X; desktop/mobile passed'})
+                            'offhandSwaps': offhand_swaps,
+                            'workflow': 'nine primary rows; all 19 official item slot types in 18 positions; compact details; exclusive offhand swaps/reloads; icons; advanced slots; drag/backdrop retention; filters/persistence; focus/Escape/X; desktop/mobile passed'})
+
+                        # Seed an existing schema-v1 conflict, as an older accepted
+                        # app could save both types. Restoration must preserve bytes;
+                        # only a named, confirmed keep/remove action resolves it.
+                        legacy = saved()
+                        preserved_equipment = list(legacy['equipment'])
+                        legacy['equipment'] += [
+                            {'slot': 'OffHand', 'item': {'kind': 'manual', 'instance': {'baseItemId': 'item_45722', 'displayName': 'Legacy weapon', 'existingPowers': [], 'metadata': {'retainUntilConfirmed': True}}}, 'candidateMods': [{'powerId': 'power_10001', 'tierId': None}], 'sparks': {'mode': 'none'}},
+                            {'slot': 'OffHandShield', 'item': {'kind': 'imported', 'instance': {'baseItemId': 'item_45052', 'displayName': 'Legacy shield', 'existingPowers': [{'powerId': 'power_129', 'tierId': 'id_120'}], 'metadata': {'retained': ['original', 42]}}}, 'candidateMods': [{'powerId': 'power_10001', 'tierId': 'id_9'}], 'sparks': {'mode': 'simulated', 'input': {'category': 'skill-damage', 'skillId': 'Psychology', 'count': 12, 'seed': 'keep'}}},
+                        ]
+                        legacy_bytes = json.dumps(legacy)
+                        page.evaluate('([key,value]) => localStorage.setItem(key,value)', [key, legacy_bytes])
+                        page.reload()
+                        page.locator('.equipment-section').wait_for()
+                        page.wait_for_timeout(600)
+                        assert page.evaluate('(key) => localStorage.getItem(key)', key) == legacy_bytes
+                        row = page.locator('[data-equipment-row="OffHand"]')
+                        expect(row.locator(':scope > summary')).to_contain_text('Conflict · 2 saved')
+                        row.locator(':scope > summary').click()
+                        expect(row.get_by_role('alert')).to_contain_text('All entries are retained')
+                        for button in row.get_by_role('button', name='Replace OffHand', exact=True).all():
+                            expect(button).to_be_disabled()
+                        assert not page.evaluate('document.documentElement.scrollWidth > innerWidth')
+                        page.screenshot(path=str(output / f'{mode}-legacy-conflict-mobile.png'), full_page=True)
+                        page.set_viewport_size({'width': 1440, 'height': 900})
+                        page.screenshot(path=str(output / f'{mode}-legacy-conflict-desktop.png'), full_page=True)
+                        # An unrelated committed edit must retain every conflict entry.
+                        page.locator('#level-A').fill('91')
+                        wait_saved()
+                        assert saved()['equipment'] == legacy['equipment']
+                        decision, confirmations = {'accept': False}, []
+
+                        def confirm(dialog):
+                            confirmations.append(dialog.message)
+                            if decision['accept']:
+                                dialog.accept()
+                            else:
+                                dialog.dismiss()
+
+                        page.on('dialog', confirm)
+                        keep_index = len(legacy['equipment']) - 1
+                        keep = row.locator(f'[data-selection-index="{keep_index}"] .equipment-actions button').last
+                        before_resolution = page.evaluate('(key) => localStorage.getItem(key)', key)
+                        keep.click()
+                        assert page.evaluate('(key) => localStorage.getItem(key)', key) == before_resolution
+                        assert 'Legacy weapon' in confirmations[-1] and 'Spark settings' in confirmations[-1]
+                        decision['accept'] = True
+                        keep.click()
+                        wait_saved()
+                        page.reload()
+                        page.locator('.equipment-section').wait_for()
+                        kept = legacy['equipment'][-1]
+                        assert saved()['equipment'] == preserved_equipment + [kept]
+                        assert saved()['abilityBarA'] == baseline['abilityBarA'] and saved()['abilityBarB'] == baseline['abilityBarB']
+                        expect(page.locator('[data-equipment-row="OffHand"] > summary')).not_to_contain_text('Conflict')
+                        # Cross-type replacement of the kept imported instance also
+                        # requires confirmation; associated planning data is preserved.
+                        decision['accept'] = False
+                        browse('OffHand')
+                        search('item_45722')
+                        page.locator('.equipment-result-heading button').click()
+                        assert saved()['equipment'] == preserved_equipment + [kept]
+                        expect(page.locator('dialog')).to_be_visible()
+                        decision['accept'] = True
+                        page.locator('.equipment-result-heading button').click()
+                        wait_saved()
+                        page.reload()
+                        page.locator('.equipment-section').wait_for()
+                        swapped = {**kept, 'slot': 'OffHand', 'item': {'kind': 'database', 'itemId': 'item_45722'}}
+                        assert saved()['equipment'] == preserved_equipment + [swapped]
+                        expect(page.get_by_role('alert')).to_have_count(0)
+                        assert not errors, errors
+                        results[-1]['legacyConflict'] = {'restoreBytesPreserved': True, 'unrelatedEditPreservedEntries': True, 'cancelPreserved': True,
+                            'confirmedKeepPreservedInstanceModsSparks': True, 'confirmedCrossTypeSwapPreservedModsSparks': True, 'confirmationMessages': confirmations}
+                        results[-1]['browserErrors'] = list(errors)
                         context.close()
 
                         # A deliberate CDN 404 tests the actual image error path in an
