@@ -90,6 +90,14 @@ The T0009 picker deliberately closes via X/Escape, not by clicking its backdrop,
 
 **Action:** If revisited, test a dialog with more outer gutter/adjusted scaling and dismiss only when a pointer interaction both begins and ends on the actual backdrop; never close for drags originating within input/content. Preserve text, keyboard Escape/X, focus return, touch behavior and responsive no-overflow. Add a regression browser test before restoring click-away. Do not alter the accepted default behavior without testing.
 
+## KI-0011 — Duplicate Equipment Detail Header and Nonexclusive Offhand UI
+
+**Status:** Confirmed product-owner feedback after merged T0009, 2026-11-01; correction planned under **T0009-F1**. No implementation yet.
+
+Expanded equipment information repeats the already-visible selected item icon and name, wasting vertical space. The current T0009 OffHand row exposes two independent selectors for official `OffHand` and `OffHandShield`; the customer clarified they are alternatives for **one physical player loadout position**, not two simultaneously occupiable positions. Existing BuildDocument saves distinguish the official source strings, which must be preserved.
+
+**Action:** Remove the duplicate item header inside details. Combine offhand weapon/shield browsing into a single user-facing offhand position, and enforce one occupant on *new edits* while preserving canonical source item slots. On cross-type swaps, safeguard staged mods/Sparks/manual/imported instance metadata; on loading older dual selections, warn and require explicit resolution rather than deleting saved data. Verify across reload and mobile/keyboard. [T0009-F1 scope](Tickets.md). Do not include treasure-mod editing (T0010) or unrelated rule inference.
+
 ## Follow-Up Candidates After T0021
 
 - Rotation Simulator explicit sequence
