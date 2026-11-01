@@ -224,6 +224,12 @@ export function normalizeAbilities(input: AbilityInput): NormalizedAbilityData {
     const rank = optional(raw, 'Rank', path, (v, p) => typeof v === 'string' ? string(v, p) : number(v, p));
     return { id, internalName: text(raw.InternalName, `${path}.InternalName`),
       displayName: string(raw.Name, `${path}.Name`), description: string(raw.Description, `${path}.Description`),
+      iconId: optional(raw, 'IconID', path, (v, p) => {
+        const id = number(v, p);
+        if (!Number.isSafeInteger(id) || id < 0) fail(p, 'expected a nonnegative integer icon identifier');
+        return id;
+      }),
+      specialInfo: optional(raw, 'SpecialInfo', path, string),
       skill: skillRef(raw.Skill, `${path}.Skill`), level, rank,
       upgradeOf: optional(raw, 'UpgradeOf', path, abilityRef), prerequisite: optional(raw, 'Prerequisite', path, abilityRef),
       damage: { damageType: text(raw.DamageType, `${path}.DamageType`),

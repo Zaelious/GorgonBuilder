@@ -128,6 +128,10 @@ export interface NormalizedAbility extends AbilitySourceRecord {
   readonly internalName: string;
   readonly displayName: string;
   readonly description: string;
+  /** Published IconID; null when absent. Asset identity only, never inferred. */
+  readonly iconId: number | null;
+  /** Published SpecialInfo prose, without evaluating embedded game semantics. */
+  readonly specialInfo: string | null;
   readonly skill: SkillReference;
   readonly level: number;
   /** Only the explicit Rank field. Never parsed from names, Level or UpgradeOf. */

@@ -195,3 +195,12 @@ describe('pinned source validation', () => {
     await expect(readFile(join(output, 'manifest.json'))).rejects.toThrow('ENOENT');
   }, 30_000);
 });
+
+it('projects every pinned official ability icon and special text without changing identity or provenance', () => {
+  const source = input.raw.abilities as Record<string, { IconID: number; SpecialInfo?: string }>;
+  for (const ability of runtime.abilities.abilities) {
+    expect(ability.iconId, ability.id).toBe(source[ability.id]!.IconID);
+    expect(ability.specialInfo, ability.id).toBe(source[ability.id]!.SpecialInfo ?? null);
+    expect(ability.source).toEqual({ dataset: 'abilities', recordId: ability.id });
+  }
+});
