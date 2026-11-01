@@ -138,6 +138,8 @@ This is a separate narrow preflight PR, not part of T0009's equipment UI.
 3. Compare official `SkillReqs` versus `CraftingTargetLevel`; neither is a universal equip-level assertion. Changing the filter must not silently unequip existing selections.
 4. Equip/replace/clear, refresh and verify the existing skill/ability planner and saved draft fields remain intact.
 
+**T0009 final accepted verification (2026-11-01):** [PR #18](https://github.com/Zaelious/GorgonBuilder/pull/18) merged at `7cd03ee`. The customer passed the initial functional checklist, then accepted the refined nine-primary-slot icon layout. The [final report](T0009_Verification.md) documents 408 passing tests, real Chromium Vite dev/preview checks, and updated screenshots. For regressions, also check all nine empty rows, official selected-item icons/fallbacks, collapsed Other slots, distinct OffHand and OffHandShield, picker X/Escape focus behavior, and dragging text outside the search field without closing the dialog. Backdrop-click dismissal remains disabled pending optional KI-0010 UX exploration.
+
 ## Calculation Tickets
 
 Verify:
