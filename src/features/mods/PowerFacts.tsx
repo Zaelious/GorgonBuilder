@@ -1,4 +1,4 @@
-import { EffectDescriptions, ExactEffects } from './EffectDescription';
+import { EffectDescriptions, EffectRequirements, ExactEffects } from './EffectDescription';
 import type { CandidateMod } from '../../core/build/document';
 import type { Runtime } from '../../data/repository/contracts';
 import type { NormalizedTreasureTier } from '../../data/normalized/items-treasure';
@@ -8,7 +8,7 @@ import { powerName, type TreasurePower, type TreasureRelevance } from '../../dat
 
 export function TierFacts({ tier, data }: { tier: Runtime<NormalizedTreasureTier>; data: GameDataRepository }) {
   return <div className="mod-tier-facts">
-    <p><EffectDescriptions descriptions={tier.effectDescriptions} data={data} /></p><ExactEffects descriptions={tier.effectDescriptions} />
+    <p><EffectDescriptions descriptions={tier.effectDescriptions} data={data} /></p><EffectRequirements descriptions={tier.effectDescriptions} data={data} /><ExactEffects descriptions={tier.effectDescriptions} />
     <p className="muted">Published levels {tier.minLevel}–{tier.maxLevel} · Minimum rarity: {tier.minRarity} · Skill level prerequisite: {tier.skillLevelPrerequisite}</p>
     <p className="muted">{tier.powerId} / {tier.id}</p>
   </div>;

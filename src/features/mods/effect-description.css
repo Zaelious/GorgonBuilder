@@ -4,3 +4,4 @@
 .effect-value-note, .effect-unformatted { font-size: 10px; color: var(--color-muted); }
 .effect-unformatted { border-bottom: 1px dotted currentColor; }
 .exact-effects pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 11px; max-height: 8rem; overflow: auto; }
+.effect-requirement { color: var(--color-muted); font-size: 11px; font-style: italic; }

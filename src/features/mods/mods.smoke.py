@@ -159,7 +159,7 @@ def main():
                         # Max and each numeric target stage the exact visible tier.
                         inline_search('power_10001')
                         expect(power()).to_have_attribute('data-preview-tier', 'id_12')
-                        assert power().locator(':scope > button').inner_text().startswith('Archery Base Damage modifier: 0.6')
+                        assert power().locator(':scope > button').inner_text().startswith('Archery Base Damage +60%')
                         add()
                         expect(page.locator('[data-selection-index="0"] [data-candidate-effect="0"]')).to_contain_text('CANDIDATE · Archery')
                         preview_level('90')
@@ -177,7 +177,7 @@ def main():
                         candidate_details(1)
                         editor().get_by_label('Tier for candidate 1', exact=True).select_option('id_11')
                         expected_mods[0]['tierId'] = 'id_11'
-                        expect(page.locator('[data-selection-index="0"] [data-candidate-effect="0"]')).to_contain_text('Archery Base Damage modifier: 0.55')
+                        expect(page.locator('[data-selection-index="0"] [data-candidate-effect="0"]')).to_contain_text('Archery Base Damage +55%')
                         editor().get_by_label('Move candidate 1 down', exact=True).focus()
                         page.keyboard.press('Enter')
                         expected_mods[0], expected_mods[1] = expected_mods[1], expected_mods[0]
@@ -275,16 +275,50 @@ def main():
                         geometry = editor().locator('.mod-available-scroll').evaluate("""panel => {
                             const b = panel.getBoundingClientRect();
                             const rows = [...panel.querySelectorAll('.mod-available-power')].map(e=>e.getBoundingClientRect());
-                            return {height:b.height, visibleRows:rows.filter(r=>r.top>=b.top && r.bottom<=b.bottom).length,
-                              rowHeights:rows.slice(0,15).map(r=>r.height)};
+                            const texts = [...panel.querySelectorAll('.available-effect-text')];
+                            return {height:b.height, width:b.width, visibleRows:rows.filter(r=>r.top>=b.top && r.bottom<=b.bottom).length,
+                              rowHeights:rows.slice(0,15).map(r=>r.height),
+                              clamped:texts.filter(t=>t.scrollHeight>t.clientHeight+1).length, total:texts.length};
                         }""")
-                        assert 400 <= geometry['height'] <= 430, geometry
-                        assert geometry['visibleRows'] >= 12, geometry
-                        assert max(geometry['rowHeights']) <= 34, geometry
-                        normal_rows = editor().locator('.available-effect, .candidate-effect')
-                        assert all('<icon=' not in r.inner_text() and '{MOD_' not in r.inner_text() for r in normal_rows.all())
                         editor().screenshot(path=str(output / f'{mode}-inline-desktop.png'))
                         page.screenshot(path=str(output / f'{mode}-page-desktop.png'), full_page=True)
+                        # Readability over a fixed count: wider columns, 1-2 line rows, still dense.
+                        assert 400 <= geometry['height'] <= 430, geometry
+                        assert geometry['width'] >= 600, geometry
+                        assert geometry['visibleRows'] >= 8, geometry
+                        assert max(geometry['rowHeights']) <= 50, geometry
+                        normal_rows = editor().locator('.available-effect, .candidate-effect')
+                        assert all('<icon=' not in r.inner_text() and '{MOD_' not in r.inner_text() and 'source value' not in r.inner_text() for r in normal_rows.all())
+                        # Paired Animal Handling attributes: one readable +25%/+25% effect, fully visible without the details control.
+                        paired = 'Direct Electricity Damage +25%, Fire Damage (Direct & Per-Tick) +25%'
+                        inline_search('power_12192')
+                        expect(power('power_12192')).to_have_attribute('data-preview-tier', 'id_25')
+                        paired_text = power('power_12192').locator('.available-effect-text')
+                        expect(paired_text).to_have_text(paired)
+                        add('power_12192')
+                        proof['equipment'][0]['candidateMods'].append({'powerId': 'power_12192', 'tierId': 'id_25'})
+                        paired_candidate = editor().locator('.candidate-effect').last
+                        paired_candidate.scroll_into_view_if_needed()
+                        expect(paired_candidate).to_have_text(paired)
+                        expect(page.locator('[data-selection-index="0"] [data-candidate-effect]').last).to_contain_text(paired)
+                        for locator in [paired_text, paired_candidate, page.locator('[data-selection-index="0"] [data-candidate-effect] > span:last-child').last]:
+                            assert locator.evaluate('(e) => e.scrollHeight <= e.clientHeight + 1 && e.scrollWidth <= e.clientWidth + 1'), 'paired effect clipped'
+                        overlap = editor().evaluate("""root => {
+                            const hit = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+                            const bad = [];
+                            for (const row of root.querySelectorAll('.mod-available-power, .candidate-list > li')) {
+                              const text = row.querySelector('.available-effect-text, .candidate-effect');
+                              if (!text) continue;
+                              const t = text.getBoundingClientRect();
+                              for (const control of row.querySelectorAll(':scope .mod-add-mark, :scope > details > summary, :scope > .candidate-remove'))
+                                if (hit(t, control.getBoundingClientRect())) bad.push(control.className || control.tagName);
+                            }
+                            return bad;
+                        }""")
+                        assert overlap == [], overlap
+                        wait_saved(); assert saved() == proof
+                        editor().screenshot(path=str(output / f'{mode}-paired-desktop.png'))
+                        inline_search('')
                         # Missing icon fallback is intentional, isolated and recorded separately.
                         before_fallback = len(errors)
                         page.route('**/icons/icon_2160.png', lambda route: route.fulfill(status=404, body='missing icon'))

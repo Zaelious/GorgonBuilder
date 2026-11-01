@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { GameDataRepository } from '../../data/repository/repository';
 import { abilityIconUrl } from '../abilities/AbilityIcon';
-import { presentEffect } from './effect-description';
+import { effectSummaryText, presentEffect, requiredSkills, type EffectPresentation } from './effect-description';
 import './effect-description.css';
 
 function EffectIcon({ token, version }: { token: string; version: string }) {
@@ -21,21 +21,45 @@ function InlineText({ text, version }: { text: string; version: string }) {
     ? <EffectIcon key={index} token={part.slice(6, part.endsWith('>') ? -1 : undefined)} version={version} /> : part);
 }
 
+function AttributeText({ presentation }: { presentation: Extract<EffectPresentation, { kind: 'attribute' }> }) {
+  return <>{presentation.label} {presentation.value}
+    {!presentation.verified && <small className="effect-value-note" title={`Published ${presentation.displayType} value unchanged; this display type's player-facing scale is not established by the pinned data. See exact source in Details.`}> (scale unverified)</small>}
+  </>;
+}
+
+const UNFORMATTED = <small className="effect-unformatted" title="This official template cannot be safely formatted. Inspect its exact published text in Details.">unformatted official effect</small>;
+
 export function EffectDescription({ description, data, fallback = 'Published effect' }: {
   description: string; data: GameDataRepository; fallback?: string;
 }) {
   const presentation = presentEffect(description, data);
   return <span className="effect-description">
     {presentation.kind === 'prose' ? <InlineText text={presentation.text} version={data.gameDataVersion} />
-      : presentation.kind === 'attribute' ? <>{presentation.label}{presentation.sourceValue ? ' modifier' : ''}: {presentation.value}
-        {presentation.context && <span className="effect-context"> · context: {presentation.context}</span>}
-        {presentation.sourceValue && <small className="effect-value-note" title={`Published ${presentation.displayType} value unchanged; percentage/scaling convention is unverified. See exact source in Details.`}> source value</small>}
-      </> : <>{fallback} <small className="effect-unformatted" title="This official template cannot be safely formatted. Inspect its exact published text in Details.">unformatted official effect</small></>}
+      : presentation.kind === 'attribute' ? <AttributeText presentation={presentation} />
+        : <>{fallback} {UNFORMATTED}</>}
   </span>;
 }
 
-export function EffectDescriptions({ descriptions, data, fallback }: { descriptions: readonly string[]; data: GameDataRepository; fallback?: string }) {
-  return <>{descriptions.map((description, index) => <span key={index}>{index > 0 && ' · '}<EffectDescription description={description} data={data} fallback={fallback} /></span>)}</>;
+/** One readable mod effect per tier: every published line is shown, comma-separated. */
+export function EffectDescriptions({ descriptions, data, fallback = 'Published effect' }: { descriptions: readonly string[]; data: GameDataRepository; fallback?: string }) {
+  const presentations = descriptions.map(description => presentEffect(description, data));
+  const shown = presentations.flatMap((presentation, index) => presentation.kind === 'unsupported' ? [] : [{ presentation, index }]);
+  const unsupported = shown.length < presentations.length;
+  const title = [effectSummaryText(descriptions, data, fallback), ...requiredSkills(descriptions, data).map(requirementText)].join(' · ');
+  return <span className="effect-description" title={title}>
+    {shown.map(({ presentation, index }, position) => <span key={index}>{position > 0 && ', '}
+      {presentation.kind === 'prose' ? <InlineText text={presentation.text} version={data.gameDataVersion} /> : presentation.kind === 'attribute' && <AttributeText presentation={presentation} />}
+    </span>)}
+    {unsupported && <>{shown.length > 0 ? ', ' : ''}{fallback} {UNFORMATTED}</>}
+  </span>;
+}
+
+export function requirementText(skill: string) { return `Requires ${skill} active`; }
+
+/** Subtle eligibility note for expanded details. */
+export function EffectRequirements({ descriptions, data }: { descriptions: readonly string[]; data: GameDataRepository }) {
+  const skills = requiredSkills(descriptions, data);
+  return skills.length ? <p className="effect-requirement">{skills.map(requirementText).join(' · ')}</p> : null;
 }
 
 export function ExactEffects({ descriptions }: { descriptions: readonly string[] }) {

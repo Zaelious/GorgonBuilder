@@ -64,11 +64,11 @@ it('shows inline Available/Selected, immediate item effects, >6 exact candidates
   await search('power_10001');
   const preview = () => control(`${editor} [data-power-id="power_10001"]`);
   expect(preview().dataset.previewTier).toBe('id_12');
-  expect(preview().querySelector('.available-effect')!.textContent).toContain('Archery Base Damage modifier: 0.6');
+  expect(preview().querySelector('.available-effect')!.textContent).toContain('Archery Base Damage +60%');
   expect(preview().querySelector('.available-effect')!.textContent).not.toContain('{MOD_');
   await add();
   expect(control(`${scope} .equipment-candidate-effects`).textContent).toContain('CANDIDATE · Archery');
-  expect(control(`${scope} [data-candidate-effect="0"]`).textContent).toContain('Archery Base Damage modifier: 0.6');
+  expect(control(`${scope} [data-candidate-effect="0"]`).textContent).toContain('Archery Base Damage +60%');
   await target('90');
   expect(preview().dataset.previewTier).toBe('id_9');
   expect(control(`${editor} .mod-mismatch`).getAttribute('aria-label')).toBe('Differs from target preview');
@@ -78,7 +78,7 @@ it('shows inline Available/Selected, immediate item effects, >6 exact candidates
   await add();
   expect(control(`${editor} .mod-selected h3`).textContent).toBe('Selected (9)');
   await change(`${editor} [aria-label="Tier for candidate 1"]`, 'id_11');
-  expect(control(`${scope} [data-candidate-effect="0"]`).textContent).toContain('Archery Base Damage modifier: 0.55');
+  expect(control(`${scope} [data-candidate-effect="0"]`).textContent).toContain('Archery Base Damage +55%');
   await click(`${editor} [aria-label="Move candidate 1 down"]`);
   await click(`${editor} [aria-label="Remove candidate 3"]`);
   await change(`${editor} [aria-label="Tier for candidate 2"]`, '');
@@ -106,7 +106,7 @@ it('leaves Available empty without combat skills and preserves saved candidates 
   localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build)); await render(); await open();
   expect(control(`${editor} .mod-available`).textContent).toContain('Select a combat skill to view mods.');
   expect(container.querySelectorAll(`${editor} [data-power-id]`)).toHaveLength(0);
-  expect(control(`${editor} .mod-selected`).textContent).toContain('Archery Base Damage modifier: 0.45');
+  expect(control(`${editor} .mod-selected`).textContent).toContain('Archery Base Damage +45%');
   await tick(); expect(saved()).toEqual(build);
 });
 
@@ -231,4 +231,24 @@ it('renders actual inline icon images in Available, Selected, CANDIDATE lines, s
   expect(control(`${editor} .mod-tier-facts`).querySelector('img.effect-icon')).not.toBeNull();
   await tick();
   expect(saved().equipment[0]!.candidateMods).toEqual([{ powerId: 'power_12301', tierId: 'id_25' }]);
+});
+
+it('renders paired Animal Handling attributes as one readable +25%/+25% effect in Available, Selected and item CANDIDATE lines, saving exact IDs', async () => {
+  const original = seed();
+  original.skillSlotB = { skillId: 'AnimalHandling', level: 125 };
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(original));
+  await render(); await open();
+  await search('power_12192');
+  const row = control(`${editor} [data-power-id="power_12192"]`);
+  expect(row.dataset.previewTier).toBe('id_25');
+  const expected = 'Direct Electricity Damage +25%, Fire Damage (Direct & Per-Tick) +25%';
+  expect(row.querySelector('.available-effect-text')!.textContent).toBe(expected);
+  expect(row.textContent).not.toMatch(/modifier|source value|context:|\{MOD_/u);
+  await add('power_12192');
+  expect(control(`${editor} .candidate-effect`).textContent).toBe(expected);
+  expect(control(`${scope} [data-candidate-effect="0"]`).textContent).toBe(`CANDIDATE · Animal Handling${expected}`);
+  expect(control(`${editor} .candidate-effect .effect-description`).getAttribute('title')).toContain('Requires Animal Handling active');
+  await tick(500);
+  expect(saved().equipment[0]!.candidateMods).toEqual([{ powerId: 'power_12192', tierId: 'id_25' }]);
+  expect(saved().skillSlotB).toEqual({ skillId: 'AnimalHandling', level: 125 });
 });
