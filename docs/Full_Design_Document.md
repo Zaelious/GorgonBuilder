@@ -89,7 +89,7 @@ Do not duplicate formulas.
 1. Open planner.
 2. Choose skill A and skill B.
 3. Choose abilities.
-4. Set minimum item level, commonly 90+.
+4. Set the published minimum equipment target level (default 90, optionally including unknown targets); this is a browsing hint, not a verified equip restriction.
 5. Select real items for equipment slots.
 6. Add candidate treasure mods.
 7. Configure/simulate Sparks on eligible offensive items.
