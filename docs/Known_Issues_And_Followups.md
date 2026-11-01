@@ -1,6 +1,6 @@
 # GorgonBuilder — Known Issues and Follow-Ups
 
-**Last updated:** 2026-10-31
+**Last updated:** 2026-11-01
 
 ## KI-0001 — Exact Damage Formula Is Not Fully Known
 
@@ -65,6 +65,22 @@ T0005's official v490 `items` data exposes `CraftingTargetLevel`, not a generic 
 **Risk:** Using this field as an unqualified item-level/equip-level requirement could hide valid gear or communicate a false gameplay restriction. Imported concrete item-instance levels and published item `SkillReqs` are separate concepts.
 
 **Action:** Before implementing T0009's global minimum-level filter, establish and document intended filtering semantics from official data and/or controlled game evidence; preserve null/unknown levels rather than substituting zero. Do not redefine the T0005 source field without a documented design decision.
+
+## KI-0008 — Vite Development/Preview Gzip Transport
+
+**Status:** Reproducible in T0008; resolve before T0009.
+
+`npm run dev` / `vite preview` can serve the generated `.gz` assets with `Content-Encoding: gzip`. Browser fetch transparently decodes the response before T0006's loader verifies **compressed** byte lengths and SHA-256, so local Vite use fails with a byte mismatch. The production bundle worked via a static server and Cloudflare Workers local assets; PR #12's remote preview deployment succeeded, although its live runtime was not independently fetched by the implementation environment.
+
+**Action:** Fix the loader/asset-serving transport contract in a narrowly scoped follow-up, without weakening integrity checks or altering unrelated gameplay code.
+
+## KI-0009 — Runtime Repository Memory and Load Cost
+
+**Status:** Monitor during equipment/mod UI implementation.
+
+Early T0008 unthrottled desktop measurements showed roughly **195–239 MB** used browser JavaScript heap while loading the complete v490 repository; this is not a mobile-device performance guarantee.
+
+**Action:** Measure actual loading/interaction on representative hardware before adopting additional caching or partitioning. Keep the pinned source/version/integrity model intact.
 
 ## Follow-Up Candidates After T0021
 

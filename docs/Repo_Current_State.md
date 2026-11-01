@@ -1,12 +1,12 @@
 # GorgonBuilder — Repository Current State
 
-**Last updated:** 2026-10-31  
+**Last updated:** 2026-11-01  
 **Canonical repository:** `Zaelious/GorgonBuilder`  
 **Default branch:** `main`
 
 ## Current Status
 
-T0001–T0007 are merged. The repository contains the Vite/React/strict TypeScript app shell, Cloudflare Workers static-asset hosting, the verified official Project Gorgon v490 raw snapshot, React-independent T0003–T0005 normalization contracts, T0006's deterministic compressed runtime artifacts and typed indexed runtime repository, and T0007's versioned BuildDocument plus browser-local draft/preferences persistence and debounced autosave. Planner UI and remote save/share are not yet implemented.
+T0001–T0008 are merged. The first customer-accepted compact skill/ability planner now runs on the verified v490 snapshot, normalized runtime repository and versioned BuildDocument/local autosave. It supports two independent skill/level selections, official ability browsing and icon-based six-slot bars, inline build title editing, protected local draft recovery, and responsive details. Equipment, damage calculations, character import and remote save/share remain future work.
 
 ## Completed Tickets
 
@@ -19,16 +19,17 @@ T0001–T0007 are merged. The repository contains the Vite/React/strict TypeScri
 - **T0006 — Generated Dataset, Completeness Checks, and Runtime Repository** (merged 2026-10-31 via [PR #8](https://github.com/Zaelious/GorgonBuilder/pull/8); squash commit `4d29f7abf4056c6013558c5c62dc2c4f3b4f49c4`). Added deterministic compressed generated artifacts, a manifest with completeness and diagnostic checks, and typed indexed runtime lookups, with 37 focused tests. See [runtime repository README](../src/data/repository/README.md).
 
 - **T0007 — Build Domain and Local Persistence** (merged 2026-10-31 via [PR #10](https://github.com/Zaelious/GorgonBuilder/pull/10); squash commit `fa6eb4312e55defe9e4022de9f8e05a596347ccb`). Added BuildDocument schema v1, strict validation/serialization, unique active-skill IDs, local draft/preferences recovery, and debounced autosave (84 focused tests). See [build domain README](../src/core/build/README.md).
+- **T0008 — Skill and Ability Planner UI** (merged 2026-11-01 via [PR #12](https://github.com/Zaelious/GorgonBuilder/pull/12); squash commit `dd268dea8e539480f2ec14d237a313165dcb9da3`). Two compact six-slot skill bars, official ability icons/tier selection/facts, title editing, isolated bar-clearing on skill changes and local autosave/recovery; customer hands-on accepted, 345 tests passed. See [app README](../src/app/README.md).
 
 **Deployment housekeeping completed** via [PR #2](https://github.com/Zaelious/GorgonBuilder/pull/2) (squash commit `9df290379b396f8bb4cc2717e154bbbca577af98`): explicit static-assets `wrangler.jsonc`, Wrangler 4.156.0 and synchronized lockfile, deploy/preview scripts, GitHub CI with Cloudflare dry-run, and deployment instructions.
 
 ## Active Ticket
 
-None. T0007 is merged; T0008 has not started.
+None. T0008 is accepted/merged; T0009 has not started. First resolve KI-0007 equipment-level semantics and KI-0008 Vite gzip transport.
 
 ## Planned Next Ticket
 
-**T0008 — Skill and Ability Planner UI**
+**T0009 — Equipment Search and Planner**
 
 The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/DPS deferred to the following ticket series.
 
@@ -36,10 +37,10 @@ The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/D
 
 - Vite 8, React 19, strict TypeScript 6
 - ESLint 10 with TypeScript rules and core-layer import restrictions
-- Vitest 5 with jsdom for a React shell smoke test
+- Vitest 5 with jsdom for 345 tests, including 50 focused editor/UI tests; optional Chromium/Playwright layout smoke
 - Shared CSS variables and responsive baseline styles
 - Cloudflare Workers Static Assets for the Vite frontend (no Cloudflare Vite plugin or backend yet)
-- T0007 browser-local persistence is implemented using an injected storage abstraction; remote provider-agnostic build saving remains a future design direction
+- T0008 connects T0007's injected local draft/autosave to the actual planner; remote provider-agnostic saving remains future work
 
 Runtime dependencies: `react`, `react-dom`.  
 Development dependencies: `@eslint/js`, `@types/node`, `@types/react`, `@types/react-dom`, `@vitejs/plugin-react`, `eslint`, `globals`, `jsdom`, `typescript`, `typescript-eslint`, `vite`, `vitest`, `wrangler` (pinned to 4.156.0).
@@ -67,7 +68,8 @@ Install dependencies with `npm ci` using the committed lockfile.
 ```text
 src/
 ├─ app/
-│  ├─ App.tsx
+│  ├─ App.tsx, planner.css, README.md
+│  ├─ editor/                 (inline title, immutable build edits/tests)
 │  └─ routes/                 (placeholder)
 ├─ core/
 │  ├─ build/                 (BuildDocument v1, validation, serialization, tests, README)
@@ -82,12 +84,12 @@ src/
 │  ├─ repository/            (typed contracts, integrity, loader, indexed lookups, tests, README)
 │  └─ search/                (placeholder)
 ├─ features/
-│  ├─ abilities/             (placeholder)
+│  ├─ abilities/             (picker, six-slot bars, official icons, source facts)
 │  ├─ comparison/            (placeholder)
 │  ├─ equipment/             (placeholder)
 │  ├─ import/                (placeholder)
 │  ├─ mods/                  (placeholder)
-│  ├─ skills/                (placeholder)
+│  ├─ skills/                (compact combat-skill/level controls)
 │  └─ sparks/                (placeholder)
 ├─ generated/
 │  └─ game-data/             (three compressed runtime data files + deterministic manifest)
@@ -97,7 +99,7 @@ src/
 ├─ styles/
 │  └─ global.css
 ├─ test/
-│  ├─ App.test.tsx
+│  ├─ App.test.tsx, planner-fixture.ts, planner-layout.smoke.py
 │  └─ setup.ts
 └─ main.tsx
 ```
@@ -134,6 +136,8 @@ These are implementation-agent test results, not a separate independent executio
 
 **T0007 acceptance evidence (2026-10-31):** Codex reported **84 focused tests**, lint, typecheck, **294 total tests across 10 files**, production build, and whitespace checks passing. [GitHub Actions CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41246601530) independently passed installation, lint, typecheck, tests, build, and Wrangler dry-run; Cloudflare's PR #10 preview build/deployment succeeded. Architect reviewed the nine-file implementation, recorded acceptance, and squash-merged [PR #10](https://github.com/Zaelious/GorgonBuilder/pull/10). Draft and preferences live at `gorgonbuilder.current-draft` and `gorgonbuilder.preferences`. Unsupported saved schema versions are protected from overwrite, and malformed/unavailable storage falls back with explicit status. T0008 will connect the editor to the existing autosave lifecycle; no UI was added by T0007.
 
+**T0008 acceptance evidence (2026-11-01):** [PR #12](https://github.com/Zaelious/GorgonBuilder/pull/12) received customer hands-on acceptance after revisions; the compact desktop section measures **212 CSS px** with 80/81 px rows and 48 px icons. Codex reported **345 tests across 11 files** (50 focused editor/UI tests), pinned-data checks, lint, typecheck, build, Wrangler dry-run, and responsive Chromium smoke tests. [Final-head CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41297214856) and Cloudflare preview checks succeeded at `b6f90ad`; architect reviewed and squash-merged it at `dd268dea`. Official ability normalization now adds exact published IconID and optional SpecialInfo for display; source/provenance/integrity remain verified. Initial unthrottled desktop heap observations: **195–239 MB**. See [app README](../src/app/README.md). T0014's proposed optional Respect Skill Level picker mode is future work, not implemented in T0008.
+
 **Cloudflare PR preview warning:** Workers Builds checks failed on PRs #2, #3 and #4 despite successful GitHub CI; PR #5 and PR #6 Cloudflare checks passed. KI-0006 remains tracked until preview-build reliability is confirmed across branches. See [deployment troubleshooting](Cloudflare_Deployment.md).
 
 ## Hosting and Previews
@@ -142,7 +146,7 @@ These are implementation-agent test results, not a separate independent executio
 - Production branch: `main` (Cloudflare Workers Builds connected to GitHub)
 - Cloudflare dashboard commands: build `npm run build`, deploy `npx wrangler deploy`, preview `npx wrangler preview`
 - `wrangler.jsonc` serves `./dist` with single-page-app fallback.
-- Enable **Preview Builds** in Cloudflare's Branch control to receive URLs for feature-branch testing; preview enablement must be confirmed in the Cloudflare dashboard.
+- Cloudflare Preview Builds were confirmed working for PR #12; production deployment should still be checked independently in the dashboard.
 - Deployment implementation is frontend-only and does not decide the T0018 backend provider.
 
 ## Game Data
@@ -164,7 +168,7 @@ Character import is not yet implemented.
 
 ## Known Issues
 
-See `docs/Known_Issues_And_Followups.md`. T0004 and T0005 source diagnostics remain visible in T0006's generated manifest. T0005's `CraftingTargetLevel` versus equipment-level interpretation must be resolved before T0009's level filtering; see KI-0007. Earlier Cloudflare preview failures remain tracked as KI-0006, although PR #5 and #6 preview checks succeeded.
+See `docs/Known_Issues_And_Followups.md`. T0004/T0005 source diagnostics remain visible in generated data. Resolve KI-0007 (equipment-level semantics) and KI-0008 (Vite gzip loader transport) before T0009; monitor KI-0009 (browser memory/load). Historical Cloudflare build failures are retained under KI-0006 despite PR #12's successful preview.
 
 ## Documentation Rule
 
