@@ -1,4 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { getUniqueActiveSkillIds } from '../../core/build/document';
+import { EquipmentMods } from '../mods/EquipmentMods';
 import type { BuildDocument, EquipmentSelection } from '../../core/build/document';
 import type { BuildEdit } from '../../app/editor/build-editor';
 import { isOffhandSlot } from '../../app/editor/build-editor';
@@ -22,6 +24,7 @@ interface Props {
 const PRIMARY_SLOTS = ['Head', 'Chest', 'Legs', 'Hands', 'Feet', 'Ring', 'Necklace', 'MainHand', 'OffHand'] as const;
 
 export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, preferenceProtected, preferenceNotice, onMinimumChange }: Props) {
+  const skillIds = useMemo(() => getUniqueActiveSkillIds(build), [build.skillSlotA, build.skillSlotB]);
   const officialSlots = new Set(data.items.map(item => item.slot));
   // Offhand types share a position; saved selections retain canonical slot values.
   const otherSlots = [...new Set([...officialSlots, ...build.equipment.map(selection => selection.slot)])]
@@ -50,7 +53,7 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
       {item ? <ItemFacts item={item} data={data} /> : <p className="warning">This saved selection has no available official base definition. It is retained.</p>}
       {item && item.slot !== selection.slot && <p className="warning">Published slot is {item.slot}; saved slot {selection.slot} is retained.</p>}
       {selection.item.kind !== 'database' && <details className="item-more"><summary>Saved {selection.item.kind} instance</summary><pre>{JSON.stringify(selection.item.instance, null, 2)}</pre></details>}
-      {(selection.candidateMods.length > 0 || selection.sparks.mode !== 'none') && <p className="muted">{selection.candidateMods.length} staged mods · Spark settings: {selection.sparks.mode}</p>}
+      <EquipmentMods selection={selection} equipmentIndex={index} item={item} skillIds={skillIds} data={data} onEdit={onEdit} readOnly={readOnly} />
       <div className="equipment-actions"><button type="button" disabled={readOnly || conflict || !officialSlots.has(selection.slot)} onClick={event => openPicker(selection.slot, index, event.currentTarget)}>Replace {isOffhandSlot(selection.slot) ? 'OffHand' : selection.slot}</button>
         <button type="button" disabled={readOnly} onClick={event => {
           const retainedData = selection.item.kind !== 'database' || selection.candidateMods.length > 0 || selection.sparks.mode !== 'none';

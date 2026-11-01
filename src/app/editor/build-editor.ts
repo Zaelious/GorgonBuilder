@@ -1,9 +1,11 @@
+import { editCandidateMods, type CandidateModEdit } from '../../core/build/candidate-mods';
 import type { AbilitySelection, BuildDocument } from '../../core/build/document';
 import type { GameDataRepository } from '../../data/repository/repository';
 
 export const COMBAT_BAR_SIZE = 6;
 export type Slot = 'A' | 'B';
 export type BuildEdit =
+  | CandidateModEdit
   | { type: 'title'; title: string }
   | { type: 'equipment-equip'; slot: string; itemId: string; index: number | null }
   | { type: 'equipment-clear'; index: number }
@@ -23,6 +25,15 @@ export function isOffhandSlot(slot: string): boolean {
 /** Each committed edit preserves unrelated fields. Skill switches clear only their own bar. */
 export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataRepository): BuildDocument {
   if (build.gameDataVersion !== data.gameDataVersion) return build;
+  if (edit.type === 'mod-add' || edit.type === 'mod-tier' || edit.type === 'mod-remove' || edit.type === 'mod-move') {
+    const selection = build.equipment[edit.equipmentIndex];
+    if (!Number.isInteger(edit.equipmentIndex) || !selection) return build;
+    const candidateMods = editCandidateMods(selection.candidateMods, edit, data);
+    if (candidateMods === selection.candidateMods) return build;
+    const equipment = [...build.equipment];
+    equipment[edit.equipmentIndex] = { ...selection, candidateMods };
+    return { ...build, equipment };
+  }
   if (edit.type === 'equipment-resolve-offhand') {
     if (!Number.isInteger(edit.keepIndex) || !isOffhandSlot(build.equipment[edit.keepIndex]?.slot ?? '') ||
       build.equipment.filter(selection => isOffhandSlot(selection.slot)).length <= 1) return build;
