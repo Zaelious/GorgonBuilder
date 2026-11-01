@@ -7,9 +7,8 @@ export const PREFERENCES_SCHEMA_VERSION = 1 as const;
 
 export interface Preferences {
   schemaVersion: typeof PREFERENCES_SCHEMA_VERSION;
-  /** Planned filter value only; T0009 must resolve KI-0007 before applying it.
-   * null disables the filter. This does not assert an equip-level requirement.
-   */
+  /** Minimum published CraftingTargetLevel for base equipment browsing.
+   * null disables the filter. This does not assert an equip-level requirement. */
   minimumEquipmentLevel: number | null;
 }
 

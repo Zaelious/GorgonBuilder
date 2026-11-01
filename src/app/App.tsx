@@ -3,6 +3,7 @@ import type { BuildDocument } from '../core/build/document';
 import { loadGameDataRepository } from '../data/repository/load';
 import type { GameDataRepository } from '../data/repository/repository';
 import { SkillPlanner } from '../features/skills/SkillPlanner';
+import { EquipmentPlanner } from '../features/equipment/EquipmentPlanner';
 import { createDraftAutosave } from '../persistence/local/autosave';
 import { createLocalPersistence, type SaveResult } from '../persistence/local/storage';
 import { editBuild, type BuildEdit, type Slot } from './editor/build-editor';
@@ -22,8 +23,10 @@ function saveError(result: Exclude<SaveResult, { ok: true }>): string {
 function BuildEditor({ data }: { data: GameDataRepository }) {
   const [session] = useState(() => {
     const local = createLocalPersistence({ gameDataVersion: data.gameDataVersion });
-    return { local, restored: local.restoreDraft() };
+    return { local, restored: local.restoreDraft(), preferences: local.restorePreferences() };
   });
+  const [minimumEquipmentLevel, setMinimumEquipmentLevel] = useState(session.preferences.value.minimumEquipmentLevel);
+  const [preferenceResult, setPreferenceResult] = useState<SaveResult | null>(session.preferences.status === 'fallback' ? session.preferences.error : null);
   const [build, setBuild] = useState(session.restored.value);
   const current = useRef(build);
   const [detailSlot, setDetailSlot] = useState<Slot | null>(null);
@@ -66,6 +69,23 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
     autosave.schedule(next);
   }
 
+  const preferenceProtected = preferenceResult !== null && !preferenceResult.ok &&
+    (preferenceResult.reason === 'unsupported-version' || preferenceResult.reason === 'read-failed');
+  function updateMinimum(value: number | null) {
+    setMinimumEquipmentLevel(value);
+    setPreferenceResult(session.local.updatePreferences({ minimumEquipmentLevel: value }));
+  }
+  const preferenceNotice = preferenceResult && !preferenceResult.ok ? <div className="notice warning" role="alert">
+    <p>{preferenceResult.reason === 'unsupported-version'
+      ? 'Saved preferences use an unsupported version and are protected from overwrite. Use a compatible app to change the minimum.'
+      : preferenceResult.reason === 'read-failed' ? 'Saved preferences could not be read and are protected. Restore storage access and reload.'
+        : preferenceResult.reason === 'invalid-data' || preferenceResult.reason === 'invalid-json'
+          ? 'Saved preferences are invalid. The default minimum is shown; changing it will replace the invalid preferences.'
+          : 'The minimum target level could not be saved. It applies in this page only. Restore storage access and retry.'}</p>
+    {!preferenceProtected && preferenceResult.reason !== 'invalid-data' && preferenceResult.reason !== 'invalid-json' &&
+      <button type="button" onClick={() => updateMinimum(minimumEquipmentLevel)}>Retry saving preference</button>}
+  </div> : null;
+
   return <>
     <div className="planner-heading"><BuildTitle title={build.title} readOnly={readOnly} onCommit={title => commit({ type: 'title', title })} /><p className="save-status" role="status">{saveState}</p></div>
     {recoveryVisible && session.restored.status === 'fallback' && <p className="notice warning" role="alert">{saveError(session.restored.error)}</p>}
@@ -81,6 +101,8 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
       <SkillPlanner slot="A" skill={build.skillSlotA} bar={build.abilityBarA} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} />
       <SkillPlanner slot="B" skill={build.skillSlotB} bar={build.abilityBarB} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} />
     </div></section>
+    <EquipmentPlanner build={build} data={data} onEdit={commit} readOnly={readOnly} minimum={minimumEquipmentLevel}
+      preferenceProtected={preferenceProtected} preferenceNotice={preferenceNotice} onMinimumChange={updateMinimum} />
     <footer className="planner-footer"><span>Draft game data: {build.gameDataVersion} · Loaded: {data.gameDataVersion} · Schema {build.schemaVersion}</span><span>Some portions copyright {new Date().getFullYear()} Elder Game, LLC. · Local draft only</span></footer>
   </>;
 }
@@ -103,7 +125,7 @@ export function App() {
   return <div className="app-shell">
     <header className="site-header"><span className="wordmark">Gorgon Builder</span><span className="project-label">Project Gorgon build planner</span></header>
     <main className="planner-main">
-      {load.status === 'loading' && <section className="notice" role="status"><h1>Loading official game data…</h1><p>Preparing the skill and ability planner.</p></section>}
+      {load.status === 'loading' && <section className="notice" role="status"><h1>Loading official game data…</h1><p>Preparing the build planner.</p></section>}
       {load.status === 'error' && <section className="notice" role="alert"><h1>Game data could not be loaded</h1><p>Check your connection and retry. Your stored draft has not been changed.</p><button type="button" onClick={() => { setLoad({ status: 'loading' }); setAttempt(n => n + 1); }}>Retry loading game data</button></section>}
       {load.status === 'ready' && <BuildEditor data={load.data} />}
     </main>
