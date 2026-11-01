@@ -204,3 +204,12 @@ it('projects every pinned official ability icon and special text without changin
     expect(ability.source).toEqual({ dataset: 'abilities', recordId: ability.id });
   }
 });
+
+it('projects all 3078 exact official equipment IconId values without changing identity or provenance', () => {
+  const source = input.raw.items as Record<string, { IconId?: number }>;
+  expect(runtime.itemsTreasure.items).toHaveLength(3078);
+  for (const item of runtime.itemsTreasure.items) {
+    expect(item.iconId, item.id).toBe(source[item.id]!.IconId ?? null);
+    expect(item.source).toEqual({ dataset: 'items', recordId: item.id });
+  }
+});

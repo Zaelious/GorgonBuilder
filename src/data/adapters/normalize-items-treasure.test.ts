@@ -50,6 +50,20 @@ function reverseKeys(value: unknown): unknown {
 }
 
 describe('item and treasure normalization fixtures', () => {
+  it('preserves the exact published IconId for display, with null for missing icons', () => {
+    const input = fixture();
+    input.items.item_1!.IconId = 15208;
+    const output = normalizeItemsTreasure(input);
+    expect(output.items[0]!.iconId).toBe(15208);
+    expect(output.items[0]!.raw.IconId).toBe(15208);
+    expect(output.items[1]!.iconId).toBeNull();
+  });
+
+  it.each([-1, 1.5, '15208', null])('rejects malformed published IconId %s', iconId => {
+    const input = fixture();
+    input.items.item_1!.IconId = iconId;
+    expect(() => normalizeItemsTreasure(input)).toThrow('items.item_1.IconId');
+  });
   it('keeps item identity, published target level, equip requirements, slot and fixed descriptions distinct', () => {
     const input = fixture();
     const before = JSON.stringify(input);

@@ -1,120 +1,143 @@
 # T0009 — Equipment Search and Planner verification
 
-Status: implementation proposed; awaiting architectural review and customer hands-on acceptance. Ticket status has not been changed. T0010 has not been started.
+Status: revised implementation proposed on `feature/t0009-equipment-planner`, updating existing draft [PR #18](https://github.com/Zaelious/GorgonBuilder/pull/18). Awaiting renewed architectural review and customer hands-on acceptance. Do not merge or mark T0009 complete. T0010 has not started.
 
-## Base and prerequisites
+## Review and scope
 
-Feature branch: `feature/t0009-equipment-planner`, based on latest fetched `main` at `b06e049d348e936c1e9a2e5619104435d7921df4`.
+The initial implementation at `1ae26fe` passed 399 tests, received architectural review without blocking code issues, and passed the customer's functional checklist. The [latest product-owner review](https://github.com/Zaelious/GorgonBuilder/pull/18#pullrequestreview-5728992620) requests a bounded UI revision: nine always-visible loadout rows, generic/official item icons, a collapsed advanced area, distinct offhand/shield semantics, and removal of backdrop dismissal with a drag regression. This revision implements all six requested refinements in the same PR.
 
-Confirmed merged prerequisites in the actual main history and repository state:
+The branch remains based on main `b06e049d348e936c1e9a2e5619104435d7921df4`. Confirmed merged prerequisites: T0006 `4d29f7a`, T0007 `fa6eb43`, T0008 `dd268de`, and KI-0008 `b9b75f2` / PR #16. Reviewed AGENTS.md, the ticket and required design/persistence/normalization/manual-verification documents, actual editor/repository/schema/preferences/autosave code, and the full PR review before revising.
 
-- T0006: `4d29f7a` — runtime repository and generated data.
-- T0007: `fa6eb43` — schema v1, preferences and autosave.
-- T0008: `dd268de` — accepted skill/ability editor.
-- KI-0008: `b9b75f2`, PR #16 — original gzip transport in Vite dev/preview.
+The review explicitly authorizes a narrow display-only normalization/runtime artifact extension for official `IconId`. It supersedes the initial task's restriction on changing those files for this purpose. No raw snapshot bytes, game mechanics, integrity logic, or gzip serving behavior were changed.
 
-Read AGENTS.md, T0009 and its preflight, repository state, full/MVP designs, manual guide, data normalization design, save/share design and known issues before implementation. Reviewed the actual editor, runtime item repository/contracts, BuildDocument, preferences, storage and autosave implementations.
+## Revised UI and preserved behavior
 
-## Result and changed files
+- Nine primary rows always appear: Head, Chest, Legs, Hands, Feet, Ring, Necklace, MainHand and OffHand. Each compact summary contains a category/item icon, slot, selected name or No gear selected, and an expand affordance. Native details summaries work with pointer, Enter and Space. Item facts and slot-specific picker actions appear inside expanded rows.
+- Other slots is collapsed by default. It exposes the remaining official slots and retains unknown legacy saved slots. The count of selected non-primary entries remains visible on its summary. No site-wide navigation/catalog was added.
+- The visible OffHand row contains separate OffHand and OffHandShield sections and picker controls. A shield-only summary identifies Shield. Both canonical slot strings remain unchanged in BuildDocument; multiple/legacy entries remain individually inspectable and actionable by original selection index.
+- Empty slots use consistent local equipment line drawings. Selected items and picker results use their exact published official artwork when available; missing/failed artwork falls back to a category drawing. Head/Ring/MainHand/OffHandShield artwork was verified in real Chromium.
+- Backdrop dismissal is removed from the equipment picker. Dragging search text outside or clicking the backdrop retains the dialog and query. X and Escape close it and restore focus to the opener; if equipping replaced the opener, focus returns to the persistent row summary.
+- Detailed fixed effects, target level, SkillReqs, descriptions, exact tokens and provenance stay in expanded rows or the picker. The expanded row content can accommodate a future mod panel without fixed sizing; this revision adds no mod/Spark controls or placeholder panel.
 
-The compact Equipment section sits below the existing skill/ability planner. Its slot selector uses all 19 exact official slot strings. A native modal picker searches official names, descriptions, fixed-effect text, keywords and IDs. Search uses NFKC, case/whitespace/underscore normalization and one explicit symmetric lightning/electricity synonym group; no fuzzy search or dependency was added. Results show target level, separate published skill requirements and fixed effects, prioritizing matching effects. Descriptions, remaining effects, exact published tokens and official provenance/acquisition data are available on demand. Ten results render per page.
+Original behavior is preserved: pure NFKC/case/whitespace/underscore substring search, explicit symmetric lightning/electricity synonyms, exact slots, ten results per page, nullable target-level threshold (default 90), transient default-on unknown inclusion, and schema-v1 preference persistence. Filters never unequip selections. CraftingTargetLevel remains a browsing hint, separate from published SkillReqs and confirmed equip requirements.
 
-Minimum target level defaults to 90 via the existing schema-v1 preference; an empty input saves null and disables the threshold. The default-on Include unknown target level toggle remains transient. Unknown target levels remain null and are labeled explicitly. Threshold, slot and search changes never unequip saved selections. CraftingTargetLevel is never represented as a confirmed equip requirement.
+Equip/replace/clear still use the original immutable edits and 500 ms protected autosave. Both skill bars and unrelated build fields survive. Manual/imported instances, duplicate selections, candidate mods and Spark data remain retained through unrelated changes. Explicit instance replacement/associated-data clearing retains its existing confirmation. No editor, persistence API, saved schema or search predicate changes were needed for this revision.
 
-Equip/replace/clear use immutable BuildEdit operations and existing 500 ms autosave/retry. New items store actual official IDs. Replacement preserves associated candidate mods and Spark settings. Unrelated selections, both skill bars, metadata and targets survive edits. Existing manual/imported instances and duplicate/legacy slots are retained. Discarding an instance on explicit replacement, or clearing a selection with associated data, requires confirmation. No instance import/mod/Spark editor was added.
+## Official icon extension and deterministic output
+
+Inspected `src/data/raw/cache/v490/items.json`: all **3,078 equipment definitions publish integer IconId** (official spelling differs from ability IconID). Examples: `item_45640` → 15208, `item_45052` → 14009, `item_49070` → 17202. The existing official index documents `https://cdn.projectgorgon.com/v490/icons/icon_{IconId}.png`.
+
+`NormalizedItem.iconId` copies the exact nonnegative safe integer; an absent source field becomes null. Malformed present values fail with the source path. The existing runtime projection automatically includes it. No IDs or artwork are synthesized, and no unrelated artwork source is used.
+
+Ran generation twice and compared all four generated-file SHA-256 values: byte-identical. Only itemsTreasure and manifest metadata changed relative to the original PR:
+
+| Artifact | Compressed bytes | Decoded JSON bytes | SHA-256 |
+| --- | ---: | ---: | --- |
+| progression | 912,081 | 24,512,764 | `3e9c01e629d18bac727a8e82138011951def5f067454e4f121036147d41bb915` |
+| abilities | 566,143 | 16,214,378 | `0606099fad944d22c9330bf9c310e78e2feaeda9db02a208d808b63a4e9e41c7` |
+| itemsTreasure | 1,824,985 | 31,653,251 | `90ea272a7804075fc8474e1150119512b3dddb9b2806626ee350aac789411487` |
+
+The item gzip grew by 3,736 bytes. All source hashes, official IDs/slots, record counts and diagnostics remain unchanged. Existing compressed length/hash verification, explicit gzip decoding, JSON-length and schema/version checks remain intact. BuildDocument and preferences stay at schema v1.
+
+Pinned v490 regressions remain: **3,078 equipment definitions, 518 known target levels at 90+, 500 unknown, 1,018 when unknowns are included at 90+**. Tests still cover 89/90/91/null, disabled minimum, and composed text/slot/level filters.
+
+## Files changed for this revision
 
 | Files | Purpose |
 | --- | --- |
-| `src/data/search/equipment.ts` | Pure normalization, search and composed level/slot/text predicates |
-| `src/data/search/equipment.test.ts` | 28 search, synonym, slot, level and pinned-count regressions |
-| `src/features/equipment/EquipmentPlanner.tsx` | Compact overview, official slot selection, inspection and edit controls |
-| `src/features/equipment/EquipmentPicker.tsx` | Modal search, preference controls, pagination and keyboard/focus behavior |
-| `src/features/equipment/ItemFacts.tsx` | Published target level, skill requirements, fixed effects and source details |
-| `src/features/equipment/equipment.css` | Equipment-only responsive styles |
-| `src/features/equipment/equipment-editor.test.ts` | Four immutable-edit/autosave/preservation regressions |
-| `src/features/equipment/EquipmentPlanner.test.tsx` | 15 editor/UI persistence, protection, recovery and interaction regressions |
-| `src/features/equipment/equipment.smoke.py` | Repeatable real-browser dev/preview smoke and measurements |
-| `src/app/App.tsx` | Editor integration, existing preference restore/update API and visible failures/retry |
-| `src/app/editor/build-editor.ts` | Equip/replace/clear edits, exact-slot/ID validation and preservation |
-| `src/persistence/local/preferences.ts` | Clarify existing field documentation; schema stays v1 |
-| `docs/T0009_Verification.md` | Review evidence and customer acceptance checklist |
+| `src/features/equipment/EquipmentPlanner.tsx` | Nine compact rows, advanced slots, exact offhand grouping, preserved selections and focus targets |
+| `src/features/equipment/EquipmentPicker.tsx` | Official result icons, removal of backdrop dismissal, row-focus fallback |
+| `src/features/equipment/EquipmentIcon.tsx` | Official icon URL validation, per-slot line drawings and failed-artwork fallback |
+| `src/features/equipment/equipment.css` | Compact responsive rows and icon/expanded-content styling |
+| `src/features/equipment/EquipmentPlanner.test.tsx` | Preserve original workflow assertions with new selectors; offhand/legacy/duplicate preservation, backdrop and icon regressions |
+| `src/features/equipment/equipment.smoke.py` | Real row/drag/icon/fallback/advanced-slot browser assertions and screenshots |
+| `src/data/normalized/items-treasure.ts` | Display-only nullable iconId contract |
+| `src/data/adapters/normalize-items-treasure.ts` | Exact official IconId projection |
+| `src/data/adapters/normalize-items-treasure.test.ts` | Missing/malformed/published icon cases |
+| `scripts/generate-data.test.ts` | Exact raw-to-runtime icon/provenance checks for all 3,078 equipment definitions |
+| `src/generated/game-data/itemsTreasure.json.gz`, `manifest.json` | Deterministically regenerated item data and metadata |
+| `src/data/normalized/README.md` | Reviewed display-only extension, source spelling, provenance and artifact changes |
+| `docs/T0009_Verification.md` | Current revision evidence and customer checklist |
+| `docs/screenshots/t0009/*.png` | Four actual Chromium production-preview captures for PR review |
 
-Pinned raw data, generated artifacts, normalizers, integrity code, loader and KI-0008 transport configuration remain unchanged.
+Original PR files additionally cover pure equipment search/tests, immutable build-editor operations, App preference/editor integration, ItemFacts and persistence/editor regressions. They are unchanged by this UI revision. Raw data, repository loader/integrity, KI-0008 transport/Vite configuration, dependency files, skill/ability UI and treasure-mod/Spark implementations remain unchanged.
 
-## Commands and automated results
+## Commands and results
 
-Node 24.19.0, npm 11.9.0. Passed:
+Node 24.19.0, npm 11.9.0. Successful checks:
 
 ```bash
 npm ci --cache /tmp/gorgon-npm-cache
 npm run data:update -- --check
+npm run data:generate
+sha256sum src/generated/game-data/* > /tmp/t0009-icons-first-generation.sha256
+npm run data:generate
+sha256sum --check /tmp/t0009-icons-first-generation.sha256
 npm run lint
 npm run typecheck
 npm test
 npm run build
 git diff --check
 XDG_CONFIG_HOME=/tmp/t0009-wrangler-config npx wrangler deploy --dry-run --outdir /tmp/t0009-wrangler-dry-run
-CHROMIUM_TRUST_HOME=/tmp/t0009-chromium-home python src/features/equipment/equipment.smoke.py --output /workspace/artifacts/t0009/browser
-CHROMIUM_TRUST_HOME=/tmp/t0009-chromium-home python src/test/vite-transport.smoke.py --output /workspace/artifacts/t0009/transport
+CHROMIUM_TRUST_HOME=/tmp/t0009-chromium-home python src/features/equipment/equipment.smoke.py --output /workspace/artifacts/t0009/revision/browser
+CHROMIUM_TRUST_HOME=/tmp/t0009-chromium-home python src/test/vite-transport.smoke.py --output /workspace/artifacts/t0009/revision/transport
 ```
 
-Final automated suite: **399 tests across 15 files**, including **47 new focused T0009 tests** and the existing seven transport integration tests. Production build and Wrangler static-assets dry-run passed; no deployment was performed. Pinned v490 counts are checked: 3,078 equipment definitions, 518 known target levels at 90+, 500 unknown; including unknowns at 90+ yields 1,018. Synthetic boundary tests cover 89, 90, 91 and null; disabled minimum includes all levels regardless of the unknown toggle.
+Full suite: **408 tests across 15 files**, retaining all earlier behavioral coverage and adding nine cases. Focused adapter/generator/UI run also passed (89 tests). Lint, both strict TypeScript projects, build, raw validation, deterministic regeneration, whitespace checks and Wrangler static-assets dry-run passed. No direct deployment or merge was performed.
 
-Environment notes: the first plain `npm ci` attempt could not create the default `/home/agent/.npm` cache; using a writable `/tmp` cache succeeded without lockfile changes. The sandbox initially blocked local listening ports for transport tests; enabling executor network access allowed the unchanged tests and both browser servers to pass. Chromium trusts the injected environment CA in a temporary NSS store, following KI-0008's documented setup; TLS validation remains enabled. Wrangler's writable config/output paths are under `/tmp`.
+Environment setup follows the original verification: writable `/tmp` npm cache and Wrangler config/output, executor network access for local test servers, inherited HTTPS proxy, and injected environment CA trusted in a temporary Chromium NSS store. TLS verification remains enabled. No runtime/test dependency was added.
 
-## Actual browser evidence
+## Actual browser evidence and screenshots
 
-Python Playwright and installed Chromium exercised actual `npm run dev` (port 5175) and built `npm run preview` (4175), at 1440×900 and 375×812. Both passed:
+Installed Chromium **154.0.8037.57** with Python Playwright exercised actual Vite dev (5175) and built production preview (4175), at 1440×900 and 375×812. Both modes passed:
 
-- All 19 exact slots; compact empty overview (140.4 CSS px tall on desktop).
-- Default 90, unknown on/off, null minimum, and persisted 90/999 thresholds after reload.
-- Representative searches, empty results, separate SkillReqs, source/description and exact-effect disclosure.
-- MainHand equip and replacement, additional OffHandShield equip, clear and reload.
-- Both original ability bars and all unrelated document fields preserved.
-- Filters retaining equipped items; ten-result pagination; native modal keyboard focus containment; Escape closing from a nonempty search and returning focus.
-- Desktop/mobile screenshots, no horizontal page overflow, no unexpected console or page errors.
+- Nine empty primary rows, category icons, native keyboard expansion and directly available slot picker actions. Empty desktop rows are 49 px including borders; the full nine-row equipment section plus Other slots is 526 px.
+- All 19 canonical slots; initially collapsed advanced area and an accessible Horseshoes picker.
+- Real Head, Ring, MainHand and OffHandShield choices with exact CDN URLs and loaded 64×64 official artwork. Selected-state and shield labeling are visible.
+- Actual pointer drag from search text beyond the dialog boundary and a separate backdrop click: dialog/query remain intact. X/Escape close with focus restoration; equipping into an empty row returns focus to its summary.
+- Original target-level/unknown/text filters, no-results state, official provenance/exact-effect disclosure, pagination, equip/replace/clear/reload, retained equipment under changing filters, and unchanged skill bars/document fields.
+- Mobile picker and overview without horizontal page overflow. Normal workflows produced **zero console errors and zero page errors**.
+- An isolated forced CDN 404 rendered the category fallback while keeping the selected name. Its expected resource-404 console message is explicitly recorded separately; no page exception occurred. Missing icon metadata and recovery to another icon are also unit-tested.
 
-The browser smoke found that native search inputs could consume the first Escape to clear text. The picker now handles Escape explicitly; the corrected workflow and focused regression both pass.
+The unchanged KI-0008 browser regression passed both modes with the newly generated manifest: all three browser-received compressed byte counts/hashes matched, Content-Type was application/gzip, and Content-Encoding was absent. Same-size corrupt responses for every artifact were rejected, Retry recovered, and existing Psychology/Deer, Cow/Unarmed, duplicate-skill, one-skill and ability-edit/reload flows passed.
 
-The separate existing KI-0008 smoke passed dev/preview gzip lengths/SHA-256, three same-size corrupt responses rejected per mode, Retry recovery, and Psychology/Deer, Cow/Unarmed, same-skill and one-skill planner flows. Received bytes in both modes:
+Review screenshots from the actual production-preview browser run are committed:
 
-| Asset | Compressed bytes | SHA-256 |
-| --- | ---: | --- |
-| progression | 912,081 | `3e9c01e629d18bac727a8e82138011951def5f067454e4f121036147d41bb915` |
-| abilities | 566,143 | `0606099fad944d22c9330bf9c310e78e2feaeda9db02a208d808b63a4e9e41c7` |
-| itemsTreasure | 1,821,249 | `d500d0046394d3d8f630b86c5add880b1913d34f36ca272681844f256237c484` |
+![Nine empty primary rows](screenshots/t0009/empty-desktop.png)
 
-Every response used `Content-Type: application/gzip` with no Content-Encoding. Browser records match the unchanged manifest.
+![Selected official item icons and shield labeling](screenshots/t0009/selected-desktop.png)
 
-Local review artifacts (outside Git): `/workspace/artifacts/t0009/browser/results.json`, eight equipment screenshots named `{dev,preview}-{picker,overview}-{desktop,mobile}.png`, `/workspace/artifacts/t0009/transport/results.json` and its planner screenshots, plus `/workspace/artifacts/t0009/search-performance.json`. The final response links the screenshots directly for the desktop app.
+[Mobile selected layout](screenshots/t0009/selected-mobile.png) · [Deliberate icon-404 fallback](screenshots/t0009/icon-fallback.png)
 
-Pure-search measurement used the loaded runtime repository, seven queries, five warmups and 30 measured samples per query across all slots, MainHand and Feet. At default 90 with unknowns included, MainHand/Feet medians were approximately 0.27–0.71 ms; all-slot medians 3.02–5.67 ms and measured p95 at most 10.34 ms. No cache/index was justified. Browser round-trip measurements include Playwright overhead and are recorded separately; these are unthrottled local observations, not a mobile-device performance guarantee.
+Additional revision artifacts are outside Git under `/workspace/artifacts/t0009/revision/`:
 
-Final browser run used Chromium 154.0.8037.57. CDP measurements below are target-specific JS heap bytes; explicit garbage collection distinguishes retained data from transient allocations. They are not directly comparable to earlier coarse `performance.memory` readings in KI-0009.
+- `browser/results.json`, `browser.log`, and `{dev,preview}-{empty-desktop,overview-desktop,overview-mobile,picker-desktop,picker-mobile,icon-fallback}.png`.
+- `transport/results.json`, `transport.log` and dev/preview planner screenshots.
 
-| Mode | Initial load | Search round-trip range | Heap after initial GC | Heap after workflow GC |
-| --- | ---: | ---: | ---: | ---: |
-| Vite dev | 1,172 ms | 13.0–46.5 ms | 78,031,892 | 79,758,244 |
-| Production preview | 891 ms | 13.3–30.7 ms | 74,279,004 | 74,845,012 |
+The final chat response links current desktop/mobile screenshots directly. Initial-run artifacts under `/workspace/artifacts/t0009/browser` and `/workspace/artifacts/t0009/transport` remain available as historical evidence.
 
-## Customer hands-on checklist
+The original pure-search measurement remains applicable because search code is unchanged: five warmups and 30 samples across seven queries; MainHand/Feet medians approximately 0.27–0.71 ms, all-slot medians 3.02–5.67 ms and measured p95 at most 10.34 ms. Browser results additionally record load latency, interaction round trips and CDP heap before/after explicit GC. These are unthrottled local measurements, not low-end mobile performance guarantees; KI-0009 remains relevant. No search cache, partitioning or new architecture was added.
 
-1. Open Equipment → Feet → Browse items. Confirm Minimum target level is 90 and Include unknown target level is checked.
-2. Search lightning/electricity, taunt, kick and combat refresh; try psychic in a suitable slot such as MainHand. Verify visible effects support the results.
-3. In Feet search `item_40002` (Basic Boots): unknown target level is visible with unknowns on, hidden with unknowns off at 90. Clear the minimum; it reappears even with unknowns off.
-4. Try minimum 80 and no minimum; close/reload/reopen to confirm the minimum persists. Searches and the unknown toggle are transient.
-5. In MainHand search `item_45640`: inspect target level 90, separate Knife Fighting 60 requirement, description and official source. Verify target-level wording makes no equip-requirement claim.
-6. Equip MainHand and OffHandShield `item_45052`; replace one, change filters so it no longer matches, reload, then clear one and reload again. Confirm both skill bars, title and notes remain intact.
-7. Use keyboard only: open Browse items, search, Tab/Shift+Tab within the dialog, page through results, press Escape and check focus returns. Repeat common actions on a narrow viewport.
-8. Review error/read-only regressions and automated evidence, then give architectural review and customer acceptance before any merge or ticket-status update.
+Final revision run, measured alongside the test suite: dev load 2,027 ms and preview load 1,189 ms. Target-specific CDP heap after explicit GC was 78,377,304 → 80,011,952 bytes in dev and 74,390,976 → 75,693,580 bytes in preview (initial load → completed workflow). Temporary allocations before GC are recorded separately in results.json.
 
-## Risks, assumptions and follow-ups
+## Customer acceptance recheck
 
-- Fixed effects remain published, uninterpreted data. Token labels only replace underscores/case for readability; exact original tokens are available in source details. No units, percentages, legality or calculated mechanics are inferred.
-- Existing mod/Spark settings deliberately survive replacement; their applicability to the new base item is future T0010/later validation. This ticket only preserves them.
-- A legacy document can retain multiple selections for the same slot. Explicit row actions address one entry by index; no canonical slot mapping or silent reconciliation is introduced.
-- The full repository's pre-existing memory/load cost (KI-0009) remains relevant; browser records include target-specific heap measurements before/after the workflow and explicit garbage collection. No data partitioning or architecture change was attempted.
-- Browser evidence covers Chromium on this environment, not low-end mobile hardware, other browser engines or live Cloudflare deployment. Cloudflare deployment was not requested; the dry-run passed.
-- T0010 treasure-mod editing, Spark editing/simulation, calculations, character/storage imports and remote save/share remain out of scope. No new unrelated issue was implemented.
+1. Open a fresh draft: see all nine empty primary rows with meaningful icons and No gear selected. Use pointer and keyboard to expand Head, Ring, MainHand and OffHand and open their pickers.
+2. Equip Head/Ring/MainHand items and a shield through OffHand → Shields (OffHandShield). Check official artwork, selected names and shield labeling; expand OffHand to inspect its two distinct canonical sections.
+3. Expand Other slots, browse an unusual slot such as Horseshoes or Racial, then collapse it. Verify selected non-primary gear remains discoverable via the count.
+4. Search lightning/electricity, psychic, taunt, kick and combat refresh in suitable slots. In Feet search item_40002, toggle unknown levels at minimum 90, then clear the minimum. Try minimum 80 and refresh to check preference persistence.
+5. Inspect item_45640: target level 90, separate Knife Fighting 60 requirement, fixed effects, description and official source. Check that target level is not presented as an equip requirement.
+6. Drag search text outside the dialog and click its backdrop: it stays open. Close with X/Escape and verify focus returns. Page through results using the keyboard.
+7. Equip multiple slots, replace and clear, refresh after each, and verify both ability bars, title, notes and other equipment persist. Existing manual/imported/duplicate selections must remain unless explicitly changed; associated-data confirmation still applies.
+8. Review the forced-404 fallback evidence and repeat common actions on a narrow screen. Provide renewed architectural review and customer acceptance before any merge/status update.
 
-After architectural review, customer acceptance and merge, documentation owners should update Tickets, Repo_Current_State, Manual_Verification_Guide, MVP_Technical_Design, Build_Save_And_Share_Design and Data_Source_And_Normalization to describe the implemented equipment workflow and explicit synonym mapping; update KI-0007's pending status and retain KI-0009 monitoring. This verification record does not mark T0009 complete.
+## Risks, assumptions, follow-ups and documentation
+
+- Official CDN artwork can be missing or unavailable; the category fallback is deliberate. All pinned equipment records have IconId, so absent metadata is covered by synthetic unit tests rather than an invented official record.
+- UI grouping of OffHand/OffHandShield does not assert that both can legally be worn together. The planner retains both canonical selections and defers mechanics/eligibility decisions.
+- Fixed effects remain uninterpreted; token formatting does not infer units or percentages. Retained mods/Spark settings may not apply to replacement gear and need later eligibility validation.
+- Legacy unknown slots and duplicate entries remain preserved. Their presence does not invent official slot mappings or add a character-import workflow.
+- T0010 mod candidate selection/tier editing, skill/profile eligibility, numeric stats, Spark simulation, damage calculations, imports and remote persistence remain out of scope. No new unrelated issue was implemented.
+- Browser coverage is local Chromium, not all engines, low-end hardware or the live Cloudflare runtime. Wrangler dry-run validates bundling; it is not a live runtime test.
+
+This report and the normalization README are updated now. After renewed architectural/customer acceptance and merge, documentation owners should synchronize Tickets, Repo_Current_State, Manual_Verification_Guide, MVP_Technical_Design, Build_Save_And_Share_Design, Data_Source_And_Normalization, and KI-0007's pending status while retaining KI-0009 monitoring. T0009 remains unmerged and incomplete pending that review.

@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from 'react';
-import type { BuildDocument } from '../../core/build/document';
+import type { BuildDocument, EquipmentSelection } from '../../core/build/document';
 import type { BuildEdit } from '../../app/editor/build-editor';
 import type { GameDataRepository } from '../../data/repository/repository';
 import { EquipmentPicker } from './EquipmentPicker';
+import { EquipmentIcon } from './EquipmentIcon';
 import { ItemFacts } from './ItemFacts';
 import './equipment.css';
 
@@ -17,42 +18,80 @@ interface Props {
   onMinimumChange: (value: number | null) => void;
 }
 
+const PRIMARY_SLOTS = ['Head', 'Chest', 'Legs', 'Hands', 'Feet', 'Ring', 'Necklace', 'MainHand', 'OffHand'] as const;
+
 export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, preferenceProtected, preferenceNotice, onMinimumChange }: Props) {
-  const slots = [...new Set(data.items.map(item => item.slot))].sort();
-  const [slot, setSlot] = useState(slots.includes('MainHand') ? 'MainHand' : slots[0] ?? '');
-  const [picker, setPicker] = useState<{ slot: string; index: number | null; returnFocus: HTMLElement | null } | null>(null);
-  const existingIndex = build.equipment.findIndex(selection => selection.slot === slot);
+  const officialSlots = new Set(data.items.map(item => item.slot));
+  // Presentation groups only. Every edit and saved selection keeps its exact slot.
+  const otherSlots = [...new Set([...officialSlots, ...build.equipment.map(selection => selection.slot)])]
+    .filter(slot => !PRIMARY_SLOTS.some(primary => primary === slot) && slot !== 'OffHandShield').sort();
+  const [picker, setPicker] = useState<{ slot: string; index: number | null; returnFocus: HTMLElement; fallbackFocus: HTMLElement | null } | null>(null);
+
+  function definition(selection: EquipmentSelection) {
+    const id = selection.item.kind === 'database' ? selection.item.itemId : selection.item.instance.baseItemId;
+    return id === null ? undefined : data.getItem(id);
+  }
+  function name(selection: EquipmentSelection) {
+    return (selection.item.kind !== 'database' ? selection.item.instance.displayName : undefined)
+      ?? definition(selection)?.displayName
+      ?? (selection.item.kind === 'database' ? selection.item.itemId : selection.item.instance.baseItemId ?? 'Manual item');
+  }
+  function openPicker(slot: string, index: number | null, opener: HTMLButtonElement) {
+    setPicker({ slot, index, returnFocus: opener, fallbackFocus: opener.closest('.equipment-row')?.querySelector<HTMLElement>('summary') ?? null });
+  }
+  function renderSelection(selection: EquipmentSelection, index: number) {
+    const item = definition(selection);
+    return <article className="equipment-selection" key={index} data-selection-index={index}>
+      <div className="equipment-selection-heading"><EquipmentIcon slot={selection.slot} iconId={item?.iconId} version={data.gameDataVersion} />
+        <h3>{name(selection)}</h3><span className="muted">{selection.slot}{selection.item.kind !== 'database' && ` · ${selection.item.kind} instance`}</span></div>
+      {item ? <ItemFacts item={item} data={data} /> : <p className="warning">This saved selection has no available official base definition. It is retained.</p>}
+      {item && item.slot !== selection.slot && <p className="warning">Published slot is {item.slot}; saved slot {selection.slot} is retained.</p>}
+      {selection.item.kind !== 'database' && <details className="item-more"><summary>Saved {selection.item.kind} instance</summary><pre>{JSON.stringify(selection.item.instance, null, 2)}</pre></details>}
+      {(selection.candidateMods.length > 0 || selection.sparks.mode !== 'none') && <p className="muted">{selection.candidateMods.length} staged mods · Spark settings: {selection.sparks.mode}</p>}
+      <div className="equipment-actions"><button type="button" disabled={readOnly || !officialSlots.has(selection.slot)} onClick={event => openPicker(selection.slot, index, event.currentTarget)}>Replace {selection.slot}</button>
+        <button type="button" disabled={readOnly} onClick={event => {
+          const retainedData = selection.item.kind !== 'database' || selection.candidateMods.length > 0 || selection.sparks.mode !== 'none';
+          if (retainedData && !window.confirm(`Clear ${name(selection)} and its saved instance, staged mods, and Spark settings from this slot?`)) return;
+          // Always-visible primary row summaries survive clearing their selection.
+          const summary = event.currentTarget.closest('.equipment-row')?.querySelector<HTMLElement>('summary');
+          const otherSummary = document.getElementById('other-equipment-summary');
+          onEdit({ type: 'equipment-clear', index });
+          requestAnimationFrame(() => (summary?.isConnected ? summary : otherSummary)?.focus());
+        }}>Clear {selection.slot}</button></div>
+    </article>;
+  }
+  function renderRow(slot: string) {
+    const slots = slot === 'OffHand' ? ['OffHand', 'OffHandShield'] : [slot];
+    const selections = build.equipment.map((selection, index) => ({ selection, index })).filter(entry => slots.includes(entry.selection.slot));
+    const first = selections[0]?.selection;
+    const item = first ? definition(first) : undefined;
+    return <details className={`equipment-row${first ? ' has-equipment' : ''}`} key={slot} data-equipment-row={slot}>
+      <summary><EquipmentIcon slot={first?.slot ?? slot} iconId={item?.iconId} version={data.gameDataVersion} />
+        <span className="equipment-slot-name">{slot}</span>
+        <span className="equipment-row-name">{first ? `${name(first)}${selections.length > 1 ? ` + ${selections.length - 1} more` : ''}` : 'No gear selected'}</span>
+        {first && <small>{selections.length > 1 ? `${selections.length} selected` : `${first.slot === 'OffHandShield' ? 'Shield · ' : ''}${first.item.kind !== 'database' ? `${first.item.kind} instance` : item?.level == null ? 'Unknown target level' : `Target ${item.level}`}`}</small>}
+      </summary>
+      <div className="equipment-row-content">
+        {slot === 'OffHand' && <p className="muted offhand-help">OffHand and OffHandShield are separate official slots. Each selection is saved independently.</p>}
+        {slots.map(canonicalSlot => {
+          const entries = selections.filter(entry => entry.selection.slot === canonicalSlot);
+          return <div className="equipment-canonical-slot" key={canonicalSlot} data-equipment-slot={canonicalSlot}>
+            {slot === 'OffHand' && <h3 className="canonical-slot-heading">{canonicalSlot === 'OffHandShield' ? 'Shields (OffHandShield)' : 'Offhand items (OffHand)'}</h3>}
+            {entries.map(entry => renderSelection(entry.selection, entry.index))}
+            {entries.length === 0 && <button type="button" disabled={!officialSlots.has(canonicalSlot)} aria-label={`Browse ${canonicalSlot} items`} onClick={event => openPicker(canonicalSlot, null, event.currentTarget)}>Choose {canonicalSlot === 'OffHandShield' ? 'a shield' : 'gear'}</button>}
+          </div>;
+        })}
+      </div>
+    </details>;
+  }
+
   return <section className="equipment-section" aria-labelledby="equipment-title">
     <div className="section-heading"><h2 id="equipment-title">Equipment</h2><span className="muted">{build.equipment.length} selected</span></div>
     {!picker && preferenceNotice}
-    <div className="equipment-toolbar"><label htmlFor="equipment-slot">Official slot</label>
-      <select id="equipment-slot" value={slot} onChange={event => setSlot(event.target.value)}>{slots.map(value => <option key={value}>{value}</option>)}</select>
-      <button type="button" disabled={!slot} onClick={event => setPicker({ slot, index: existingIndex < 0 ? null : existingIndex, returnFocus: event.currentTarget })}>Browse items</button>
-    </div>
-    {build.equipment.length === 0 && <p className="equipment-empty muted">No equipment selected. Choose a slot to browse official items.</p>}
-    <div className="equipment-overview">{build.equipment.map((selection, index) => {
-      const id = selection.item.kind === 'database' ? selection.item.itemId : selection.item.instance.baseItemId;
-      const item = id === null ? undefined : data.getItem(id);
-      const name = selection.item.kind !== 'database' && selection.item.instance.displayName
-        ? selection.item.instance.displayName : item?.displayName ?? id ?? 'Manual item';
-      return <details className="equipment-selection" key={`${index}-${selection.slot}-${id}`}>
-        <summary><span className="equipment-slot-name">{selection.slot}</span><span>{name}</span><small>{selection.item.kind !== 'database' ? `${selection.item.kind} instance` : item?.level === null || !item ? 'Unknown target level' : `Target ${item.level}`}</small></summary>
-        <div className="equipment-selection-content">
-          {item ? <ItemFacts item={item} data={data} /> : <p className="warning">{id ? `Official definition ${id} is unavailable.` : 'No base definition is linked.'} This saved selection is retained.</p>}
-          {item && item.slot !== selection.slot && <p className="warning">Published slot is {item.slot}; saved slot {selection.slot} is retained.</p>}
-          {selection.item.kind !== 'database' && <details className="item-more"><summary>Saved {selection.item.kind} instance</summary><pre>{JSON.stringify(selection.item.instance, null, 2)}</pre></details>}
-          {(selection.candidateMods.length > 0 || selection.sparks.mode !== 'none') && <p className="muted">{selection.candidateMods.length} staged mods · Spark settings: {selection.sparks.mode}</p>}
-          <div className="equipment-actions"><button type="button" disabled={readOnly || !slots.includes(selection.slot)} onClick={event => setPicker({ slot: selection.slot, index, returnFocus: event.currentTarget })}>Replace {selection.slot}</button>
-            <button type="button" disabled={readOnly} onClick={event => {
-              const retainedData = selection.item.kind !== 'database' || selection.candidateMods.length > 0 || selection.sparks.mode !== 'none';
-              if (retainedData && !window.confirm(`Clear ${name} and its saved instance, staged mods, and Spark settings from this slot?`)) return;
-              const section = event.currentTarget.closest('section');
-              onEdit({ type: 'equipment-clear', index });
-              section?.querySelector<HTMLSelectElement>('#equipment-slot')?.focus();
-            }}>Clear {selection.slot}</button></div>
-        </div>
-      </details>;
-    })}</div>
+    <div className="equipment-primary">{PRIMARY_SLOTS.map(renderRow)}</div>
+    <details className="equipment-other"><summary id="other-equipment-summary">Other slots{build.equipment.some(selection => otherSlots.includes(selection.slot)) && <span className="muted"> · {build.equipment.filter(selection => otherSlots.includes(selection.slot)).length} selected</span>}</summary>
+      {otherSlots.map(renderRow)}
+    </details>
     {picker && <EquipmentPicker {...picker} data={data} minimum={minimum} preferenceProtected={preferenceProtected} preferenceNotice={preferenceNotice} onMinimumChange={onMinimumChange} readOnly={readOnly} replacing={picker.index !== null}
       onClose={() => setPicker(null)} onChoose={itemId => {
         const previous = picker.index === null ? undefined : build.equipment[picker.index];
