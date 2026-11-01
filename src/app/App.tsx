@@ -112,8 +112,8 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
         <p>Select skills and levels, then use + to browse abilities. Open an equipped icon for details and bar controls. Changing a skill clears its bar and staged mods for a skill no longer in either slot (with Undo). Both slots can use the same skill.</p>
       </div></details>
     </div><div className="planner-grid">
-      <SkillPlanner slot="A" skill={build.skillSlotA} bar={build.abilityBarA} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} />
-      <SkillPlanner slot="B" skill={build.skillSlotB} bar={build.abilityBarB} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} />
+      <SkillPlanner slot="A" skill={build.skillSlotA} bar={build.abilityBarA} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} equipment={build.equipment} />
+      <SkillPlanner slot="B" skill={build.skillSlotB} bar={build.abilityBarB} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} equipment={build.equipment} />
     </div>
     <div className="skill-change-notice" aria-live="polite">{cleared && <p>
       <span>{cleared.message}</span>

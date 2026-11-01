@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { AbilitySelection, SkillSlot } from '../../core/build/document';
+import type { AbilitySelection, EquipmentSelection, SkillSlot } from '../../core/build/document';
 import type { GameDataRepository } from '../../data/repository/repository';
 import type { BuildEdit, Slot } from '../../app/editor/build-editor';
 import { AbilityBar } from '../abilities/AbilityPlanner';
@@ -13,6 +13,7 @@ interface Props {
   readOnly: boolean;
   detailSlot: Slot | null;
   onDetailOpen: (slot: Slot) => void;
+  equipment?: readonly EquipmentSelection[];
 }
 
 function SkillLevel({ slot, level, onEdit }: { slot: Slot; level: number; onEdit: Props['onEdit'] }) {
@@ -29,7 +30,7 @@ function SkillLevel({ slot, level, onEdit }: { slot: Slot; level: number; onEdit
     {!valid && <p id={`level-error-${slot}`} className="warning">Use a nonnegative whole number. The saved level is unchanged.</p>}</>;
 }
 
-export function SkillPlanner({ slot, skill, bar, data, onEdit, readOnly, detailSlot, onDetailOpen }: Props) {
+export function SkillPlanner({ slot, skill, bar, data, onEdit, readOnly, detailSlot, onDetailOpen, equipment }: Props) {
   const skills = useMemo(() => data.skills.filter(s => s.combat)
     .toSorted((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id)), [data]);
   const selected = skill.skillId === null ? undefined : data.getSkill(skill.skillId);
@@ -51,7 +52,7 @@ export function SkillPlanner({ slot, skill, bar, data, onEdit, readOnly, detailS
           </div>
         </div>
       </fieldset>
-      <AbilityBar key={skill.skillId ?? 'empty'} slot={slot} skill={skill} bar={bar} data={data} onEdit={onEdit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={onDetailOpen} />
+      <AbilityBar key={skill.skillId ?? 'empty'} slot={slot} skill={skill} bar={bar} data={data} onEdit={onEdit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={onDetailOpen} equipment={equipment} />
       {unavailable && <p role="alert" className="warning">Official skill {skill.skillId} is unavailable. Your saved selection has been retained.</p>}
       {selected && !selected.combat && <p role="alert" className="warning">The saved skill is not marked as a combat skill in loaded data.</p>}
 

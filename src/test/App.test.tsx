@@ -451,7 +451,7 @@ it('shows one equipped detail panel when switching between the independent bars'
 });
 
 
-it('keeps technical facts behind More details and explicitly expands a long description', async () => {
+it('shows full published facts and ability effects immediately, with only technical fields under Technical details', async () => {
   const ability = data.abilities.find(a => a.description.length > 240 && data.getSkill(a.skill.skillId ?? '')?.combat)!;
   const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
   build.skillSlotA.skillId = ability.skill.skillId;
@@ -459,17 +459,15 @@ it('keeps technical facts behind More details and explicitly expands a long desc
   localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build));
   await render();
   await inspect('A', 1);
-  const more = control<HTMLDetailsElement>('.supplementary-facts');
-  const description = control<HTMLDetailsElement>('.full-description');
-  expect(more.open).toBe(false);
-  expect(description.open).toBe(false);
-  expect(control('.official-id').closest('details')).toBe(more);
-  expect(control('.ability-description > p').textContent!.length).toBeLessThan(245);
-  await click('.full-description summary');
-  expect(description.open).toBe(true);
-  expect(control('.full-description > p').textContent).toBe(ability.description);
-  await click('.supplementary-facts summary');
-  expect(more.open).toBe(true);
+  expect(control('.ability-description').textContent).toBe(ability.description);
+  expect(container.querySelector('.full-description')).toBeNull();
+  const technical = control<HTMLDetailsElement>('.technical-details');
+  expect(technical.open).toBe(false);
+  expect(technical.querySelector('summary')!.textContent).toBe('Technical details');
+  expect(control('.official-id').closest('details')).toBe(technical);
+  expect(container.textContent).not.toContain('More details');
+  await click('.technical-details summary');
+  expect(technical.open).toBe(true);
 });
 
 it('commits a title with Enter through the existing 500 ms autosave and restores it on remount', async () => {

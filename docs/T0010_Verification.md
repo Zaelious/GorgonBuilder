@@ -2,7 +2,66 @@
 
 **Status: Revised on the existing PR #22 for architectural review and customer acceptance. Not merged or marked complete.**
 
-Branch: `feature/t0010-treasure-mod-planner`. The initial implementation at `62d8116` passed architectural review, but the Product Owner requested a different UI in [the latest customer revision review](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729510750). The subsequent [rendering/density review at c13d9f5](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729721042) requires actual official icons, readable effects and substantially denser lists. The [customer acceptance review at 8f6f4a2](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729847590) then required four further corrections: player-facing percentages, unclipped mod effects, use of the desktop viewport and visible three-digit skill levels. The [architectural re-review at dd781c0](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730438882) then asked for two visual fixes: slot-based skill colours and grouped STATS rows, described first below. Before that, the [final customer review](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730246516) and its [addendum](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730252983) then required six more corrections, described in the first section below. Later sections keep the earlier evidence, marked where this revision supersedes it. Existing domain/persistence work remains in place.
+Branch: `feature/t0010-treasure-mod-planner`. The initial implementation at `62d8116` passed architectural review, but the Product Owner requested a different UI in [the latest customer revision review](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729510750). The subsequent [rendering/density review at c13d9f5](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729721042) requires actual official icons, readable effects and substantially denser lists. The [customer acceptance review at 8f6f4a2](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729847590) then required four further corrections: player-facing percentages, unclipped mod effects, use of the desktop viewport and visible three-digit skill levels. The [ability-details addendum at 68e2fa7](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730552251) then asked for visible ability facts and a Relevant Mods section, described first below. Before that, the [architectural re-review at dd781c0](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730438882) then asked for two visual fixes: slot-based skill colours and grouped STATS rows, described first below. Before that, the [final customer review](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730246516) and its [addendum](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730252983) then required six more corrections, described in the first section below. Later sections keep the earlier evidence, marked where this revision supersedes it. Existing domain/persistence work remains in place.
+
+## Ability details and Relevant Mods (addendum at 68e2fa7)
+
+### Ability facts shown immediately
+- The "More details" dropdown is removed from `AbilityFacts`. The full description and the core stats (Min Level, Power, Reuse, Range, Base damage) are always visible. AoE, health damage, armor damage and extra damage if vulnerable are also shown whenever the source publishes them.
+- A new **Ability effects** list shows `SpecialInfo`, the PvE special values and the DoTs as published. For example, Brambleskin 13 shows **Melee Damagers Suffer 310 Nature per tick · 1 tick · DelayedDamage**. Nothing is calculated or inferred, and "Not published" stays as is.
+- Only technical fields sit under an optional, closed **Technical details** section: official ID, internal name, raw rank, keywords and a provenance note.
+- The same component serves the ability picker's tier facts, so the picker benefits too.
+
+### Relevant Mods
+- Every ability popover has an always-visible **Relevant Mods** block: an uppercase blue heading, a left accent border, a light blue tint and divided rows. It is not an accordion.
+- **Sources:** only equipped gear in the current build, covering both imported `existingPowers` and planned `candidateMods` whose exact `(powerId, tierId)` resolves.
+- **Order:** stable. Equipment order first, then imported before planned, then saved order.
+- Rows use the shared `EffectDescriptions` renderer, so they show official icons and formatted text. A small source label shows the slot (with "◇ imported" for imported powers); the tooltip has the item name, IDs and the match reason.
+- **Duplicates are kept.** The same effect on two different items gives two rows.
+- **Unresolved saved IDs** are skipped in this section, never removed from the draft.
+- If nothing matches, the section says "No ability-specific equipped mods identified."
+- The list is computed on render from the current build, so it updates immediately when mods are added, removed or re-tiered, when gear or the ability changes, after a skill change and after Undo. Nothing new is persisted.
+
+### Matching rules (`src/data/search/ability-mods.ts`, pure and cached once per repository)
+The family is the official `UpgradeOf` root, so every Brambleskin rank shares one family.
+
+**Attribute templates** `{ATTR}{value}` match when both conditions hold:
+1. `ATTR` appears in the ability's published `AttributesThat*` hooks (ability, PvE, DoT or special-value level).
+2. At most **3** ability families reference `ATTR`.
+
+In v490, of the treasure attributes that some ability references, 240 are referenced by one family, 16 by two and 2 by three. From four families up they are skill-wide, e.g. Crossbow and Cow base damage, `MOD_SKILL_DRUID` (22 families) and `ABILITY_RESETTIME_DELTA` (1,935). Skill-wide attributes are deliberately **not** labelled as specific to one ability. That also excludes the 5-family "All Shield Bash Abilities Damage", a conservative and documented exclusion.
+
+**Prose effects** match only when both conditions hold:
+1. The text contains an official `<icon=N>` equal to an `IconID` used by the family (Brambleskin uses 3483).
+2. The family's root display name appears as a whole phrase (case-insensitive; apostrophes ignored).
+
+Results on the v490 data:
+- **Coverage:** 1,095 of 1,320 icon-bearing prose effects (top tiers) match some family.
+- **Misses:** mostly skill-wide wording such as "All Sword abilities…" or "Archery attacks that…". These are correctly treated as not ability-specific, plus a few naming variants that are not matched rather than guessed.
+- **Brambleskin:** every Brambleskin rank, including Brambleskin 13, matches exactly the **8 official Brambleskin powers** (`power_14151`–`power_14157` and `power_14159`). Unrelated Druid mods such as Indirect Poison and the skill-wide Druid Base Damage are excluded.
+
+**Tests:**
+- **Pure:**
+  - The exact Brambleskin set for ranks 13 and 1.
+  - Attribute matches and skill-wide exclusions.
+  - Prose needs both the icon and the name.
+  - Duplicates kept, equipment order, unresolved IDs skipped.
+- **App:**
+  - Brambleskin 13: effects and the visible section.
+  - Rows: imported Head plus two planned Chest rows, with identical effects separate and official icon 3483 loaded.
+  - Nonmatching and skill-wide mods excluded, and no write to the draft.
+  - Immediate updates on removal and tier change, and the empty state.
+- **App.test:** the full description is shown, and the ID appears only inside the closed Technical details.
+- **Chromium smoke (dev and preview):**
+  - Opens Brambleskin 13: three rows in the expected order, identical effects present, icon loaded.
+  - Closes with Escape, then removing a planned mod updates the section to two rows.
+  - At 375px the popover fits the viewport with no overflow.
+  - Desktop and mobile captures (`relevant-mods-desktop.png`, `relevant-mods-mobile.png`).
+
+**Limitations:**
+- Effects that apply to a whole skill or to multiple ability groups are not listed per ability.
+- Relevant Mods does not imply an effect is active, legal or stackable.
+- No damage is recalculated.
 
 ## Slot colours and grouped STATS rows (re-review at dd781c0)
 
@@ -323,6 +382,10 @@ Previous revision: Chromium 154.0.8037.57 exercised Vite dev and production prev
 Both mod-workflow modes check for zero unexpected console errors/page exceptions; the deliberate icon-404 fallback case is recorded separately. Existing equipment/offhand smoke passed canonical swaps/reloads, legacy conflict preservation/cancel/confirmed resolution, instance-replacement confirmations, candidate/Spark preservation, equipment filter/preferences and picker drag/backdrop/X/Escape behavior. Its deliberate icon-404 fallback recorded only the expected resource message. Transport smoke passed compressed lengths/hashes/headers, corruption/retry and existing skill/ability workflows in both modes. The separate layout regression covers desktop sizes through 2560px, touch at 375/320px, native skill dropdowns, ability search/details and persisted titles.
 
 Artifacts and JSON measurements were written to the session scratch directory (not committed). Measurements are unthrottled local Chromium observations, not guarantees for low-end devices, other engines or live Cloudflare runtime.
+
+![Brambleskin 13 with Relevant Mods](screenshots/t0010/relevant-mods-desktop.png)
+
+![Brambleskin 13 popover at 375px](screenshots/t0010/relevant-mods-mobile.png)
 
 ![Druid (A, blue) + Archery (B, gold) Chest: grouped STATS panel and Available/Selected](screenshots/t0010/druid-chest-desktop.png)
 

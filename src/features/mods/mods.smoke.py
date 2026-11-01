@@ -380,7 +380,10 @@ def main():
                         druid_build = copy.deepcopy(baseline)
                         druid_build['skillSlotA'] = {'skillId': 'Druid', 'level': 100}
                         druid_build['skillSlotB'] = {'skillId': 'Archery', 'level': 100}
-                        druid_build['abilityBarA'] = []; druid_build['abilityBarB'] = []
+                        druid_build['abilityBarA'] = [{'abilityId': 'ability_5386', 'rank': None}]; druid_build['abilityBarB'] = []
+                        for entry in druid_build['equipment']:
+                            if entry['slot'] == 'Head':
+                                entry['item'] = {'kind': 'imported', 'instance': {'baseItemId': head['id'], 'existingPowers': [{'powerId': 'power_14159', 'tierId': 'id_25'}]}}
                         druid_build['equipment'] = [e for e in druid_build['equipment'] if e['slot'] != 'Chest'] + [{'slot': 'Chest', 'item': {'kind': 'database', 'itemId': 'item_42705'}, 'candidateMods': [], 'sparks': {'mode': 'none'}}]
                         chest_index = len(druid_build['equipment']) - 1
                         page.evaluate('([key, build]) => localStorage.setItem(key, JSON.stringify(build))', [key, druid_build])
@@ -432,6 +435,40 @@ def main():
                         page.locator('.skill-change-notice button', has_text='Undo').click()
                         expect(planned).to_have_count(3)
                         wait_saved(); assert saved()['equipment'][chest_index]['candidateMods'] == druid_mods and saved()['skillSlotA']['skillId'] == 'Druid'
+                        # Brambleskin 13 popover: full facts, ability effects and always-visible Relevant Mods from equipped gear.
+                        chest_editor.locator('[data-power-id="power_14159"] > .available-effect').click()
+                        bramble_slot = page.locator('.skill-panel').first.locator('.slot-button').first
+                        bramble_slot.click()
+                        popover = page.locator('#equipped-ability-detail-A')
+                        expect(popover.locator('h3')).to_have_text('Brambleskin 13')
+                        expect(popover.locator('.ability-effects')).to_contain_text('Melee Damagers Suffer 310 Nature per tick')
+                        expect(popover.locator('.technical-details')).not_to_have_attribute('open', '')
+                        relevant = popover.locator('.relevant-mods [data-relevant-mod]')
+                        expect(popover.locator('.relevant-mods h4')).to_have_text('Relevant Mods')
+                        expect(relevant).to_have_count(3)
+                        head_index = next(i for i, e in enumerate(druid_build['equipment']) if e['slot'] == 'Head')
+                        assert relevant.evaluate_all('(es) => es.map(e => e.dataset.relevantMod)') == [f'{head_index}:imported:0', f'{chest_index}:planned:2', f'{chest_index}:planned:3']
+                        texts = relevant.locator('.relevant-effect').all_inner_texts()
+                        assert texts[0] == texts[2] == 'Brambleskin deals +44% damage to melee attackers', texts
+                        assert 'Indirect Poison' not in popover.inner_text() and 'Heavy Shot' not in popover.locator('.relevant-mods').inner_text()
+                        first_icon = relevant.first.locator('img.effect-icon')
+                        page.wait_for_function('(img) => img.complete && img.naturalWidth > 0', arg=first_icon.element_handle())
+                        popover.screenshot(path=str(output / f'{mode}-relevant-mods-desktop.png'))
+                        page.keyboard.press('Escape')
+                        expect(popover).to_have_count(0)
+                        chest_editor.get_by_label('Remove candidate 4', exact=True).click()
+                        bramble_slot.click()
+                        expect(relevant).to_have_count(2)
+                        page.keyboard.press('Escape')
+                        page.set_viewport_size({'width': 375, 'height': 812})
+                        bramble_slot.click()
+                        expect(relevant).to_have_count(2)
+                        assert popover.evaluate('(e) => { const r = e.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; }')
+                        no_overflow()
+                        popover.screenshot(path=str(output / f'{mode}-relevant-mods-mobile.png'))
+                        page.keyboard.press('Escape')
+                        page.set_viewport_size({'width': 1440, 'height': 900})
+                        wait_saved(); assert saved()['equipment'][chest_index]['candidateMods'] == druid_mods
                         # A mismatched snapshot is inspectable but never writable.
                         rich['gameDataVersion'] = 'other-version'
                         page.evaluate('([key, build]) => localStorage.setItem(key, JSON.stringify(build))', [key, rich])
