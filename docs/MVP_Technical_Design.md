@@ -119,6 +119,10 @@ Initial item search:
 - slot filter
 - minimum-level filter
 
+**T0009 target-level contract (KI-0007):** `NormalizedItem.level` is the nullable official `CraftingTargetLevel`, used only as a **base-item target-level search hint**. Use the existing `minimumEquipmentLevel` preference (default 90; `null` disables threshold) and a separate default-on “Include unknown target level” control. Never coerce null to zero; distinguish target level from published item `SkillReqs`, actual imported item-instance levels, treasure-tier level ranges and equipping legality. Keep the predicate pure and testable; no breaking change to preferences or normalized source data solely for this feature.
+
+**KI-0008 local serving preflight:** Before T0009, a separate small PR must make original compressed `.json.gz` bytes available in **both** Vite dev and preview. A path-restricted local serving change is preferred when verified by browser tests; retain T0006's compressed length/hash, explicit decompression and JSON length checks. Do not change generated artifacts, broaden asset routes, or weaken integrity checks.
+
 Do not add a fuzzy-search dependency until basic search is measured and found insufficient.
 
 ## Calculation API
