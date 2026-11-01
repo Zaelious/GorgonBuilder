@@ -47,6 +47,7 @@ async function change(selector: string, value: string) {
 }
 const tick = async () => { await act(async () => { vi.advanceTimersByTime(500); }); };
 async function browse(slot = 'MainHand') {
+  if (slot === 'OffHandShield') slot = 'OffHand';
   const row = control<HTMLDetailsElement>(`[data-equipment-row="${slot === 'OffHandShield' ? 'OffHand' : slot}"]`);
   if (!row.open) await click(`[data-equipment-row="${slot === 'OffHandShield' ? 'OffHand' : slot}"] > summary`);
   const selected = row.querySelector(`[data-equipment-slot="${slot}"] .equipment-actions button`);
@@ -64,7 +65,7 @@ it('shows a compact empty overview, all 19 exact slots and a focused on-demand p
   await render();
   expect(container.querySelectorAll('.equipment-primary > .equipment-row')).toHaveLength(9);
   expect([...container.querySelectorAll('.equipment-row-name')].filter(element => element.textContent === 'No gear selected')).toHaveLength(18);
-  expect([...container.querySelectorAll<HTMLElement>('[data-equipment-slot]')].map(element => element.dataset.equipmentSlot).sort()).toEqual([...new Set(data.items.map(item => item.slot))].sort());
+  expect([...container.querySelectorAll<HTMLElement>('[data-equipment-slot]')].map(element => element.dataset.equipmentSlot).sort()).toEqual([...new Set(data.items.map(item => item.slot))].filter(slot => slot !== 'OffHandShield').sort());
   expect(control<HTMLDetailsElement>('.equipment-other').open).toBe(false);
   expect(container.querySelector('dialog')).toBeNull();
   await browse();
@@ -216,31 +217,37 @@ it('blocks edits when draft or preferences cannot be read and preserves unread b
   await tick(); spy.mockRestore(); expect(localStorage.length).toBe(0);
 });
 
-it('keeps OffHand and OffHandShield separate and preserves duplicate and legacy selections on unrelated edits', async () => {
+it('retains and explicitly resolves legacy offhand conflicts without losing the kept instance or unrelated data', async () => {
   const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
   build.equipment = [
     { slot: 'OffHand', item: { kind: 'manual', instance: { baseItemId: null, displayName: 'Manual offhand', existingPowers: [] } }, candidateMods: [{ powerId: 'power_10001', tierId: null }], sparks: { mode: 'none' } },
-    { slot: 'OffHandShield', item: { kind: 'database', itemId: 'item_45052' }, candidateMods: [], sparks: { mode: 'none' } },
+    { slot: 'OffHandShield', item: { kind: 'imported', instance: { baseItemId: 'item_45052', displayName: 'My shield', existingPowers: [{ powerId: 'power_129', tierId: 'id_120' }], metadata: { retained: true } } }, candidateMods: [], sparks: { mode: 'simulated', input: { category: 'skill-damage', skillId: 'Psychology', count: 10, seed: 'keep' } } },
     { slot: 'OffHand', item: { kind: 'imported', instance: { baseItemId: null, displayName: 'Second offhand', existingPowers: [] } }, candidateMods: [], sparks: { mode: 'none' } },
     { slot: 'LegacySlot', item: { kind: 'manual', instance: { baseItemId: null, existingPowers: [] } }, candidateMods: [], sparks: { mode: 'none' } },
   ];
-  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build));
-  await render();
-  expect(control('[data-equipment-row="OffHand"] > summary').textContent).toContain('Manual offhand + 2 more');
+  const bytes = JSON.stringify(build);
+  localStorage.setItem(DRAFT_STORAGE_KEY, bytes);
+  await render(); await tick();
+  expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(bytes);
+  expect(control('[data-equipment-row="OffHand"] > summary').textContent).toContain('Conflict · 3 saved');
   await click('[data-equipment-row="OffHand"] > summary');
-  expect(container.querySelectorAll('[data-equipment-slot="OffHand"] .equipment-selection')).toHaveLength(2);
-  expect(container.querySelectorAll('[data-equipment-slot="OffHandShield"] .equipment-selection')).toHaveLength(1);
-  await click('[data-equipment-slot="OffHandShield"] .equipment-actions button');
-  expect(control('dialog .eyebrow').textContent).toBe('OffHandShield');
-  await change('#equipment-search', 'item_45052');
-  await click('.equipment-result-heading button'); await tick();
+  expect(container.querySelectorAll('[data-equipment-slot="OffHand"] .equipment-selection')).toHaveLength(3);
+  expect(container.textContent).toContain('All entries are retained');
+  expect([...container.querySelectorAll<HTMLButtonElement>('[data-equipment-row="OffHand"] .equipment-actions button:first-child')].every(button => button.disabled)).toBe(true);
+  await remount();
   expect(draft()).toEqual(build);
-  expect(control('[data-equipment-row="LegacySlot"]').closest('.equipment-other')).not.toBeNull();
   await change('#level-A', '90'); await tick();
   expect(draft().equipment).toEqual(build.equipment);
-  vi.spyOn(window, 'confirm').mockReturnValue(true);
-  await click('[data-selection-index="2"] .equipment-actions button:nth-child(2)'); await tick();
-  expect(draft().equipment).toEqual(build.equipment.filter((_, index) => index !== 2));
+  await click('[data-equipment-row="OffHand"] > summary');
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+  await click('[data-selection-index="1"] .equipment-actions button:nth-child(3)'); await tick();
+  expect(draft().equipment).toEqual(build.equipment);
+  expect(confirm.mock.calls[0]![0]).toContain('staged mods, and Spark settings');
+  confirm.mockReturnValue(true);
+  await click('[data-selection-index="1"] .equipment-actions button:nth-child(3)'); await tick(); await remount();
+  expect(draft().equipment).toEqual([build.equipment[1], build.equipment[3]]);
+  expect(container.textContent).not.toContain('Conflict ·');
+  expect(control('[data-equipment-row="LegacySlot"]').closest('.equipment-other')).not.toBeNull();
 });
 
 it('does not dismiss the picker when its backdrop is clicked', async () => {
@@ -266,4 +273,52 @@ it('uses exact official icon URLs, falls back on missing/failed artwork and reco
   expect(container.querySelector('svg')).not.toBeNull();
   await act(async () => { root.render(<EquipmentIcon slot="OffHandShield" iconId={14009} version="v490" />); });
   expect(control<HTMLImageElement>('img').src).toContain('icon_14009.png');
+});
+
+it.each(['Head', 'MainHand', 'Ring', 'OffHand'])('shows the selected %s name/icon once while retaining all expanded facts and actions', async slot => {
+  const item = data.items.find(item => item.slot === slot && item.level === 90)!;
+  const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  build.equipment = [{ slot, item: { kind: 'database', itemId: item.id }, candidateMods: [], sparks: { mode: 'none' } }];
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build));
+  await render(); await click(`[data-equipment-row="${slot}"] > summary`);
+  const row = control(`[data-equipment-row="${slot}"]`);
+  expect(row.querySelector('summary')!.textContent).toContain(item.displayName);
+  expect(row.querySelectorAll('.equipment-icon')).toHaveLength(1);
+  expect(row.querySelectorAll('.equipment-row-content .equipment-icon, .equipment-selection-heading, h3')).toHaveLength(0);
+  expect(row.querySelector('.item-facts')).not.toBeNull();
+  expect(row.querySelector('.item-requirements')).not.toBeNull();
+  expect(row.querySelector('.item-more')).not.toBeNull();
+  expect(row.querySelectorAll('.equipment-actions button')).toHaveLength(2);
+});
+
+it('searches both offhand types from one picker and confirms instance replacement before swapping, saving and reloading', async () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  build.skillSlotA = { skillId: 'Psychology', level: 90 }; build.skillSlotB = { skillId: 'Deer', level: 80 };
+  build.abilityBarA = [{ abilityId: 'ability_1201', rank: null }]; build.abilityBarB = [{ abilityId: 'ability_1578', rank: null }];
+  build.equipment = [{ slot: 'OffHand', item: { kind: 'imported', instance: { baseItemId: 'item_45722', existingPowers: [{ powerId: 'power_129', tierId: 'id_120' }] } }, candidateMods: [{ powerId: 'power_10001', tierId: 'id_9' }], sparks: { mode: 'simulated', input: { category: 'skill-damage', skillId: 'Psychology', count: 12, seed: 'retain' } } }];
+  const bytes = JSON.stringify(build);
+  localStorage.setItem(DRAFT_STORAGE_KEY, bytes);
+  await render(); await browse('OffHand');
+  await change('#equipment-search', 'item_45052');
+  expect(control('dialog').textContent).toContain('Shield · OffHandShield');
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+  await click('.equipment-result-heading button'); await tick();
+  expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(bytes);
+  confirm.mockReturnValue(true);
+  await click('.equipment-result-heading button'); await tick(); await remount();
+  expect(draft().equipment).toEqual([{ ...build.equipment[0], slot: 'OffHandShield', item: { kind: 'database', itemId: 'item_45052' } }]);
+  await browse('OffHand'); await change('#equipment-search', 'item_45722');
+  expect(control('dialog').textContent).toContain('Offhand weapon · OffHand');
+  await click('.equipment-result-heading button'); await tick(); await remount();
+  expect(draft()).toEqual({ ...build, equipment: [{ ...build.equipment[0], item: { kind: 'database', itemId: 'item_45722' } }] });
+  expect(confirm).toHaveBeenCalledTimes(2);
+});
+
+it('disables legacy conflict resolution in an incompatible read-only build', async () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: 'other' });
+  build.equipment = ['OffHand', 'OffHandShield'].map(slot => ({ slot, item: { kind: 'database', itemId: slot === 'OffHand' ? 'item_45722' : 'item_45052' }, candidateMods: [], sparks: { mode: 'none' } }));
+  const bytes = JSON.stringify(build); localStorage.setItem(DRAFT_STORAGE_KEY, bytes);
+  await render(); await click('[data-equipment-row="OffHand"] > summary');
+  expect([...container.querySelectorAll<HTMLButtonElement>('[data-equipment-row="OffHand"] .equipment-actions button')].every(button => button.disabled)).toBe(true);
+  await tick(); expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(bytes);
 });

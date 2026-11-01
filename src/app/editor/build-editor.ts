@@ -7,6 +7,7 @@ export type BuildEdit =
   | { type: 'title'; title: string }
   | { type: 'equipment-equip'; slot: string; itemId: string; index: number | null }
   | { type: 'equipment-clear'; index: number }
+  | { type: 'equipment-resolve-offhand'; keepIndex: number }
   | { type: 'skill'; slot: Slot; skillId: string | null }
   | { type: 'level'; slot: Slot; level: number }
   | { type: 'add'; slot: Slot; abilityId: string }
@@ -14,9 +15,20 @@ export type BuildEdit =
   | { type: 'remove'; slot: Slot; index: number }
   | { type: 'move'; slot: Slot; index: number; direction: -1 | 1 };
 
+/** Two canonical item types share one player loadout position. */
+export function isOffhandSlot(slot: string): boolean {
+  return slot === 'OffHand' || slot === 'OffHandShield';
+}
+
 /** Each committed edit preserves unrelated fields. Skill switches clear only their own bar. */
 export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataRepository): BuildDocument {
   if (build.gameDataVersion !== data.gameDataVersion) return build;
+  if (edit.type === 'equipment-resolve-offhand') {
+    if (!Number.isInteger(edit.keepIndex) || !isOffhandSlot(build.equipment[edit.keepIndex]?.slot ?? '') ||
+      build.equipment.filter(selection => isOffhandSlot(selection.slot)).length <= 1) return build;
+    // Only this explicit resolution (or an explicit clear) discards legacy entries.
+    return { ...build, equipment: build.equipment.filter((selection, index) => !isOffhandSlot(selection.slot) || index === edit.keepIndex) };
+  }
   if (edit.type === 'equipment-clear') {
     if (!Number.isInteger(edit.index) || !build.equipment[edit.index]) return build;
     return { ...build, equipment: build.equipment.filter((_, index) => index !== edit.index) };
@@ -25,16 +37,20 @@ export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataR
     const item = data.getItem(edit.itemId);
     if (!item || item.slot !== edit.slot) return build;
     const equipment = [...build.equipment];
+    const offhand = isOffhandSlot(item.slot);
+    // Restored conflicts remain untouched until explicitly resolved. Even a
+    // direct edit cannot add or replace an occupant while multiple entries exist.
+    if (offhand && equipment.filter(selection => isOffhandSlot(selection.slot)).length > 1) return build;
     if (edit.index === null) {
       // New selections cannot accidentally replace a saved/manual selection.
-      if (equipment.some(selection => selection.slot === edit.slot)) return build;
+      if (equipment.some(selection => offhand ? isOffhandSlot(selection.slot) : selection.slot === edit.slot)) return build;
       equipment.push({ slot: item.slot, item: { kind: 'database', itemId: item.id }, candidateMods: [], sparks: { mode: 'none' } });
     } else {
       const previous = equipment[edit.index];
-      if (!Number.isInteger(edit.index) || !previous || previous.slot !== edit.slot) return build;
-      if (previous.item.kind === 'database' && previous.item.itemId === item.id) return build;
-      // Explicit replacement changes only the item; staged mods/Sparks survive.
-      equipment[edit.index] = { ...previous, item: { kind: 'database', itemId: item.id } };
+      if (!Number.isInteger(edit.index) || !previous || (offhand ? !isOffhandSlot(previous.slot) : previous.slot !== edit.slot)) return build;
+      if (previous.slot === item.slot && previous.item.kind === 'database' && previous.item.itemId === item.id) return build;
+      // Replace the definition and canonical slot; staged mods/Sparks survive.
+      equipment[edit.index] = { ...previous, slot: item.slot, item: { kind: 'database', itemId: item.id } };
     }
     return { ...build, equipment };
   }
