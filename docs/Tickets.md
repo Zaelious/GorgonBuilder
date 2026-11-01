@@ -502,6 +502,42 @@ Guidelines:
 4. Equip, replace, clear and refresh without changing skill bars or other draft fields.
 5. Run pinned-data check, lint, typecheck, tests and build, plus local dev/preview smoke after the KI-0008 fix.
 
+## T0009-F1 — Compact Equipment Details and Exclusive Offhand Position
+
+**Status:** Approved product-owner follow-up identified after T0009 customer acceptance and merge; **not implemented**. Complete before starting T0010.
+
+**Complexity:** Small
+
+**Verification:** Customer hands-on
+
+**Goal:** Remove redundant equipment headers in expanded details and enforce one occupied offhand loadout position while retaining exact official item identifiers.
+
+**Dependencies:** Merged T0009, PR #18.
+
+**Allowed areas:**
+- `src/features/equipment` and focused tests
+- `src/app/editor/build-editor.ts` equipment-only operations and tests
+- related verification documentation
+
+**Do not touch:** pinned official source, item/TSys normalizers, generated artifacts, saved BuildDocument schema, other skill/ability editor, treasure-mod editor, Sparks, damage engine, imports, remote saving.
+
+**Requirements:**
+- The collapsed row already shows selected item icon and name. Do not repeat this icon/name as a large header in expanded item details; keep source effects, requirements, description, and all actions accessible.
+- Treat published `OffHand` and `OffHandShield` as **one mutually exclusive player-facing offhand loadout position**, even though official data uses two canonical EquipSlot strings. Present one offhand row and one coherent picker, including offhand weapons and shields, with clear type labels as needed. Preserve the exact selected official slot string on saved items; do not rewrite `OffHandShield` to `OffHand`.
+- Selecting an offhand item when a shield occupies the position, or vice versa, must **replace/swap** the previous occupant instead of adding a second. Safeguard associated manual/imported instance data, candidate mods and Spark settings with the existing explicit confirmation/preservation policy, never silently discard.
+- Unmodified legacy builds containing both `OffHand` and `OffHandShield` must load without silent deletion; clearly indicate a conflict and provide explicit resolution. New UI actions must never create a second occupant in this group.
+- Other 17 published slots and existing saved selections remain unchanged.
+- Keep X/Escape picker dismissal and drag-selection safety. Optional click-outside dismissal is separate KI-0010.
+
+**Acceptance criteria / tests:**
+1. Expand a selected Head, MainHand, Ring and OffHand row: the title and image appear once, in the persistent row summary; all existing details and replace/clear controls remain discoverable.
+2. With empty offhand, choose an offhand weapon, then switch to a shield, then back; verify only one occupant in the saved build, with the correct exact canonical slot and official item ID after each operation and reload.
+3. Opposite-type candidates are searchable from the same offhand picker and cannot be simultaneously equipped through normal UI or edit operations.
+4. Preexisting dual-slot legacy selections remain intact on restore until an explicit customer resolution; manual/imported metadata and candidate mods/Sparks are not silently destroyed.
+5. Both skill bars and unrelated equipment/prefs survive; keyboard/mobile no-overflow, pinned data, lint, typecheck, tests, production build, Wrangler dry-run, real Chromium dev/preview and gzip integrity checks pass.
+
+**Manual verification:** Inspect compact expanded rows; equip offhand weapon, swap to shield and back; refresh each time; test a legacy dual-selection draft; ensure no unexpected deletions and both skill bars remain unchanged. Stop with a small new PR for architectural review and customer acceptance. Do not merge or start T0010.
+
 ## T0010 — Treasure Mod Planner
 
 **Complexity:** High
