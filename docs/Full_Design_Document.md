@@ -62,7 +62,15 @@ A formula/mechanic can be marked:
 
 The planner should not over-police users while exploring combinations. Slot applicability should be known and visible, but users may stage more candidate mods than a final legal item can contain.
 
-### 2.5 One calculation engine
+### 2.5 Simple by Default, Detailed on Demand
+
+GorgonBuilder should prioritize compact, readable, and intuitive interfaces. Show users the information and controls most relevant to their immediate task, so common build-planning actions are quick and easy to scan.
+
+Advanced statistics, technical details, and secondary actions should remain available through tooltips, expandable sections, dialogs, or contextual controls rather than occupying the default view. Avoid visual clutter, redundant labels, excessive or non-actionable warnings, and unnecessarily large information panels. Preserve visible, actionable errors and important data-quality limitations.
+
+Use GorgonExplorer as a functional interaction reference where helpful, without cloning its branding or visual identity. Apply this principle across skill selection, equipment, treasure mods, calculations, and build management. Calculation transparency and accessibility still apply: detailed breakdowns must be discoverable and usable by keyboard and on smaller screens.
+
+### 2.6 One calculation engine
 
 The same pure calculation engine must serve:
 
