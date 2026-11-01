@@ -58,7 +58,7 @@ Cloudflare Workers Builds marked PR previews on PRs #2, #3 and #4 as failed on 2
 
 ## KI-0007 — Crafting Target Level Is Not a Validated Equipment Requirement
 
-**Status:** Target-level filtering interpretation approved; implementation pending in T0009.
+**Status:** Resolved for base-item browsing by T0009; customer accepted and merged 2026-11-01 in [PR #18](https://github.com/Zaelious/GorgonBuilder/pull/18). The source field remains a browsing hint, not an equip restriction.
 
 T0005's official v490 `items` data exposes `CraftingTargetLevel`, not a generic item `Level`. Normalized `level` intentionally equals that source field with `levelSource` recorded. Of 3,078 equipment records, 518 have crafting target level 90+ and 500 omit the field.
 
@@ -81,6 +81,14 @@ T0005's official v490 `items` data exposes `CraftingTargetLevel`, not a generic 
 Early T0008 unthrottled desktop measurements showed roughly **195–239 MB** used browser JavaScript heap while loading the complete v490 repository; this is not a mobile-device performance guarantee.
 
 **Action:** Measure actual loading/interaction on representative hardware before adopting additional caching or partitioning. Keep the pinned source/version/integrity model intact.
+
+## KI-0010 — Optional Equipment Picker Click-Outside Dismissal
+
+**Status:** Nonblocking UX follow-up after customer acceptance of T0009 (2026-11-01); not a reason to reopen or delay T0009, and not part of T0010 treasure-mod scope.
+
+The T0009 picker deliberately closes via X/Escape, not by clicking its backdrop, because selecting/dragging text in the wide search input could unintentionally dismiss the dialog. The customer accepted this behavior but would also find click-outside dismissal convenient if safe.
+
+**Action:** If revisited, test a dialog with more outer gutter/adjusted scaling and dismiss only when a pointer interaction both begins and ends on the actual backdrop; never close for drags originating within input/content. Preserve text, keyboard Escape/X, focus return, touch behavior and responsive no-overflow. Add a regression browser test before restoring click-away. Do not alter the accepted default behavior without testing.
 
 ## Follow-Up Candidates After T0021
 
