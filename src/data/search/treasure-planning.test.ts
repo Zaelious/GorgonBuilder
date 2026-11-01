@@ -3,7 +3,7 @@ import { beforeAll, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { loadPlannerFixture } from '../../test/planner-fixture';
 import { browseTreasurePowers, indexTreasurePowers, treasureRelevance, treasureSlot } from './treasure';
-import { availableTreasurePowers, candidateTargetMismatch, fitsItem, groupTreasurePowers, orderTreasureTiers, previewTreasureTiers, treasureCategoryLabel, type ModCategories } from './treasure-planning';
+import { availableTreasurePowers, candidateTargetMismatch, fitsItem, groupPlannedMods, groupTreasurePowers, skillTone, orderTreasureTiers, previewTreasureTiers, treasureCategoryLabel, type ModCategories } from './treasure-planning';
 let data: ReturnType<typeof loadPlannerFixture>;
 beforeAll(() => { data = loadPlannerFixture(); });
 const enabled: ModCategories = { generic: true, endurance: true, shamanic: true };
@@ -113,4 +113,31 @@ it('maps OffHandShield items to the published OffHand treasure slot and never ex
   expect(fitsItem(power, { profile: 'different', slot: 'match', skill: 'match' }, data)).toBe(false);
   expect(fitsItem(power, { profile: 'match', slot: 'different', skill: 'match' }, data)).toBe(false);
   expect(fitsItem(data.getTreasurePower('power_30101')!, { profile: 'different', slot: 'match', skill: 'unknown' }, data)).toBe(true);
+});
+it('assigns slot tones from official associations and the current A/B slots, never from a hash', () => {
+  const druid = data.getTreasurePower('power_14005')!; const archery = data.getTreasurePower('power_10001')!;
+  expect(skillTone(druid, 'Druid', 'Archery', data)).toBe('skill-a');
+  expect(skillTone(archery, 'Druid', 'Archery', data)).toBe('skill-b');
+  expect(skillTone(druid, 'Archery', 'Druid', data)).toBe('skill-b');
+  expect(skillTone(archery, 'Archery', 'Druid', data)).toBe('skill-a');
+  expect(skillTone(druid, 'Druid', 'Druid', data)).toBe('skill-a');
+  expect(skillTone(archery, 'Druid', null, data)).toBe('other');
+  expect(skillTone(data.getTreasurePower('power_101'), 'Druid', 'Archery', data)).toBe('generic');
+  expect(skillTone(data.getTreasurePower('power_129'), 'Druid', 'Archery', data)).toBe('endurance');
+  expect(skillTone(data.getTreasurePower('power_30101'), 'Druid', 'Archery', data)).toBe('shamanic');
+  expect(skillTone(data.treasurePowers.find(p => p.skill.sourceId === 'Unknown'), 'Druid', 'Archery', data)).toBe('unknown');
+  expect(skillTone(undefined, 'Druid', 'Archery', data)).toBe('unknown');
+});
+it('groups planned mods by skill for display only, stable within groups and keeping original indices', () => {
+  const unknown = data.treasurePowers.find(p => p.skill.sourceId === 'Unknown')!.id;
+  const mods = [{ powerId: 'power_14005', tierId: 'id_25' }, { powerId: 'missing', tierId: null }, { powerId: 'power_10001', tierId: 'id_12' },
+    { powerId: 'power_101', tierId: null }, { powerId: 'power_3001', tierId: null }, { powerId: 'power_14154', tierId: null },
+    { powerId: unknown, tierId: null }, { powerId: 'power_30101', tierId: null }, { powerId: 'power_129', tierId: 'id_120' }, { powerId: 'power_21002', tierId: null }];
+  const frozen = JSON.stringify(mods);
+  const order = (a: string | null, b: string | null) => groupPlannedMods(mods, a, b, data).map(row => row.index);
+  expect(order('Druid', 'Archery')).toEqual([0, 5, 2, 3, 8, 7, 4, 9, 1, 6]);
+  expect(order('Archery', 'Druid')).toEqual([2, 0, 5, 3, 8, 7, 4, 9, 1, 6]);
+  expect(order('Druid', 'Druid')).toEqual([0, 5, 3, 8, 7, 2, 4, 9, 1, 6]);
+  expect(groupPlannedMods(mods, 'Druid', 'Archery', data).map(row => row.mod)).toEqual([0, 5, 2, 3, 8, 7, 4, 9, 1, 6].map(i => mods[i]));
+  expect(JSON.stringify(mods)).toBe(frozen);
 });

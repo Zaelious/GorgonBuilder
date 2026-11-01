@@ -2,7 +2,34 @@
 
 **Status: Revised on the existing PR #22 for architectural review and customer acceptance. Not merged or marked complete.**
 
-Branch: `feature/t0010-treasure-mod-planner`. The initial implementation at `62d8116` passed architectural review, but the Product Owner requested a different UI in [the latest customer revision review](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729510750). The subsequent [rendering/density review at c13d9f5](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729721042) requires actual official icons, readable effects and substantially denser lists. The [customer acceptance review at 8f6f4a2](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729847590) then required four further corrections: player-facing percentages, unclipped mod effects, use of the desktop viewport and visible three-digit skill levels. The [final customer review](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730246516) and its [addendum](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730252983) then required six more corrections, described in the first section below. Later sections keep the earlier evidence, marked where this revision supersedes it. Existing domain/persistence work remains in place.
+Branch: `feature/t0010-treasure-mod-planner`. The initial implementation at `62d8116` passed architectural review, but the Product Owner requested a different UI in [the latest customer revision review](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729510750). The subsequent [rendering/density review at c13d9f5](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729721042) requires actual official icons, readable effects and substantially denser lists. The [customer acceptance review at 8f6f4a2](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5729847590) then required four further corrections: player-facing percentages, unclipped mod effects, use of the desktop viewport and visible three-digit skill levels. The [architectural re-review at dd781c0](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730438882) then asked for two visual fixes: slot-based skill colours and grouped STATS rows, described first below. Before that, the [final customer review](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730246516) and its [addendum](https://github.com/Zaelious/GorgonBuilder/pull/22#pullrequestreview-5730252983) then required six more corrections, described in the first section below. Later sections keep the earlier evidence, marked where this revision supersedes it. Existing domain/persistence work remains in place.
+
+## Slot colours and grouped STATS rows (re-review at dd781c0)
+
+### 1. Skill A blue, Skill B gold
+- The hashed palette (`categoryHue`) is removed. A planned or imported power's tone now comes from its **officially resolved skill ID**, compared with the build's current Skill A and Skill B. The two slot IDs are passed to `ItemStats` in order, not as a deduplicated set.
+- **Skill A** is filled blue: `#1a5fc0` with white text, 6.1:1 contrast. **Skill B** is filled gold: `#f2c230` with near-black text, 10.9:1. These values come from computed styles checked in Chromium.
+- **A=B** uses the single Skill A blue. When the skills swap slots, the colours follow the new assignment, because nothing is stored.
+- The chip text always names the skill (e.g. DRUID, ARCHERY), so colour is never the only cue. The STATS legend shows `A · Druid` and `B · Archery` in the slot colours.
+- **Generic** (slate), **Endurance** (brown) and **Shamanic** (teal) each use a muted fill with at least 7:1 contrast. Resolved skills in neither slot are neutral gray, and unknown or missing powers get a dashed neutral chip, so none of these looks like a combat slot.
+- **Base** rows stay neutral. **Imported** powers keep their outlined, dashed style but use their slot tone, e.g. `◇ ARCHERY` outlined in blue when Archery is Skill A.
+
+### 2. Planned STATS rows grouped by skill (presentation only)
+- `groupPlannedMods` sorts a copy of the planned mods in this order: Skill A, Skill B, Generic, Endurance, Shamanic, other resolved skills (by first appearance), then Unknown. Order within each group is unchanged.
+- Base fixed effects stay first and complete. Imported powers follow, then the grouped planned mods.
+- Adding Druid 1 → Archery 1 → Druid 2 shows **DRUID, DRUID, ARCHERY**. `data-candidate-effect` keeps the original saved indices (`0, 2, 1`).
+- `BuildDocument.candidateMods`, the exact `(powerId, tierId)` pairs, the Selected pane order and its up/down/remove/tier controls are unchanged. The saved draft keeps Druid, Archery, Druid.
+- Grouping stays correct after removing a candidate by its saved index, after reload, after a skill change clears the departed skill's mods, and after Undo.
+- **Tests:**
+  - Pure tests cover every tone, the A/B swap, A=B, no slots, and the full group order including missing and unknown powers. They also check that the input array is not mutated.
+  - A component test checks A/B swapping, A=B, imported tones and original indices.
+  - An App test covers Druid → Archery → Druid: STATS order, tones and legend; Selected order; exact saved order through autosave; removal; and reload.
+- The **Chromium smoke** (dev and preview) asserts:
+  - STATS order and the original indices.
+  - Computed chip backgrounds of `rgb(26, 95, 192)` for Druid and `rgb(242, 194, 48)` for Archery.
+  - Druid → Psychology clears 2 Druid mods, keeps the gold Archery row, and Undo restores everything.
+
+Files: `src/data/search/treasure-planning.ts` (`skillTone`, `groupPlannedMods`), `src/features/mods/ItemStats.tsx`, `item-stats.css`, `src/features/equipment/EquipmentPlanner.tsx`, `src/features/mods/ItemStats.test.tsx` (new), `treasure-planning.test.ts`, `ModPlanner.test.tsx` and `mods.smoke.py`. Screenshots were refreshed. **500 tests across 21 files pass.**
 
 ## Final customer UI corrections (reviews at d8f195a)
 
@@ -52,7 +79,7 @@ Same-effect checks across the data:
 ### STATS panel and fixed effects
 
 - Each equipped item has one compact **STATS** panel: all published fixed effects (chip **Base**), then imported existing powers (dashed chip **◇ Skill**), then planned mods (filled chip **Skill**).
-- Every row is a two-column grid with a fixed chip column, so effects start at one aligned x position (asserted in Chromium). Skill chips use a deterministic accessible hue per skill (Druid renders blue). Generic, Endurance and Shamanic have fixed hues. Unknown associations get a dashed neutral chip.
+- Every row is a two-column grid with a fixed chip column, so effects start at one aligned x position (asserted in Chromium). *Superseded:* chip colours are now slot-based (Skill A blue, Skill B gold; see the first section).
 - Official icons and complete, unclamped descriptions are kept. The word **CANDIDATE** and the loose list are gone; a small legend explains Base / ◇ Imported / Planned.
 - `ItemFacts.tsx` no longer cuts fixed effects at three behind a "more fixed effects" dropdown. **All** published fixed effects are shown immediately: 1,247 v490 equipment items have more than three, up to nine. **Description & official source** remains an optional expandable section, and it still lists the exact raw fixed-effect strings.
 
@@ -297,7 +324,7 @@ Both mod-workflow modes check for zero unexpected console errors/page exceptions
 
 Artifacts and JSON measurements were written to the session scratch directory (not committed). Measurements are unthrottled local Chromium observations, not guarantees for low-end devices, other engines or live Cloudflare runtime.
 
-![Druid + Chest: complete STATS panel and Available/Selected](screenshots/t0010/druid-chest-desktop.png)
+![Druid (A, blue) + Archery (B, gold) Chest: grouped STATS panel and Available/Selected](screenshots/t0010/druid-chest-desktop.png)
 
 ![Druid + Chest at 375px](screenshots/t0010/druid-chest-mobile.png)
 

@@ -52,8 +52,8 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
     return <article className="equipment-selection" key={index} data-selection-index={index}>
       {multiple && <p className="equipment-entry-label">Saved entry {index + 1}: {name(selection)}</p>}
       <p className="muted equipment-selection-type">{selection.slot}{selection.item.kind !== 'database' && ` · ${selection.item.kind} instance`}</p>
-      {item ? <ItemFacts item={item} data={data} stats={<ItemStats selection={selection} item={item} data={data} />} />
-        : <><p className="warning">This saved selection has no available official base definition. It is retained.</p><ItemStats selection={selection} item={undefined} data={data} /></>}
+      {item ? <ItemFacts item={item} data={data} stats={<ItemStats selection={selection} item={item} data={data} skillA={build.skillSlotA.skillId} skillB={build.skillSlotB.skillId} />} />
+        : <><p className="warning">This saved selection has no available official base definition. It is retained.</p><ItemStats selection={selection} item={undefined} data={data} skillA={build.skillSlotA.skillId} skillB={build.skillSlotB.skillId} /></>}
       {item && item.slot !== selection.slot && <p className="warning">Published slot is {item.slot}; saved slot {selection.slot} is retained.</p>}
       {selection.item.kind !== 'database' && <details className="item-more"><summary>Saved {selection.item.kind} instance</summary><pre>{JSON.stringify(selection.item.instance, null, 2)}</pre></details>}
       <EquipmentMods selection={selection} equipmentIndex={index} item={item} skillIds={skillIds} data={data} onEdit={onEdit} readOnly={readOnly} expanded={expanded.has(isOffhandSlot(selection.slot) ? 'OffHand' : selection.slot)} />

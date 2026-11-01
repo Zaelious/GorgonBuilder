@@ -93,3 +93,34 @@ export function groupTreasurePowers(powers: readonly TreasurePower[], skillIds: 
   }
   return groups.filter(group => group.powers.length > 0);
 }
+
+/** Presentation tone for STATS chips, from the official resolved association and the build's current slots. */
+export type SkillTone = 'skill-a' | 'skill-b' | 'generic' | 'endurance' | 'shamanic' | 'other' | 'unknown';
+const TONE_ORDER: readonly SkillTone[] = ['skill-a', 'skill-b', 'generic', 'endurance', 'shamanic', 'other', 'unknown'];
+
+export function skillTone(power: TreasurePower | undefined, skillA: string | null, skillB: string | null, data: GameDataRepository): SkillTone {
+  if (!power) return 'unknown';
+  const category = powerCategoryId(power, data);
+  // A=B uses the single primary (A) colour.
+  if (skillA !== null && category === skillA) return 'skill-a';
+  if (skillB !== null && category === skillB) return 'skill-b';
+  if (category === 'AnySkill') return 'generic';
+  if (category === 'Endurance') return 'endurance';
+  if (category === 'ShamanicInfusion') return 'shamanic';
+  return category === 'unknown' ? 'unknown' : 'other';
+}
+
+/**
+ * Presentation-only grouping of planned mods: Skill A, Skill B, Generic, Endurance, Shamanic, other resolved skills
+ * (by first appearance), Unknown. Stable within each group; `index` is the original saved candidate index.
+ */
+export function groupPlannedMods<T extends { powerId: string }>(mods: readonly T[], skillA: string | null, skillB: string | null,
+  data: GameDataRepository): { mod: T; index: number; tone: SkillTone }[] {
+  const rows = mods.map((mod, index) => {
+    const power = data.getTreasurePower(mod.powerId);
+    return { mod, index, tone: skillTone(power, skillA, skillB, data), category: power ? powerCategoryId(power, data) : 'unknown' };
+  });
+  const otherOrder = [...new Set(rows.filter(row => row.tone === 'other').map(row => row.category))];
+  const rank = (row: typeof rows[number]) => TONE_ORDER.indexOf(row.tone) * 10000 + (row.tone === 'other' ? otherOrder.indexOf(row.category) : 0);
+  return [...rows].sort((a, b) => rank(a) - rank(b) || a.index - b.index).map(({ mod, index, tone }) => ({ mod, index, tone }));
+}

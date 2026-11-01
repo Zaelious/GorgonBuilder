@@ -379,7 +379,7 @@ def main():
                         page.set_viewport_size({'width': 1440, 'height': 900})
                         druid_build = copy.deepcopy(baseline)
                         druid_build['skillSlotA'] = {'skillId': 'Druid', 'level': 100}
-                        druid_build['skillSlotB'] = {'skillId': None, 'level': 70}
+                        druid_build['skillSlotB'] = {'skillId': 'Archery', 'level': 100}
                         druid_build['abilityBarA'] = []; druid_build['abilityBarB'] = []
                         druid_build['equipment'] = [e for e in druid_build['equipment'] if e['slot'] != 'Chest'] + [{'slot': 'Chest', 'item': {'kind': 'database', 'itemId': 'item_42705'}, 'candidateMods': [], 'sparks': {'mode': 'none'}}]
                         chest_index = len(druid_build['equipment']) - 1
@@ -401,14 +401,19 @@ def main():
                         assert 'Vulnerability to Electricity -20%' in base_rows.all_inner_texts() and 'Armor from Combat Refresh Abilities +45' in base_rows.all_inner_texts()
                         expect(chest).not_to_contain_text('more fixed effects')
                         druid_mods = []
-                        for power_id in ['power_14005', 'power_14154', 'power_14201']:
+                        archery_id = chest_editor.locator('[data-mod-group="Archery"] [data-power-id]').first.get_attribute('data-power-id')
+                        for power_id in ['power_14005', archery_id, 'power_14154']:
                             druid_row = chest_editor.locator(f'[data-power-id="{power_id}"]')
                             druid_mods.append({'powerId': power_id, 'tierId': druid_row.get_attribute('data-preview-tier')})
                             druid_row.locator(':scope > .available-effect').click()
-                        expect(druid_rows).to_have_count(8)
+                        expect(druid_rows).to_have_count(9)
                         planned = chest.locator('.item-stats [data-stat-kind="planned"]')
                         expect(planned).to_have_count(3)
-                        expect(planned.locator('.stat-chip')).to_have_text(['Druid', 'Druid', 'Druid'])
+                        # Presentation-only grouping: Druid, Druid, Archery; saved order stays Druid, Archery, Druid.
+                        expect(planned.locator('.stat-chip')).to_have_text(['Druid', 'Druid', 'Archery'])
+                        assert planned.evaluate_all('(es) => es.map(e => e.dataset.candidateEffect)') == ['0', '2', '1']
+                        chip_colors = planned.locator('.stat-chip').evaluate_all('(es) => es.map(e => getComputedStyle(e).backgroundColor)')
+                        assert chip_colors == ['rgb(26, 95, 192)', 'rgb(26, 95, 192)', 'rgb(242, 194, 48)'], chip_colors
                         chip_x = chest.locator('.item-stats .stat-text').evaluate_all('(es) => [...new Set(es.map(e => Math.round(e.getBoundingClientRect().left)))]')
                         assert len(chip_x) == 1, chip_x  # every STATS effect starts in one aligned column
                         expect(chest).not_to_contain_text('CANDIDATE')
@@ -420,9 +425,10 @@ def main():
                         page.locator('[data-equipment-row="Chest"]').screenshot(path=str(output / f'{mode}-druid-chest-mobile.png'))
                         page.set_viewport_size({'width': 1440, 'height': 900})
                         page.locator('#skill-A').select_option('Psychology')
-                        expect(page.locator('.skill-change-notice')).to_contain_text('Removed 3 staged Druid mods from 1 item.')
-                        expect(planned).to_have_count(0)
-                        wait_saved(); assert saved()['equipment'][chest_index]['candidateMods'] == [] and saved()['equipment'][:chest_index] == druid_build['equipment'][:chest_index]
+                        expect(page.locator('.skill-change-notice')).to_contain_text('Removed 2 staged Druid mods from 1 item.')
+                        expect(planned).to_have_count(1)
+                        expect(planned.locator('.stat-chip')).to_have_text(['Archery'])
+                        wait_saved(); assert saved()['equipment'][chest_index]['candidateMods'] == [druid_mods[1]] and saved()['equipment'][:chest_index] == druid_build['equipment'][:chest_index]
                         page.locator('.skill-change-notice button', has_text='Undo').click()
                         expect(planned).to_have_count(3)
                         wait_saved(); assert saved()['equipment'][chest_index]['candidateMods'] == druid_mods and saved()['skillSlotA']['skillId'] == 'Druid'

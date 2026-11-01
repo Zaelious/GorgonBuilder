@@ -378,3 +378,31 @@ it('renders paired Animal Handling attributes as one readable +25%/+25% effect i
   expect(saved().equipment[0]!.candidateMods).toEqual([{ powerId: 'power_12192', tierId: 'id_25' }]);
   expect(saved().skillSlotB).toEqual({ skillId: 'AnimalHandling', level: 125 });
 });
+
+it('groups planned STATS rows by skill (Druid, Druid, Archery) with A blue / B gold, without changing saved order or Selected', async () => {
+  seedChest('Druid', 'Archery'); await render(); await click('[data-equipment-row="Chest"] > summary');
+  const archery = control(`${chestEditor} [data-mod-group="Archery"] [data-power-id]`);
+  const archeryMod = { powerId: archery.dataset.powerId!, tierId: archery.dataset.previewTier! };
+  await click(`${chestEditor} [data-power-id="power_14005"] > .available-effect`);
+  await click(`${chestEditor} [data-power-id="${archeryMod.powerId}"] > .available-effect`);
+  await click(`${chestEditor} [data-power-id="power_14154"] > .available-effect`);
+  const rows = () => [...container.querySelectorAll<HTMLElement>(`${chest} .item-stats [data-stat-kind="planned"]`)];
+  expect(rows().map(row => row.querySelector('.stat-chip')!.textContent)).toEqual(['Druid', 'Druid', 'Archery']);
+  expect(rows().map(row => row.dataset.candidateEffect)).toEqual(['0', '2', '1']);
+  expect(rows().map(row => (row.querySelector('.stat-chip') as HTMLElement).dataset.tone)).toEqual(['skill-a', 'skill-a', 'skill-b']);
+  expect(control(`${chest} .item-stats-legend`).textContent).toContain('A · Druid');
+  expect(control(`${chest} .item-stats-legend`).textContent).toContain('B · Archery');
+  // Selected keeps saved order and its index-based controls.
+  expect([...container.querySelectorAll<HTMLElement>(`${chestEditor} .candidate-list > [data-mod-index]`)].map(row => row.textContent)).toEqual([
+    expect.stringContaining('Indirect Poison Damage'), expect.anything(), expect.stringContaining('Brambleskin')]);
+  await tick();
+  const savedOrder = [{ powerId: 'power_14005', tierId: 'id_25' }, archeryMod, { powerId: 'power_14154', tierId: control<HTMLSelectElement>(`${chestEditor} [aria-label="Tier for candidate 3"]`).value }];
+  expect(saved().equipment[2]!.candidateMods).toEqual(savedOrder);
+  // Removing candidate 1 (Druid) by its saved index keeps grouping and identities consistent.
+  await click(`${chestEditor} [aria-label="Remove candidate 1"]`);
+  expect(rows().map(row => [row.querySelector('.stat-chip')!.textContent, row.dataset.candidateEffect])).toEqual([['Druid', '1'], ['Archery', '0']]);
+  await tick(); expect(saved().equipment[2]!.candidateMods).toEqual(savedOrder.slice(1));
+  await remount();
+  await click('[data-equipment-row="Chest"] > summary');
+  expect(rows().map(row => row.querySelector('.stat-chip')!.textContent)).toEqual(['Druid', 'Archery']);
+});
