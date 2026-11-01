@@ -64,20 +64,21 @@ it('shows inline Available/Selected, immediate item effects, >6 exact candidates
   await search('power_10001');
   const preview = () => control(`${editor} [data-power-id="power_10001"]`);
   expect(preview().dataset.previewTier).toBe('id_12');
-  expect(preview().textContent).toContain(data.getTreasureTier('power_10001', 'id_12')!.effectDescriptions[0]);
+  expect(preview().querySelector('.available-effect')!.textContent).toContain('Archery Base Damage modifier: 0.6');
+  expect(preview().querySelector('.available-effect')!.textContent).not.toContain('{MOD_');
   await add();
   expect(control(`${scope} .equipment-candidate-effects`).textContent).toContain('CANDIDATE · Archery');
-  expect(control(`${scope} [data-candidate-effect="0"]`).textContent).toContain('{MOD_SKILL_ARCHERY}{0.6}');
+  expect(control(`${scope} [data-candidate-effect="0"]`).textContent).toContain('Archery Base Damage modifier: 0.6');
   await target('90');
   expect(preview().dataset.previewTier).toBe('id_9');
-  expect(control(`${editor} .mod-mismatch`).textContent).toContain('Differs from target preview');
+  expect(control(`${editor} .mod-mismatch`).getAttribute('aria-label')).toBe('Differs from target preview');
   expect(control<HTMLSelectElement>(`${editor} [aria-label="Tier for candidate 1"]`).value).toBe('id_12');
   for (let n = 0; n < 7; n++) await add();
   await target('100'); expect(preview().dataset.previewTier).toBe('id_10');
   await add();
   expect(control(`${editor} .mod-selected h3`).textContent).toBe('Selected (9)');
   await change(`${editor} [aria-label="Tier for candidate 1"]`, 'id_11');
-  expect(control(`${scope} [data-candidate-effect="0"]`).textContent).toContain('{MOD_SKILL_ARCHERY}{0.55}');
+  expect(control(`${scope} [data-candidate-effect="0"]`).textContent).toContain('Archery Base Damage modifier: 0.55');
   await click(`${editor} [aria-label="Move candidate 1 down"]`);
   await click(`${editor} [aria-label="Remove candidate 3"]`);
   await change(`${editor} [aria-label="Tier for candidate 2"]`, '');
@@ -105,7 +106,7 @@ it('leaves Available empty without combat skills and preserves saved candidates 
   localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build)); await render(); await open();
   expect(control(`${editor} .mod-available`).textContent).toContain('Select a combat skill to view mods.');
   expect(container.querySelectorAll(`${editor} [data-power-id]`)).toHaveLength(0);
-  expect(control(`${editor} .mod-selected`).textContent).toContain('{MOD_SKILL_ARCHERY}{0.45}');
+  expect(control(`${editor} .mod-selected`).textContent).toContain('Archery Base Damage modifier: 0.45');
   await tick(); expect(saved()).toEqual(build);
 });
 
@@ -142,7 +143,7 @@ it('uses independent default-checked source-category toggles, supports broad sea
 it('makes overlapping tier options explicit and stages the exact alternative or null on request', async () => {
   seed(); await render(); await open(); await target('90'); await search('power_10001');
   await click(`${editor} [data-power-id="power_10001"] > details > summary`); await tick(0);
-  expect(control(`${editor} [data-power-id="power_10001"] > details > summary`).textContent).toContain('3 tier options');
+  expect(control(`${editor} [data-power-id="power_10001"] > details > summary`).getAttribute('title')).toContain('3 preview tier options');
   expect(control(`${editor} .mod-association`).textContent).toBe('Skill: Archery');
   await click(`${editor} [data-tier-id="id_8"]`); await tick();
   expect(saved().equipment[0]!.candidateMods).toEqual([{ powerId: 'power_10001', tierId: 'id_8' }]);
@@ -212,4 +213,22 @@ it('keeps the last preview on invalid transient target input and does not edit t
     expect(control(`${editor} [data-power-id="power_10001"]`).dataset.previewTier).toBe('id_9');
   }
   await tick(); expect(saved()).toEqual(build);
+});
+
+it('renders actual inline icon images in Available, Selected, CANDIDATE lines, saved powers and tier facts without raw markup in normal effects', async () => {
+  const build = seed(); build.skillSlotA.skillId = 'AnimalHandling';
+  build.equipment[0]!.item = { kind: 'imported', instance: { baseItemId: 'item_45052', existingPowers: [{ powerId: 'power_12301', tierId: 'id_12' }] } };
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build)); await render(); await open(); await search('power_12301');
+  const img = control<HTMLImageElement>(`${editor} .available-effect img`);
+  expect(img.src).toBe('https://cdn.projectgorgon.com/v490/icons/icon_2160.png');
+  expect(img.alt).toBe('Official effect icon 2160');
+  expect(control(`${editor} .available-effect`).textContent).not.toContain('<icon=');
+  await add('power_12301');
+  for (const selector of [`${editor} .candidate-effect`, `${scope} .equipment-candidate-effects`, `${scope} .existing-powers`]) {
+    expect(control(selector).querySelector('img.effect-icon')).not.toBeNull();
+  }
+  await click(`${editor} [aria-label="Details and tier for candidate 1"]`);
+  expect(control(`${editor} .mod-tier-facts`).querySelector('img.effect-icon')).not.toBeNull();
+  await tick();
+  expect(saved().equipment[0]!.candidateMods).toEqual([{ powerId: 'power_12301', tierId: 'id_25' }]);
 });

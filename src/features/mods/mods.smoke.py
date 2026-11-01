@@ -2,6 +2,7 @@
 Uses installed Python Playwright/Chromium; adds no project dependencies.
 """
 import argparse
+import copy
 import gzip
 import json
 import os
@@ -91,7 +92,11 @@ def main():
                             wait_saved()
 
                         def no_overflow():
-                            assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+                            overflow = page.evaluate('''() => ({width:innerWidth, scroll:document.documentElement.scrollWidth,
+                              wide:[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).slice(0,8).map(e=>({tag:e.tagName,cls:e.className,width:e.getBoundingClientRect().width}))})''')
+                            if overflow['scroll'] > overflow['width']:
+                                page.screenshot(path=str(output / f'{mode}-overflow.png'), full_page=True)
+                            assert overflow['scroll'] <= overflow['width'], overflow
                             if page.locator('dialog').count():
                                 assert page.locator('dialog').evaluate('(e) => e.scrollWidth <= e.clientWidth + 1')
 
@@ -114,6 +119,16 @@ def main():
 
                         def add(power_id='power_10001', index=0):
                             power(power_id, index).locator(':scope > .available-effect').click()
+
+                        def candidate_details(number):
+                            details = editor().locator(f'[data-mod-index="{number - 1}"] > details')
+                            if not details.evaluate('(e) => e.open'):
+                                details.locator(':scope > summary').click()
+                            return details
+
+                        def close_candidate_details():
+                            while editor().locator('.candidate-details[open]').count():
+                                editor().locator('.candidate-details[open]').first.locator(':scope > summary').click()
 
                         # Empty Available is mandatory until a combat skill is selected.
                         equip('Head', head['id'])
@@ -144,7 +159,7 @@ def main():
                         # Max and each numeric target stage the exact visible tier.
                         inline_search('power_10001')
                         expect(power()).to_have_attribute('data-preview-tier', 'id_12')
-                        assert power().locator(':scope > button').inner_text().startswith('{MOD_SKILL_ARCHERY}{0.6}')
+                        assert power().locator(':scope > button').inner_text().startswith('Archery Base Damage modifier: 0.6')
                         add()
                         expect(page.locator('[data-selection-index="0"] [data-candidate-effect="0"]')).to_contain_text('CANDIDATE · Archery')
                         preview_level('90')
@@ -159,30 +174,31 @@ def main():
                         expected_mods = [{'powerId': 'power_10001', 'tierId': 'id_12'}] + [{'powerId': 'power_10001', 'tierId': 'id_9'} for _ in range(7)] + [{'powerId': 'power_10001', 'tierId': 'id_10'}]
                         wait_saved()
                         assert saved()['equipment'][0]['candidateMods'] == expected_mods
+                        candidate_details(1)
                         editor().get_by_label('Tier for candidate 1', exact=True).select_option('id_11')
                         expected_mods[0]['tierId'] = 'id_11'
-                        expect(page.locator('[data-selection-index="0"] [data-candidate-effect="0"]')).to_contain_text('{MOD_SKILL_ARCHERY}{0.55}')
+                        expect(page.locator('[data-selection-index="0"] [data-candidate-effect="0"]')).to_contain_text('Archery Base Damage modifier: 0.55')
                         editor().get_by_label('Move candidate 1 down', exact=True).focus()
                         page.keyboard.press('Enter')
                         expected_mods[0], expected_mods[1] = expected_mods[1], expected_mods[0]
                         expect(editor().locator('[data-mod-index="1"]')).to_be_focused()
                         editor().get_by_label('Remove candidate 3', exact=True).click()
                         expected_mods.pop(2)
+                        candidate_details(2)
                         editor().get_by_label('Tier for candidate 2', exact=True).select_option('')
+                        close_candidate_details()
                         expected_mods[1]['tierId'] = None
                         wait_saved()
                         assert saved()['equipment'][0]['candidateMods'] == expected_mods
                         expect(page.locator('[data-selection-index="0"] [data-candidate-effect]')).to_have_count(8)
                         preview_level('90')
                         power().locator(':scope > details > summary').click()
-                        expect(power().locator(':scope > details > summary')).to_contain_text('3 tier options')
+                        expect(power().locator(':scope > details > summary')).to_have_attribute('title', '3 preview tier options · Details and other tiers')
                         expect(power().locator('.mod-association')).to_have_text('Skill: Archery')
                         power().locator(':scope > details > summary').click()
                         heap_with_mods = heap()
                         inline_search('')
                         editor().locator('.candidate-list').evaluate('(e) => e.scrollTop = 0')
-                        editor().screenshot(path=str(output / f'{mode}-inline-desktop.png'))
-                        page.screenshot(path=str(output / f'{mode}-page-desktop.png'), full_page=True)
                         # Target changes are transient; complete restored build differs only in candidates.
                         page.reload(); page.locator('.equipment-section').wait_for(); expand('Head')
                         assert saved()['equipment'][0]['candidateMods'] == expected_mods
@@ -208,7 +224,9 @@ def main():
                         page.evaluate('([key, build]) => localStorage.setItem(key, JSON.stringify(build))', [key, rich])
                         page.reload(); page.locator('.equipment-section').wait_for(); expand('Head')
                         expect(editor().locator('.candidate-list')).to_contain_text('Official power unavailable')
+                        candidate_details(1)
                         editor().get_by_label('Tier for candidate 1', exact=True).select_option('id_10')
+                        close_candidate_details()
                         wait_saved(); rich['equipment'][0]['candidateMods'][0]['tierId'] = 'id_10'
                         assert saved() == rich
                         expect(page.locator('[data-selection-index="0"] .existing-powers')).to_contain_text('power_129 / id_120')
@@ -220,29 +238,89 @@ def main():
                         power('power_13501').locator(':scope > details > summary').click()
                         expect(power('power_13501').locator('.mod-association')).to_contain_text('Unknown — association unknown')
                         power('power_13501').locator(':scope > details > summary').click()
+                        # Actual icons + readable templates + measured row density.
+                        proof = copy.deepcopy(rich)
+                        proof['skillSlotA']['skillId'] = 'AnimalHandling'
+                        proof['abilityBarA'] = []
+                        proof['equipment'][0]['candidateMods'] = []
+                        proof['equipment'][0]['item']['instance']['existingPowers'] = [{'powerId': 'power_12301', 'tierId': 'id_25'}]
+                        page.evaluate('([key, build]) => localStorage.setItem(key, JSON.stringify(build))', [key, proof])
+                        page.reload(); page.locator('.equipment-section').wait_for(); expand('Head')
+                        icon_power_ids = [p['id'] for p in treasure['treasurePowers'] if p['skill']['sourceId'] == 'AnimalHandling'][:8]
+                        for power_id in icon_power_ids:
+                            inline_search(power_id)
+                            shown_tier = power(power_id).get_attribute('data-preview-tier')
+                            add(power_id)
+                            proof['equipment'][0]['candidateMods'].append({'powerId': power_id, 'tierId': shown_tier})
+                        wait_saved(); assert saved() == proof
+                        inline_search('power_12301')
+                        icon = power('power_12301').locator(':scope > button img.effect-icon')
+                        expect(icon).to_have_attribute('src', 'https://cdn.projectgorgon.com/v490/icons/icon_2160.png')
+                        expect(icon).to_have_js_property('complete', True)
+                        page.wait_for_function('(img) => img.naturalWidth > 0', arg=icon.element_handle())
+                        for selector in ['.candidate-effect', '.equipment-candidate-effects', '.existing-powers']:
+                            image = page.locator('[data-selection-index="0"]').locator(selector).locator('img.effect-icon').first
+                            image.scroll_into_view_if_needed()
+                            page.wait_for_function('(img) => img.complete && img.naturalWidth > 0', arg=image.element_handle())
+                        # Keyboard expansion exposes full tier/source facts with images.
+                        summary = editor().get_by_label('Details and tier for candidate 1', exact=True)
+                        summary.focus(); page.keyboard.press('Enter')
+                        fact_icon = editor().locator('[data-mod-index="0"] .mod-tier-facts img').first
+                        expect(fact_icon).to_be_visible()
+                        page.wait_for_function('(img) => img.naturalWidth > 0', arg=fact_icon.element_handle())
+                        close_candidate_details()
+                        inline_search('')
+                        editor().locator('.mod-available-scroll, .candidate-list').evaluate_all('(es) => es.forEach(e => e.scrollTop=0)')
+                        editor().scroll_into_view_if_needed()
+                        geometry = editor().locator('.mod-available-scroll').evaluate("""panel => {
+                            const b = panel.getBoundingClientRect();
+                            const rows = [...panel.querySelectorAll('.mod-available-power')].map(e=>e.getBoundingClientRect());
+                            return {height:b.height, visibleRows:rows.filter(r=>r.top>=b.top && r.bottom<=b.bottom).length,
+                              rowHeights:rows.slice(0,15).map(r=>r.height)};
+                        }""")
+                        assert 400 <= geometry['height'] <= 430, geometry
+                        assert geometry['visibleRows'] >= 12, geometry
+                        assert max(geometry['rowHeights']) <= 34, geometry
+                        normal_rows = editor().locator('.available-effect, .candidate-effect')
+                        assert all('<icon=' not in r.inner_text() and '{MOD_' not in r.inner_text() for r in normal_rows.all())
+                        editor().screenshot(path=str(output / f'{mode}-inline-desktop.png'))
+                        page.screenshot(path=str(output / f'{mode}-page-desktop.png'), full_page=True)
+                        # Missing icon fallback is intentional, isolated and recorded separately.
+                        before_fallback = len(errors)
+                        page.route('**/icons/icon_2160.png', lambda route: route.fulfill(status=404, body='missing icon'))
+                        inline_search('power_12301'); page.reload(); page.locator('.equipment-section').wait_for(); expand('Head')
+                        inline_search('power_12301')
+                        expect(power('power_12301').locator('.effect-icon-fallback')).to_be_visible()
+                        assert '<icon=' not in power('power_12301').locator(':scope > button').inner_text()
+                        fallback_errors = errors[before_fallback:]
+                        assert all('404' in error for error in fallback_errors), fallback_errors
+                        del errors[before_fallback:]
+                        page.unroute('**/icons/icon_2160.png')
+                        page.reload(); page.locator('.equipment-section').wait_for(); expand('Head')
                         page.set_viewport_size({'width': 375, 'height': 812})
-                        inline_search('power_10001'); preview_level('100')
+                        inline_search('')
                         no_overflow()
                         assert editor().evaluate('(e) => e.scrollWidth <= e.clientWidth + 1')
-                        columns = editor().locator('.mod-columns').bounding_box()
                         available_box = editor().locator('.mod-available').bounding_box()
                         selected_box = editor().locator('.mod-selected').bounding_box()
                         assert selected_box['y'] >= available_box['y'] + available_box['height']
-                        assert columns['width'] <= 375
-                        editor().locator('.candidate-list').evaluate('(e) => e.scrollTop = 0')
+                        editor().locator('.mod-available-scroll, .candidate-list').evaluate_all('(es) => es.forEach(e => e.scrollTop=0)')
                         editor().screenshot(path=str(output / f'{mode}-inline-mobile.png'))
                         page.screenshot(path=str(output / f'{mode}-page-mobile.png'), full_page=True)
+                        for width in [320, 768]:
+                            page.set_viewport_size({'width': width, 'height': 900}); no_overflow()
+                        rich = proof
                         # A mismatched snapshot is inspectable but never writable.
                         rich['gameDataVersion'] = 'other-version'
                         page.evaluate('([key, build]) => localStorage.setItem(key, JSON.stringify(build))', [key, rich])
                         page.reload(); page.locator('.equipment-section').wait_for(); expand('Head')
-                        inline_search('power_10001'); preview_level('90')
-                        expect(power().locator(':scope > button')).to_be_disabled()
+                        inline_search('power_12301'); preview_level('90')
+                        expect(power('power_12301').locator(':scope > button')).to_be_disabled()
                         assert all(e.is_disabled() for e in editor().locator('.candidate-list button, .candidate-list select').all())
                         page.wait_for_timeout(600); assert saved() == rich
                         assert errors == [], errors
                         results.append({'chromiumVersion': browser.version, 'heapAfterGc': {'loaded': heap_loaded, 'withModEditor': heap_with_mods}, 'mode': mode,
-                            'loadMs': load_ms, 'timings': timings, 'profileOrders': profile_orders, 'candidateCountAfterEdits': 8, 'errors': errors})
+                            'loadMs': load_ms, 'timings': timings, 'profileOrders': profile_orders, 'candidateCountAfterEdits': 8, 'density': geometry, 'expectedIcon404Errors': fallback_errors, 'errors': errors})
                         context.close()
                     finally:
                         os.killpg(process.pid, signal.SIGTERM)

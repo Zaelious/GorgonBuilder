@@ -1,0 +1,6 @@
+.effect-description { overflow-wrap: anywhere; }
+.effect-icon { display: inline-block; width: 18px; height: 18px; vertical-align: -4px; margin-inline: 1px 3px; object-fit: contain; }
+.effect-icon-fallback { text-align: center; color: var(--color-muted); font-size: 13px; line-height: 18px; }
+.effect-value-note, .effect-unformatted { font-size: 10px; color: var(--color-muted); }
+.effect-unformatted { border-bottom: 1px dotted currentColor; }
+.exact-effects pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 11px; max-height: 8rem; overflow: auto; }

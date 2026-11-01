@@ -1,3 +1,4 @@
+import { EffectDescriptions } from './EffectDescription';
 import { useMemo } from 'react';
 import type { EquipmentSelection } from '../../core/build/document';
 import type { CandidateModEdit } from '../../core/build/candidate-mods';
@@ -21,7 +22,7 @@ export function EquipmentMods({ selection, equipmentIndex, item, skillIds, data,
       const power = data.getTreasurePower(mod.powerId);
       const tier = mod.tierId === null ? undefined : data.getTreasureTier(mod.powerId, mod.tierId);
       return <li key={index} data-candidate-effect={index}><span className="mod-source-label">CANDIDATE · {power ? treasureCategoryLabel(power, data) : 'Unknown association'}</span>
-        <span>{tier ? tier.effectDescriptions.join(' · ') : `${mod.powerId} · ${mod.tierId === null ? 'No tier chosen' : `Tier ${mod.tierId} unavailable (retained)`}`}</span></li>;
+        <span>{tier ? <EffectDescriptions descriptions={tier.effectDescriptions} data={data} /> : `${mod.powerId} · ${mod.tierId === null ? 'No tier chosen' : `Tier ${mod.tierId} unavailable (retained)`}`}</span></li>;
     })}</ul>}
     {selection.sparks.mode !== 'none' && <p className="muted">Spark settings: {selection.sparks.mode}</p>}
     {expanded && <ModPlanner selection={selection} equipmentIndex={equipmentIndex} context={context} data={data} onEdit={onEdit} readOnly={readOnly} />}

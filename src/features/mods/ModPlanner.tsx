@@ -4,6 +4,7 @@ import type { CandidateModEdit } from '../../core/build/candidate-mods';
 import type { GameDataRepository } from '../../data/repository/repository';
 import { browseTreasurePowers, indexTreasurePowers, powerName, treasureRelevance, type TreasureContext, type TreasurePower, type TreasureRelevance } from '../../data/search/treasure';
 import { groupTreasurePowers, orderTreasureTiers, previewTreasureTiers, type ModCategories, type ModTargetLevel, type TreasureTier } from '../../data/search/treasure-planning';
+import { EffectDescriptions } from './EffectDescription';
 import { CandidateList } from './CandidateList';
 import { PowerFacts, TierFacts } from './PowerFacts';
 import './mods.css';
@@ -15,17 +16,18 @@ function AvailablePower({ power, relevance, context, target, data, onAdd, readOn
   const [open, setOpen] = useState(false);
   const previews = previewTreasureTiers(power, target);
   const tier = previews[0];
-  const effects = (record: TreasureTier) => record.effectDescriptions.join(' · ') || powerName(power);
+  const effects = (record: TreasureTier) => <EffectDescriptions descriptions={record.effectDescriptions} data={data} fallback={powerName(power)} />;
   return <li className="mod-available-power" data-power-id={power.id} data-preview-tier={tier?.id ?? ''}>
     {tier ? <button type="button" className="available-effect" disabled={readOnly} onClick={() => onAdd(tier.id)} title={`Add ${powerName(power)} · ${tier.id}`}>
-      {effects(tier)}<span aria-hidden="true" className="mod-add-mark">＋</span>
+      <span className="available-effect-text">{effects(tier)}</span><span aria-hidden="true" className="mod-add-mark">＋</span>
     </button> : <p className="muted">{powerName(power)} · No published tier range at this target.</p>}
-    <details className="mod-more" onToggle={event => { if (event.target === event.currentTarget) setOpen(event.currentTarget.open); }}>
-      <summary>{previews.length > 1 ? `${previews.length} tier options · Details` : 'Details / other tiers'}</summary>
+    <details className="mod-more available-details" onToggle={event => { if (event.target === event.currentTarget) setOpen(event.currentTarget.open); }}>
+      <summary aria-label={`Details and tiers for ${power.id}`} title={`${previews.length} preview tier options · Details and other tiers`}><span aria-hidden="true">⋯</span></summary>
       {open && <>
+        <p>{previews.length} preview tier options</p>
         <PowerFacts power={power} relevance={relevance} profileId={context.item?.treasureProfile?.profileId} data={data} />
         <p className="muted">Preview: highest published minimum level{target === 'max' ? '' : ` within ${target}'s published ranges`}, then maximum level; rarity name and tier key break ties. This does not determine strength or unique legality.</p>
-        {tier && <TierFacts tier={tier} />}
+        {tier && <TierFacts tier={tier} data={data} />}
         <p className="muted">Choose any exact published tier below; overlapping ranges and rarity are not resolved as legality rules.</p>
         <ul className="mod-tier-alternatives">{orderTreasureTiers(power.tiers).map(other => <li key={other.id}>
           <button type="button" disabled={readOnly} onClick={() => onAdd(other.id)} data-tier-id={other.id}>{effects(other)}<span className="muted"> · {other.id} · Levels {other.minLevel}–{other.maxLevel} · {other.minRarity}</span></button>
