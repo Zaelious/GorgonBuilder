@@ -31,5 +31,3 @@ GorgonBuilder is a build planner and calculation tool for Project Gorgon. It is 
 ## Source of Truth
 
 The GitHub repository is canonical for code and documentation.
-
-The ChatGPT Project may contain mirrored copies of the Markdown planning documents for cross-chat context. If a Project-file copy and GitHub differ, GitHub wins.
