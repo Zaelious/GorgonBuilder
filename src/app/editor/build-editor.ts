@@ -5,6 +5,8 @@ export const COMBAT_BAR_SIZE = 6;
 export type Slot = 'A' | 'B';
 export type BuildEdit =
   | { type: 'title'; title: string }
+  | { type: 'equipment-equip'; slot: string; itemId: string; index: number | null }
+  | { type: 'equipment-clear'; index: number }
   | { type: 'skill'; slot: Slot; skillId: string | null }
   | { type: 'level'; slot: Slot; level: number }
   | { type: 'add'; slot: Slot; abilityId: string }
@@ -15,6 +17,27 @@ export type BuildEdit =
 /** Each committed edit preserves unrelated fields. Skill switches clear only their own bar. */
 export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataRepository): BuildDocument {
   if (build.gameDataVersion !== data.gameDataVersion) return build;
+  if (edit.type === 'equipment-clear') {
+    if (!Number.isInteger(edit.index) || !build.equipment[edit.index]) return build;
+    return { ...build, equipment: build.equipment.filter((_, index) => index !== edit.index) };
+  }
+  if (edit.type === 'equipment-equip') {
+    const item = data.getItem(edit.itemId);
+    if (!item || item.slot !== edit.slot) return build;
+    const equipment = [...build.equipment];
+    if (edit.index === null) {
+      // New selections cannot accidentally replace a saved/manual selection.
+      if (equipment.some(selection => selection.slot === edit.slot)) return build;
+      equipment.push({ slot: item.slot, item: { kind: 'database', itemId: item.id }, candidateMods: [], sparks: { mode: 'none' } });
+    } else {
+      const previous = equipment[edit.index];
+      if (!Number.isInteger(edit.index) || !previous || previous.slot !== edit.slot) return build;
+      if (previous.item.kind === 'database' && previous.item.itemId === item.id) return build;
+      // Explicit replacement changes only the item; staged mods/Sparks survive.
+      equipment[edit.index] = { ...previous, item: { kind: 'database', itemId: item.id } };
+    }
+    return { ...build, equipment };
+  }
   if (edit.type === 'title') {
     const title = edit.title.trim();
     return title && title !== build.title ? { ...build, title } : build;

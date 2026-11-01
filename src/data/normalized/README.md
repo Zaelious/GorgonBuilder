@@ -405,3 +405,28 @@ After merge, update `docs/Repo_Current_State.md`,
 with this API, counts, level mapping and diagnostics. Those paths remain
 unchanged to respect the ticket's allowed areas. Stop at PR review; do not merge
 or proceed to T0006.
+
+### T0009 reviewed display-only item icon extension
+
+The [PR #18 product-owner review](https://github.com/Zaelious/GorgonBuilder/pull/18#pullrequestreview-5728992620)
+authorizes exposing the exact official item `IconId` for equipment artwork.
+`NormalizedItem.iconId` copies that field as a nonnegative safe integer; an absent
+field stays null. Invalid present values fail with the source path. Note the
+official spelling is item `IconId`, distinct from ability `IconID`.
+
+All 3,078 pinned v490 equipment definitions publish this field. For example,
+`item_45640` has icon 15208, `item_45052` has 14009, and `item_49070` has 17202.
+The runtime projection automatically carries it; no BuildDocument/preference
+schema change, source ID, slot mapping or gameplay interpretation is introduced.
+The canonical icon route is the pinned official index's
+`https://cdn.projectgorgon.com/v490/icons/icon_{IconId}.png`. Missing or failed
+artwork uses local category line drawings instead of invented item artwork.
+
+The item gzip and its manifest metadata were deterministically regenerated twice
+from unchanged verified raw bytes. Compressed size is 1,824,985 bytes, decoded
+size 31,653,251 bytes and SHA-256
+`90ea272a7804075fc8474e1150119512b3dddb9b2806626ee350aac789411487`.
+Progression and ability artifacts, source hashes, record counts, diagnostics,
+integrity checks and KI-0008 transport remain unchanged. Focused tests cover
+missing/malformed IDs and exact raw-to-runtime projection for all 3,078 items.
+See [T0009 verification](../../../docs/T0009_Verification.md) for current review evidence.

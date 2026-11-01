@@ -34,6 +34,8 @@ export interface NormalizedItem extends ItemTreasureSourceRecord {
   readonly id: string;
   readonly internalName: string;
   readonly displayName: string;
+  /** Published IconId for display only; absent remains null. */
+  readonly iconId: number | null;
   readonly description: string;
   /** Published CraftingTargetLevel, never inferred from SkillReqs or a name. */
   readonly level: number | null;

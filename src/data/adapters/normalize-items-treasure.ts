@@ -196,7 +196,7 @@ export function normalizeItemsTreasure(input: ItemTreasureInput): NormalizedItem
     const displayName = string(raw.Name, `${path}.Name`);
     const description = string(raw.Description, `${path}.Description`);
     const keywords = optional(raw, 'Keywords', path, strings);
-    return { id, internalName, displayName, description, level: itemLevel,
+    return { id, internalName, displayName, iconId: optional(raw, 'IconId', path, level), description, level: itemLevel,
       levelSource: itemLevel === null ? null : 'CraftingTargetLevel' as const,
       slot: text(raw.EquipSlot, `${path}.EquipSlot`), keywords, fixedEffects,
       behaviors: optional(raw, 'Behaviors', path, arrayRows), skillRequirements,
