@@ -249,7 +249,7 @@ def main():
                             row = page.locator(f'[data-equipment-row="{slot}"]')
                             row.locator(':scope > summary').click()
                             expect(row.locator('.equipment-icon')).to_have_count(1)
-                            expect(row.locator('.equipment-row-content .equipment-icon, .equipment-selection-heading, h3')).to_have_count(0)
+                            expect(row.locator('.equipment-row-content .equipment-icon, .equipment-selection-heading')).to_have_count(0)
                             expect(row.locator('.item-facts')).to_be_visible()
                             expect(row.locator('.equipment-actions button')).to_have_count(2)
                             if slot == 'OffHand':

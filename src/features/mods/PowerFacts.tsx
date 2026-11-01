@@ -2,6 +2,7 @@ import type { CandidateMod } from '../../core/build/document';
 import type { Runtime } from '../../data/repository/contracts';
 import type { NormalizedTreasureTier } from '../../data/normalized/items-treasure';
 import type { GameDataRepository } from '../../data/repository/repository';
+import { treasureCategoryLabel } from '../../data/search/treasure-planning';
 import { powerName, type TreasurePower, type TreasureRelevance } from '../../data/search/treasure';
 
 export function TierFacts({ tier }: { tier: Runtime<NormalizedTreasureTier> }) {
@@ -16,11 +17,11 @@ export function TierSelect({ power, tierId, onChange, disabled, label }: {
   power: TreasurePower | undefined; tierId: string | null; onChange: (id: string | null) => void; disabled: boolean; label: string;
 }) {
   const tiers = [...(power?.tiers ?? [])].sort((a, b) => a.minLevel - b.minLevel || a.id.localeCompare(b.id, undefined, { numeric: true }));
-  return <label className="mod-tier-select">Published tier
+  return <label className="mod-tier-select">Tier
     <select aria-label={label} value={tierId ?? ''} disabled={disabled} onChange={event => onChange(event.target.value || null)}>
       <option value="">No tier chosen</option>
       {tierId !== null && !tiers.some(tier => tier.id === tierId) && <option value={tierId}>{tierId} — unavailable (retained)</option>}
-      {tiers.map(tier => <option value={tier.id} key={tier.id}>{tier.id} · Levels {tier.minLevel}–{tier.maxLevel} · {tier.minRarity}</option>)}
+      {tiers.map(tier => <option value={tier.id} key={tier.id}>Levels {tier.minLevel}–{tier.maxLevel} · {tier.minRarity}{tiers.filter(other => other.minLevel === tier.minLevel && other.maxLevel === tier.maxLevel && other.minRarity === tier.minRarity).length > 1 ? ` · ${tier.id}` : ''}</option>)}
     </select>
   </label>;
 }
@@ -29,11 +30,15 @@ export function SavedPower({ mod, data, existing = false }: { mod: CandidateMod;
   const power = data.getTreasurePower(mod.powerId);
   const tier = mod.tierId === null ? undefined : data.getTreasureTier(mod.powerId, mod.tierId);
   return <>
-    <strong>{power ? powerName(power) : mod.powerId}</strong>
-    <p className="muted">{mod.powerId} / {mod.tierId ?? 'No tier chosen'}</p>
+    {tier ? <ul className="mod-effect-text">{tier.effectDescriptions.map((text, index) => <li key={index}>{text}</li>)}</ul>
+      : <p>{power ? powerName(power) : mod.powerId} · {mod.tierId === null ? 'No tier chosen' : 'Saved tier unavailable'}</p>}
     {!power && <p className="warning">Official power unavailable. Saved ID retained; inspect with a matching data snapshot{existing ? '.' : ' or remove this candidate explicitly.'}</p>}
     {mod.tierId !== null && !tier && <p className="warning">Official tier {mod.tierId} unavailable for {mod.powerId}. Saved ID retained; {existing ? 'inspect with a matching data snapshot.' : 'choose a published tier, clear the tier, or remove this candidate.'}</p>}
-    {tier && <details className="mod-more"><summary>Published tier effects</summary><TierFacts tier={tier} /></details>}
+    <details className="mod-more"><summary>Details</summary>
+      <p>{mod.powerId} / {mod.tierId ?? 'No tier chosen'} · {power ? powerName(power) : 'Unknown power'}</p>
+      {power && <p>{treasureCategoryLabel(power, data)} · {power.internalName}</p>}
+      {tier && <TierFacts tier={tier} />}
+    </details>
   </>;
 }
 

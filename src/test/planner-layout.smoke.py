@@ -39,8 +39,11 @@ def main():
     try:
         with sync_playwright() as playwright:
             proxy = {'server': os.environ['HTTPS_PROXY'], 'bypass': '127.0.0.1,localhost'} if os.environ.get('HTTPS_PROXY') else None
+            browser_env = dict(os.environ)
+            if os.environ.get('CHROMIUM_TRUST_HOME'):
+                browser_env['HOME'] = os.environ['CHROMIUM_TRUST_HOME']
             browser = playwright.chromium.launch(executable_path=shutil.which('chromium'), headless=True,
-                args=['--no-sandbox', '--disable-dev-shm-usage'], proxy=proxy)
+                args=['--no-sandbox', '--disable-dev-shm-usage'], proxy=proxy, env=browser_env)
             page = browser.new_page(viewport={'width': 1440, 'height': 900})
             page.on('pageerror', lambda error: errors.append(str(error)))
             page.on('console', lambda message: errors.append(message.text) if message.type == 'error' else None)
@@ -92,13 +95,9 @@ def main():
                     measurements.append({'viewport': [width, height], 'state': state, **metric})
 
             restore(document('partial'))
-            page.get_by_label('Filter skills for Skill A', exact=True).focus()
-            page.keyboard.press('Enter')
-            expect(page.locator('#skill-search-A')).to_be_focused()
-            page.locator('#skill-search-A').fill('psych')
-            expect(page.locator('#skill-A option')).to_have_count(2)
-            page.keyboard.press('Escape')
-            expect(page.get_by_label('Filter skills for Skill A', exact=True)).to_be_focused()
+            expect(page.locator('.skill-filter, [id^="skill-search"]')).to_have_count(0)
+            page.locator('#skill-A').focus()
+            expect(page.locator('#skill-A')).to_be_focused()
             page.locator('.skill-panel').first.locator('.slot-button').first.focus()
             expect(page.locator('.ability-popover')).to_be_visible()
             page.keyboard.press('Escape')
@@ -135,9 +134,9 @@ def main():
             mobile.locator('.slot-button[aria-haspopup]').first.tap()
             expect(mobile.locator('.ability-popover')).to_be_visible()
             mobile.get_by_label('Close ability details', exact=True).tap()
-            mobile.get_by_label('Filter skills for Skill A', exact=True).tap()
-            expect(mobile.locator('#skill-search-A')).to_be_focused()
-            mobile.keyboard.press('Escape')
+            expect(mobile.locator('.skill-filter, [id^="skill-search"]')).to_have_count(0)
+            mobile.locator('#skill-A').select_option('Archery')
+            expect(mobile.locator('#skill-A')).to_have_value('Archery')
             mobile.set_viewport_size({'width': 320, 'height': 812})
             assert not mobile.evaluate('document.documentElement.scrollWidth > innerWidth')
             mobile.screenshot(path=str(output / '320-touch.png'), full_page=True)

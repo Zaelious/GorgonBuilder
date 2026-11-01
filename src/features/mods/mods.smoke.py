@@ -1,4 +1,4 @@
-"""T0010 real Chromium dev/production-preview workflow. Build first.
+"""T0010 revised inline editor: real Chromium dev/production-preview workflow. Build first.
 Uses installed Python Playwright/Chromium; adds no project dependencies.
 """
 import argparse
@@ -23,7 +23,6 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     repo = Path(__file__).resolve().parents[3]
     treasure = json.load(gzip.open(repo / 'src/generated/game-data/itemsTreasure.json.gz'))
-    powers = {p['id']: p for p in treasure['treasurePowers']}
     head = next(i for i in treasure['items'] if i['slot'] == 'Head' and (i['level'] or 0) >= 90)
     key = 'gorgonbuilder.current-draft'
     results = []
@@ -91,138 +90,159 @@ def main():
                             page.locator('.equipment-result-heading button').first.click()
                             wait_saved()
 
-                        def open_mods(index, slot):
-                            row(slot)
-                            opener = page.get_by_label(f'Plan candidate mods for equipment {index + 1}', exact=True)
-                            opener.focus()
-                            start = time.perf_counter()
-                            page.keyboard.press('Enter')
-                            expect(page.locator('#mod-search')).to_be_focused()
-                            timings.append({'action': 'open', 'ms': (time.perf_counter() - start) * 1000})
-                            return opener
-
-                        def search(value):
-                            start = time.perf_counter()
-                            page.locator('#mod-search').fill(value)
-                            page.locator('.mod-results-title').wait_for()
-                            timings.append({'action': value, 'ms': (time.perf_counter() - start) * 1000})
-
-                        def staged():
-                            page.locator('dialog [aria-label="Mod planner views"] button').nth(1).click()
-
-                        def close_mods():
-                            page.keyboard.press('Escape')
-                            expect(page.locator('dialog')).to_have_count(0)
-
                         def no_overflow():
                             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
                             if page.locator('dialog').count():
                                 assert page.locator('dialog').evaluate('(e) => e.scrollWidth <= e.clientWidth + 1')
 
-                        for slot, skill in [('A', 'Cow'), ('B', 'Unarmed')]:
+                        def editor(index=0):
+                            return page.locator(f'[data-selection-index="{index}"] .mod-planner')
+
+                        def expand(slot):
+                            row(slot)
+
+                        def inline_search(value, index=0):
+                            start = time.perf_counter()
+                            editor(index).get_by_label('Search treasure powers', exact=True).fill(value)
+                            timings.append({'action': value, 'ms': (time.perf_counter() - start) * 1000})
+
+                        def preview_level(value, index=0):
+                            editor(index).get_by_label('Mod target level', exact=True).fill(value)
+
+                        def power(power_id='power_10001', index=0):
+                            return editor(index).locator(f'[data-power-id="{power_id}"]')
+
+                        def add(power_id='power_10001', index=0):
+                            power(power_id, index).locator(':scope > .available-effect').click()
+
+                        # Empty Available is mandatory until a combat skill is selected.
+                        equip('Head', head['id'])
+                        expect(editor().get_by_text('Select a combat skill to view mods.', exact=True)).to_be_visible()
+                        expect(editor().locator('[data-power-id]')).to_have_count(0)
+                        expect(page.locator('.skill-filter, [id^="skill-search"]')).to_have_count(0)
+                        for slot, skill in [('A', 'Archery'), ('B', 'Cow')]:
                             page.locator(f'#skill-{slot}').select_option(skill)
                             page.get_by_label(f'Open ability picker for bar {slot}', exact=True).click()
                             page.locator('.quick-add').first.click()
                         wait_saved()
-                        equip('Head', head['id'])
                         equip('Ring', 'item_49070')
                         equip('OffHand', 'item_45052')
                         baseline = saved()
+                        expand('Head')
+                        expect(editor().locator('[data-mod-group="Archery"]')).to_have_count(1)
+                        expect(editor().locator('[data-mod-group="Cow"]')).to_have_count(1)
+                        assert len(editor().locator('.mod-category-toggles input:checked').all()) == 3
+                        for name, group in [('Generic', 'AnySkill'), ('Endurance', 'Endurance'), ('Shamanic Infusions', 'ShamanicInfusion')]:
+                            editor().get_by_role('checkbox', name=name, exact=True).uncheck()
+                            expect(editor().locator(f'[data-mod-group="{group}"]')).to_have_count(0)
+                            editor().get_by_role('checkbox', name=name, exact=True).check()
                         profile_orders = []
                         for index, slot in [(0, 'Head'), (1, 'Ring'), (2, 'OffHand')]:
-                            opener = open_mods(index, slot)
-                            profile_orders.append(page.locator('.mod-power').evaluate_all('(es) => es.map(e => e.dataset.powerId)'))
-                            page.get_by_label('Power browsing', exact=True).select_option('all')
-                            for query in ['Psychology', 'Cow', 'Unarmed']:
-                                search(query)
-                                assert page.locator('.mod-power').count() > 0
-                            close_mods()
-                            expect(opener).to_be_focused()
+                            expand(slot)
+                            profile_orders.append(editor(index).locator('[data-mod-group="Archery"] [data-power-id]').evaluate_all('(es) => es.map(e => e.dataset.powerId)'))
                         assert profile_orders[0] != profile_orders[2]
-                        opener = open_mods(2, 'OffHand')
-                        expected_mods = []
-                        for power_id in ['power_4001', 'power_20001', 'power_3001']:
-                            search(power_id)
-                            expect(page.locator('.mod-association')).to_have_text(f"Skill: {powers[power_id]['skill']['sourceId']}")
-                            tier_id = 'id_10'
-                            page.get_by_label(f'Published tier for {power_id}', exact=True).select_option(tier_id)
-                            tier = next(t for t in powers[power_id]['tiers'] if t['id'] == tier_id)
-                            expect(page.locator('dialog .mod-tier-facts li').first).to_have_text(tier['effectDescriptions'][0])
-                            page.get_by_label(f'Stage {power_id}', exact=True).click()
-                            expected_mods.append({'powerId': power_id, 'tierId': tier_id})
-                        page.get_by_label('Published tier for power_3001', exact=True).select_option('')
-                        for _ in range(10):
-                            page.get_by_label('Stage power_3001', exact=True).click()
-                            expected_mods.append({'powerId': 'power_3001', 'tierId': None})
+                        # Max and each numeric target stage the exact visible tier.
+                        inline_search('power_10001')
+                        expect(power()).to_have_attribute('data-preview-tier', 'id_12')
+                        assert power().locator(':scope > button').inner_text().startswith('{MOD_SKILL_ARCHERY}{0.6}')
+                        add()
+                        expect(page.locator('[data-selection-index="0"] [data-candidate-effect="0"]')).to_contain_text('CANDIDATE · Archery')
+                        preview_level('90')
+                        expect(power()).to_have_attribute('data-preview-tier', 'id_9')
+                        expect(editor().get_by_label('Tier for candidate 1', exact=True)).to_have_value('id_12')
+                        expect(editor().locator('.mod-mismatch').first).to_be_visible()
+                        for _ in range(7):
+                            add()
+                        preview_level('100')
+                        expect(power()).to_have_attribute('data-preview-tier', 'id_10')
+                        add()
+                        expected_mods = [{'powerId': 'power_10001', 'tierId': 'id_12'}] + [{'powerId': 'power_10001', 'tierId': 'id_9'} for _ in range(7)] + [{'powerId': 'power_10001', 'tierId': 'id_10'}]
                         wait_saved()
-                        page.get_by_label('Published tier for power_3001', exact=True).select_option('id_10')
-                        page.locator('dialog').evaluate('(e) => e.scrollTop = 0')
-                        page.screenshot(path=str(output / f'{mode}-browse-desktop.png'))
-                        staged()
-                        page.locator('dialog').get_by_label('Tier for candidate 1', exact=True).select_option('id_12')
-                        expected_mods[0]['tierId'] = 'id_12'
-                        move = page.locator('dialog').get_by_label('Move candidate 1 down', exact=True)
-                        move.focus()
+                        assert saved()['equipment'][0]['candidateMods'] == expected_mods
+                        editor().get_by_label('Tier for candidate 1', exact=True).select_option('id_11')
+                        expected_mods[0]['tierId'] = 'id_11'
+                        expect(page.locator('[data-selection-index="0"] [data-candidate-effect="0"]')).to_contain_text('{MOD_SKILL_ARCHERY}{0.55}')
+                        editor().get_by_label('Move candidate 1 down', exact=True).focus()
                         page.keyboard.press('Enter')
                         expected_mods[0], expected_mods[1] = expected_mods[1], expected_mods[0]
-                        expect(page.locator('dialog [data-mod-index="1"]')).to_be_focused()
-                        page.locator('dialog').get_by_label('Remove candidate 3', exact=True).click()
+                        expect(editor().locator('[data-mod-index="1"]')).to_be_focused()
+                        editor().get_by_label('Remove candidate 3', exact=True).click()
                         expected_mods.pop(2)
-                        page.locator('dialog').get_by_label('Tier for candidate 2', exact=True).select_option('')
+                        editor().get_by_label('Tier for candidate 2', exact=True).select_option('')
                         expected_mods[1]['tierId'] = None
                         wait_saved()
-                        assert saved()['equipment'][2]['candidateMods'] == expected_mods
+                        assert saved()['equipment'][0]['candidateMods'] == expected_mods
+                        expect(page.locator('[data-selection-index="0"] [data-candidate-effect]')).to_have_count(8)
+                        preview_level('90')
+                        power().locator(':scope > details > summary').click()
+                        expect(power().locator(':scope > details > summary')).to_contain_text('3 tier options')
+                        expect(power().locator('.mod-association')).to_have_text('Skill: Archery')
+                        power().locator(':scope > details > summary').click()
                         heap_with_mods = heap()
-                        page.locator('dialog').evaluate('(e) => e.scrollTop = 0')
-                        page.screenshot(path=str(output / f'{mode}-staged-desktop.png'))
-                        page.set_viewport_size({'width': 375, 'height': 812})
-                        no_overflow()
-                        page.locator('dialog').evaluate('(e) => e.scrollTop = 0')
-                        page.screenshot(path=str(output / f'{mode}-staged-mobile.png'))
-                        close_mods()
-                        expect(opener).to_be_focused()
-                        page.reload()
-                        page.locator('.equipment-section').wait_for()
-                        restored = saved()
-                        assert restored['equipment'][2]['candidateMods'] == expected_mods
-                        restored['equipment'][2]['candidateMods'] = []
+                        inline_search('')
+                        editor().locator('.candidate-list').evaluate('(e) => e.scrollTop = 0')
+                        editor().screenshot(path=str(output / f'{mode}-inline-desktop.png'))
+                        page.screenshot(path=str(output / f'{mode}-page-desktop.png'), full_page=True)
+                        # Target changes are transient; complete restored build differs only in candidates.
+                        page.reload(); page.locator('.equipment-section').wait_for(); expand('Head')
+                        assert saved()['equipment'][0]['candidateMods'] == expected_mods
+                        restored = saved(); restored['equipment'][0]['candidateMods'] = []
                         assert restored == baseline
-                        open_mods(2, 'OffHand')
-                        search('power_13501')
-                        expect(page.locator('.mod-association')).to_contain_text('Unknown — association unknown')
-                        page.get_by_label('Published tier for power_13501', exact=True).select_option('id_1')
-                        expect(page.locator('dialog .mod-tier-facts li').first).to_have_text(powers['power_13501']['tiers'][0]['effectDescriptions'][0])
-                        no_overflow()
-                        page.screenshot(path=str(output / f'{mode}-browse-mobile.png'))
-                        close_mods()
-                        page.set_viewport_size({'width': 1440, 'height': 900})
-                        # Import/manual powers, unknown saved IDs and Sparks survive edits.
-                        rich = saved()
-                        rich['equipment'][2]['item'] = {'kind': 'imported', 'instance': {'baseItemId': 'item_45052', 'metadata': {'keep': True}, 'existingPowers': [{'powerId': 'power_129', 'tierId': 'id_120'}]}}
-                        rich['equipment'][2]['sparks'] = {'mode': 'simulated', 'input': {'category': 'skill-damage', 'skillId': 'Cow', 'count': 11, 'seed': 'keep'}}
-                        rich['equipment'][2]['candidateMods'].append({'powerId': 'missing-power', 'tierId': 'missing-tier'})
-                        page.evaluate('([key, build]) => localStorage.setItem(key, JSON.stringify(build))', [key, rich])
-                        page.reload(); page.locator('.equipment-section').wait_for()
-                        open_mods(2, 'OffHand'); staged()
-                        expect(page.locator('dialog .candidate-list')).to_contain_text('Official power unavailable')
-                        page.locator('dialog').get_by_label('Tier for candidate 1', exact=True).select_option('id_11')
+                        expect(editor().get_by_label('Mod target level', exact=True)).to_have_value('Max')
+                        # Skill changes update groups immediately, retaining all candidates.
+                        page.locator('#skill-B').select_option('Archery')
+                        expect(editor().locator('[data-mod-group="Archery"]')).to_have_count(1)
+                        expect(editor().locator('[data-mod-group="Cow"]')).to_have_count(0)
+                        page.locator('#skill-A').select_option('')
+                        page.locator('#skill-B').select_option('')
+                        expect(editor().locator('[data-power-id]')).to_have_count(0)
+                        expect(editor().get_by_text('Select a combat skill to view mods.', exact=True)).to_be_visible()
+                        expect(editor().locator('[data-mod-index]')).to_have_count(8)
                         wait_saved()
-                        rich['equipment'][2]['candidateMods'][0]['tierId'] = 'id_11'
+                        # Restore original bars then test source-unknown exploration and mobile stacking.
+                        rich = baseline
+                        rich['equipment'][0]['candidateMods'] = expected_mods
+                        rich['equipment'][0]['item'] = {'kind': 'imported', 'instance': {'baseItemId': head['id'], 'metadata': {'keep': True}, 'existingPowers': [{'powerId': 'power_129', 'tierId': 'id_120'}]}}
+                        rich['equipment'][0]['sparks'] = {'mode': 'simulated', 'input': {'category': 'skill-damage', 'skillId': 'Cow', 'count': 11, 'seed': 'keep'}}
+                        rich['equipment'][0]['candidateMods'].append({'powerId': 'missing-power', 'tierId': 'missing-tier'})
+                        page.evaluate('([key, build]) => localStorage.setItem(key, JSON.stringify(build))', [key, rich])
+                        page.reload(); page.locator('.equipment-section').wait_for(); expand('Head')
+                        expect(editor().locator('.candidate-list')).to_contain_text('Official power unavailable')
+                        editor().get_by_label('Tier for candidate 1', exact=True).select_option('id_10')
+                        wait_saved(); rich['equipment'][0]['candidateMods'][0]['tierId'] = 'id_10'
                         assert saved() == rich
-                        close_mods()
-                        expect(row('OffHand').locator('.existing-powers')).to_contain_text('power_129 / id_120')
+                        expect(page.locator('[data-selection-index="0"] .existing-powers')).to_contain_text('power_129 / id_120')
+                        editor().get_by_label('All skills', exact=True).check()
+                        for query in ['Psychology', 'Cow', 'Unarmed']:
+                            inline_search(query)
+                            assert editor().locator('[data-power-id]').count() > 0
+                        inline_search('power_13501')
+                        power('power_13501').locator(':scope > details > summary').click()
+                        expect(power('power_13501').locator('.mod-association')).to_contain_text('Unknown — association unknown')
+                        power('power_13501').locator(':scope > details > summary').click()
+                        page.set_viewport_size({'width': 375, 'height': 812})
+                        inline_search('power_10001'); preview_level('100')
+                        no_overflow()
+                        assert editor().evaluate('(e) => e.scrollWidth <= e.clientWidth + 1')
+                        columns = editor().locator('.mod-columns').bounding_box()
+                        available_box = editor().locator('.mod-available').bounding_box()
+                        selected_box = editor().locator('.mod-selected').bounding_box()
+                        assert selected_box['y'] >= available_box['y'] + available_box['height']
+                        assert columns['width'] <= 375
+                        editor().locator('.candidate-list').evaluate('(e) => e.scrollTop = 0')
+                        editor().screenshot(path=str(output / f'{mode}-inline-mobile.png'))
+                        page.screenshot(path=str(output / f'{mode}-page-mobile.png'), full_page=True)
                         # A mismatched snapshot is inspectable but never writable.
                         rich['gameDataVersion'] = 'other-version'
                         page.evaluate('([key, build]) => localStorage.setItem(key, JSON.stringify(build))', [key, rich])
-                        page.reload(); page.locator('.equipment-section').wait_for()
-                        open_mods(2, 'OffHand'); search('power_4001')
-                        expect(page.get_by_label('Stage power_4001', exact=True)).to_be_disabled()
-                        staged()
-                        assert all(e.is_disabled() for e in page.locator('dialog .candidate-list button, dialog .candidate-list select').all())
-                        page.wait_for_timeout(600)
-                        assert saved() == rich
+                        page.reload(); page.locator('.equipment-section').wait_for(); expand('Head')
+                        inline_search('power_10001'); preview_level('90')
+                        expect(power().locator(':scope > button')).to_be_disabled()
+                        assert all(e.is_disabled() for e in editor().locator('.candidate-list button, .candidate-list select').all())
+                        page.wait_for_timeout(600); assert saved() == rich
                         assert errors == [], errors
-                        results.append({'chromiumVersion': browser.version, 'heapAfterGc': {'loaded': heap_loaded, 'withModDialog': heap_with_mods}, 'mode': mode, 'loadMs': load_ms, 'timings': timings, 'profileOrders': profile_orders, 'candidateCount': len(expected_mods), 'errors': errors})
+                        results.append({'chromiumVersion': browser.version, 'heapAfterGc': {'loaded': heap_loaded, 'withModEditor': heap_with_mods}, 'mode': mode,
+                            'loadMs': load_ms, 'timings': timings, 'profileOrders': profile_orders, 'candidateCountAfterEdits': 8, 'errors': errors})
                         context.close()
                     finally:
                         os.killpg(process.pid, signal.SIGTERM)

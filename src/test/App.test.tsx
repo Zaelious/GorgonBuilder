@@ -119,10 +119,11 @@ it('adds chosen official ranks to separate bars, reorders, removes and restores 
   expect(draft()).toEqual(saved);
 });
 
-it('searches names and descriptions without autosaving transient controls', async () => {
+it('keeps alphabetic skill choices and ability search without autosaving transient controls', async () => {
   await render();
-  await change('#skill-search-A', 'psych');
-  expect(control<HTMLSelectElement>('#skill-A').options).toHaveLength(2);
+  expect(container.querySelector('.skill-filter, [id^=skill-search]')).toBeNull();
+  const names = [...control<HTMLSelectElement>('#skill-A').options].slice(1).map(option => option.text);
+  expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
   await tick();
   expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
   await change('#skill-A', 'Psychology');
@@ -526,27 +527,19 @@ it.each(['', '   '])('rejects a blank title on Enter and blur while keeping the 
   expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
 });
 
-it('keeps help and skill filtering on demand while preserving accessible controls', async () => {
+it('keeps help on demand and removes the skill search control while preserving the native dropdown and levels', async () => {
   await render();
   expect(container.querySelector('.planner-heading .eyebrow')).toBeNull();
   expect(container.querySelector('.introduction')).toBeNull();
+  expect(container.querySelector('.skill-filter, .skill-search-panel, [id^=skill-search]')).toBeNull();
   const help = control<HTMLDetailsElement>('.planner-help');
-  const filter = control<HTMLDetailsElement>('.skill-filter');
   expect(help.open).toBe(false);
-  expect(filter.open).toBe(false);
   expect(control('#level-A').getAttribute('aria-label')).toBe('Skill A level');
-  expect(control('.skill-filter summary').getAttribute('aria-label')).toBe('Filter skills for Skill A');
+  expect(control<HTMLSelectElement>('#skill-A').options.length).toBeGreaterThan(25);
   await click('.planner-help summary');
   expect(help.open).toBe(true);
   await act(async () => { help.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); });
   expect(help.open).toBe(false);
-  await click('.skill-filter summary');
-  expect(filter.open).toBe(true);
-  await change('#skill-search-A', 'psych');
-  expect(control<HTMLSelectElement>('#skill-A').options).toHaveLength(2);
-  await act(async () => { filter.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); });
-  expect(filter.open).toBe(false);
-  expect(document.activeElement).toBe(control('.skill-filter summary'));
   await tick();
   expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
 });
