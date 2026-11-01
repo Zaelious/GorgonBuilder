@@ -118,7 +118,7 @@ See [build domain README](../src/core/build/README.md). No new UI or remote save
 3. Replace/reorder/remove; changing Animal Handling to Archery clears **only** A, while re-selecting the same skill retains its bar.
 4. Edit title (Enter/blur save, Escape cancel), refresh and confirm title/levels/bars persist. Test protected schema, storage recovery/retry and unresolved official IDs.
 5. Inspect the desktop section's approximately **212 CSS px** height (48 px icons); confirm 375 px and 320 px mobile layouts. For optional real-browser geometry verification run `python src/test/planner-layout.smoke.py --output /tmp/gorgonbuilder-layout` after building.
-6. Run pinned-data validation, lint, typecheck, full tests and production build. **KI-0008:** standard Vite dev/preview may mis-serve `.gz` artifacts; use the production bundle/Cloudflare path for current hands-on testing until fixed before T0009.
+6. Run pinned-data validation, lint, typecheck, full tests and production build. **KI-0008:** see the [transport verification](KI-0008_Verification.md) and browser smoke below for local Vite dev/preview checks.
 
 See [T0008 app README](../src/app/README.md) for detailed evidence.
 
@@ -129,6 +129,7 @@ This is a separate narrow preflight PR, not part of T0009's equipment UI.
 1. In a real browser, inspect each generated `.json.gz` response under both `npm run dev` and `npm run build && npm run preview`: verify `fetch().arrayBuffer()` returns manifest-matching **compressed** size and SHA-256, without transparent HTTP decoding.
 2. Confirm the existing skill/ability planner loads correctly in both Vite modes and displays no loader errors; intentionally corrupted bytes must still fail verification.
 3. Verify other assets/production output are unaffected; run `npm run data:update -- --check`, lint, typecheck, tests, build and Wrangler dry-run.
+4. After building, run `python src/test/vite-transport.smoke.py --output /tmp/gorgonbuilder-vite-transport` with Python Playwright and Chromium available. It starts both npm serving modes, verifies browser sizes/hashes, exercises the existing planner and tests corruption/retry for every artifact. See [KI-0008 evidence and environment setup](KI-0008_Verification.md).
 
 ### T0009 minimum target-level search checks
 
