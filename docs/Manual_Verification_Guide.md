@@ -140,6 +140,8 @@ This is a separate narrow preflight PR, not part of T0009's equipment UI.
 
 **T0009 final accepted verification (2026-11-01):** [PR #18](https://github.com/Zaelious/GorgonBuilder/pull/18) merged at `7cd03ee`. The customer passed the initial functional checklist, then accepted the refined nine-primary-slot icon layout. The [final report](T0009_Verification.md) documents 408 passing tests, real Chromium Vite dev/preview checks, and updated screenshots. For regressions, also check all nine empty rows, official selected-item icons/fallbacks, collapsed Other slots, distinct OffHand and OffHandShield, picker X/Escape focus behavior, and dragging text outside the search field without closing the dialog. Backdrop-click dismissal remains disabled pending optional KI-0010 UX exploration.
 
+**Post-merge correction to verify under T0009-F1 (not yet implemented):** Expanded selected-item details should not repeat the icon/name already visible in the row summary. Treat OffHand and OffHandShield as one mutually exclusive user-facing offhand position; validate swapping between their original official slot types, persistence across reload, and explicit handling of older builds that contain both selections. No silent loss of staged mods, Spark settings or manual/imported metadata. See [T0009-F1](Tickets.md) and KI-0011.
+
 ## Calculation Tickets
 
 Verify:
