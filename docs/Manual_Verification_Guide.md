@@ -104,10 +104,23 @@ T0007 is an internal schema/persistence ticket; automated tests and architect re
 3. Inspect representative equipment selection, imported/manual instance metadata, composite TSys power/tier IDs, candidate mods without count limits, and Spark none/simulated/actual modes; verify JSON round-tripping.
 4. Check browser-local draft and preference save/restore with fresh persistence instances. The keys are `gorgonbuilder.current-draft` and `gorgonbuilder.preferences`; minimum equipment level defaults to 90 as a preference only, not a validated equip restriction.
 5. Confirm malformed JSON/structure, absent storage, blocked localStorage, quota failures and incompatible future schema versions produce explicit recovery/error results. Incompatible saved versions must **not** be overwritten, including by autosave.
-6. Check autosave snapshotting, 500 ms debounce, flush/cancel and explicit retry after a failed write. The React editor hooks are deferred to T0008.
+6. Check autosave snapshotting, 500 ms debounce, flush/cancel and explicit retry after a failed write. T0008 now connects the React editor lifecycle to this API.
 7. Run `npx vitest run src/core/build/document.test.ts src/persistence/local/storage.test.ts src/persistence/local/autosave.test.ts` (84 focused tests), followed by lint, typecheck, full tests (294) and build.
 
 See [build domain README](../src/core/build/README.md). No new UI or remote save/share capability is expected in T0007.
+
+### T0008 compact skill/ability planner checks
+
+[PR #12](https://github.com/Zaelious/GorgonBuilder/pull/12) was customer-accepted and merged. [Final-head CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41297214856) passed **345 tests**; Cloudflare preview build/deployment succeeded.
+
+1. Select Psychology/Deer, Cow/Unarmed, A-only, and Psychology/Psychology; confirm independent levels and six slots per bar.
+2. Search official ability families, quick-add highest published tier and explicitly choose a lower tier; inspect source facts, real official icons, full-bar guidance and keyboard/touch access.
+3. Replace/reorder/remove; changing Animal Handling to Archery clears **only** A, while re-selecting the same skill retains its bar.
+4. Edit title (Enter/blur save, Escape cancel), refresh and confirm title/levels/bars persist. Test protected schema, storage recovery/retry and unresolved official IDs.
+5. Inspect the desktop section's approximately **212 CSS px** height (48 px icons); confirm 375 px and 320 px mobile layouts. For optional real-browser geometry verification run `python src/test/planner-layout.smoke.py --output /tmp/gorgonbuilder-layout` after building.
+6. Run pinned-data validation, lint, typecheck, full tests and production build. **KI-0008:** standard Vite dev/preview may mis-serve `.gz` artifacts; use the production bundle/Cloudflare path for current hands-on testing until fixed before T0009.
+
+See [T0008 app README](../src/app/README.md) for detailed evidence.
 
 ## Calculation Tickets
 
