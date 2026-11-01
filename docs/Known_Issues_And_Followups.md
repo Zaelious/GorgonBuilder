@@ -68,7 +68,7 @@ T0005's official v490 `items` data exposes `CraftingTargetLevel`, not a generic 
 
 ## KI-0008 — Vite Development/Preview Gzip Transport
 
-**Status:** Narrow implementation requirements approved; fix PR pending before T0009.
+**Status:** Scoped fix implemented and locally verified; review/merge required before T0009. See [KI-0008 verification](KI-0008_Verification.md) for before/after headers, hashes, regression coverage and environment notes.
 
 `npm run dev` / `vite preview` can serve the generated `.gz` assets with `Content-Encoding: gzip`. Browser fetch transparently decodes the response before T0006's loader verifies **compressed** byte lengths and SHA-256, so local Vite use fails with a byte mismatch. The production bundle worked via a static server and Cloudflare Workers local assets; PR #12's remote preview deployment succeeded, although its live runtime was not independently fetched by the implementation environment.
 
