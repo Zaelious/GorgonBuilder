@@ -1,12 +1,12 @@
 # GorgonBuilder — Character Import and Validation
 
-**Status:** Feasible; initial design approved  
-**Version:** 1.0  
-**Date:** 2026-10-31
+**Status:** T0011 parser implemented and accepted; browser My Items import and CurrentStats comparisons pending  
+**Version:** 1.1  
+**Date:** 2026-11-02
 
 ## Clarification About Export Freshness
 
-The supplied customer files were an **older snapshot**.
+Earlier sample files were older snapshots. Two fresh private real exports have since been reviewed against T0011's known field constraints; the valid `XpNeededForNextLevel: -1` sentinel was incorporated into the parser.
 
 That does not mean CharacterSheet/Storage import is inherently stale.
 
@@ -55,6 +55,14 @@ Useful item-instance fields observed include:
 - CraftPoints where present
 - storage vault or `IsInInventory`
 - additional optional fields
+
+## Implementation State
+
+- **T0011 (merged):** Pure local CharacterSheet/Storage parser, typed source snapshots, exact resolvable power/tier pairs, optional official v490 adapter, preserved unknowns, separate imbues, and sanitized regression tests. It does not equip any items.
+- **T0011-F1 (planned):** Browser-only file selection, searchable **My Items**, real owned item/power/tier inspection and manual equipment selection. This is the customer-preferred end-to-end import acceptance path.
+- **T0016 (later):** CurrentStats-vs-modeled aggregate comparisons; this no longer duplicates the basic import UI.
+
+Independent checks of fresh customer exports against T0011's typed field constraints succeeded after the next-XP sentinel fix. The exact full Node CLI with v490 reference-resolution on the real private files was **not** run; actual resolved/unresolved ID and tier counts remain to be checked in T0011-F1. Never commit original customer reports.
 
 ## What Import Can Do
 

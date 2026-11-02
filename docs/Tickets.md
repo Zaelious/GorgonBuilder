@@ -586,6 +586,8 @@ Guidelines:
 
 ## T0011 — Character Import Core and Sanitized Fixtures
 
+**Status:** Completed, customer-accepted and squash-merged 2026-11-02 via [PR #23](https://github.com/Zaelious/GorgonBuilder/pull/23), commit `a197599`. [Verification](T0011_Verification.md): CI passed 611 tests (98 focused imports), the `XpNeededForNextLevel: -1` defect was fixed with a synthetic regression, and private fresh customer exports passed independent field-constraint review. The full Node v490 reference resolver was not run on those private files; verify resolution counts in the planned T0011-F1 browser UI.
+
 **Complexity:** High
 
 **Verification:** Automated + customer file smoke test
@@ -630,6 +632,34 @@ Guidelines:
 1. Locally choose a current CharacterSheet/Storage export and confirm the parser identifies character, timestamp, representative skills, and item counts.
 2. Do not add the real exports to git.
 3. Run the quality suite.
+
+## T0011-F1 — Browser Import and My Items Picker
+
+**Status:** Planned; not started. Separate ticket/branch after T0011, before T0012.
+
+**Complexity:** High
+
+**Verification:** Customer hands-on in web browser with current exports, plus focused tests and full quality suite
+
+**Goal:** Let users import current CharacterSheet/Storage JSON locally, inspect real owned equipment and select its exact instances for the planner before formula work.
+
+**Dependencies:** T0011,T0009,T0010
+
+**Allowed areas:** src/features/import, equipment picker, necessary build/editor/local-state integrations, tests, verification docs.
+
+**Do not touch:** T0012 calculator, CurrentStats delta calculations (T0016), automatic equipped inference, remote raw-file upload, Spark-roll inference, unrelated UI redesign.
+
+**Requirements:**
+- Provide a compact local-only Import Character browser workflow for both JSON reports, showing character/server, timestamp/version, skill and item counts, and clear errors.
+- Expose a searchable **My Items** source for owned equipment; support useful slot, item-level, rarity and storage-location filters.
+- Display actual imported item names/levels/rarity/slots, source TSys powers and **exact** tiers; clearly show unresolved official mappings without approximations or silently dropping evidence.
+- Equip/replace/clear manually from My Items, retaining imported existing powers distinct from candidate mods and preserving the saved draft, unrelated skills, Sparks and exclusive offhand behavior.
+- Never equate `IsInInventory` with equipped. Preserve user choice explicitly; no Spark history import without source proof.
+- Keep raw reports in the browser only, with predictable re-import/refresh behavior and privacy-safe diagnostics.
+
+**Acceptance:** Current real files import through the UI; known item instances, skill levels and power/tier pairs are correct; item selection and reload preserve identities and unrelated build state; bad reports show useful errors; all tests/build and browser preview checks pass. Record actual resolved/unresolved reference counts without publishing raw exports.
+
+**Manual verification:** Import current CharacterSheet and Storage in a branch preview; search representative rings/weapons/armor, compare levels and powers to the game, equip/swap/clear and reload, confirm unknown-ID warnings and no raw-file upload.
 
 ## T0012 — Build Modifier Aggregation Engine
 
@@ -818,15 +848,15 @@ Guidelines:
 3. Enter actual/manual Spark totals and compare ability changes.
 4. Run the quality suite.
 
-## T0016 — My Items Import and CurrentStats Validation
+## T0016 — CurrentStats Validation and Import Integration
 
 **Complexity:** High
 
 **Verification:** Customer hands-on with current export
 
-**Goal:** Turn imported character reports into useful planner data and a formula-validation tool.
+**Goal:** Compare imported Project Gorgon CurrentStats with modeled aggregate stats from the T0011-F1 imported/manual loadout.
 
-**Dependencies:** T0011,T0012,T0013,T0015
+**Dependencies:** T0011-F1,T0012,T0013,T0015
 
 **Allowed areas:**
 - src/features/import
@@ -841,11 +871,8 @@ Guidelines:
 - rotation simulator
 
 **Requirements:**
-- Add an Import Character workflow for local CharacterSheet/Storage files.
-- Show character/server/export timestamp and compatibility status.
-- Expose imported owned equipment as a My Items source.
-- Selecting an imported item instance must preserve its exact existing TSys powers/tiers and keep user-added candidate mods separate.
-- If the report exposes an authoritative equipped field, use it; otherwise require/manual-select loadout and never treat IsInInventory alone as equipped.
+- Reuse T0011-F1's existing browser-local Import Character and My Items workflow; do not duplicate its picker.
+- Use the manually selected imported loadout and preserve source TSys power tiers separately from candidate mods.
 - Add a registry mapping supported CurrentStats keys to modeled aggregate stats.
 - Show Project Gorgon value, GorgonBuilder value, delta, and unsupported keys.
 
