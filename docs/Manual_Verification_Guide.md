@@ -194,6 +194,10 @@ Verify:
 - `IsInInventory` is not presented as "equipped"
 - malformed/wrong report gives clear error
 
+### T0011-F3 — My Items quick-loadout UX (planned)
+
+Test the **general** Equipment → My Items view separately from each slot-specific picker. General view must stay open through repeated Equip/Replace/Unequip actions, retaining current search/filter/page/scroll; a selected concrete instance must show **Equipped** status and **Unequip** action, while another copy of the same TypeID stays unselected. “Equipped” here means selected in the **GorgonBuilder build**, never `IsInInventory` from Project Gorgon. Confirm clearing an edited item is protected, read-only drafts cannot change, OffHand exclusivity holds, and slot-specific pickers still close after one choice. Recheck state across refresh and safe reimport, 375px and 320px. Do not publish original customer reports.
+
 ## Save/Share Tickets
 
 Test at least:

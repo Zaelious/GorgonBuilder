@@ -723,6 +723,54 @@ Guidelines:
 4. Switch skill slots to check new color grouping, restore slots, and verify no implicit deletion of imported powers.
 5. Run lint, typecheck, full/focused tests, production build, Wrangler dry-run, and desktop/mobile Chromium smoke. Provide a working branch preview and screenshots for customer acceptance.
 
+## T0011-F3 — My Items Quick Equip/Unequip Without Closing Inventory
+
+**Status:** Planned product-owner UX follow-up from hands-on testing (2026-11-02); separate Codex branch and PR. Do not mix into open T0011-F2 / PR #25. Schedule after F2 acceptance and before the next feature ticket.
+
+**Complexity:** Medium
+
+**Verification:** Hands-on with the actual 255 equipment instances plus synthetic automated and desktop/mobile browser tests.
+
+**Goal:** Turn the **general My Items** dialog, opened from the Equipment section header, into a quick loadout manager that supports equipping/replacing/unequipping multiple individual imported items without closing the dialog or losing search, filters, page, or scroll position. Show the current planner-equipped state on each owned item result. **Individual equipment-slot pickers retain their existing one-selection-and-close workflow.**
+
+**Dependencies:** T0011-F1,T0011-F2,T0009-F1
+
+**Allowed areas:** src/features/import/MyItemsBrowser.tsx and minimal related UI/styles/tests, src/features/equipment/EquipmentPicker.tsx and EquipmentPlanner.tsx, existing build-edit actions if needed, verification documentation.
+
+**Do not touch:** CharacterSheet/Storage parser, official v490 data, T0011-F2 imported treasure editing semantics, T0012 formulas or T0015 Sparks, remote import, broad inventory redesign, new BuildDocument schema.
+
+**User observations:** General My Items (255 equipment instances shown in header for an actual export) closes upon choosing a result, requiring reopening for every slot. An owned result still says **Equip** when the same concrete item instance is already in the GorgonBuilder loadout. The result should visibly reflect the selected state, including an **Unequip** action.
+
+**Requirements:**
+- **Two explicit picker modes:** When launched with no specified equipment slot (the Equipment heading's **My Items** button, `slot === ''`), stay open after successful Equip, Replace and Unequip actions. When launched from an individual slot's **Choose gear** or **Replace** action, preserve existing closing-on-selection/clear behavior, focus restoration and slot filtering. Scope any changed dialog dismissal to general My Items only.
+- **Live item state:** Pass the currently selected `build.equipment` list (or a minimal derived view) into the owned-item result renderer. When a result corresponds to the **same concrete imported instance currently selected in the planner**, show a clear **Equipped** status and an **Unequip** button. A different instance with the same TypeID/name/slot must *not* be marked equipped. A different item for an occupied slot can say **Replace** (rather than an ambiguous Equip), with existing loss-prevention confirmation. Once changed, buttons/indicators and the top-level selected count update immediately, without closing the general dialog.
+- **Exact instance matching:** Prefer verified stable instance identity when genuinely present. For imported items using the current export, conservatively match on persisted `provenance.reference`, `metadata.sourcePath`, source export timestamp/report identity, plus TypeID/instance identity as available. This must still match an imported selected item after changing its effective treasure powers (F2) because `metadata.sourceItem` stays immutable. Never match by item name, base TypeID or slot alone. Do not accidentally equate the `IsInInventory` game-export field with equipped status: **Equipped means selected in this GorgonBuilder build only**. If reliable identity is absent/mismatched across reimports, do not claim a match.
+- **Unequip:** Invoking the action on an exact selected instance should use the existing explicit `equipment-clear` behavior, with the current confirmation if it would remove imported working powers, candidate mods, or Spark settings. Cancel keeps both the item and the dialog unchanged; confirm clears only the exact matching selection. No implicit unequip of similarly named duplicates.
+- **Equip/Replace:** Keep canonical slot assignment, exclusive OffHand/OffHandShield logic, legacy offhand-conflict guard, protected draft/read-only behavior and the existing confirmation before overwriting meaningful previous selections. Preserve the established replacement policy for staged candidate mods and Spark configuration (do not silently change it). Do not accidentally double-equip one imported instance in multiple slots.
+- **General dialog stays open and stable:** Keep current search text, slot/level/rarity/location filters, page and approximate scroll position while changing loadout. Do not remount the picker, reset search, or bounce scroll to the top after each action. A rapid Head → Chest → Legs → Ring sequence should be possible without reopening. Button states and counts must rerender from actual build state, not stale component state or assumptions.
+- **Slot-specific behavior unchanged:** A slot-specific choice still closes the picker, with existing keyboard focus restoration and only that specific slot's candidates visible. If the already selected imported instance is shown, use clear Equipped/Unequip semantics; an explicit Unequip from that picker may close after the action. Ensure database source behavior is not inadvertently changed.
+- **Clarity and accessibility:** Distinguish button **Unequip** from passive **Equipped** status and name target item in aria labels; ensure keyboard navigation and mobile layout remain sound. Preserve existing paging and 10-result rendering for large inventories.
+
+**Non-goals:** Multi-select checkbox, bulk auto-equip, auto-equipped-state detection from Project Gorgon, drag/drop loadouts, simultaneous loadout templates, full inventory persistence, formulas or mod/Spark changes.
+
+**Acceptance criteria:**
+1. Open general Equipment → My Items, search a known item, Equip it; the dialog remains open, result immediately indicates Equipped, action changes to Unequip, and Equipment's selected count increases.
+2. Without closing or losing filters/page/scroll, equip a second item in another slot, then a third. Exact equipped markers follow the build and are not applied to duplicate TypeIDs.
+3. Unequip an equipped item in the same dialog. Confirmation protects staged mods/Sparks, cancel does nothing, and confirm updates indicator/button and selected count without dismissing dialog.
+4. Selecting a different instance of the same slot uses established Replace/confirmation rules, updates which exact row is Equipped and never creates a duplicate offhand slot.
+5. Slot-specific pickers retain existing one-and-close behavior and correct focus restoration.
+6. After auto-save and refresh/reimport of the **same** report, selected imported gear and conservative exact-instance state are accurately recognized; mismatched/new reports do not falsely mark an unrelated row Equipped.
+7. Read-only/protected drafts disallow all changes; search/filter/pagination and inspection stay available.
+8. No regression in T0011-F2 working-mod edits, restoration, import privacy, regular database equipment picker, 10-row page cap or narrow/mobile widths.
+
+**Manual verification:**
+1. In the actual branch browser preview, import current CharacterSheet/Storage files locally. Open general My Items and select Inventory location. Use three or four different equipment slots without closing the dialog; inspect buttons and section count.
+2. On a page containing multiple instances with identical TypeID, equip exactly one and confirm only that instance shows Equipped/Unequip. Modify its Cow/Unarmed powers if desired, return to My Items and verify identity still matches.
+3. Unequip a clean item; then try clearing an item with staged candidate mods/Sparks and test cancel and confirm. Check preservation of other slots, including OffHand/OffHandShield exclusivity.
+4. Repeat equip from Head and Ring slot-specific picker: selecting once still closes and focus returns correctly.
+5. Search, set rarity/location/level filters, navigate to page 2, equip/unequip; assert page and scroll do not reset. Verify keyboard, 375px and 320px.
+6. Run pinned-data check, lint, typecheck, full tests, build, Cloudflare dry-run, diff whitespace and dev/production browser smoke. Provide PR, preview, screenshots and private customer-relevant counts only (never uploaded files).
+
 ## T0012 — Build Modifier Aggregation Engine
 
 **Complexity:** High
