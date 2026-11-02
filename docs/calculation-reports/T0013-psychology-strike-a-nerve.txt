@@ -1,0 +1,95 @@
+# Strike a Nerve 8 (ability_1298)
+
+Synthetic calculation, not an observed in-game measurement.
+Data: v490; aggregation: v490; build: v490
+Identity: StrikeANerve8; skill: Psychology; level: 98; published rank: absent
+Source: {"dataset":"abilities","gameDataVersion":"v490","sha256":"c6062577fe8d0eeed6c6e9917e7101df3d420fb11ac4ebdb3ddf7c6f3fc60ead","sourceUrl":"https://cdn.projectgorgon.com/v490/data/abilities.json","recordId":"ability_1298"}
+Official damage fields: {"armorMitigationRatio":null,"armorSpecificDamage":null,"critDamageMod":1.25,"damage":430,"damageType":"Psychic","extraDamageIfTargetVulnerable":430,"healthSpecificDamage":null}
+Official PvE hooks: {"AttributesThatDeltaDamage":["BOOST_SKILL_PSYCHOLOGY","BOOST_ABILITY_STRIKEANERVE"],"AttributesThatDeltaRage":["ABILITY_RAGE_DELTA_STRIKEANERVE"],"AttributesThatDeltaTaunt":["ABILITY_TAUNT_DELTA_ALL_ATTACKS"],"AttributesThatModBaseDamage":["MOD_SKILL_PSYCHOLOGY"],"AttributesThatModDamage":["MOD_ABILITY_STRIKEANERVE","MOD_SKILL_ALL_PSYCHOLOGY"],"AttributesThatModRage":["ABILITY_RAGE_MOD_STRIKEANERVE"]}
+Official embedded DoTs: null
+Context: pve-normal-before-target-effects; formula: supported-components-v1
+Final normal: unavailable; provisional supported subset: 1088.3600000000001; critical: unavailable
+Overall confidence: unknown
+
+## damage: 430 Psychic (present)
+Path: PvE.Damage; delivery: direct
+Final normal: unavailable; provisional: 1088.3600000000001; confidence: unknown
+
+- original-base: Read PvE.Damage unchanged. Source reproduction, not an observed in-game hit. Rule: validated; input + rule: validated; source: official base
+- all-direct-damage-flat: 430 + (1 × 175) = 605. Rule: assumed; input + rule: assumed; source: equipment:Ring#0/fixed:0
+- all-direct-damage-flat: 605 + (1 × 58) = 663. Rule: assumed; input + rule: assumed; source: equipment:Necklace#0/fixed:0
+- ability-damage-percent: 663 + (663 × 0.22) = 808.86. Rule: assumed; input + rule: assumed; source: equipment:Necklace#0/candidate:power_4061:id_9#0/effect:0
+- skill-base-damage-percent: 808.86 + (430 × 0.2) = 894.86; basis is the original published base only. Rule: validated; input + rule: partially_validated; source: equipment:Head#0/fixed:1
+- skill-base-damage-percent: 894.86 + (430 × 0.45) = 1088.3600000000001; basis is the original published base only. Rule: validated; input + rule: partially_validated; source: equipment:Head#0/candidate:power_4001:id_9#0/effect:0
+
+Applicability:
+
+- excluded | not-normal-damage | skill:Psychology/active:3_Balanced/MAX_HEALTH | max-resource-flat 200 points | MAX_HEALTH
+  Resource, mitigation and critical modifiers do not contribute to outgoing normal damage. Source: Psychology [A] L100 active 3_Balanced (100 level entries). Input confidence: assumed. Conditions: [].
+- excluded | not-normal-damage | skill:Psychology/active:3_Balanced/MAX_POWER | max-resource-flat 95 points | MAX_POWER
+  Resource, mitigation and critical modifiers do not contribute to outgoing normal damage. Source: Psychology [A] L100 active 3_Balanced (55 level entries). Input confidence: assumed. Conditions: [].
+- excluded | not-normal-damage | equipment:Head#0/fixed:0 | max-resource-flat 68 points | MAX_ARMOR
+  Resource, mitigation and critical modifiers do not contribute to outgoing normal damage. Source: Head#0 database item_44346 fixed[0]. Input confidence: partially_validated. Conditions: [].
+- applied | supported | equipment:Head#0/fixed:1 | skill-base-damage-percent 0.2 fraction | MOD_SKILL_PSYCHOLOGY
+  Exact scope and evaluated conditions match; included in the supported-subset calculation. Source: Head#0 database item_44346 fixed[1]. Input confidence: partially_validated. Conditions: [].
+- applied | supported | equipment:Head#0/candidate:power_4001:id_9#0/effect:0 | skill-base-damage-percent 0.45 fraction | MOD_SKILL_PSYCHOLOGY
+  Exact scope and evaluated conditions match; included in the supported-subset calculation. Source: Head#0 database planned power_4001/id_9 effect[0]. Input confidence: partially_validated. Conditions: [].
+- applied | supported | equipment:Ring#0/fixed:0 | all-direct-damage-flat 175 points | BOOST_UNIVERSAL_DIRECT
+  Exact scope and evaluated conditions match; included in the supported-subset calculation. Source: Ring#0 database item_49120 fixed[0]. Input confidence: partially_validated. Conditions: [].
+- applied | supported | equipment:Necklace#0/fixed:0 | all-direct-damage-flat 58 points | BOOST_UNIVERSAL_DIRECT
+  Exact scope and evaluated conditions match; included in the supported-subset calculation. Source: Necklace#0 database item_48082 fixed[0]. Input confidence: partially_validated. Conditions: [].
+- excluded | skill-mismatch | equipment:Necklace#0/fixed:1 | skill-base-damage-percent 0.07 fraction | MOD_SKILL_NECROMANCY
+  Requires exact skill Necromancy; ability belongs to Psychology. Source: Necklace#0 database item_48082 fixed[1]. Input confidence: partially_validated. Conditions: [].
+- applied | supported | equipment:Necklace#0/candidate:power_4061:id_9#0/effect:0 | ability-damage-percent 0.22 fraction | MOD_ABILITY_STRIKEANERVE
+  Exact scope and evaluated conditions match; included in the supported-subset calculation. Source: Necklace#0 database planned power_4061/id_9 effect[0]. Input confidence: partially_validated. Conditions: [].
+- excluded | not-normal-damage | equipment:Chest#0/fixed:0 | max-resource-flat 240 points | MAX_ARMOR
+  Resource, mitigation and critical modifiers do not contribute to outgoing normal damage. Source: Chest#0 database item_42702 fixed[0]. Input confidence: partially_validated. Conditions: [].
+- excluded | skill-mismatch | equipment:Chest#0/fixed:1 | skill-damage-flat 88 points | BOOST_SKILL_NECROMANCY
+  Requires exact skill Necromancy; ability belongs to Psychology. Source: Chest#0 database item_42702 fixed[1]. Input confidence: partially_validated. Conditions: [].
+
+## health-specific: absent Psychic (absent)
+Path: PvE.HealthSpecificDamage; delivery: direct
+Final normal: unavailable; provisional: unavailable; confidence: unknown
+
+All 11 modifier records are excluded from this absent field.
+
+## armor-specific: absent Psychic (absent)
+Path: PvE.ArmorSpecificDamage; delivery: direct
+Final normal: unavailable; provisional: unavailable; confidence: unknown
+
+All 11 modifier records are excluded from this absent field.
+
+## Unsupported sources (not added)
+
+- skill:Psychology/progression-rewards: progression-rewards-not-modifiers; Psychology level 100 unlock rewards (Ability ×27, BonusToSkill ×13) are not stat modifiers. Source: Psychology [A] L100.
+- equipment:Head#0/fixed:2: unmapped-attribute; Vulnerability to Psychic % (VULN_PSYCHIC) has no validated modifier mapping yet. Source: Head#0 database item_44346 fixed[2].
+- equipment:Head#0/fixed:3: unmapped-attribute; Vulnerability to Demonic % (VULN_DEMONIC) has no validated modifier mapping yet. Source: Head#0 database item_44346 fixed[3].
+- equipment:Head#0/fixed:4: unmapped-attribute; Health from Combat Refresh Abilities (COMBAT_REFRESH_HEALTH_DELTA) has no validated modifier mapping yet. Source: Head#0 database item_44346 fixed[4].
+- equipment:Head#0/fixed:5: unmapped-attribute; Armor from Combat Refresh Abilities (COMBAT_REFRESH_ARMOR_DELTA) has no validated modifier mapping yet. Source: Head#0 database item_44346 fixed[5].
+- equipment:Head#0/fixed:6: unmapped-attribute; Power from Combat Refresh Abilities (COMBAT_REFRESH_POWER_DELTA) has no validated modifier mapping yet. Source: Head#0 database item_44346 fixed[6].
+- equipment:Necklace#0/candidate:power_4002:id_9#0/effect:0: prose-effect; Published text effect is not interpreted: "<icon=2118>Psychoanalyze deals between 90 and 220 extra damage" Source: Necklace#0 database planned power_4002/id_9 effect[0].
+- equipment:Chest#0/fixed:2: unmapped-attribute; Vulnerability to Psychic % (VULN_PSYCHIC) has no validated modifier mapping yet. Source: Chest#0 database item_42702 fixed[2].
+- equipment:Chest#0/fixed:3: unmapped-attribute; Health from Combat Refresh Abilities (COMBAT_REFRESH_HEALTH_DELTA) has no validated modifier mapping yet. Source: Chest#0 database item_42702 fixed[3].
+- equipment:Chest#0/fixed:4: unmapped-attribute; Armor from Combat Refresh Abilities (COMBAT_REFRESH_ARMOR_DELTA) has no validated modifier mapping yet. Source: Chest#0 database item_42702 fixed[4].
+- equipment:Chest#0/fixed:5: unmapped-attribute; Power from Combat Refresh Abilities (COMBAT_REFRESH_POWER_DELTA) has no validated modifier mapping yet. Source: Chest#0 database item_42702 fixed[5].
+- equipment:Chest#0/candidate:power_4009:id_9#0/effect:0: unmapped-attribute; Psychology/Mentalism Critical Hit Damage % (MOD_CRITICAL_HIT_DAMAGE) has no validated modifier mapping yet. Source: Chest#0 database planned power_4009/id_9 effect[0].
+
+## Aggregation warnings
+
+
+## Calculation warnings
+
+- unsupported-build-effects: 11 unsupported build effects may change damage; preserved in aggregation.unsupported.
+- ability-mechanics-unresolved: Keyword rules, conditional keywords, effect constraints, special values or special-info prose remain uninterpreted in the official ability record.
+- target-bonus-not-applied: Published vulnerable-target extra damage 430 is retained but not added to the normal baseline.
+- critical-unavailable: Critical chance, multipliers and target-dependent Phrenology rules are unsupported; criticalDamage is null.
+- provisional-formula: Provisional values cover supported contributions only. Review assumptions and exclusions before comparing with game measurements.
+
+## Assumptions requiring game validation
+
+- Category comes from the official attribute ID family, label and DisplayType; formula ordering/stacking is decided and validated by the damage engine, not here.
+- AsBuffMod deltas are fractions (0.45 = +45%), matching the T0010 confirmed display convention.
+- Assumed: applicable flat categories add to the published base before percentage contributions; no caps or rounding are modeled.
+- Assumed: each non-Skill-Base percentage contributes (original base + all applicable flats) × its fraction. Contributions add; categories do not compound.
+- Assumed: Skill Base contributions are added after other percentage contributions, without subsequent scaling. Only original base × Skill Base fraction is confirmed.
+- Assumed: published PvE Damage, HealthSpecificDamage and ArmorSpecificDamage fields are direct hit components; embedded DoTs remain separate.

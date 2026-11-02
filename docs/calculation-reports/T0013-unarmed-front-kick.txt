@@ -1,0 +1,123 @@
+# Front Kick 9 (ability_8169)
+
+Synthetic calculation, not an observed in-game measurement.
+Data: v490; aggregation: v490; build: v490
+Identity: FrontKick9; skill: Unarmed; level: 99; published rank: absent
+Source: {"dataset":"abilities","gameDataVersion":"v490","sha256":"c6062577fe8d0eeed6c6e9917e7101df3d420fb11ac4ebdb3ddf7c6f3fc60ead","sourceUrl":"https://cdn.projectgorgon.com/v490/data/abilities.json","recordId":"ability_8169"}
+Official damage fields: {"armorMitigationRatio":null,"armorSpecificDamage":null,"critDamageMod":null,"damage":364,"damageType":"Crushing","extraDamageIfTargetVulnerable":364,"healthSpecificDamage":null}
+Official PvE hooks: {"AttributesThatDeltaAccuracy":["ACCURACY_DELTA_UNARMED"],"AttributesThatDeltaDamage":["BOOST_SKILL_UNARMED","BOOST_ABILITY_FRONTKICK"],"AttributesThatDeltaTaunt":["ABILITY_TAUNT_DELTA_ALL_ATTACKS"],"AttributesThatModBaseDamage":["MOD_SKILL_UNARMED"],"AttributesThatModDamage":["MOD_ABILITY_FRONTKICK","MOD_SKILL_ALL_UNARMED"]}
+Official embedded DoTs: null
+Context: pve-normal-before-target-effects; formula: supported-components-v1
+Final normal: unavailable; provisional supported subset: 1109.1499999999999; critical: unavailable
+Overall confidence: unknown
+
+## damage: 364 Crushing (present)
+Path: PvE.Damage; delivery: direct
+Final normal: unavailable; provisional: 1109.1499999999999; confidence: unknown
+
+- original-base: Read PvE.Damage unchanged. Source reproduction, not an observed in-game hit. Rule: validated; input + rule: validated; source: official base
+- all-direct-damage-flat: 364 + (1 × 175) = 539. Rule: assumed; input + rule: assumed; source: equipment:Ring#0/fixed:0
+- ability-damage-percent: 539 + (539 × 0.45) = 781.55. Rule: assumed; input + rule: assumed; source: equipment:Feet#0/existing:power_3024:id_9#0/effect:0
+- skill-base-damage-percent: 781.55 + (364 × 0.45) = 945.3499999999999; basis is the original published base only. Rule: validated; input + rule: partially_validated; source: equipment:MainHand#0/existing:power_3001:id_9#0/effect:0
+- skill-base-damage-percent: 945.3499999999999 + (364 × 0.45) = 1109.1499999999999; basis is the original published base only. Rule: validated; input + rule: partially_validated; source: equipment:MainHand#0/candidate:power_3001:id_9#0/effect:0
+
+Applicability:
+
+- excluded | not-normal-damage | skill:Cow/active:11_PlayerCow/MAX_HEALTH | max-resource-flat 275 points | MAX_HEALTH
+  Resource, mitigation and critical modifiers do not contribute to outgoing normal damage. Source: Cow [A] L100 active 11_PlayerCow (100 level entries). Input confidence: assumed. Conditions: [].
+- excluded | not-normal-damage | skill:Cow/active:11_PlayerCow/MAX_POWER | max-resource-flat 85 points | MAX_POWER
+  Resource, mitigation and critical modifiers do not contribute to outgoing normal damage. Source: Cow [A] L100 active 11_PlayerCow (55 level entries). Input confidence: assumed. Conditions: [].
+- excluded | not-normal-damage | skill:Cow/active:11_PlayerCow/MITIGATION_CRUSHING | damage-type-mitigation-flat 10 points | MITIGATION_CRUSHING
+  Resource, mitigation and critical modifiers do not contribute to outgoing normal damage. Source: Cow [A] L100 active 11_PlayerCow (10 level entries). Input confidence: assumed. Conditions: [].
+- excluded | not-normal-damage | skill:Cow/active:11_PlayerCow/MITIGATION_PIERCING | damage-type-mitigation-flat 10 points | MITIGATION_PIERCING
+  Resource, mitigation and critical modifiers do not contribute to outgoing normal damage. Source: Cow [A] L100 active 11_PlayerCow (10 level entries). Input confidence: assumed. Conditions: [].
+- excluded | not-normal-damage | skill:Cow/active:11_PlayerCow/MITIGATION_SLASHING | damage-type-mitigation-flat 10 points | MITIGATION_SLASHING
+  Resource, mitigation and critical modifiers do not contribute to outgoing normal damage. Source: Cow [A] L100 active 11_PlayerCow (10 level entries). Input confidence: assumed. Conditions: [].
+- excluded | not-normal-damage | skill:Unarmed/active:3_Balanced/MAX_HEALTH | max-resource-flat 200 points | MAX_HEALTH
+  Resource, mitigation and critical modifiers do not contribute to outgoing normal damage. Source: Unarmed [B] L100 active 3_Balanced (100 level entries). Input confidence: assumed. Conditions: [].
+- excluded | not-normal-damage | skill:Unarmed/active:3_Balanced/MAX_POWER | max-resource-flat 95 points | MAX_POWER
+  Resource, mitigation and critical modifiers do not contribute to outgoing normal damage. Source: Unarmed [B] L100 active 3_Balanced (55 level entries). Input confidence: assumed. Conditions: [].
+- excluded | skill-mismatch | equipment:MainHand#0/fixed:0 | skill-damage-percent 0.12 fraction | MOD_SKILL_ALL_KNIFE
+  Requires exact skill Knife; ability belongs to Unarmed. Source: MainHand#0 imported item_45640 fixed[0]. Input confidence: partially_validated. Conditions: [].
+- excluded | damage-type-mismatch | equipment:MainHand#0/fixed:2 | damage-type-direct-flat 146 points | BOOST_DARKNESS_DIRECT
+  Requires Darkness; this component is Crushing. Source: MainHand#0 imported item_45640 fixed[2]. Input confidence: partially_validated. Conditions: [].
+- excluded | hook-mismatch | equipment:MainHand#0/existing:power_20006:id_9#0/effect:0 | ability-damage-flat 101 points | BOOST_ABILITY_COWFRONTKICK
+  PvE.Damage does not reference BOOST_ABILITY_COWFRONTKICK via AttributesThatDeltaDamage; hit hooks are not inherited by DoTs. Source: MainHand#0 imported existing power_20006/id_9 effect[0]. Input confidence: partially_validated. Conditions: [].
+- applied | supported | equipment:MainHand#0/existing:power_3001:id_9#0/effect:0 | skill-base-damage-percent 0.45 fraction | MOD_SKILL_UNARMED
+  Exact scope and evaluated conditions match; included in the supported-subset calculation. Source: MainHand#0 imported existing power_3001/id_9 effect[0]. Input confidence: partially_validated. Conditions: [].
+- applied | supported | equipment:MainHand#0/candidate:power_3001:id_9#0/effect:0 | skill-base-damage-percent 0.45 fraction | MOD_SKILL_UNARMED
+  Exact scope and evaluated conditions match; included in the supported-subset calculation. Source: MainHand#0 imported planned power_3001/id_9 effect[0]. Input confidence: partially_validated. Conditions: [].
+- excluded | not-normal-damage | equipment:Head#0/fixed:0 | max-resource-flat 95 points | MAX_ARMOR
+  Resource, mitigation and critical modifiers do not contribute to outgoing normal damage. Source: Head#0 database item_44411 fixed[0]. Input confidence: partially_validated. Conditions: [].
+- excluded | skill-mismatch | equipment:Head#0/fixed:1 | skill-damage-flat 293 points | BOOST_SKILL_COW
+  Requires exact skill Cow; ability belongs to Unarmed. Source: Head#0 database item_44411 fixed[1]. Input confidence: partially_validated. Conditions: [].
+- excluded | skill-mismatch | equipment:Head#0/candidate:power_20001:id_9#0/effect:0 | skill-base-damage-percent 0.45 fraction | MOD_SKILL_COW
+  Requires exact skill Cow; ability belongs to Unarmed. Source: Head#0 database planned power_20001/id_9 effect[0]. Input confidence: partially_validated. Conditions: [].
+- excluded | not-normal-damage | equipment:Head#0/candidate:power_20002:id_9#0/effect:0 | max-resource-flat 45 points | MAX_ARMOR
+  Resource, mitigation and critical modifiers do not contribute to outgoing normal damage. Source: Head#0 database planned power_20002/id_9 effect[0]. Input confidence: partially_validated. Conditions: [{"kind":"requires-active-skill","skillId":"Cow","status":"met"}].
+- excluded | not-normal-damage | equipment:Feet#0/fixed:0 | max-resource-flat 125 points | MAX_ARMOR
+  Resource, mitigation and critical modifiers do not contribute to outgoing normal damage. Source: Feet#0 manual item_40358 fixed[0]. Input confidence: partially_validated. Conditions: [].
+- excluded | skill-mismatch | equipment:Feet#0/fixed:2 | skill-damage-flat 116 points | BOOST_SKILL_DRUID
+  Requires exact skill Druid; ability belongs to Unarmed. Source: Feet#0 manual item_40358 fixed[2]. Input confidence: partially_validated. Conditions: [].
+- excluded | skill-mismatch | equipment:Feet#0/fixed:3 | skill-damage-flat 116 points | BOOST_SKILL_COW
+  Requires exact skill Cow; ability belongs to Unarmed. Source: Feet#0 manual item_40358 fixed[3]. Input confidence: partially_validated. Conditions: [].
+- applied | supported | equipment:Feet#0/existing:power_3024:id_9#0/effect:0 | ability-damage-percent 0.45 fraction | MOD_ABILITY_FRONTKICK
+  Exact scope and evaluated conditions match; included in the supported-subset calculation. Source: Feet#0 manual existing power_3024/id_9 effect[0]. Input confidence: partially_validated. Conditions: [].
+- applied | supported | equipment:Ring#0/fixed:0 | all-direct-damage-flat 175 points | BOOST_UNIVERSAL_DIRECT
+  Exact scope and evaluated conditions match; included in the supported-subset calculation. Source: Ring#0 database item_49120 fixed[0]. Input confidence: partially_validated. Conditions: [].
+- excluded | hook-mismatch | equipment:Ring#0/candidate:power_20007:id_9#0/effect:0 | ability-damage-percent 0.37 fraction | MOD_ABILITY_COWBASH
+  PvE.Damage does not reference MOD_ABILITY_COWBASH via AttributesThatModDamage; hit hooks are not inherited by DoTs. Source: Ring#0 database planned power_20007/id_9 effect[0]. Input confidence: partially_validated. Conditions: [].
+
+## health-specific: absent Crushing (absent)
+Path: PvE.HealthSpecificDamage; delivery: direct
+Final normal: unavailable; provisional: unavailable; confidence: unknown
+
+All 22 modifier records are excluded from this absent field.
+
+## armor-specific: absent Crushing (absent)
+Path: PvE.ArmorSpecificDamage; delivery: direct
+Final normal: unavailable; provisional: unavailable; confidence: unknown
+
+All 22 modifier records are excluded from this absent field.
+
+## Unsupported sources (not added)
+
+- skill:Cow/progression-rewards: progression-rewards-not-modifiers; Cow level 100 unlock rewards (Ability ×27, BonusToSkill ×10) are not stat modifiers. Source: Cow [A] L100.
+- skill:Unarmed/progression-rewards: progression-rewards-not-modifiers; Unarmed level 100 unlock rewards (Ability ×20, BonusToSkill ×14) are not stat modifiers. Source: Unarmed [B] L100.
+- equipment:MainHand#0/fixed:1: unmapped-attribute; Core Attack Damage (BOOST_ABILITY_COREATTACK) has no validated modifier mapping yet. Source: MainHand#0 imported item_45640 fixed[1].
+- equipment:MainHand#0/existing:power_20014:id_9#0/effect:0: prose-effect; Published text effect is not interpreted: "<icon=3407>Cow's Bash inflicts bugs on the target, dealing 170 Nature damage over 10 seconds" Source: MainHand#0 imported existing power_20014/id_9 effect[0].
+- equipment:MainHand#0/existing:power_3006:id_9#0/effect:0: prose-effect; Published text effect is not interpreted: "<icon=108>Unarmed attacks deal +47 Armor damage" Source: MainHand#0 imported existing power_3006/id_9 effect[0].
+- equipment:MainHand#0/existing:power_20015:id_9#0/effect:0: prose-effect; Published text effect is not interpreted: "<icon=108>Indirect Nature and Indirect Trauma damage +26% while Cow skill active" Source: MainHand#0 imported existing power_20015/id_9 effect[0].
+- equipment:MainHand#0/existing:power_3007:id_9#0/effect:0: prose-effect; Published text effect is not interpreted: "<icon=108>Unarmed attacks deal +5 damage and have +9 Accuracy (which cancels out the Evasion that certain monsters have)" Source: MainHand#0 imported existing power_3007/id_9 effect[0].
+- equipment:Head#0/fixed:2: unmapped-attribute; Health from Combat Refresh Abilities (COMBAT_REFRESH_HEALTH_DELTA) has no validated modifier mapping yet. Source: Head#0 database item_44411 fixed[2].
+- equipment:Head#0/fixed:3: unmapped-attribute; Power from Combat Refresh Abilities (COMBAT_REFRESH_POWER_DELTA) has no validated modifier mapping yet. Source: Head#0 database item_44411 fixed[3].
+- equipment:Feet#0/fixed:1: unmapped-attribute; Sprint Speed Boost (SPRINT_BOOST) has no validated modifier mapping yet. Source: Feet#0 manual item_40358 fixed[1].
+- equipment:Feet#0/fixed:4: unmapped-attribute; Health from Combat Refresh Abilities (COMBAT_REFRESH_HEALTH_DELTA) has no validated modifier mapping yet. Source: Feet#0 manual item_40358 fixed[4].
+- equipment:Feet#0/fixed:5: unmapped-attribute; Armor from Combat Refresh Abilities (COMBAT_REFRESH_ARMOR_DELTA) has no validated modifier mapping yet. Source: Feet#0 manual item_40358 fixed[5].
+- equipment:Feet#0/fixed:6: unmapped-attribute; Power from Combat Refresh Abilities (COMBAT_REFRESH_POWER_DELTA) has no validated modifier mapping yet. Source: Feet#0 manual item_40358 fixed[6].
+
+## Aggregation warnings
+
+- sparks-not-aggregated: Mastery Spark settings (simulated) on MainHand are not aggregated until T0015.
+- candidate-tier-unselected: Planned candidate CowMaxHealthBoost on Ring has no tier chosen; no modifiers until a tier is selected.
+- unknown-power: Planned candidate power_99999999 on Ring is not an official treasure power; retained without modifiers.
+- instance-without-base-item: Unknown leggings in Legs has no official base item; no fixed effects are aggregated.
+- unknown-tier: Existing power CowMaxHealthBoost tier id_999 on Legs is not an official tier of this power; not substituted.
+
+## Calculation warnings
+
+- unsupported-build-effects: 11 unsupported build effects may change damage; preserved in aggregation.unsupported.
+- aggregation-incomplete: T0012 warnings are preserved in aggregation.warnings; omitted sources prevent a complete result.
+- ability-mechanics-unresolved: Keyword rules, conditional keywords, effect constraints, special values or special-info prose remain uninterpreted in the official ability record.
+- target-bonus-not-applied: Published vulnerable-target extra damage 364 is retained but not added to the normal baseline.
+- critical-unavailable: Critical chance, multipliers and target-dependent Phrenology rules are unsupported; criticalDamage is null.
+- provisional-formula: Provisional values cover supported contributions only. Review assumptions and exclusions before comparing with game measurements.
+
+## Assumptions requiring game validation
+
+- Category comes from the official attribute ID family, label and DisplayType; formula ordering/stacking is decided and validated by the damage engine, not here.
+- AsBuffMod deltas are fractions (0.45 = +45%), matching the T0010 confirmed display convention.
+- Assumed: applicable flat categories add to the published base before percentage contributions; no caps or rounding are modeled.
+- Assumed: each non-Skill-Base percentage contributes (original base + all applicable flats) × its fraction. Contributions add; categories do not compound.
+- Assumed: Skill Base contributions are added after other percentage contributions, without subsequent scaling. Only original base × Skill Base fraction is confirmed.
+- Assumed: published PvE Damage, HealthSpecificDamage and ArmorSpecificDamage fields are direct hit components; embedded DoTs remain separate.
