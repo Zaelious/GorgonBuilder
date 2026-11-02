@@ -7,8 +7,8 @@ import { AbilityIcon } from './AbilityIcon';
 import { AbilityFacts } from './AbilityFacts';
 import { AbilityPicker } from './AbilityPicker';
 import './bar.css';
-import { RelevantMods } from './RelevantMods';
-import { choosePopoverPlacement, type PopoverLayout } from './popover-placement';
+import { RelevantMods, RelevantModSources, useRelevantModRows } from './RelevantMods';
+import { choosePopoverPlacement, tooltipWidth } from './popover-placement';
 
 interface Props {
   slot: Slot;
@@ -24,6 +24,13 @@ interface Props {
 }
 
 const NO_EQUIPMENT: readonly EquipmentSelection[] = [];
+
+/** Ability facts with Relevant Mods; each mod's provenance is listed on demand in Technical details. */
+function PopoverFacts({ id, ability, equipment, data }: { id: string; ability: NonNullable<ReturnType<GameDataRepository['getAbility']>>; equipment: readonly EquipmentSelection[]; data: GameDataRepository }) {
+  const rows = useRelevantModRows(ability, equipment, data);
+  return <AbilityFacts ability={ability} afterStats={<RelevantMods rows={rows} equipment={equipment} data={data} idPrefix={id} />}
+    technical={<RelevantModSources rows={rows} equipment={equipment} data={data} idPrefix={id} />} />;
+}
 
 function DetailPopover({ id, selection, anchor, warnings, data, equipment, onClose, onEnter, onLeave, onPin, children }: {
   id: string;
@@ -45,24 +52,11 @@ function DetailPopover({ id, selection, anchor, warnings, data, equipment, onClo
     const element = popup.current!;
     function position() {
       if (!anchor) return;
-      // Measure the natural height per candidate width/layout (synchronous, before paint), then place the whole card.
-      const rect = anchor.getBoundingClientRect();
+      // One narrow column at a fixed width: measure its natural height before paint, then place it next to the slot.
       const viewport = { width: window.innerWidth, height: window.innerHeight };
-      const measure = (width: number, layout: PopoverLayout) => {
-        element.dataset.layout = layout;
-        element.style.width = `${width}px`;
-        element.style.maxHeight = 'none';
-        return element.offsetHeight;
-      };
-      delete element.dataset.density;
-      let placement = choosePopoverPlacement(rect, viewport, measure);
-      if (!placement.fits) {
-        // Last resort before scrolling: 13px text. Keep 14px whenever the denser card would still not fit.
-        element.dataset.density = 'tight';
-        const tight = choosePopoverPlacement(rect, viewport, measure);
-        if (tight.fits) placement = tight; else delete element.dataset.density;
-      }
-      element.dataset.layout = placement.layout;
+      element.style.width = `${tooltipWidth(viewport)}px`;
+      element.style.maxHeight = 'none';
+      const placement = choosePopoverPlacement(anchor.getBoundingClientRect(), viewport, element.offsetHeight);
       element.dataset.side = placement.side;
       element.dataset.fit = placement.fits ? 'whole' : 'scroll';
       element.style.width = `${placement.width}px`;
@@ -101,7 +95,7 @@ function DetailPopover({ id, selection, anchor, warnings, data, equipment, onClo
     onBlur={e => { if (!(e.relatedTarget instanceof Node) || (!e.currentTarget.contains(e.relatedTarget) && e.relatedTarget !== anchor)) onClose(); }}
     onKeyDown={e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose(true); } }}>
     <div className="detail-heading"><AbilityIcon ability={ability} version={data.gameDataVersion} /><div><h3>{ability?.displayName ?? selection.abilityId}</h3>{ability && ability.rank !== null && <p className="detail-rank">{rankLabel(ability.rank)}</p>}</div><button type="button" aria-label="Close ability details" onClick={() => onClose(true)}>×</button></div>
-    {ability && <AbilityFacts ability={ability} afterStats={<RelevantMods ability={ability} equipment={equipment} data={data} />} />}
+    {ability && <PopoverFacts id={id} ability={ability} equipment={equipment} data={data} />}
     {warnings.map(w => <p key={w} className="warning">{w}</p>)}
     <div className="detail-actions">{children}</div>
   </div>;

@@ -21,14 +21,16 @@ DRAFT = {'schemaVersion': 1, 'gameDataVersion': 'v490', 'title': 'Untitled build
     'equipment': [{'slot': 'MainHand', 'item': {'kind': 'database', 'itemId': 'item_46107'},
         'candidateMods': [{'powerId': 'power_10302', 'tierId': 'id_25'}], 'sparks': {'mode': 'none'}}],
     'target': {'count': 1, 'damageTypes': {}}}
-# T0022-F1: Chew Cud 10 with six long Relevant Mods (four Cow powers on six slots) plus Acid Arrow 13.
-CHEW = lambda slot, item, power: {'slot': slot, 'item': {'kind': 'database', 'itemId': item},
-    'candidateMods': [{'powerId': power, 'tierId': 'id_9'}], 'sparks': {'mode': 'none'}}
+# T0022-F2: Chew Cud 10 with six long Relevant Mods (five imported existing powers + one planned) plus Acid Arrow 13.
+IMPORTED = lambda slot, item, power: {'slot': slot, 'item': {'kind': 'imported', 'instance': {'baseItemId': item,
+    'existingPowers': [{'powerId': power, 'tierId': 'id_9'}]}}, 'candidateMods': [], 'sparks': {'mode': 'none'}}
 TALL_DRAFT = {**DRAFT, 'title': 'Popover fit', 'skillSlotA': {'skillId': 'Cow', 'level': 125},
     'abilityBarA': [{'abilityId': 'ability_6159', 'rank': None}], 'abilityBarB': [{'abilityId': 'ability_2627', 'rank': None}],
-    'equipment': [CHEW('Hands', 'item_43092', 'power_20062'), CHEW('Feet', 'item_40031', 'power_20062'),
-        CHEW('Chest', 'item_42100', 'power_20065'), CHEW('Ring', 'item_49071', 'power_20065'),
-        CHEW('Head', 'item_44032', 'power_20066'), CHEW('Necklace', 'item_48082', 'power_20067'), DRAFT['equipment'][0]]}
+    'equipment': [IMPORTED('Chest', 'item_42100', 'power_20065'), IMPORTED('Hands', 'item_43092', 'power_20062'),
+        IMPORTED('Feet', 'item_40031', 'power_20062'), IMPORTED('Ring', 'item_49071', 'power_20065'),
+        IMPORTED('Necklace', 'item_48082', 'power_20067'),
+        {'slot': 'Head', 'item': {'kind': 'database', 'itemId': 'item_44032'}, 'candidateMods': [{'powerId': 'power_20066', 'tierId': 'id_9'}], 'sparks': {'mode': 'none'}},
+        DRAFT['equipment'][0]]}
 
 GEOMETRY = '''() => {
   const box = element => { const r = element.getBoundingClientRect(); return {x: r.x, y: r.y, width: r.width, height: r.height, right: r.right, bottom: r.bottom}; };
@@ -47,8 +49,14 @@ POPOVER = '''() => {
   return {left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, viewport: [innerWidth, innerHeight],
     labels: terms.map(term => term.textContent), columns: new Set(terms.map(term => Math.round(term.getBoundingClientRect().left))).size,
     damageColor: damage && getComputedStyle(damage).color, textColor: getComputedStyle(popover).color,
-    scrollable: popover.scrollHeight > popover.clientHeight + 1, layout: popover.dataset.layout, side: popover.dataset.side,
-    fontSize: parseFloat(getComputedStyle(popover).fontSize), mods: popover.querySelectorAll('.relevant-mods li').length};
+    scrollable: popover.scrollHeight > popover.clientHeight + 1, side: popover.dataset.side, scrollHeight: popover.scrollHeight, clientHeight: popover.clientHeight,
+    fontSize: parseFloat(getComputedStyle(popover).fontSize), mods: popover.querySelectorAll('.relevant-mods li').length,
+    modFont: (el => el && parseFloat(getComputedStyle(el).fontSize))(popover.querySelector('.relevant-mods li')),
+    titleFont: parseFloat(getComputedStyle(popover.querySelector('h3')).fontSize),
+    modLefts: new Set([...popover.querySelectorAll('.relevant-mods li')].map(li => Math.round(li.getBoundingClientRect().left))).size,
+    visibleTags: popover.querySelectorAll('.relevant-mods .relevant-source').length,
+    effects: [...popover.querySelectorAll('.relevant-mods .relevant-effect')].map(e => e.textContent),
+    sources: popover.querySelectorAll('.technical-details .relevant-mod-sources li').length};
 }'''
 
 
@@ -118,7 +126,7 @@ def main():
                 assert popover['labels'][:2] == ['Damage', 'Armor damage'] and popover['columns'] == 1, popover
                 assert popover['damageColor'] != popover['textColor'], popover
                 if width >= 1024:
-                    assert 440 <= popover['width'] <= 560 and not popover['scrollable'], popover
+                    assert 400 <= popover['width'] <= 480 and not popover['scrollable'], popover
                 expect(page.locator('.ability-popover .relevant-mods')).to_contain_text('Acid Arrow Damage +110%')
                 if touch:
                     close = page.get_by_label('Close ability details', exact=True)
@@ -131,7 +139,8 @@ def main():
                 measurements.append({'viewport': [width, height], 'touch': touch, **geometry, 'popover': popover})
                 context.close()
 
-            # T0022-F1: whole tooltip visible without internal scrolling; text never shrinks below 13px.
+            # T0022-F2: one narrow column (<=480 px), dense text (>=12 px mods, 13 px facts), no default internal scroll at
+            # 1920x1080/1440x900/1366x768, every full mod wording once per source, no per-row source tags.
             fit = []
             for width, height, touch in [(1920, 1080, False), (1440, 900, False), (1366, 768, False), (1280, 720, False), (375, 812, True), (320, 568, True)]:
                 context, page = open_page(width, height, touch, TALL_DRAFT)
@@ -140,16 +149,21 @@ def main():
                     trigger.tap() if touch else trigger.hover()
                     expect(page.locator('.ability-popover h3')).to_have_text(title)
                     metric = page.evaluate(POPOVER)
-                    assert metric['mods'] == mods and metric['fontSize'] >= 13, metric
+                    assert metric['mods'] == mods and metric['fontSize'] >= 12 and metric['modFont'] >= 11.5 and metric['width'] <= 480, metric
+                    assert metric['modLefts'] == 1 and metric['visibleTags'] == 0 and metric['sources'] == mods, metric
+                    if title == 'Chew Cud 10':
+                        assert all(text.startswith('Chew Cud ') for text in metric['effects']), metric['effects']
+                        expect(page.locator('.ability-popover .ability-stats')).not_to_contain_text('Nothingness')
                     assert metric['left'] >= 0 and metric['right'] <= width and metric['top'] >= 0 and metric['bottom'] <= height, metric
-                    if not touch or title == 'Acid Arrow 13':
+                    if not touch or not (title == 'Chew Cud 10' and height < 700):
+                        # Only Chew Cud on a 320x568 phone is taller than the screen (bounded last-resort scroll).
                         assert not metric['scrollable'], (width, metric)
                     if width >= 1024 and metric['side'] != 'overlay':
                         # Beside/below/above the slot: the hovered slot stays visible.
                         slot = trigger.bounding_box()
                         assert slot['x'] + slot['width'] <= metric['left'] or slot['x'] >= metric['right'] or slot['y'] + slot['height'] <= metric['top'] or slot['y'] >= metric['bottom'], metric
                     page.screenshot(path=str(output / f'fit-{width}-{title.split()[0].lower()}.png'))
-                    fit.append({'viewport': [width, height], 'title': title, **{key: metric[key] for key in ['side', 'layout', 'width', 'scrollable', 'fontSize']}})
+                    fit.append({'viewport': [width, height], 'title': title, **{key: metric[key] for key in ['side', 'width', 'scrollHeight', 'clientHeight', 'scrollable', 'fontSize', 'modFont', 'titleFont']}})
                     if touch:
                         page.get_by_label('Close ability details', exact=True).tap()
                     else:
@@ -157,6 +171,27 @@ def main():
                     expect(page.locator('.ability-popover')).to_have_count(0)
                 context.close()
             measurements.append({'popoverFit': fit})
+            # Keyboard-only provenance: focus the slot, Tab into the card, open Technical details with Enter.
+            context, page = open_page(1920, 1080, False, TALL_DRAFT)
+            page.locator('.skill-panel').nth(0).locator('.slot-button').first.focus()
+            expect(page.locator('.ability-popover h3')).to_have_text('Chew Cud 10')
+            for _ in range(6):
+                page.keyboard.press('Tab')
+                if page.evaluate("document.activeElement?.matches('.ability-popover .technical-details > summary')"):
+                    break
+            else:
+                raise AssertionError('Technical details summary is not reachable by keyboard')
+            page.keyboard.press('Enter')
+            sources = page.locator('.ability-popover .relevant-mod-sources li')
+            expect(sources).to_have_count(6)
+            expect(sources.first).to_contain_text('Chest · ◇ imported')
+            expect(sources.first).to_contain_text('Imported existing power')
+            expect(sources.last).to_contain_text('Head')
+            expect(sources.last).to_contain_text('Planned mod')
+            page.keyboard.press('Escape')
+            expect(page.locator('.ability-popover')).to_have_count(0)
+            expect(page.locator('.skill-panel').nth(0).locator('.slot-button').first).to_be_focused()
+            context.close()
             # Disclosures inside a hover-opened card re-place it; pressing inside pins it so it stays open.
             context, page = open_page(1920, 1080, False, TALL_DRAFT)
             page.locator('.skill-panel').nth(0).locator('.slot-button').first.hover()

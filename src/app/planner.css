@@ -119,39 +119,8 @@
 .supplementary-facts > p { font-size: 0.75rem; }
 .full-description[open] > p { margin-top: 0.4rem; }
 
-/* Floating ability inspector: one vertical list, quiet border and shadow. */
-/* Responsive sizing (T0022-F1): spacing and padding tighten on shorter/narrower viewports; text stays 14px. Placement,
- * width and layout come from popover-placement.ts so the whole card fits without scrolling. Only when even the
- * expanded card cannot fit does the component retry at 13px ('tight'), before falling back to internal scrolling. */
-.ability-popover {
-  --pop-pad-y: clamp(0.625rem, 0.25rem + 0.9vh, 0.875rem);
-  --pop-pad-x: clamp(0.75rem, 0.5rem + 0.5vw, 1rem);
-  --pop-gap: clamp(0.375rem, 0.125rem + 0.6vh, 0.5625rem);
-  position: fixed; inset: auto; margin: 0; max-height: calc(100dvh - 2rem); overflow-y: auto; overscroll-behavior: contain;
-  color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: 0.625rem;
-  padding: var(--pop-pad-y) var(--pop-pad-x); box-shadow: var(--shadow-float);
-  font-size: 0.875rem; line-height: 1.4;
-}
-.ability-popover[data-density='tight'] { font-size: 0.8125rem; }
-.detail-heading { gap: 0.75rem; align-items: center; }
-.detail-heading h3 { font-family: var(--font-body); font-size: 1.125rem; line-height: 1.25; font-weight: 600; overflow-wrap: anywhere; }
-.detail-heading > .ability-icon { width: 2.375rem; height: 2.375rem; flex-shrink: 0; border-radius: var(--radius-control); border: 1px solid #00000080; }
-.detail-heading > div { flex: 1; min-width: 0; }
-.detail-rank { color: var(--color-muted); font-size: 0.75rem; }
-.planner-main .ability-popover button { min-height: 2rem; padding: 0.25rem 0.6rem; font-size: 0.8125rem; }
-.planner-main .ability-popover .detail-heading > button { min-width: 2rem; min-height: 2rem; padding: 0; font-size: 1.375rem; font-weight: 300; background: transparent; border-color: transparent; color: var(--color-secondary); }
-.planner-main .ability-popover .detail-heading > button:hover:enabled { color: var(--color-text); background: var(--color-hover); }
-.ability-popover .ability-facts > .ability-description { margin: var(--pop-gap) 0 0; padding-bottom: var(--pop-gap); border-bottom: 1px solid var(--color-border); color: #c7c7c7; font-size: 1em; line-height: 1.45; }
-.ability-popover > .warning { margin-top: var(--pop-gap); }
 .detail-actions { margin-top: 0.625rem; display: flex; flex-direction: column; gap: 0.5rem; }
-.ability-popover .detail-actions { margin-top: var(--pop-gap); gap: calc(var(--pop-gap) * 0.75); }
 .bar-edit-actions > div { display: flex; flex-wrap: wrap; gap: 0.35rem; padding: 0 0.75rem 0.625rem; }
-.planner-main .ability-popover .remove-ability { align-self: flex-end; margin-top: 0; color: var(--color-danger); background: transparent; border-color: transparent; font-weight: 500; }
-.planner-main .ability-popover .remove-ability::before { content: '×'; margin-right: 0.35rem; font-size: 1.1em; }
-.planner-main .ability-popover .remove-ability:hover:enabled { color: #f87171; background: #ef44441a; border-color: transparent; }
-.ability-popover .detail-actions::before { content: ''; order: 1; border-top: 1px solid var(--color-border); }
-.ability-popover .bar-edit-actions { order: 0; }
-.ability-popover .remove-ability { order: 2; }
 
 .build-title { max-width: 45rem; }
 .planner-main .title-button { display: inline-flex; align-items: center; gap: 0.5rem; max-width: 100%; min-height: 0; padding: 0; border-color: transparent; background: transparent; font-family: var(--font-heading); font-size: inherit; font-weight: inherit; line-height: inherit; text-align: left; }
@@ -217,11 +186,7 @@
 .ability-effects li { margin: 0.15rem 0; }
 .relevant-mods { margin-top: 0.75rem; }
 .relevant-mods h4 { color: var(--color-positive); }
-.ability-popover .relevant-mods { margin-top: 0; padding: var(--pop-gap) 0 0; border-top: 1px solid var(--color-border); }
-.ability-popover .relevant-mods h4 { margin-bottom: 0.125rem; font-size: 1.0625em; line-height: 1.35; letter-spacing: 0; text-transform: none; }
-.ability-popover .relevant-mods li { padding-block: 0.125rem; font-size: 1em; line-height: 1.4; }
-.ability-popover .ability-effects { margin-top: var(--pop-gap); }
-.relevant-mods li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.75rem; align-items: baseline; padding-block: 0.25rem; font-size: 0.875rem; line-height: 1.45; }
+.relevant-mods li { padding-block: 0.25rem; font-size: 0.875rem; line-height: 1.45; }
 .relevant-effect { min-width: 0; overflow-wrap: break-word; color: var(--color-text); }
 .relevant-source { color: var(--color-muted); font-size: 0.75rem; white-space: nowrap; }
 .relevant-mods .muted { font-size: 0.8125rem; }
@@ -234,7 +199,6 @@
 .ability-stats dt::after { content: ':'; }
 .ability-stats dd { margin: 0; min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
 .tier .ability-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.1rem 1rem; margin: 0.45rem 0; font-size: 0.8125rem; }
-.ability-popover .ability-stats { gap: 0; margin: var(--pop-gap) 0 0; padding-bottom: var(--pop-gap); font-size: 1em; line-height: 1.4; }
 .technical-records { margin: 0.2rem 0; padding-left: 1rem; font-size: 0.75rem; }
 .technical-records code { white-space: normal; overflow-wrap: anywhere; }
 @media (max-width: 26rem) { .tier .ability-stats { grid-template-columns: minmax(0, 1fr); } }
@@ -244,16 +208,11 @@
 .technical-details[open] > summary::before { content: '▾'; }
 
 /* Popover disclosures (Technical details, Edit bar) as quiet bordered rows with a trailing chevron. */
-.ability-popover .technical-details, .ability-popover .bar-edit-actions { margin-top: var(--pop-gap); border: 1px solid var(--color-border-strong); border-radius: var(--radius-control); background: var(--color-input); }
-.ability-popover .detail-actions .bar-edit-actions { margin-top: 0; }
-.ability-popover .technical-details > summary, .ability-popover .bar-edit-actions > summary { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 2.25rem; padding: 0.125rem 0.75rem; color: var(--color-text); font-size: 1em; list-style: none; }
 .ability-popover .bar-edit-actions > summary::-webkit-details-marker { display: none; }
 .ability-popover .technical-details > summary::before { content: none; }
 .ability-popover .technical-details > summary::after, .ability-popover .bar-edit-actions > summary::after { content: ''; width: 0.45rem; height: 0.45rem; margin: 0 0.2rem 0.2rem 0.75rem; border-right: 1.5px solid var(--color-secondary); border-bottom: 1.5px solid var(--color-secondary); transform: rotate(45deg); }
 .ability-popover .technical-details[open] > summary::after, .ability-popover .bar-edit-actions[open] > summary::after { margin-bottom: -0.2rem; transform: rotate(-135deg); }
 .ability-popover .technical-details > summary:hover, .ability-popover .bar-edit-actions > summary:hover { background: var(--color-hover); }
-.ability-popover .technical-details > :not(summary) { margin-inline: 0.75rem; }
-.ability-popover .technical-details[open] { padding-bottom: 0.625rem; }
 .ability-popover .technical-details .official-id { margin-top: 0; }
 
 /* Damage-type colors: reserved for actual published damage values. */
@@ -271,13 +230,61 @@
 .damage-regeneration { --damage-color: #6ee7b7; }
 .damage-crushing, .damage-slashing, .damage-piercing { --damage-color: #e5e5e5; }
 
-/* T0022-F1 expanded presentation: only for content that cannot fit as a compact card. Wider, and two columns
- * (facts | Relevant Mods) when the viewport allows, so long content stays readable instead of shrinking. */
-.ability-popover[data-layout='expanded-columns'] .ability-facts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 1.25rem; align-items: start; }
-.ability-popover[data-layout='expanded-columns'] .ability-facts > .relevant-mods { grid-column: 2; grid-row: 1 / span 6; margin-top: var(--pop-gap); padding: 0 0 0 1.25rem; border-top: 0; border-left: 1px solid var(--color-border); }
-.ability-popover[data-layout='expanded-columns'] .ability-facts > .ability-stats { padding-bottom: 0; }
-/* Narrow cards: the source label flows after the effect text instead of reserving a column, so long effects wrap less. */
-.ability-popover[data-layout='expanded'] .relevant-mods li { display: block; }
-.ability-popover[data-layout='expanded'] .relevant-source { margin-left: 0.5rem; }
 /* Last resort (content taller than the viewport, e.g. a phone): a full-height sheet whose title and close stay visible. */
 .ability-popover[data-fit='scroll'] > .detail-heading { position: sticky; top: calc(-1 * var(--pop-pad-y)); z-index: 1; margin: calc(-1 * var(--pop-pad-y)) calc(-1 * var(--pop-pad-x)) 0; padding: var(--pop-pad-y) var(--pop-pad-x) calc(var(--pop-pad-y) * 0.5); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+
+/* T0022-F2 ability tooltip: one narrow column (440 px desktop, ≤480 px; viewport-bounded on phones), dense through
+ * typography — 15px title, 30px icon, 13px facts, 12px mod effects, line-height ~1.25, 11px padding, 4–6px section
+ * gaps. Placement (popover-placement.ts): below, then above, then a narrow card beside the slot; never wider or split.
+ * Bounded internal scrolling is only a last resort for content taller than the available room. */
+.ability-popover {
+  --pop-pad-y: 0.6875rem;
+  --pop-pad-x: 0.75rem;
+  --pop-gap: 0.375rem;
+  position: fixed; inset: auto; margin: 0; max-height: calc(100dvh - 2rem); overflow-y: auto; overscroll-behavior: contain;
+  color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: 0.5rem;
+  padding: var(--pop-pad-y) var(--pop-pad-x); box-shadow: var(--shadow-float);
+  font-size: 0.8125rem; line-height: 1.28;
+}
+.detail-heading { gap: 0.5rem; align-items: center; }
+.detail-heading h3 { font-family: var(--font-body); font-size: 0.9375rem; line-height: 1.2; font-weight: 600; overflow-wrap: anywhere; }
+.detail-heading > .ability-icon { width: 1.875rem; height: 1.875rem; flex-shrink: 0; border-radius: 0.3125rem; border: 1px solid #00000080; }
+.detail-heading > div { flex: 1; min-width: 0; }
+.detail-rank { color: var(--color-muted); font-size: 0.6875rem; }
+.planner-main .ability-popover button { min-height: 1.75rem; padding: 0.125rem 0.5rem; font-size: 0.75rem; }
+.planner-main .ability-popover .detail-heading > button { min-width: 1.75rem; min-height: 1.75rem; padding: 0; font-size: 1.25rem; font-weight: 300; background: transparent; border-color: transparent; color: var(--color-secondary); }
+.planner-main .ability-popover .detail-heading > button:hover:enabled { color: var(--color-text); background: var(--color-hover); }
+.ability-popover .ability-facts > .ability-description { margin: var(--pop-gap) 0 0; padding-bottom: var(--pop-gap); border-bottom: 1px solid var(--color-border); color: #c7c7c7; font-size: 1em; line-height: 1.3; }
+.ability-popover .ability-stats { gap: 0; margin: var(--pop-gap) 0 0; font-size: 1em; line-height: 1.3; }
+.ability-popover .ability-effects { margin-top: 0.125rem; }
+.ability-popover .ability-effects h4 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.ability-popover .ability-effects li { margin: 0; line-height: 1.3; font-size: 1em; }
+.ability-popover .relevant-mods { margin-top: var(--pop-gap); padding-top: var(--pop-gap); border-top: 1px solid var(--color-border); }
+.ability-popover .relevant-mods h4 { margin: 0 0 0.125rem; font-size: 0.8125rem; line-height: 1.25; letter-spacing: 0; text-transform: none; }
+.ability-popover .relevant-mods li { padding-block: 0.0625rem; font-size: 0.75rem; line-height: 1.3; }
+.ability-popover .relevant-mods li + li { margin-top: 0.125rem; }
+.ability-popover .relevant-mods .muted { font-size: 0.75rem; }
+.ability-popover .relevant-effect .effect-icon { width: 15px; height: 15px; vertical-align: -3px; }
+.ability-popover > .warning { margin-top: var(--pop-gap); font-size: 0.75rem; line-height: 1.3; }
+.ability-popover .technical-details, .ability-popover .bar-edit-actions { margin-top: var(--pop-gap); border: 1px solid var(--color-border-strong); border-radius: var(--radius-control); background: var(--color-input); }
+.ability-popover .technical-details > summary, .ability-popover .bar-edit-actions > summary { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 1.75rem; padding: 0.0625rem 0.625rem; color: var(--color-text); font-size: 0.75rem; line-height: 1.3; list-style: none; }
+.ability-popover .technical-details > :not(summary) { margin-inline: 0.625rem; font-size: 0.6875rem; line-height: 1.35; }
+.ability-popover .technical-details[open] { padding-bottom: 0.5rem; }
+.ability-popover .technical-details .technical-records { font-size: 0.6875rem; }
+.ability-popover .relevant-mod-sources { margin-bottom: 0.375rem; padding-bottom: 0.375rem; border-bottom: 1px solid var(--color-border); }
+.ability-popover .relevant-mod-sources ol { margin: 0.125rem 0 0; padding-left: 1.25rem; }
+.ability-popover .relevant-mod-sources li { overflow-wrap: anywhere; }
+.ability-popover .relevant-mod-sources .relevant-source { color: var(--color-text); font-size: inherit; white-space: normal; }
+.ability-popover .detail-actions { margin-top: var(--pop-gap); gap: 0.25rem; }
+.ability-popover .detail-actions .bar-edit-actions { margin-top: 0; }
+.ability-popover .bar-edit-actions > div { padding: 0 0.625rem 0.375rem; gap: 0.25rem; }
+.planner-main .ability-popover .remove-ability { align-self: flex-end; margin: 0; color: var(--color-danger); background: transparent; border-color: transparent; font-weight: 500; }
+.planner-main .ability-popover .remove-ability::before { content: '×'; margin-right: 0.3rem; font-size: 1.1em; }
+.planner-main .ability-popover .remove-ability:hover:enabled { color: #f87171; background: #ef44441a; border-color: transparent; }
+.ability-popover .detail-actions::before { content: ''; order: 1; border-top: 1px solid var(--color-border); }
+.ability-popover .bar-edit-actions { order: 0; }
+.ability-popover .remove-ability { order: 2; }
+@media (pointer: coarse) {
+  .planner-main .ability-popover button, .planner-main .ability-popover .detail-heading > button { min-height: 2.75rem; min-width: 2.75rem; }
+  .ability-popover .technical-details > summary, .ability-popover .bar-edit-actions > summary { min-height: 2.75rem; }
+}

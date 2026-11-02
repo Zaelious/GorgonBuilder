@@ -504,12 +504,15 @@ def main():
                         acid_rows = acid_popover.locator('.relevant-mods [data-relevant-mod]')
                         expect(acid_rows).to_have_count(1)
                         expect(acid_rows.locator('.relevant-effect')).to_have_text('Acid Arrow Damage +110%')
-                        expect(acid_rows.locator('.relevant-source')).to_have_text('MainHand')
+                        # T0022-F2: no per-row source tag; provenance stays on the row and in Technical details.
+                        expect(acid_rows).to_have_attribute('data-source-slot', 'MainHand')
+                        expect(acid_rows.locator('.relevant-source')).to_have_count(0)
+                        expect(acid_popover.locator('.relevant-mod-sources .relevant-source')).to_have_text('MainHand')
                         visible = acid_popover.evaluate("(e) => { const c = e.cloneNode(true); c.querySelector('.technical-details')?.remove(); return c.textContent; }")
                         assert '0 Poison' not in visible and 'BuffActivated' not in visible and 'DelayedDamage' not in visible, visible
                         expect(acid_popover.locator('.ability-stats')).to_contain_text('Damage529 Acid')
                         box = acid_popover.bounding_box(); stats_box = acid_popover.locator('.relevant-mods').bounding_box()
-                        assert 440 <= box['width'] <= 560 and stats_box['y'] + stats_box['height'] <= box['y'] + box['height'] + 1, (box, stats_box)
+                        assert 400 <= box['width'] <= 480 and stats_box['y'] + stats_box['height'] <= box['y'] + box['height'] + 1, (box, stats_box)
                         acid_popover.screenshot(path=str(output / f'{mode}-acid-arrow-popover-desktop.png'))
                         page.keyboard.press('Escape')
                         main_editor.get_by_label('Remove candidate 1', exact=True).click()
