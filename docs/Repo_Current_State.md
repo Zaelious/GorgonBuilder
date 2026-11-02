@@ -6,7 +6,7 @@
 
 ## Current Status
 
-T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on verified v490 data, normalized runtime lookups and BuildDocument v1/local autosave. T0008 supplies independent skill/ability bars; T0009 adds nine always-visible primary equipment rows, official item icons with fallbacks, collapsed other slots, item search and persistent equip/replace/clear. T0009-F1 removes duplicated expanded headings and makes official OffHand/OffHandShield alternatives mutually exclusive in one loadout position, preserving exact source slots and explicit legacy conflict recovery. T0010 treasure-mod editing is now merged and customer accepted, including inline Available/Selected, source-backed item/skill filtering, compact item STATS and ability Relevant Mods. T0011 pure CharacterSheet/Storage parsing is now completed and merged. The browser-local My Items workflow is also merged via T0011-F1; damage calculations, CurrentStats validation and remote save/share remain future work. Actual customer-export ID/power/tier reference-resolution still requires private hands-on checking.
+T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on verified v490 data, normalized runtime lookups and BuildDocument v1/local autosave. T0008 supplies independent skill/ability bars; T0009 adds nine always-visible primary equipment rows, official item icons with fallbacks, collapsed other slots, item search and persistent equip/replace/clear. T0009-F1 removes duplicated expanded headings and makes official OffHand/OffHandShield alternatives mutually exclusive in one loadout position, preserving exact source slots and explicit legacy conflict recovery. T0010 treasure-mod editing is now merged and customer accepted, including inline Available/Selected, source-backed item/skill filtering, compact item STATS and ability Relevant Mods. T0011 pure CharacterSheet/Storage parsing is completed and merged. The browser-local My Items workflow is merged via T0011-F1. **T0011-F2 is now planned** to make imported existing mods editable in the working build and unify skill color/grouping before modifier aggregation; damage calculations, CurrentStats validation and remote save/share remain future work. Actual customer-export ID/power/tier reference-resolution still requires private hands-on checking.
 
 ## Completed Tickets
 
@@ -37,7 +37,7 @@ None. T0011-F1 has been customer conditionally accepted and merged. Real custome
 
 ## Planned Next Ticket
 
-**T0012 — Build Modifier Aggregation Engine** (awaiting explicit kickoff). T0011-F1's real-export mapping counts and representative gear/tier checks are a separate customer follow-up; do not claim that verification has passed.
+**T0011-F2 — Editable Imported Treasure Mods and Unified Skill Styling** (planned, not started; next ticket, ahead of T0012). Customer hands-on screenshots revealed that imported existing powers display in STATS but not in the Selected mod editor, cannot be removed/tier-changed as working gear, and use dashed rather than consistent filled skill colors. T0012 now depends on the F2 effective-power model. Real-export resolved/unresolved counts and representative power/tier checks remain a separate private browser follow-up.
 
 The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/DPS deferred to the following ticket series.
 

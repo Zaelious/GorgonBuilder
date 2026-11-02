@@ -661,6 +661,68 @@ Guidelines:
 
 **Manual verification:** Import current CharacterSheet and Storage in a branch preview; search representative rings/weapons/armor, compare levels and powers to the game, equip/swap/clear and reload, confirm unknown-ID warnings and no raw-file upload.
 
+## T0011-F2 — Editable Imported Treasure Mods and Unified Skill Styling
+
+**Status:** Planned follow-up based on customer hands-on feedback (2026-11-02). Not started; create a separate Codex branch/PR. Complete before T0012 modifier aggregation so the effective mod semantics are stable.
+
+**Complexity:** High
+
+**Verification:** Customer hands-on with imported Cow/Unarmed item + automated unit, editor, persistence, and browser UI tests.
+
+**Goal:** A concrete imported item must be a useful editable starting point, not a read-only copy with a separate unrelated mod list. Show all effective imported and planned treasure mods in one Selected editor, allow changing/removing imported powers on the **working build**, and use the same skill colors/grouping across origins.
+
+**Dependencies:** T0010,T0011,T0011-F1
+
+**Allowed areas:**
+- src/core/build (item/power edit contracts, validation, preservation of source evidence)
+- src/app/editor (safe equipment mod edits and autosave integration)
+- src/features/mods, src/features/equipment, src/features/import (minimal integration)
+- src/data/search/treasure-planning.ts (shared display/grouping logic)
+- focused tests, styling and verification docs
+
+**Do not touch:**
+- T0012 formula/modifier aggregation implementation, T0013 damage formulas, T0015 Sparks
+- T0016 CurrentStats comparison, report parser semantics, official data/v490 pin
+- remote upload, automatic equipped guessing, unrelated planner redesign
+
+**Observed customer reproduction:**
+1. Import Storage and choose a real Cow/Unarmed item, then select Cow as Skill A and Unarmed as Skill B.
+2. STATS shows imported existing powers (dashed blue/gold chips); the Selected editor shows 0 because it reads only `candidateMods`.
+3. Add a Cow candidate: Selected shows 1, despite multiple imported powers; the newly added Cow chip is solid blue, unlike the dashed imported Cow chips.
+4. Imported powers cannot be removed or have their tiers changed through that editor, and STATS lists all imported powers before planned ones instead of a unified skill grouping.
+
+**Requirements:**
+- **Unified effective Selected list:** Show every *resolvable effective existing* imported treasure power and every planned candidate in the existing Available/Selected editor. Selected count reflects both; each row has its actual skill/color, exact tier, and a subtle origin indicator (`Imported` or `Planned`). Preserve distinct instances and original source order in saved data. Keep imbues in their separate supported presentation; do not misidentify imbues or raw/unknown entries as editable known treasure mods.
+- **Working-copy editing:** On an imported item, explicitly removing an imported power or changing its tier updates only the selected build's effective `ItemInstance.existingPowers` (or a similarly small explicit override model). Never mutate `metadata.sourceItem` or the original in-memory Storage report. Preserve original power IDs/tiers, unresolved entries and imbues as read-only reference evidence accessible via `Original imported item`. Provide a clear `Restore imported mods` action that restores the original known treasure powers without discarding separately staged planned mods, skills, or other item settings. Confirm destructive overwrite only when useful; no prompt for every normal experimental edit.
+- **Add/remove consistency:** Newly staged powers remain separate candidates with explicit origin. Available should exclude any power already present in the effective existing or planned selection so the same power is not inadvertently staged twice; after removing a working imported power it becomes selectable again. Preserve legitimate pre-existing duplicate powers rather than silently deduplicating the imported baseline. A new staged power must not silently overwrite original imported powers. Removing/changing imported mods should be persistent across reloads and must not reappear as effective simply because `restoredImportedItem()` reparses `metadata.sourceItem`; the original-detail view must be clearly labeled as historical source, not current build state.
+- **Grouping and colors:** Use shared `skillTone` and grouping logic for BOTH editable imported and planned rows, grouped by current Skill A, Skill B, then Generic/Endurance/Shamanic/other/unknown. Stable sort for display only; saved mod order and source identities must remain intact. Cow as Skill A should have the same solid blue chip whether it was imported or newly added; Unarmed as Skill B should have the same filled gold/amber chip in both cases. Distinguish provenance with an icon or small text, **not** different skill-tone styling; respect contrasting text, accessible labels, and light/dark/mobile behavior. Label actual skill names, not just vague A/B.
+- **STATS and editor agree:** The STATS panel must render exactly the current effective working powers and separately staged candidates, without double-counted or resurrected removed imports. If an imported mod is removed, it disappears from effective STATS/Selected but remains inspectable under original import evidence. If tier changes, the new exact power-owned tier renders; no nearest-tier substitution. Keep unknown/unresolved original entries visible with their status and source tier, without inventing editable mappings. Clearly distinguish fixed/innate effects.
+- **Build integration:** Maintain existing `kind: 'imported'`, schema-v1 local autosave if possible, and current offhand behavior. Validate all edits against known official power-owned tiers. No accidental mutation of shared snapshots; preserve candidate mod staging, Spark settings, skill bars, other gear and protected/read-only draft behavior. Switching an active skill must not silently delete imported existing powers. T0012's future source aggregation must consume **only effective working existing pairs + separately planned candidates**, not original metadata and not both original/overridden versions.
+- **Browser workflow:** Existing My Items import and search remain unchanged. The customer should be able to import a Cow/Unarmed item, immediately see both skills' powers as selected, remove/tier-change one, add another, inspect STATS, save/refresh, and restore original mod powers without reimporting. Source details remain truthful about what was actually exported.
+
+**Non-goals:**
+- No mutation of real in-game items or Storage files.
+- No automatic official legality/max-mod-count rule beyond current behavior.
+- No new damage calculations or application of Spark history.
+- No raw customer reports in git or remote telemetry.
+
+**Acceptance criteria:**
+1. Selecting an imported Cow/Unarmed item with six resolved existing powers shows **Selected (6)** before adding anything, with the correct Cow blue/Unarmed amber skill labels.
+2. Adding a Cow candidate produces **Selected (7)**; both imported and added Cow badges are visually consistent, with only a discreet source distinction. The duplicate-power guard applies against both effective imported and planned selections.
+3. Removing an imported existing Cow mod reduces the effective count, removes it from STATS and survives autosave/reload; original source entry is still available in original import details and can be restored.
+4. Changing an imported power to another exact official tier updates the working STATS and survives reload; an invalid/unresolved tier is not substituted.
+5. Removing a planned candidate does not remove original imported evidence; restoring original imported mods does not erase independent planned candidates.
+6. Changing skill order/choice updates skill colors and display grouping without altering the imported powers, while existing explicit staged-candidate skill-pruning behavior stays intact.
+7. Unresolved raw powers/imbues remain inspectable and never silently treated as resolved effective powers or discarded.
+8. Existing local draft protection, items with duplicate power IDs, offhand exclusivity, conditional source data and tests remain intact.
+
+**Manual verification:**
+1. Import a fresh Storage report and equip Cow/Unarmed gear with more than one existing power. Select Cow in A, Unarmed in B; compare badges, grouping and Selected count to the actual item.
+2. Change the exact tier of an existing Cow power, remove an imported Unarmed power, and add a fresh candidate. Verify Selected and STATS stay synchronized; compare original evidence separately.
+3. Refresh after autosave; verify the edited effective setup and original source are both preserved. Use Restore imported mods, confirm the starting imported known powers return but unrelated candidates and Sparks remain.
+4. Switch skill slots to check new color grouping, restore slots, and verify no implicit deletion of imported powers.
+5. Run lint, typecheck, full/focused tests, production build, Wrangler dry-run, and desktop/mobile Chromium smoke. Provide a working branch preview and screenshots for customer acceptance.
+
 ## T0012 — Build Modifier Aggregation Engine
 
 **Complexity:** High
@@ -669,7 +731,7 @@ Guidelines:
 
 **Goal:** Create the single source that converts an entire build into normalized modifiers before ability math is applied.
 
-**Dependencies:** T0003,T0005,T0007,T0010,T0011
+**Dependencies:** T0003,T0005,T0007,T0010,T0011,T0011-F2
 
 **Allowed areas:**
 - src/core/calculation
@@ -686,7 +748,7 @@ Guidelines:
 - Define normalized modifier operations, scopes, conditions, provenance, and confidence states.
 - Aggregate active-skill advancement rewards using the unique active-skill set.
 - Aggregate fixed/innate item effects.
-- Aggregate imported existing TSys powers separately from user-staged candidate mods.
+- Aggregate **effective editable** imported existing TSys powers separately from user-staged candidate mods; do not reread original imported source metadata as active modifiers or count original and edited copies twice.
 - Create a registry/mapper pattern that supports known powers and preserves unsupported powers with warnings instead of guessing.
 - Return a deterministic modifier set plus unresolved/unsupported warnings.
 - Ensure same-skill-in-both-slots does not double-count active-skill-wide rewards.
