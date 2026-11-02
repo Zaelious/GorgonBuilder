@@ -1,0 +1,25 @@
+.import-files, .import-reports { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+.import-files input { max-width: 100%; font-size: 0.8rem; }
+.import-report { min-width: 0; border: 1px solid var(--color-border); border-radius: var(--radius); padding: 0.65rem; margin-block: 0.75rem; overflow-wrap: anywhere; }
+.import-report h3 { font-size: 0.95rem; }
+.import-source { display: block; color: var(--color-muted); font-size: 0.75rem; overflow-wrap: anywhere; }
+.import-inspection { border-top: 1px solid var(--color-border); padding-block: 0.5rem; }
+.import-inspection > summary { min-height: 2.5rem; cursor: pointer; font-size: 0.85rem; }
+.import-table-scroll { overflow-x: auto; }
+.import-table-scroll table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.import-table-scroll th, .import-table-scroll td { text-align: left; padding: 0.4rem; border-bottom: 1px solid var(--color-border); overflow-wrap: anywhere; }
+.import-counts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35rem 1rem; font-size: 0.8rem; }
+.import-counts > div { display: flex; justify-content: space-between; gap: 0.5rem; }
+.import-counts dd { margin: 0; }
+.import-dialog { overflow-y: auto; }
+.imported-powers { padding-left: 1.2rem; }
+.imported-power { margin-block: 0.65rem; }
+.imported-power strong { font-size: 0.85rem; }
+.imported-item-details { min-width: 0; overflow-wrap: anywhere; }
+.equipment-source-buttons { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
+.planner-main .equipment-source-buttons button[aria-pressed=true] { border-color: var(--color-accent); color: var(--color-accent); }
+.my-items-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; margin-block: 0.5rem; }
+@media (max-width: 35rem) {
+  .import-files, .import-reports, .import-counts { grid-template-columns: minmax(0, 1fr); }
+  .my-items-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
