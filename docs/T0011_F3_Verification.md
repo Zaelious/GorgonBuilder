@@ -1,6 +1,6 @@
 # T0011-F3 — My Items Quick Equip/Unequip Without Closing Inventory
 
-**Status:** Implemented; awaiting architectural review and product-owner acceptance. Do not merge automatically.
+**Status:** Architect reviewed; product-owner tested and accepted; squash-merged 2026-11-02 via [PR #26](https://github.com/Zaelious/GorgonBuilder/pull/26) as [`ac16796`](https://github.com/Zaelious/GorgonBuilder/commit/ac16796ca93bf024464739f7929096ef55e26b19). GitHub [CI run #84](https://github.com/Zaelious/GorgonBuilder/actions/runs/41436624581) and Cloudflare checks passed.
 **Branch:** `feature/t0011-f3-quick-inventory-equip`, based on latest main `5feb339` (includes accepted F2 / PR #25).
 
 ## Behavior and identity
@@ -64,4 +64,4 @@ The smoke runner supports `--url BRANCH_PREVIEW_URL` for the same checks on Clou
 
 ## Limitations and follow-ups
 
-Full inventory remains page-local; selected gear persists, and inventory must be reimported after refresh. Reliable identity is deliberately limited to matching report/source evidence; a changed report may show Replace for the same real game item. Actual private-export hands-on validation (including the user's 255-item inventory and exact v490 resolution counts) remains for the product owner. No customer exports were available or committed. T0012 aggregation, CurrentStats, damage, Spark calculations and backend storage remain out of scope.
+Full inventory remains page-local; selected gear persists, and inventory must be reimported after refresh. Reliable identity is deliberately limited to matching report/source evidence; a changed report may show Replace for the same real game item. The product owner tested the deployed inventory UI and accepted the quick-equip behavior. Exact source-to-v490 ID/tier mapping totals from private reports have not been independently documented; do not claim those totals were verified. No customer exports were committed. T0012 aggregation, CurrentStats, damage, Spark calculations and backend storage remain out of scope.

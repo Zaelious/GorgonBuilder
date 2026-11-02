@@ -198,7 +198,7 @@ Verify:
 
 [PR #25](https://github.com/Zaelious/GorgonBuilder/pull/25) passed GitHub CI/Cloudflare builds with 660 automated tests and synthetic Chromium dev/production-preview checks at 1440/375/320px and was product-owner accepted/merged as `8932f0a`. With a private current exported Cow/Unarmed item, confirm Selected shows resolvable original powers; editing an imported tier/removing a power updates STATS and survives refresh; **Restore Imported Mods** recovers original known pairs and retains independent staged candidates, Sparks, and immutable source evidence. Official v490 private-export reference-resolution counts remain unverified. Do not publish real user exports or screenshots containing their raw source data.
 
-### T0011-F3 — My Items quick-loadout UX (planned)
+### T0011-F3 — My Items quick-loadout UX (accepted 2026-11-02)
 
 Test the **general** Equipment → My Items view separately from each slot-specific picker. General view must stay open through repeated Equip/Replace/Unequip actions, retaining current search/filter/page/scroll; a selected concrete instance must show **Equipped** status and **Unequip** action, while another copy of the same TypeID stays unselected. “Equipped” here means selected in the **GorgonBuilder build**, never `IsInInventory` from Project Gorgon. Confirm clearing an edited item is protected, read-only drafts cannot change, OffHand exclusivity holds, and slot-specific pickers still close after one choice. Recheck state across refresh and safe reimport, 375px and 320px. Do not publish original customer reports.
 

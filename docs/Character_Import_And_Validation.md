@@ -1,7 +1,7 @@
 # GorgonBuilder — Character Import and Validation
 
-**Status:** T0011 parser, T0011-F1 My Items import and T0011-F2 effective imported-mod editing implemented/accepted; T0011-F3 quick-loadout UI and CurrentStats validation pending  
-**Version:** 1.3  
+**Status:** T0011 parser and T0011-F1/F2/F3 browser import and editable quick-loadout workflow accepted/merged; CurrentStats validation pending  
+**Version:** 1.4  
 **Date:** 2026-11-02
 
 ## Clarification About Export Freshness
@@ -61,7 +61,7 @@ Useful item-instance fields observed include:
 - **T0011 (merged):** Pure local CharacterSheet/Storage parser, typed source snapshots, exact resolvable power/tier pairs, optional official v490 adapter, preserved unknowns, separate imbues, and sanitized regression tests. It does not equip any items.
 - **T0011-F1 (merged):** Browser-only file selection, searchable/filterable **My Items**, source exact power/tier and imbue inspection, manual equipment selection, schema-v1 selected instance persistence. Synthetic browser flows pass; real customer-export v490 resolution counts still await private hands-on testing. Mastery Spark history is unavailable and is not inferred.
 - **T0011-F2 (merged):** Imported treasure powers become editable working-copy pairs. Unified Selected/STATS displays imported and planned powers with matching skill color/grouping. Remove, exact tier change and Restore Imported Mods update effective pairs without mutating historical `metadata.sourceItem`, and preserve other planned mods and Sparks. Unknown originals/imbues remain source evidence, not invented effective modifiers.
-- **T0011-F3 (planned):** General My Items browser permits repeated equip/replace/unequip without dismissing the modal, with accurate per-instance Equipped state; slot-specific pickers retain one-pick-and-close behavior.
+- **T0011-F3 (merged):** General My Items browser supports repeated equip/replace/unequip without dismissing the dialog, with accurate exact-imported-instance Equipped state and retained filters/page/scroll; slot-specific pickers retain one-pick-and-close behavior. Matching source report evidence conservatively avoids falsely equating items across changed snapshots; user accepted the deployed interface.
 - **T0016 (later):** CurrentStats-vs-modeled aggregate comparisons; this no longer duplicates the basic import UI.
 
 Independent checks of fresh customer exports against T0011's typed field constraints succeeded after the next-XP sentinel fix. The exact full Node CLI with v490 reference-resolution on the real private files was **not** run; actual resolved/unresolved ID and tier counts remain to be checked through the now-available T0011-F1 UI using private customer files. Never commit original customer reports.
