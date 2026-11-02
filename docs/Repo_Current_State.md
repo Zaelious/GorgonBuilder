@@ -35,9 +35,18 @@ T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on
 
 None. T0011-F3 was architect-reviewed, customer-tested and accepted, and squash-merged via PR #26 as `ac16796`. Build schema v1 remains unchanged. [Verification](T0011_F3_Verification.md): 679 passing GitHub CI tests, green Cloudflare deployment, developer-run synthetic dev/production Chromium smoke at 1440/375/320px and customer preview acceptance.
 
-## Planned Next Ticket
+## Approved Follow-up Tickets (Not Started)
 
-**T0012 — Build Modifier Aggregation Engine** (next planned, not started; begin on a new branch from accepted `main` only after explicit kickoff). Actual private-export v490 ID/tier resolution counts have not been captured as a formal report; keep this validation limitation visible. Implement only effective working imported existing powers plus separately staged candidates, not original historical source metadata.
+The product owner approved two scoped UI follow-ups on 2026-11-02, scheduled ahead of T0012 and documented in [Tickets.md](Tickets.md):
+
+1. **T0008-F1 — Imported Effective Skill Levels and Ability Picker UX.** Auto-fill effective imported skill levels on deliberate skill selection (bonus levels count toward effective levels without double-counting), preserve manual overrides, allow continuous general + addition, and mark already-selected abilities without preventing duplicates.
+2. **T0010-F1 — Shared Equipment Mod Controls and Compact Item Metadata.** Keep one visible global equipment mod search plus expandable advanced filters; share control state across equipment pieces; collapse item/source/level metadata under one disclosure while keeping STATS and warnings accessible.
+
+Both tickets are **approved only**: neither has begun implementation, passed verification, or been merged. Their UI changes do not change the BuildDocument v1 schema, treasure eligibility rules, or damage engine scope.
+
+## Planned Next Tickets
+
+**T0008-F1**, then **T0010-F1**, followed by **T0012 — Build Modifier Aggregation Engine**. Begin each follow-up on its own branch from accepted `main` only after explicit kickoff. T0012 remains unstarted and retains its approved calculation scope. Actual private-export v490 ID/tier resolution counts have not been captured as a formal report; keep this validation limitation visible. Implement only effective working imported existing powers plus separately staged candidates, not original historical source metadata.
 
 The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/DPS deferred to the following ticket series.
 
