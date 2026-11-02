@@ -938,6 +938,8 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 
 ## T0013 — Core Ability Damage Engine
 
+**Status:** Product-owner accepted as an implementation foundation and squash-merged 2026-11-02 via [PR #32](https://github.com/Zaelious/GorgonBuilder/pull/32), commit `86c2e34`. Automated quality suite: 810 tests and successful CI. In-game percentage stacking/damage validation is deliberately deferred until T0014's visible calculation output and T0015's Spark integration are available; keep original assumptions and verification guide.
+
 **Complexity:** High
 
 **Verification:** Customer game-math validation required
@@ -980,6 +982,8 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 3. Run focused tests and the quality suite.
 
 ## T0014 — Ability Results UI and Custom Target Dummy
+
+**Status:** Next ticket; kickoff requested 2026-11-02 after T0013 merge. Implementation PR not yet opened.
 
 **Complexity:** Standard
 
