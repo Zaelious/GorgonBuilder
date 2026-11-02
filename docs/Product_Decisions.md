@@ -29,6 +29,8 @@ A build may contain:
 
 Selecting the same combat skill in both skill slots must not double-apply skill-wide advancement/progression bonuses.
 
+**Product-owner clarification (2026-11-02):** A character cannot have two effective levels of the same skill in Project Gorgon. When both planner slots select the same skill, they must share one consistent effective level while maintaining two independent ability bars. The current editor still permits conflicting saved levels; T0012 flags that legacy/inconsistent case and omits advancement contributions rather than picking one. Implement a scoped editor correction to synchronize levels on new edits and safely handle existing conflicting drafts. Bonuses associated with other skills (such as Necromancy/Priest) may appear on ordinary equipped items; retain the source effects, but do not apply inactive-skill-scoped bonuses to unrelated ability damage.
+
 The planner intentionally does **not** need to police the final number of treasure mods while planning. A user may add many candidate mods and remove the unwanted ones while comparing outcomes.
 
 ## Item Selection
