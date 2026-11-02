@@ -104,6 +104,30 @@ Expanded equipment information repeats the already-visible selected item icon an
 
 At 375px width, a saved ability-bar entry that does not match its current selected combat skill can trigger the “Marked slots need review” warning and expand the page to approximately 501px scroll width. Reproduced on untouched pre-T0010-F1 `main`; matching ability selections fit correctly. T0010-F1 made no ability-bar changes. Fix warning-content sizing in a separate scoped UI follow-up; preserve mismatch diagnostics and mobile/keyboard behavior. See [T0010-F1 verification](../src/features/equipment/verification/T0010-F1.md).
 
+## KI-0013 — Duplicate Combat Skill Must Share One Effective Level
+
+**Status:** Product-owner rule confirmed 2026-11-02; scoped planner-editor follow-up required.
+
+Project Gorgon cannot have the same combat skill at different effective levels in two equipped skill slots. The current v1 BuildDocument/editor permits independently editing both level fields, even when both slots select the same skill. T0012 conservatively emits a `skill-level-conflict` warning and omits that skill's advancement contributions, rather than inventing a level choice.
+
+**Action:** When both skill slots select the same skill, present and persist one consistent effective level across both while preserving independent ability bars. Synchronize future edits without unexpectedly changing unrelated build state. For inconsistent saved/legacy drafts, warn and require safe resolution rather than silently choosing one level. Add editor/persistence and aggregation regressions. Handle as a narrow scoped UX correction before relying on duplicate-skill calculations.
+
+## KI-0014 — Advancement-Table Accumulation and Modifier Applicability
+
+**Status:** Deliberate assumptions after T0012; validate with in-game character evidence in T0013/T0016.
+
+T0012 reports level reward entries summed through the configured skill level as `assumed`. Combining advancement-table rewards across different active skills, and final application of skill-scoped gear modifiers, still requires validation. A gear item may contain bonuses for inactive Necromancy or Priest skills; these source facts are retained, but must not affect unrelated ability damage.
+
+**Action:** Compare controlled actual-character gear, skills and levels with game-visible totals and imported `CurrentStats` (T0016). Compare ability damage and isolate one change at a time during T0013. Never upgrade confidence or silently apply off-skill bonuses without evidence.
+
+## KI-0015 — Duplicated Effect Token Parsing Grammar
+
+**Status:** Nonblocking maintainability follow-up from accepted T0012.
+
+The published attribute token syntax is parsed separately in `src/features/mods/effect-description.ts` and `src/core/calculation/registry.ts` because calculation core cannot import UI features.
+
+**Action:** If logic begins diverging or when next editing both implementations, consider moving shared parsing to a pure `src/data` helper with focused regression tests. Do not combine this unrelated refactor with formula tickets unless required.
+
 ## Follow-Up Candidates After T0021
 
 - Rotation Simulator explicit sequence
