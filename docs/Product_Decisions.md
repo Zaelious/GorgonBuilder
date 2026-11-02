@@ -285,6 +285,13 @@ Priorities:
 
 Desktop-first full editing is acceptable initially. Shared/read-only builds should remain reasonably usable on smaller screens.
 
+## Approved Visual Identity Direction (2026-11-02)
+
+- Product owner selected the **first** generated GorgonBuilder UI mockup for **UI composition**: dark charcoal backgrounds without the previous green cast, coherent sans-serif typography, blue/amber skill accents, slim stacked equipment rows and a **vertically arranged floating** ability hover inspector. **Artwork was subsequently refined** to the user's selected **ancient Greek mosaic** direction: use the supplied `mosaic_medusa_with_serpent_crown.png` bust and `moonlit_gorgon_mosaic_ruins.png` banner instead of the mockup's grayscale marble images. Their bronze/gold tones belong predominantly to the artwork, not interactive controls.
+- Preserve “Simple by Default, Detailed on Demand.” The concept image represents styling, not authorization to omit existing equipment, mod, My Items, import, warnings or editor functionality.
+- Require the two separate provided original mosaic assets attached to Codex and optimized into local site files; do not regenerate or crop the UI mockup. Do not invent game-data bonuses to match illustrative numbers.
+- T0022 is the proposed single cohesive implementation ticket, scheduled before T0013 if approved. See [UI_Visual_Redesign.md](UI_Visual_Redesign.md).
+
 ## Working Product Name
 
 - Repository: `GorgonBuilder`
