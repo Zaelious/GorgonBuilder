@@ -891,6 +891,8 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 
 ## T0012 — Build Modifier Aggregation Engine
 
+**Status:** Customer-accepted and squash-merged 2026-11-02 via [PR #29](https://github.com/Zaelious/GorgonBuilder/pull/29), commit `c611f72`. [Verification](T0012_Verification.md): 773 tests (46 new), green GitHub CI and Cloudflare preview, optional product-owner browser regression checks passed. Pure `aggregateBuildModifiers` retains official identities, mapped modifiers, unsupported records, source provenance, conditions and confidence; imported `existingPowers` stay distinct from candidate mods and historical source metadata. Advancement per-level sums are assumed, not game-validated. A same-skill/different-level build remains an explicitly warned conservative case, pending an editor correction enforcing one effective shared skill level (product owner confirmed levels cannot differ in game). T0013 is next and not started.
+
 **Complexity:** High
 
 **Verification:** Automated + game-math review
