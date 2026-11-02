@@ -5,6 +5,7 @@ import { parseCharacterSheetJson, parseStorage, parseStorageJson } from '../../c
 import type { ImportResult, ImportedStorageSnapshot } from '../../core/import';
 import { createDefaultBuildDocument } from '../../core/build/document';
 import { deserializeBuildDocument, serializeBuildDocument } from '../../core/build/validation';
+import { sameImportedInstance } from '../../core/build/imported-identity';
 import { editBuild } from '../../app/editor/build-editor';
 import { createLocalPersistence } from '../../persistence/local/storage';
 import { createImportReferenceResolver } from '../../data/adapters/import-references';
@@ -114,4 +115,46 @@ it('enforces offhand exclusivity and refuses implicit replacement or conflict cl
   const conflict = { ...equipped, equipment: [...equipped.equipment, ...swapped.equipment] };
   expect(editBuild(conflict, { type: 'equipment-import', slot: 'OffHand', index: 0, instance: dirk }, data)).toBe(conflict);
   expect(editBuild({ ...original, gameDataVersion: 'other' }, { type: 'equipment-import', slot: 'Ring', index: null, instance: shield }, data).equipment).toEqual([]);
+});
+
+
+it('matches persisted snapshot provenance and original data independently of working powers and JSON key order', () => {
+  const instance = selectedImportedInstance(session.storage.items[0]!);
+  const saved = JSON.parse(JSON.stringify(instance)) as typeof instance;
+  saved.existingPowers = [];
+  saved.metadata!.sourceItem = Object.fromEntries(Object.entries(saved.metadata!.sourceItem!).reverse());
+  expect(sameImportedInstance(instance, saved)).toBe(true);
+  expect(sameImportedInstance(instance, selectedImportedInstance(session.storage.items[1]!))).toBe(false);
+  // Even byte-identical items at distinct source paths represent distinct owned instances.
+  const twin = structuredClone(instance); twin.provenance!.metadata!.sourcePath = '/Items/1';
+  expect(sameImportedInstance(instance, twin)).toBe(false);
+});
+
+it.each(['timestamp', 'character', 'server', 'version', 'path', 'source', 'missing-source', 'missing-provenance', 'invalid-date', 'instance-id', 'type-id'])('rejects incomplete or conflicting identity evidence: %s', field => {
+  const instance = selectedImportedInstance(session.storage.items[0]!);
+  const other = structuredClone(instance);
+  switch (field) {
+    case 'timestamp': other.provenance!.exportedAt = '2026-11-02T12:01:00Z'; break;
+    case 'character': other.provenance!.metadata!.characterName = 'Another'; break;
+    case 'server': other.provenance!.metadata!.server = 'Another'; break;
+    case 'version': other.provenance!.reportVersion = '2'; break;
+    case 'path': delete other.provenance!.metadata!.sourcePath; break;
+    case 'source': other.metadata!.sourceItem = { TypeID: 45640, Name: 'Different' }; break;
+    case 'missing-source': delete other.metadata!.sourceItem; break;
+    case 'missing-provenance': delete other.provenance; break;
+    case 'invalid-date': other.provenance!.exportedAt = 'Unknown'; instance.provenance!.exportedAt = 'Unknown'; break;
+    case 'instance-id': other.instanceId = 'conflicting-id'; break;
+    case 'type-id': delete (other.metadata!.sourceItem as Record<string, unknown>).TypeID; break;
+  }
+  expect(sameImportedInstance(instance, other)).toBe(false);
+  expect(sameImportedInstance(other, instance)).toBe(false);
+});
+
+it('refuses duplicate imported-instance edits even into a different slot after working powers change', () => {
+  const original = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  const instance = selectedImportedInstance(session.storage.items[0]!);
+  const equipped = editBuild(original, { type: 'equipment-import', slot: 'MainHand', index: null, instance }, data);
+  const changed = editBuild(equipped, { type: 'existing-mod-remove', equipmentIndex: 0, index: 0 }, data);
+  expect(editBuild(changed, { type: 'equipment-import', slot: 'Ring', index: null, instance }, data)).toBe(changed);
+  expect(editBuild(changed, { type: 'equipment-import', slot: 'MainHand', index: 0, instance }, data)).toBe(changed);
 });

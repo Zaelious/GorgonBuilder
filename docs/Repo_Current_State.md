@@ -33,11 +33,11 @@ T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on
 
 ## Active Ticket
 
-None. T0011-F2 was reviewed, accepted and merged as PR #25. The scoped T0011-F3 quick-equipment UI follow-up is planned but not started.
+**T0011-F3 — My Items Quick Equip/Unequip Without Closing Inventory:** implemented on `feature/t0011-f3-quick-inventory-equip`, awaiting architectural review and product-owner acceptance. General inventory stays open across imported equip/replace/unequip with exact-instance status; slot pickers remain one-shot. Schema v1 is unchanged. [Verification](T0011_F3_Verification.md): 679 tests, required build/checks and six Chromium dev/production-preview desktop/mobile cases pass. T0011-F2 remains accepted and merged via PR #25.
 
 ## Planned Next Ticket
 
-**T0011-F3 — My Items Quick Equip/Unequip Without Closing Inventory** (next planned, not started). This separate UX follow-up responds to live import testing: the general My Items view should support multiple equip/replace/unequip actions and exact-instance Equipped/Unequip status while keeping filters/page/scroll and dialog open; slot-specific pickers remain one-shot. T0012 calculations follow this UX milestone. Actual private-export ID/tier resolution counts remain unverified.
+**T0012 — Build Modifier Aggregation Engine** follows T0011-F3 acceptance. Actual private-export ID/tier resolution counts remain unverified. Do not begin calculations in the F3 branch.
 
 The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/DPS deferred to the following ticket series.
 

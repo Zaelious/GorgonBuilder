@@ -1,3 +1,4 @@
+import { sameImportedInstance } from '../../core/build/imported-identity';
 import { editCandidateMods, pruneCandidateModsForSkill, type CandidateModEdit } from '../../core/build/candidate-mods';
 import { editExistingMods, type ExistingModEdit } from '../../core/build/existing-mods';
 import type { AbilitySelection, BuildDocument, ItemInstance } from '../../core/build/document';
@@ -63,6 +64,7 @@ export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataR
     const item = edit.type === 'equipment-equip' ? data.getItem(edit.itemId) : undefined;
     if (edit.type === 'equipment-equip' && (!item || item.slot !== edit.slot)) return build;
     if (!edit.slot.trim()) return build;
+    if (edit.type === 'equipment-import' && build.equipment.some(selection => selection.item.kind === 'imported' && sameImportedInstance(selection.item.instance, edit.instance))) return build;
     const selected = edit.type === 'equipment-import'
       ? { kind: 'imported' as const, instance: structuredClone(edit.instance) }
       : { kind: 'database' as const, itemId: edit.itemId };

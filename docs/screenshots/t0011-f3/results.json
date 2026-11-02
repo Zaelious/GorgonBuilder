@@ -1,0 +1,116 @@
+[
+  {
+    "mode": "dev",
+    "width": 1440,
+    "multi_equip_counts": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "same_dialog": true,
+    "cancel_confirm": true,
+    "filters_page_scroll": true,
+    "twins_replace": true,
+    "refresh_reimport": true,
+    "slot_close_focus": true,
+    "runtime_errors": 0,
+    "network_writes": 0,
+    "overflow": false
+  },
+  {
+    "mode": "dev",
+    "width": 375,
+    "multi_equip_counts": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "same_dialog": true,
+    "cancel_confirm": true,
+    "filters_page_scroll": true,
+    "twins_replace": true,
+    "refresh_reimport": true,
+    "slot_close_focus": true,
+    "runtime_errors": 0,
+    "network_writes": 0,
+    "overflow": false
+  },
+  {
+    "mode": "dev",
+    "width": 320,
+    "multi_equip_counts": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "same_dialog": true,
+    "cancel_confirm": true,
+    "filters_page_scroll": true,
+    "twins_replace": true,
+    "refresh_reimport": true,
+    "slot_close_focus": true,
+    "runtime_errors": 0,
+    "network_writes": 0,
+    "overflow": false
+  },
+  {
+    "mode": "preview",
+    "width": 1440,
+    "multi_equip_counts": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "same_dialog": true,
+    "cancel_confirm": true,
+    "filters_page_scroll": true,
+    "twins_replace": true,
+    "refresh_reimport": true,
+    "slot_close_focus": true,
+    "runtime_errors": 0,
+    "network_writes": 0,
+    "overflow": false
+  },
+  {
+    "mode": "preview",
+    "width": 375,
+    "multi_equip_counts": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "same_dialog": true,
+    "cancel_confirm": true,
+    "filters_page_scroll": true,
+    "twins_replace": true,
+    "refresh_reimport": true,
+    "slot_close_focus": true,
+    "runtime_errors": 0,
+    "network_writes": 0,
+    "overflow": false
+  },
+  {
+    "mode": "preview",
+    "width": 320,
+    "multi_equip_counts": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "same_dialog": true,
+    "cancel_confirm": true,
+    "filters_page_scroll": true,
+    "twins_replace": true,
+    "refresh_reimport": true,
+    "slot_close_focus": true,
+    "runtime_errors": 0,
+    "network_writes": 0,
+    "overflow": false
+  }
+]

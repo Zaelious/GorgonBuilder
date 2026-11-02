@@ -202,6 +202,10 @@ Verify:
 
 Test the **general** Equipment → My Items view separately from each slot-specific picker. General view must stay open through repeated Equip/Replace/Unequip actions, retaining current search/filter/page/scroll; a selected concrete instance must show **Equipped** status and **Unequip** action, while another copy of the same TypeID stays unselected. “Equipped” here means selected in the **GorgonBuilder build**, never `IsInInventory` from Project Gorgon. Confirm clearing an edited item is protected, read-only drafts cannot change, OffHand exclusivity holds, and slot-specific pickers still close after one choice. Recheck state across refresh and safe reimport, 375px and 320px. Do not publish original customer reports.
 
+### T0011-F3 — Quick My Items loadout workflow
+
+Use the [ticket-specific verification report](T0011_F3_Verification.md) for exact manual steps and screenshots. General My Items must retain the same dialog/search/filters/page/scroll through multi-slot equip, exact-instance replacement and confirmed unequip. Only the actual selected instance shows Equipped/Unequip, including after F2 mod edits and refresh/reimport of the same report. Individual slot pickers still close and restore focus. Check duplicate TypeIDs, cancel/confirm, retained candidates/Sparks, offhand exclusivity, protected drafts and 375/320px layouts. Run `python src/features/import/quick-equip.smoke.py` after building for synthetic dev/production-preview evidence; add `--url` for a deployed preview. Real customer reports remain private and require product-owner hands-on verification.
+
 ## Save/Share Tickets
 
 Test at least:
