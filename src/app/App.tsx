@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createDefaultBuildDocument, type BuildDocument } from '../core/build/document';
 import { loadGameDataRepository } from '../data/repository/load';
 import type { GameDataRepository } from '../data/repository/repository';
 import { SkillPlanner } from '../features/skills/SkillPlanner';
 import { EquipmentPlanner } from '../features/equipment/EquipmentPlanner';
 import { ImportCharacter } from '../features/import/ImportCharacter';
+import { TargetDummy } from '../features/abilities/TargetDummy';
+import type { AbilityDamageInputs } from '../features/abilities/AbilityResults';
+import { aggregateBuildModifiers } from '../core/calculation';
 import type { ImportSession } from '../features/import/inventory';
 import { createDraftAutosave } from '../persistence/local/autosave';
 import { createLocalPersistence, type SaveResult } from '../persistence/local/storage';
@@ -50,6 +53,8 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
   const protectedDraft = session.restored.status === 'fallback' &&
     (session.restored.error.reason === 'unsupported-version' || session.restored.error.reason === 'read-failed');
   const readOnly = versionMismatch || protectedDraft;
+  // One pure aggregation per committed build; every equipped ability result recalculates from it.
+  const damageInputs = useMemo<AbilityDamageInputs>(() => ({ aggregation: aggregateBuildModifiers(build, data), target: build.target }), [build, data]);
 
   useEffect(() => {
     const flush = () => { autosave.flush(); };
@@ -137,12 +142,13 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
       <details className="planner-help" onKeyDown={e => {
         if (e.key === 'Escape') { e.preventDefault(); e.currentTarget.open = false; e.currentTarget.querySelector<HTMLElement>('summary')?.focus(); }
       }}><summary aria-label="Planner help">?</summary><div className="planner-help-content">
-        <p>Select skills and levels, then use + to browse abilities. Open an equipped icon for details and bar controls. Changing a skill clears its bar and staged mods for a skill no longer in either slot (with Undo). Both slots can use the same skill.</p>
+        <p>Select skills and levels, then use + to browse abilities. Open an equipped icon for details, calculated damage and bar controls. Target dummy settings below the bars apply to every ability result. Changing a skill clears its bar and staged mods for a skill no longer in either slot (with Undo). Both slots can use the same skill.</p>
       </div></details>
     </div><div className="planner-grid">
-      <SkillPlanner slot="A" skill={build.skillSlotA} bar={build.abilityBarA} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} equipment={build.equipment} imported={imported?.character} />
-      <SkillPlanner slot="B" skill={build.skillSlotB} bar={build.abilityBarB} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} equipment={build.equipment} imported={imported?.character} />
+      <SkillPlanner slot="A" skill={build.skillSlotA} bar={build.abilityBarA} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} equipment={build.equipment} imported={imported?.character} damageInputs={damageInputs} />
+      <SkillPlanner slot="B" skill={build.skillSlotB} bar={build.abilityBarB} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} equipment={build.equipment} imported={imported?.character} damageInputs={damageInputs} />
     </div>
+    <TargetDummy build={build} data={data} onEdit={commit} readOnly={readOnly} />
     <div className="skill-change-notice" aria-live="polite">{cleared && <p>
       <span>{cleared.message}</span>
       <button type="button" onClick={undoCleared}>Undo</button>

@@ -8,3 +8,7 @@ export { formatAggregationReport } from './report';
 export { calculateAbilityDamage, ABILITY_DAMAGE_ASSUMPTIONS } from './ability-damage';
 export * from './ability-damage-types';
 export { formatAbilityDamageReport } from './ability-damage-report';
+export {
+  applyTargetDummy, TARGET_DAMAGE_ASSUMPTIONS,
+  type TargetDamageOptions, type TargetDamageResult, type TargetDamageTypeStep, type TargetHitResult,
+} from './target-damage';

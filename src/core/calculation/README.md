@@ -212,3 +212,25 @@ resistance/mitigation, Phrenology, AoE conversion/caps and criticals are not cal
 
 See [T0013 verification](../../../docs/T0013_Verification.md) for the assumption table,
 reproducible official-data reports, tests and controlled in-game comparison procedure.
+
+## Target dummy stage (T0014)
+
+`applyTargetDummy(result, build.target, { targetCap? })` is a separate pure stage
+after `calculateAbilityDamage`. It never mutates or recomputes the T0013 result.
+For each published direct hit component (still never summed):
+
+1. **Damage-type modifier.** Only `target.damageTypes[<exact hit damage type>]` is read.
+   With a non-zero vulnerability or resistance, the per-target value is
+   `provisional × (1 + (vulnerability − resistance) / 100)`. This is **assumed** (the
+   step and result confidence drop to at most `assumed`). A net multiplier below zero
+   gives no value plus an `invalid-target-modifier` warning; no clamp or healing rule.
+   Settings for other damage types change nothing.
+2. **Affected enemies.** An ability without a published `AoE` value counts 1 enemy
+   (assumed when more are configured). With `AoE`, a known positive-integer cap gives
+   `min(count, cap)`. With no cap, 1 configured enemy counts as 1; more enemies leave
+   `affectedTargets` and `total` null with `target-cap-unknown`. v490 publishes no cap
+   field, so totals for several AoE targets stay unavailable. An unlimited cap is never assumed.
+
+The published `ExtraDamageIfTargetVulnerable` / "Vulnerable" target state remains
+T0013's `target-bonus-not-applied` limitation; it is a stateful debuff, not the
+dummy's per-type percentages. Criticals remain unmodeled.

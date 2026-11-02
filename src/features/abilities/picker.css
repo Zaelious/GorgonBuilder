@@ -1,3 +1,8 @@
 .ability-picker .picker-status { position: sticky; top: 0; z-index: 1; padding-block: 0.4rem; margin-bottom: var(--space-1); background: var(--color-surface); border-bottom: 1px solid var(--color-border); font-size: 0.8rem; }
 .ability-picker .picker-count { color: var(--color-text); font-variant-numeric: tabular-nums; }
 .ability-picker .selected-ability { color: var(--color-positive); font-size: 0.72rem; }
+.ability-picker .picker-options { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.25rem 1rem; }
+.ability-picker .picker-options .picker-help { margin: 0; }
+.ability-picker .respect-skill-level { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.8125rem; color: var(--color-text); cursor: pointer; white-space: nowrap; }
+.ability-picker .respect-skill-level input { margin: 0; width: auto; min-height: 0; accent-color: var(--color-positive); }
+.ability-picker .quick-add-none { display: block; color: var(--color-warning); }

@@ -6,6 +6,7 @@ import type { ImportedCharacterSnapshot } from '../../core/import';
 import { importedSkillLevel } from '../import/skill-levels';
 import './skills.css';
 import { AbilityBar } from '../abilities/AbilityPlanner';
+import type { AbilityDamageInputs } from '../abilities/AbilityResults';
 
 interface Props {
   slot: Slot;
@@ -18,6 +19,7 @@ interface Props {
   onDetailOpen: (slot: Slot) => void;
   imported?: ImportedCharacterSnapshot;
   equipment?: readonly EquipmentSelection[];
+  damageInputs?: AbilityDamageInputs;
 }
 
 function SkillLevel({ slot, level, onEdit }: { slot: Slot; level: number; onEdit: Props['onEdit'] }) {
@@ -37,7 +39,7 @@ function SkillLevel({ slot, level, onEdit }: { slot: Slot; level: number; onEdit
     {!valid && <p id={`level-error-${slot}`} className="warning">Use a nonnegative whole number. The saved level is unchanged.</p>}</>;
 }
 
-export function SkillPlanner({ slot, skill, bar, data, onEdit, readOnly, detailSlot, onDetailOpen, equipment, imported }: Props) {
+export function SkillPlanner({ slot, skill, bar, data, onEdit, readOnly, detailSlot, onDetailOpen, equipment, imported, damageInputs }: Props) {
   const skills = useMemo(() => data.skills.filter(s => s.combat)
     .toSorted((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id)), [data]);
   const selected = skill.skillId === null ? undefined : data.getSkill(skill.skillId);
@@ -67,7 +69,7 @@ export function SkillPlanner({ slot, skill, bar, data, onEdit, readOnly, detailS
             onClick={() => onEdit({ type: 'level', slot, level: importedLevel })}>Apply imported level</button>}
         </div>
       </fieldset>
-      <AbilityBar key={skill.skillId ?? 'empty'} slot={slot} skill={skill} bar={bar} data={data} onEdit={onEdit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={onDetailOpen} equipment={equipment} />
+      <AbilityBar key={skill.skillId ?? 'empty'} slot={slot} skill={skill} bar={bar} data={data} onEdit={onEdit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={onDetailOpen} equipment={equipment} damageInputs={damageInputs} />
       {imported && skill.skillId && importedLevel === null && <p className="muted">Imported effective level unavailable for this skill. Your manual level is retained.</p>}
       {unavailable && <p role="alert" className="warning">Official skill {skill.skillId} is unavailable. Your saved selection has been retained.</p>}
       {selected && !selected.combat && <p role="alert" className="warning">The saved skill is not marked as a combat skill in loaded data.</p>}

@@ -63,7 +63,10 @@ it('shows Brambleskin 13 facts, effects and an always-visible Relevant Mods sect
   expect(control('.technical-records').textContent).toContain('SpecialRules DelayedDamage');
   // One column (T0022-F2): stats, then the ability's own effects, then Relevant Mods.
   expect(control('.ability-stats').nextElementSibling!.classList.contains('ability-effects')).toBe(true);
-  expect(control('.ability-effects').nextElementSibling!.classList.contains('relevant-mods')).toBe(true);
+  // T0014: the published 310 Nature DoT gets a compact Damage section stating it is not calculated.
+  expect(control('.ability-effects').nextElementSibling!.classList.contains('ability-results')).toBe(true);
+  expect(control('.ability-results').textContent).toContain('No direct hit is published; DoT damage is not calculated yet.');
+  expect(control('.ability-results').nextElementSibling!.classList.contains('relevant-mods')).toBe(true);
   const section = control('.relevant-mods');
   expect(section.closest('details')).toBeNull();
   expect(section.querySelector('h4')!.textContent).toBe('Relevant Mods');
@@ -130,7 +133,9 @@ it('shows Acid Arrow Damage +110% from MainHand under Acid Arrow 13 immediately,
   expect(rows().map(row => [row.querySelector('.relevant-effect')!.textContent, row.dataset.sourceSlot, row.dataset.powerId, row.dataset.tierId]))
     .toEqual([['Acid Arrow Damage +110%', 'MainHand', 'power_10302', 'id_25']]);
   expect(control('.ability-popover .relevant-mod-sources').textContent).toContain('MainHand · Marvelous Military Sword · Planned mod · power_10302 / id_25');
-  expect(control('.ability-stats').nextElementSibling!.classList.contains('relevant-mods')).toBe(true);
+  // T0014 inserts calculated Damage between the published stats and Relevant Mods.
+  expect(control('.ability-stats').nextElementSibling!.classList.contains('ability-results')).toBe(true);
+  expect(control('.ability-results').nextElementSibling!.classList.contains('relevant-mods')).toBe(true);
   // Zero-value conditional DoTs are not shown as damage; exact values remain in Technical details.
   expect(container.querySelector('.ability-popover .ability-effects')).toBeNull();
   const visible = [...control('.ability-popover').children].filter(child => !child.matches('.technical-details')).map(child => {

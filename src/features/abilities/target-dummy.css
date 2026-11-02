@@ -1,0 +1,19 @@
+/* T0014 target dummy: one compact row under the skill bars; damage-type inputs are on demand. */
+.target-dummy { border-top: 1px solid var(--color-border); padding: 0.5rem 1rem 0.5rem 1.5rem; font-size: 0.8125rem; }
+.target-dummy fieldset { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.5rem 1.25rem; margin: 0; padding: 0; border: 0; min-width: 0; }
+.target-dummy .target-dummy-title { margin: 0; line-height: 2rem; font-size: 0.8125rem; font-weight: 600; color: var(--color-text); }
+.target-dummy .target-count { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--color-secondary); }
+.target-dummy input[type=number] { width: 4.5rem; min-height: 2rem; padding: 0.15rem 0.4rem; font-variant-numeric: tabular-nums; }
+.target-dummy .target-error { font-size: 0.75rem; }
+.target-damage-types { flex: 1 1 18rem; min-width: 0; }
+.target-damage-types > summary { width: fit-content; cursor: pointer; color: var(--color-secondary); line-height: 2rem; }
+.target-damage-types > summary:hover { color: var(--color-text); }
+.target-set-count { color: var(--color-warning); }
+.target-damage-types-content { margin-top: 0.25rem; max-width: 34rem; }
+.target-damage-types-content > p { margin: 0 0 0.375rem; font-size: 0.75rem; }
+.target-damage-types table { border-collapse: collapse; width: 100%; }
+.target-damage-types th, .target-damage-types td { padding: 0.125rem 0.5rem 0.125rem 0; text-align: left; font-weight: 400; }
+.target-damage-types thead th { color: var(--color-secondary); font-size: 0.75rem; }
+.target-damage-types tbody th { font-weight: 600; }
+@media (max-width: 40rem) { .target-dummy { padding: 0.5rem 0.75rem 0.5rem 1.25rem; } }
+@media (pointer: coarse) { .target-dummy input[type=number] { min-height: 2.75rem; } .target-damage-types > summary { line-height: 2.75rem; } }

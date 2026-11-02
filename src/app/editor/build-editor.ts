@@ -1,6 +1,7 @@
 import { sameImportedInstance } from '../../core/build/imported-identity';
 import { editCandidateMods, pruneCandidateModsForSkill, type CandidateModEdit } from '../../core/build/candidate-mods';
 import { editExistingMods, type ExistingModEdit } from '../../core/build/existing-mods';
+import { setTargetCount, setTargetDamageTypePercent, type TargetPercentField } from '../../core/build/target';
 import type { AbilitySelection, BuildDocument, ItemInstance } from '../../core/build/document';
 import { validateBuildDocument } from '../../core/build/validation';
 import type { GameDataRepository } from '../../data/repository/repository';
@@ -11,6 +12,8 @@ export type BuildEdit =
   | CandidateModEdit
   | ExistingModEdit
   | { type: 'title'; title: string }
+  | { type: 'target-count'; count: number }
+  | { type: 'target-damage-type'; damageType: string; field: TargetPercentField; value: number | null }
   | { type: 'equipment-equip'; slot: string; itemId: string; index: number | null }
   | { type: 'equipment-import'; slot: string; instance: ItemInstance; index: number | null }
   | { type: 'equipment-clear'; index: number }
@@ -86,6 +89,11 @@ export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataR
     }
     const next = { ...build, equipment };
     return edit.type === 'equipment-import' && !validateBuildDocument(next).ok ? build : next;
+  }
+  if (edit.type === 'target-count' || edit.type === 'target-damage-type') {
+    const target = edit.type === 'target-count' ? setTargetCount(build.target, edit.count)
+      : setTargetDamageTypePercent(build.target, edit.damageType, edit.field, edit.value);
+    return target === build.target ? build : { ...build, target };
   }
   if (edit.type === 'title') {
     const title = edit.title.trim();
