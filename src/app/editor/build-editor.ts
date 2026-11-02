@@ -1,5 +1,6 @@
 import { editCandidateMods, pruneCandidateModsForSkill, type CandidateModEdit } from '../../core/build/candidate-mods';
-import type { AbilitySelection, BuildDocument } from '../../core/build/document';
+import type { AbilitySelection, BuildDocument, ItemInstance } from '../../core/build/document';
+import { validateBuildDocument } from '../../core/build/validation';
 import type { GameDataRepository } from '../../data/repository/repository';
 
 export const COMBAT_BAR_SIZE = 6;
@@ -8,6 +9,7 @@ export type BuildEdit =
   | CandidateModEdit
   | { type: 'title'; title: string }
   | { type: 'equipment-equip'; slot: string; itemId: string; index: number | null }
+  | { type: 'equipment-import'; slot: string; instance: ItemInstance; index: number | null }
   | { type: 'equipment-clear'; index: number }
   | { type: 'equipment-resolve-offhand'; keepIndex: number }
   | { type: 'skill'; slot: Slot; skillId: string | null }
@@ -45,26 +47,31 @@ export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataR
     if (!Number.isInteger(edit.index) || !build.equipment[edit.index]) return build;
     return { ...build, equipment: build.equipment.filter((_, index) => index !== edit.index) };
   }
-  if (edit.type === 'equipment-equip') {
-    const item = data.getItem(edit.itemId);
-    if (!item || item.slot !== edit.slot) return build;
+  if (edit.type === 'equipment-equip' || edit.type === 'equipment-import') {
+    const item = edit.type === 'equipment-equip' ? data.getItem(edit.itemId) : undefined;
+    if (edit.type === 'equipment-equip' && (!item || item.slot !== edit.slot)) return build;
+    if (!edit.slot.trim()) return build;
+    const selected = edit.type === 'equipment-import'
+      ? { kind: 'imported' as const, instance: structuredClone(edit.instance) }
+      : { kind: 'database' as const, itemId: edit.itemId };
     const equipment = [...build.equipment];
-    const offhand = isOffhandSlot(item.slot);
+    const offhand = isOffhandSlot(edit.slot);
     // Restored conflicts remain untouched until explicitly resolved. Even a
     // direct edit cannot add or replace an occupant while multiple entries exist.
     if (offhand && equipment.filter(selection => isOffhandSlot(selection.slot)).length > 1) return build;
     if (edit.index === null) {
       // New selections cannot accidentally replace a saved/manual selection.
       if (equipment.some(selection => offhand ? isOffhandSlot(selection.slot) : selection.slot === edit.slot)) return build;
-      equipment.push({ slot: item.slot, item: { kind: 'database', itemId: item.id }, candidateMods: [], sparks: { mode: 'none' } });
+      equipment.push({ slot: edit.slot, item: selected, candidateMods: [], sparks: { mode: 'none' } });
     } else {
       const previous = equipment[edit.index];
       if (!Number.isInteger(edit.index) || !previous || (offhand ? !isOffhandSlot(previous.slot) : previous.slot !== edit.slot)) return build;
-      if (previous.slot === item.slot && previous.item.kind === 'database' && previous.item.itemId === item.id) return build;
+      if (edit.type === 'equipment-equip' && previous.slot === edit.slot && previous.item.kind === 'database' && previous.item.itemId === edit.itemId) return build;
       // Replace the definition and canonical slot; staged mods/Sparks survive.
-      equipment[edit.index] = { ...previous, slot: item.slot, item: { kind: 'database', itemId: item.id } };
+      equipment[edit.index] = { ...previous, slot: edit.slot, item: selected };
     }
-    return { ...build, equipment };
+    const next = { ...build, equipment };
+    return edit.type === 'equipment-import' && !validateBuildDocument(next).ok ? build : next;
   }
   if (edit.type === 'title') {
     const title = edit.title.trim();
