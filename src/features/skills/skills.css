@@ -1,1 +1,1 @@
-.planner-main .apply-imported-level { grid-column: 2 / -1; justify-self: end; min-height: 1.75rem; padding: 0.1rem 0.4rem; font-size: 0.75rem; color: var(--color-accent); }
+.planner-main .apply-imported-level { grid-column: 2 / -1; justify-self: end; min-height: 1.75rem; padding: 0.1rem 0.5rem; font-size: 0.75rem; color: #4ade80; background: transparent; border-color: #22c55e59; }

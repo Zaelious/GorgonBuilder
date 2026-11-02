@@ -61,8 +61,9 @@ it('shows Brambleskin 13 facts, effects and an always-visible Relevant Mods sect
   expect(control('.ability-effects').textContent).toContain('Melee Damagers Suffer 310 Nature damage');
   expect(control('.ability-effects').textContent).not.toMatch(/DelayedDamage|BuffActivated|per tick/u);
   expect(control('.technical-records').textContent).toContain('SpecialRules DelayedDamage');
-  // Relevant Mods sits directly after the primary stats.
-  expect(control('.ability-stats').nextElementSibling!.classList.contains('relevant-mods')).toBe(true);
+  // One column (T0022-F2): stats, then the ability's own effects, then Relevant Mods.
+  expect(control('.ability-stats').nextElementSibling!.classList.contains('ability-effects')).toBe(true);
+  expect(control('.ability-effects').nextElementSibling!.classList.contains('relevant-mods')).toBe(true);
   const section = control('.relevant-mods');
   expect(section.closest('details')).toBeNull();
   expect(section.querySelector('h4')!.textContent).toBe('Relevant Mods');
@@ -72,8 +73,15 @@ it('shows Brambleskin 13 facts, effects and an always-visible Relevant Mods sect
     'Brambleskin deals +44% damage to melee attackers', 'Brambleskin deals +44% damage to melee attackers',
     'Brambleskin increases your Max Armor by +153 for 30 seconds and restores 153 Armor']);
   expect(rows().every(row => row.querySelector('img.effect-icon')!.getAttribute('src') === 'https://cdn.projectgorgon.com/v490/icons/icon_3483.png')).toBe(true);
-  expect(rows()[0]!.querySelector('.relevant-source')!.textContent).toBe('Head · ◇ imported');
-  expect(rows()[1]!.querySelector('.relevant-source')!.textContent).toBe('Chest');
+  // Provenance is not repeated beside each effect; it is listed in the same order inside Technical details.
+  expect(section.querySelector('.relevant-source')).toBeNull();
+  expect(rows().map(row => [row.dataset.sourceSlot, row.dataset.sourceKind])).toEqual([['Head', 'imported'], ['Chest', 'planned'], ['Chest', 'planned']]);
+  const sources = [...container.querySelectorAll<HTMLElement>('.ability-popover .technical-details .relevant-mod-sources li')];
+  expect(sources.map(source => source.querySelector('.relevant-source')!.textContent)).toEqual(['Head · ◇ imported', 'Chest', 'Chest']);
+  expect(sources[0]!.textContent).toContain('Imported existing power');
+  expect(sources[1]!.textContent).toContain('Planned mod');
+  expect(sources[1]!.textContent).toContain('power_14159 / id_25');
+  rows().forEach((row, index) => expect(document.getElementById(row.getAttribute('aria-describedby')!)).toBe(sources[index]));
   // Excluded: unrelated Druid indirect poison, skill-wide Druid base damage, unresolved saved IDs (retained).
   expect(section.textContent).not.toMatch(/Indirect Poison|Druid Skill Base Damage/u);
   await tick(); expect(JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY) ?? JSON.stringify(build))).toEqual(build);
@@ -118,9 +126,10 @@ it('shows Acid Arrow Damage +110% from MainHand under Acid Arrow 13 immediately,
   await open();
   expect(control('.ability-popover h3').textContent).toBe('Acid Arrow 13');
   const stats = Object.fromEntries([...container.querySelectorAll('.ability-stats > div')].map(row => [row.querySelector('dt')!.textContent, row.querySelector('dd')!.textContent]));
-  expect(stats).toMatchObject({ 'Min level': '125', 'Power cost': '70', Reuse: '10s', Range: '30', Damage: '529 Acid', 'Armor damage': '529 Acid' });
-  expect(rows().map(row => [row.querySelector('.relevant-effect')!.textContent, row.querySelector('.relevant-source')!.textContent, row.dataset.powerId, row.dataset.tierId]))
+  expect(stats).toMatchObject({ 'Min level': '125', 'Power cost': '70', 'Reuse time': '10s', Range: '30', Damage: '529 Acid', 'Armor damage': '529 Acid' });
+  expect(rows().map(row => [row.querySelector('.relevant-effect')!.textContent, row.dataset.sourceSlot, row.dataset.powerId, row.dataset.tierId]))
     .toEqual([['Acid Arrow Damage +110%', 'MainHand', 'power_10302', 'id_25']]);
+  expect(control('.ability-popover .relevant-mod-sources').textContent).toContain('MainHand · Marvelous Military Sword · Planned mod · power_10302 / id_25');
   expect(control('.ability-stats').nextElementSibling!.classList.contains('relevant-mods')).toBe(true);
   // Zero-value conditional DoTs are not shown as damage; exact values remain in Technical details.
   expect(container.querySelector('.ability-popover .ability-effects')).toBeNull();
@@ -137,4 +146,25 @@ it('shows Acid Arrow Damage +110% from MainHand under Acid Arrow 13 immediately,
   expect(rows()).toHaveLength(0);
   expect(control('.relevant-mods').textContent).toContain('No ability-specific equipped mods identified.');
   await tick(); expect(JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)!).equipment[0].candidateMods).toEqual([]);
+});
+
+it('T0022-F2: Chew Cud 10 keeps every full mod description once per source, hides empty Nothingness damage, keeps provenance on demand', async () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  build.skillSlotA = { skillId: 'Cow', level: 125 };
+  build.abilityBarA = [{ abilityId: 'ability_6159', rank: data.getAbility('ability_6159')!.rank }];
+  const imported = (slot: string, baseItemId: string, powerId: string) => ({ slot, item: { kind: 'imported' as const, instance: { baseItemId, existingPowers: [{ powerId, tierId: 'id_9' }] } }, candidateMods: [], sparks: { mode: 'none' as const } });
+  build.equipment = [imported('Chest', 'item_42100', 'power_20065'), imported('Hands', 'item_43092', 'power_20062'), imported('Feet', 'item_40031', 'power_20062'),
+    imported('Ring', 'item_49071', 'power_20065'), imported('Necklace', 'item_48082', 'power_20067'),
+    { slot: 'Head', item: { kind: 'database', itemId: 'item_44032' }, candidateMods: [{ powerId: 'power_20066', tierId: 'id_9' }], sparks: { mode: 'none' } }];
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build)); await render(); await inspect();
+  expect(control('.ability-popover h3').textContent).toBe('Chew Cud 10');
+  const effects = rows().map(row => row.querySelector('.relevant-effect')!.textContent!);
+  const official = (powerId: string) => data.getTreasureTier(powerId, 'id_9')!.effectDescriptions.map(text => text.replace(/<icon=\d+>/gu, '')).join('');
+  expect(effects).toEqual(['power_20065', 'power_20062', 'power_20062', 'power_20065', 'power_20067', 'power_20066'].map(official));
+  expect(effects.every(text => text.startsWith('Chew Cud '))).toBe(true);
+  expect(control('.relevant-mods').querySelector('.relevant-source')).toBeNull();
+  expect(container.querySelectorAll('.ability-popover .relevant-mod-sources li')).toHaveLength(6);
+  const stats = [...container.querySelectorAll('.ability-popover .ability-stats dt')].map(term => term.textContent);
+  expect(stats).toEqual(['Power cost', 'Reuse time', 'Range', 'Min level']);
+  expect(control('.ability-popover .technical-details .non-damaging-note').textContent).toContain('Nothingness');
 });

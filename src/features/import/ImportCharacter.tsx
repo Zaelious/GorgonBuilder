@@ -85,6 +85,6 @@ function ImportDialog({ data, session, onApply, onClose, opener }: { data: GameD
 export function ImportCharacter({ data, session, onApply }: { data: GameDataRepository; session: ImportSession | null; onApply: (session: ImportSession) => void }) {
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
-  return <><button ref={button} type="button" onClick={() => setOpen(true)}>Import Character</button>
+  return <><button ref={button} type="button" className="import-character" onClick={() => setOpen(true)}><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15V4m0 0L7.5 8.5M12 4l4.5 4.5M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" /></svg>Import Character</button>
     {open && <ImportDialog data={data} session={session} onApply={onApply} onClose={() => setOpen(false)} opener={button.current} />}</>;
 }

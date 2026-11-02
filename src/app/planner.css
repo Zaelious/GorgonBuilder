@@ -1,126 +1,159 @@
-.app-shell > .site-header { padding-block: 0.625rem; }
-.planner-main { padding-block: 0.75rem 1rem; }
+/* Planner layout and shared controls — T0022 neutral charcoal design. */
+.planner-main { padding-block: 0.875rem 1rem; }
 .planner-heading, .section-heading, .dialog-heading, .detail-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
-.planner-heading { flex-wrap: wrap; gap: 0.5rem; }
-.planner-heading > .build-title { min-width: 0; flex: 1 1 10rem; max-width: none; }
-.planner-heading h1 { font-size: 1.5rem; line-height: 1.2; margin: 0; }
-.save-status { color: var(--color-accent); font-size: 0.75rem; white-space: nowrap; }
-.skills-section { width: 100%; margin-top: 0.75rem; border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); }
-.section-heading { padding: 0.375rem 0.75rem; border-bottom: 1px solid var(--color-border); min-height: 2.5rem; }
-.section-heading h2 { font-family: var(--font-heading); font-weight: 400; font-size: 1.1rem; line-height: 1.4; }
-.planner-grid { display: grid; }
-.skill-panel { display: grid; grid-template-columns: 22rem max-content; align-items: center; gap: 0.5rem 1rem; padding: 1rem 0.75rem; min-width: 0; }
-.skill-panel + .skill-panel { border-top: 1px solid var(--color-border); }
-.skill-panel > .warning { grid-column: 1 / -1; }
-.skill-controls { border: 0; margin: 0; padding: 0; min-width: 0; }
-.skill-inputs { display: grid; grid-template-columns: 3.1rem minmax(0, 1fr) auto; align-items: center; gap: 0.5rem; }
-.skill-level { display: flex; align-items: center; gap: 0.25rem; }
-.planner-main .skill-level input { width: 5rem; padding-inline: 0.45rem 0.25rem; font-variant-numeric: tabular-nums; }
-.planner-main label, .ability-picker label { display: block; color: var(--color-muted); font-size: 0.8rem; margin-bottom: 0.25rem; }
-.planner-main .skill-inputs > label, .skill-level > label { margin: 0; }
-.planner-main input, .planner-main select, .planner-main button { font: inherit; color: var(--color-text); background: var(--color-background); border: 1px solid var(--color-border); border-radius: 0.3rem; padding: 0.5rem 0.65rem; min-height: 2.75rem; }
+.planner-heading { flex-wrap: wrap; gap: 0.5rem 1rem; }
+.planner-heading > .build-title { min-width: 0; flex: 1 1 12rem; max-width: none; }
+.planner-heading h1 { font-size: 1.375rem; line-height: 1.25; margin: 0; }
+.planner-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.5rem; }
+.save-status { color: var(--color-secondary); font-size: 0.8125rem; white-space: nowrap; }
+
+/* Controls: 38px inputs, 36px buttons, 6px radii; 44px targets on coarse pointers. */
+.planner-main label, .ability-picker label { display: block; color: var(--color-secondary); font-size: 0.8125rem; margin-bottom: 0.25rem; }
+.planner-main input, .planner-main select, .planner-main button { font: inherit; color: var(--color-text); background: var(--color-input); border: 1px solid var(--color-border-strong); border-radius: var(--radius-control); padding: 0.4375rem 0.65rem; min-height: 2.375rem; }
+.planner-main button { min-height: 2.25rem; padding-block: 0.375rem; cursor: pointer; background: var(--color-surface); transition: background-color 120ms, border-color 120ms, color 120ms; }
 .planner-main input, .planner-main select { width: 100%; min-width: 0; }
-.planner-main button { cursor: pointer; }
-.planner-main button:hover:enabled { background-color: #354038; border-color: var(--color-accent); }
+.planner-main input::placeholder { color: var(--color-muted); }
+.planner-main select { cursor: pointer; }
+.planner-main button:hover:enabled { background-color: var(--color-hover); border-color: #4a4a4a; }
+.planner-main input:hover:enabled, .planner-main select:hover:enabled { border-color: #444444; }
 .planner-main :disabled { opacity: 0.5; cursor: default; }
-.planner-main :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+.planner-main :focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.planner-main input[type=checkbox] { accent-color: var(--color-positive); }
+.planner-main button > svg { width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
+.planner-main .import-character, .planner-main .save-draft { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 500; }
+.planner-main .import-character { background: transparent; border-color: #4a4a4a; }
+.planner-main .save-draft { padding-inline: 1rem; color: #04130a; background: var(--color-positive); border-color: var(--color-positive); font-weight: 600; }
+.planner-main .save-draft:hover:enabled { background: #34d36d; border-color: #34d36d; }
+.planner-main .clear-build { background: transparent; border-color: transparent; color: var(--color-secondary); }
+.planner-main .clear-build:hover:enabled { background: #ef44441a; border-color: #ef444466; color: #fca5a5; }
+
+/* Panels */
+.skills-section { width: 100%; margin-top: 0.875rem; border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); }
+.section-heading { padding: 0.375rem 1rem; border-bottom: 1px solid var(--color-border); min-height: 2.75rem; }
+.section-heading h2 { display: flex; align-items: center; gap: 0.625rem; font-family: var(--font-heading); font-weight: 600; font-size: 1.0625rem; line-height: 1.4; }
+.section-icon { width: 1.25rem; height: 1.25rem; flex-shrink: 0; color: var(--color-secondary); }
+
+/* Skill rows with Skill A blue / Skill B amber guides. */
+.planner-grid { display: grid; }
+.skill-panel { --skill-accent: var(--color-skill-a); position: relative; display: grid; grid-template-columns: 22rem max-content; align-items: center; gap: 0.5rem 1.25rem; padding: 0.875rem 1rem 0.875rem 1.5rem; min-width: 0; }
+.skill-panel-B { --skill-accent: var(--color-skill-b); }
+.skill-panel::before { content: ''; position: absolute; left: 0.75rem; top: 0.875rem; bottom: 0.875rem; width: 3px; border-radius: 2px; background: var(--skill-accent); }
+.skill-panel + .skill-panel { border-top: 1px solid var(--color-border); }
+.skill-panel > .warning, .skill-panel > .muted { grid-column: 1 / -1; }
+.skill-controls { border: 0; margin: 0; padding: 0; min-width: 0; }
+.skill-inputs { display: grid; grid-template-columns: 3.75rem minmax(0, 1fr) auto; align-items: center; gap: 0.5rem; }
+.planner-main .skill-slot-label { color: var(--skill-accent); font-size: 0.9375rem; font-weight: 600; }
+.skill-level { display: flex; align-items: center; gap: 0.375rem; }
+.planner-main .skill-level input { width: 5rem; padding-inline: 0.55rem 0.25rem; font-variant-numeric: tabular-nums; }
+.planner-main .skill-inputs > label, .skill-level > label { margin: 0; }
 .planner-help { position: relative; }
-.planner-help > summary { display: flex; align-items: center; justify-content: center; min-width: 2.25rem; min-height: 2.25rem; border-radius: 0.3rem; color: var(--color-muted); cursor: pointer; list-style: none; }
+.planner-help > summary { display: flex; align-items: center; justify-content: center; min-width: 2.25rem; min-height: 2.25rem; border-radius: var(--radius-control); color: var(--color-secondary); cursor: pointer; list-style: none; }
 .planner-help > summary::-webkit-details-marker { display: none; }
-.planner-help > summary:hover { color: var(--color-accent); background: var(--color-background); }
-.planner-help-content { position: absolute; z-index: 5; top: calc(100% + 0.35rem); right: 0; width: min(19rem, calc(100vw - 3rem)); padding: 0.75rem; border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-background); box-shadow: 0 6px 20px #0006; }
-.planner-help-content { font-size: 0.85rem; line-height: 1.5; }
-.muted, .ability-description { color: var(--color-muted); font-size: 0.875rem; }
+.planner-help > summary:hover { color: var(--color-text); background: var(--color-hover); }
+.planner-help-content { position: absolute; z-index: 5; top: calc(100% + 0.35rem); right: 0; width: min(19rem, calc(100vw - 3rem)); padding: 0.75rem; border: 1px solid var(--color-border-strong); border-radius: var(--radius); background: var(--color-surface); box-shadow: var(--shadow-float); font-size: 0.8125rem; line-height: 1.5; }
+.muted, .ability-description { color: var(--color-secondary); font-size: 0.8125rem; }
 .ability-description, .special-text { white-space: pre-wrap; overflow-wrap: anywhere; }
-.ability-meta { font-size: 0.8rem; color: var(--color-accent); margin-block: 0.35rem; }
-.warning { color: #f2c588; font-size: 0.8rem; overflow-wrap: anywhere; }
-.empty-state { padding: var(--space-2); color: var(--color-muted); border: 1px dashed var(--color-border); border-radius: var(--radius); margin-top: var(--space-2); }
-.ability-bar { min-width: 0; display: grid; grid-template-columns: max-content 3rem; gap: 0.5rem; align-items: center; justify-content: start; }
-.combat-slots { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(6, 3rem); gap: 0.25rem; }
+.ability-meta { font-size: 0.8rem; color: var(--color-secondary); margin-block: 0.35rem; }
+.warning { color: var(--color-warning); font-size: 0.8125rem; overflow-wrap: anywhere; }
+.empty-state { padding: var(--space-2); color: var(--color-secondary); border: 1px dashed var(--color-border-strong); border-radius: var(--radius); margin-top: var(--space-2); }
+
+/* Ability bars: ~52px tiles, quiet empty slots, green + picker. */
+.ability-bar { min-width: 0; display: grid; grid-template-columns: max-content 2.75rem; gap: 0.625rem; align-items: center; justify-content: start; }
+.combat-slots { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(6, 3.25rem); gap: 0.5rem; }
 .combat-slot { min-width: 0; }
-.planner-main .slot-button { width: 100%; aspect-ratio: 1; min-height: 0; display: block; position: relative; padding: 0; border: 1px solid #667568; border-radius: 0.4rem; }
+.planner-main .slot-button { width: 100%; aspect-ratio: 1; min-height: 0; display: block; position: relative; padding: 0; background: var(--color-empty); border: 1px solid var(--skill-accent, var(--color-border-strong)); border-radius: var(--radius-control); box-shadow: 0 0 0 1px #00000066 inset; }
+.planner-main .slot-button:hover:enabled { background: var(--color-empty); border-color: var(--skill-accent, #4a4a4a); box-shadow: 0 0 0 1px var(--skill-accent, #4a4a4a); }
 .ability-icon { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
-.icon-fallback { display: flex; align-items: center; justify-content: center; font-family: var(--font-heading); font-size: 1.7rem; color: var(--color-muted); background: #2b3630; }
-.planner-main .empty-slot { border: 1px dashed #5b695e; color: var(--color-muted); font-size: 1.4rem; }
-.slot-number { position: absolute; bottom: 1px; right: 3px; background: #101714db; border-radius: 3px; padding-inline: 0.2rem; color: var(--color-text); font-size: 0.65rem; line-height: 1.4; }
-.slot-warning { position: absolute; top: -0.4rem; right: -0.4rem; border-radius: 50%; padding-inline: 0.45rem; color: #161a16; background: #f2c588; font-size: 0.75rem; font-weight: 700; }
-.planner-main .open-picker { width: 3rem; min-height: 3rem; padding: 0; font-size: 1.25rem; color: var(--color-accent); border-color: var(--color-accent); }
-.bar-message { grid-column: 1 / -1; margin-top: var(--space-1); }
-.legacy-slot .slot-button { border-color: #f2c588; }
-.ability-picker { width: min(48rem, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); padding: 0; color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); }
-.ability-picker::backdrop { background: #080d0bd9; }
-.picker-content { padding: var(--space-3); }
-.dialog-heading { margin-bottom: var(--space-2); }
-.dialog-heading h2 { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 400; }
+.icon-fallback { display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--color-muted); background: var(--color-empty); }
+.planner-main .empty-slot { border: 1px solid var(--color-border); box-shadow: none; color: transparent; font-size: 1.3rem; }
+.planner-main .empty-slot:hover:enabled, .planner-main .empty-slot:focus-visible { color: var(--color-positive); border-color: #3f3f3f; box-shadow: none; }
+.planner-main .empty-slot .slot-number { background: transparent; color: #5c5c5c; }
+.slot-number { position: absolute; bottom: 1px; right: 3px; background: #0f0f0fd9; border-radius: 3px; padding-inline: 0.2rem; color: var(--color-text); font-size: 0.65rem; line-height: 1.4; }
+.slot-warning { position: absolute; top: -0.4rem; right: -0.4rem; border-radius: 50%; padding-inline: 0.45rem; color: #161616; background: var(--color-warning); font-size: 0.75rem; font-weight: 700; }
+.planner-main .open-picker { width: 2.75rem; min-height: 2.75rem; padding: 0; font-size: 1.75rem; font-weight: 300; line-height: 1; color: var(--color-positive); background: transparent; border-color: transparent; }
+.planner-main .open-picker:hover:enabled { color: #4ade80; background: #22c55e14; border-color: #22c55e40; }
+/* Spanning messages must not widen the max-content slot track (mobile overflow); they fill the bar's width instead. */
+.bar-message { grid-column: 1 / -1; width: 0; min-width: 100%; margin-top: var(--space-1); }
+.planner-main .legacy-slot .slot-button { border-color: var(--color-warning); }
+
+/* Dialogs (ability picker, equipment picker / My Items, import). */
+.ability-picker { width: min(48rem, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); padding: 0; color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: var(--radius); box-shadow: var(--shadow-float); font-size: 0.9375rem; }
+.ability-picker::backdrop { background: #000000c2; }
+.picker-content { padding: 1.25rem 1.5rem 1.5rem; }
+.dialog-heading { margin-bottom: var(--space-2); padding-bottom: 0.75rem; border-bottom: 1px solid var(--color-border); }
+.dialog-heading h2 { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
 .dialog-heading > button, .detail-heading > button { flex-shrink: 0; font-size: 1.25rem; }
+.planner-main .dialog-heading > button { min-width: 2.25rem; padding: 0; background: transparent; border-color: transparent; color: var(--color-secondary); }
+.planner-main .dialog-heading > button:hover:enabled { color: var(--color-text); }
 .picker-help { margin-block: var(--space-1) var(--space-2); }
 .picker-results { display: grid; gap: var(--space-1); }
-.family { position: relative; border: 1px solid var(--color-border); border-radius: var(--radius); }
+.family { position: relative; border: 1px solid var(--color-border); border-radius: var(--radius); background: #161616; }
 .family > details > summary { display: flex; align-items: center; gap: 0.65rem; min-height: 3.5rem; padding: 0.4rem 4rem 0.4rem 0.65rem; cursor: pointer; list-style: none; }
 .family > details > summary::after { content: '▾'; color: var(--color-muted); margin-left: auto; }
 .family > details[open] > summary::after { content: '▴'; }
 .family > details > summary::-webkit-details-marker { display: none; }
-.family > details > summary .ability-icon { flex: 0 0 2.25rem; width: 2.25rem; height: 2.25rem; border-radius: 0.3rem; }
+.family > details > summary .ability-icon { flex: 0 0 2.25rem; width: 2.25rem; height: 2.25rem; border-radius: var(--radius-control); }
 .family-title { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
-.family-title small { display: block; color: var(--color-muted); font-size: 0.75rem; font-weight: 400; }
-.planner-main .quick-add { position: absolute; top: 0.4rem; right: 0.65rem; color: var(--color-accent); border-color: var(--color-accent); font-size: 1.25rem; width: 2.75rem; padding: 0; }
+.family-title small { display: block; color: var(--color-secondary); font-size: 0.75rem; font-weight: 400; }
+.planner-main .quick-add { position: absolute; top: 0.4rem; right: 0.65rem; color: var(--color-positive); border-color: #22c55e66; background: transparent; font-size: 1.25rem; width: 2.75rem; min-height: 2.75rem; padding: 0; }
 .family-tiers { border-top: 1px solid var(--color-border); padding-inline: var(--space-2); }
 .tier { padding-block: 0.55rem; }
 .tier + .tier { border-top: 1px solid var(--color-border); }
 .tier-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 .tier-identity { min-width: 0; }
-.tier h3 { font-size: 0.85rem; line-height: 1.35; font-weight: 600; }
-.tier-stats { color: var(--color-muted); font-size: 0.72rem; line-height: 1.4; margin-top: 0.2rem; }
+.tier h3 { font-size: 0.875rem; line-height: 1.35; font-weight: 600; }
+.tier-stats { color: var(--color-secondary); font-size: 0.75rem; line-height: 1.4; margin-top: 0.2rem; }
 .tier-controls { display: flex; flex-shrink: 0; gap: 0.3rem; }
-.planner-main .tier-controls button { min-height: 2rem; font-size: 0.75rem; padding: 0.25rem 0.45rem; }
-.planner-main .tier-add { border-color: var(--color-accent); }
-.tier .ability-facts { margin-top: 0.5rem; padding: 0.55rem; background: var(--color-background); border-radius: 0.3rem; }
-.ability-facts .ability-description { font-size: 0.8rem; line-height: 1.4; margin-block: 0.4rem 0.5rem; }
+.planner-main .tier-controls button { min-height: 2rem; font-size: 0.75rem; padding: 0.25rem 0.5rem; }
+.planner-main .tier-add { border-color: #22c55e66; color: #4ade80; }
+.tier .ability-facts { margin-top: 0.5rem; padding: 0.6rem 0.75rem; background: var(--color-input); border: 1px solid var(--color-border); border-radius: var(--radius-control); }
+.ability-facts .ability-description { font-size: 0.8125rem; line-height: 1.45; margin-block: 0.4rem 0.5rem; }
 .base-stats { display: grid; gap: 0.15rem; margin: 0.5rem 0; font-size: 0.8rem; line-height: 1.35; }
 .base-stats > div { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.5rem; }
-.base-stats dt { color: var(--color-muted); }
+.base-stats dt { color: var(--color-secondary); }
 .base-stats dd { margin: 0; overflow-wrap: anywhere; }
-.special-text { font-size: 0.8rem; line-height: 1.4; margin-top: 0.4rem; }
-.official-id, .facts-provenance { margin-top: 0.4rem; color: var(--color-muted); font-size: 0.7rem; }
-.supplementary-facts summary, .full-description summary, .bar-edit-actions summary { cursor: pointer; width: fit-content; color: var(--color-muted); font-size: 0.75rem; line-height: 1.8; }
+.special-text { font-size: 0.8125rem; line-height: 1.45; margin-top: 0.4rem; }
+.official-id, .facts-provenance { margin-top: 0.4rem; color: var(--color-muted); font-size: 0.75rem; }
+.supplementary-facts summary, .full-description summary, .bar-edit-actions summary { cursor: pointer; width: fit-content; color: var(--color-secondary); font-size: 0.8125rem; line-height: 1.8; }
 .supplementary-facts[open] { margin-top: 0.4rem; }
 .supplementary-facts > p { font-size: 0.75rem; }
 .full-description[open] > p { margin-top: 0.4rem; }
-.ability-popover { position: fixed; inset: auto; margin: 0; max-height: calc(100dvh - 2rem); overflow-y: auto; color: var(--color-text); background: #1a2320; border: 1px solid var(--color-accent); border-radius: var(--radius); padding: 0.65rem; box-shadow: 0 10px 40px #0009; font-size: 0.8rem; line-height: 1.35; }
-.detail-heading { gap: 0.45rem; align-items: center; }
-.detail-heading h3 { font-family: var(--font-body); font-size: 1rem; line-height: 1.2; font-weight: 600; }
-.detail-heading > .ability-icon { width: 1.75rem; height: 1.75rem; flex-shrink: 0; border-radius: 0.25rem; }
-.detail-heading > div { flex: 1; min-width: 0; }
-.detail-rank { color: var(--color-muted); font-size: 0.7rem; }
-.planner-main .ability-popover button { min-height: 1.9rem; padding: 0.25rem 0.45rem; font-size: 0.75rem; }
-.planner-main .detail-heading > button { min-width: 1.75rem; min-height: 1.75rem; padding: 0; font-size: 1rem; }
-.detail-actions { margin-top: 0.5rem; display: flex; align-items: start; justify-content: space-between; gap: 0.35rem; }
-.bar-edit-actions > div { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
+
+.detail-actions { margin-top: 0.625rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.bar-edit-actions > div { display: flex; flex-wrap: wrap; gap: 0.35rem; padding: 0 0.75rem 0.625rem; }
+
 .build-title { max-width: 45rem; }
-.planner-main .title-button { display: inline-flex; align-items: center; gap: 0.4rem; max-width: 100%; min-height: 0; padding: 0; border-color: transparent; background: transparent; font-family: var(--font-heading); font-size: inherit; font-weight: inherit; line-height: inherit; text-align: left; }
+.planner-main .title-button { display: inline-flex; align-items: center; gap: 0.5rem; max-width: 100%; min-height: 0; padding: 0; border-color: transparent; background: transparent; font-family: var(--font-heading); font-size: inherit; font-weight: inherit; line-height: inherit; text-align: left; }
 .title-button > span { min-width: 0; overflow-wrap: anywhere; }
-.title-pencil { width: 0.875rem; height: 0.875rem; flex-shrink: 0; color: var(--color-muted); opacity: 0.65; }
-.title-button:hover .title-pencil { color: var(--color-accent); opacity: 1; }
-.planner-main .build-title input { font-family: var(--font-heading); font-size: inherit; line-height: inherit; padding: 0.1rem 0.3rem; }
-.title-help { font-size: 0.75rem; color: var(--color-muted); }
+.title-pencil { width: 1rem; height: 1rem; flex-shrink: 0; color: var(--color-secondary); opacity: 0.75; }
+.title-button:hover .title-pencil { color: var(--color-text); opacity: 1; }
+.planner-main .build-title input { font-family: var(--font-heading); font-size: inherit; font-weight: inherit; line-height: inherit; padding: 0.1rem 0.4rem; }
+.title-help { font-size: 0.75rem; color: var(--color-secondary); }
 .planner-footer { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); justify-content: space-between; padding-block: 0.75rem; color: var(--color-muted); font-size: 0.75rem; }
 .notice button { margin-top: var(--space-2); }
+.planner-main .notice.warning { border-color: #6b4a2a; background: #1c1712; color: var(--color-warning); }
+.planner-main .notice.warning p { color: #f3d3ae; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 @media (max-width: 50rem) {
-  .skill-panel { grid-template-columns: minmax(0, 1fr); gap: 0.625rem; padding: 0.75rem; }
+  .skill-panel { grid-template-columns: minmax(0, 1fr); gap: 0.625rem; padding: 0.75rem 0.75rem 0.75rem 1.25rem; }
+  .skill-panel::before { left: 0.5rem; top: 0.75rem; bottom: 0.75rem; }
   .skill-controls { max-width: 28rem; }
 }
 @media (max-width: 30rem) {
-  .section-heading, .skill-panel { padding: 0.5rem; }
+  .section-heading { padding: 0.5rem 0.75rem; }
+  .skill-panel { padding: 0.625rem 0.5rem 0.625rem 1rem; }
+  .skill-panel::before { left: 0.375rem; }
   .picker-content { padding: var(--space-2); }
   .ability-bar { grid-template-columns: max-content 2.75rem; gap: 0.25rem; }
   .combat-slots { grid-template-columns: repeat(6, 2.75rem); gap: 0.125rem; }
   .planner-main .open-picker { width: 2.75rem; min-height: 2.75rem; }
   .family > details > summary { gap: 0.6rem; padding-left: 0.5rem; }
+  .planner-heading { align-items: start; }
+  .planner-actions { justify-content: flex-start; }
 }
 @media (max-width: 23rem) {
   .combat-slots { grid-template-columns: repeat(3, 2.75rem); gap: 0.25rem; }
-  .skill-inputs { grid-template-columns: 2.75rem minmax(0, 1fr) auto; gap: 0.25rem; }
+  .skill-inputs { grid-template-columns: 3.25rem minmax(0, 1fr) auto; gap: 0.25rem; }
 }
 
 @media (pointer: coarse), (max-width: 30rem) {
@@ -133,42 +166,125 @@
 .ability-description:has(> .full-description[open]) > .description-preview { display: none; }
 
 @media (pointer: coarse) {
-  .skill-inputs { grid-template-columns: 2.75rem minmax(0, 1fr) auto; }
+  .planner-main input, .planner-main select, .planner-main button { min-height: 2.75rem; }
+  .planner-main .dialog-heading > button, .planner-main .ability-popover .detail-heading > button { min-width: 2.75rem; min-height: 2.75rem; }
+  .skill-inputs { grid-template-columns: 3.25rem minmax(0, 1fr) auto; }
   .planner-help > summary { min-width: 2.75rem; }
   .planner-help > summary, .planner-main .title-button { min-height: 2.75rem; }
 }
 
-.skill-change-notice p { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0; padding: 0.4rem 0.75rem; border-top: 1px solid var(--color-border); color: #f2c588; font-size: 0.8rem; }
-.planner-main .skill-change-notice button { min-height: 2rem; padding: 0.15rem 0.6rem; font-size: 0.8rem; }
-.planner-main .skill-change-notice .notice-dismiss { border-color: transparent; background: transparent; color: var(--color-muted); padding-inline: 0.4rem; }
+.skill-change-notice p { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0; padding: 0.4rem 1rem; border-top: 1px solid var(--color-border); color: var(--color-warning); font-size: 0.8125rem; }
+.planner-main .skill-change-notice button { min-height: 2rem; padding: 0.15rem 0.6rem; font-size: 0.8125rem; }
+.planner-main .skill-change-notice .notice-dismiss { border-color: transparent; background: transparent; color: var(--color-secondary); padding-inline: 0.4rem; }
 @media (pointer: coarse) { .planner-main .skill-change-notice button { min-height: 2.75rem; min-width: 2.75rem; } }
 
-/* Ability popover: always-visible effects and Relevant Mods. */
-.ability-effects { margin-top: 0.45rem; }
-.ability-effects h4, .relevant-mods h4 { margin: 0 0 0.2rem; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-.ability-effects h4 { color: var(--color-muted); }
+/* Ability popover: effects and Relevant Mods as simple lists (no nested callout). */
+.ability-effects { margin-top: 0.75rem; }
+.ability-effects h4, .relevant-mods h4 { margin: 0 0 0.25rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.ability-effects h4 { color: var(--color-secondary); }
 .ability-effects ul, .relevant-mods ul { list-style: none; margin: 0; padding: 0; }
-.ability-effects li { margin: 0.1rem 0; }
-.relevant-mods { margin-top: 0.6rem; padding: 0.4rem 0.5rem; border: 1px solid #5aa6ff66; border-left: 3px solid #5aa6ff; border-radius: 0.3rem; background: #1a5fc01f; }
-.relevant-mods h4 { color: #8cc4ff; }
-.relevant-mods li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; align-items: baseline; padding-block: 3px; font-size: 0.8rem; line-height: 1.4; }
-.relevant-mods li + li { border-top: 1px solid #5aa6ff33; }
+.ability-effects li { margin: 0.15rem 0; }
+.relevant-mods { margin-top: 0.75rem; }
+.relevant-mods h4 { color: var(--color-positive); }
+.relevant-mods li { padding-block: 0.25rem; font-size: 0.875rem; line-height: 1.45; }
 .relevant-effect { min-width: 0; overflow-wrap: break-word; color: var(--color-text); }
-.relevant-source { color: var(--color-muted); font-size: 10.5px; white-space: nowrap; }
-.relevant-mods .muted { font-size: 0.75rem; }
-.technical-details { margin-top: 0.4rem; }
+.relevant-source { color: var(--color-muted); font-size: 0.75rem; white-space: nowrap; }
+.relevant-mods .muted { font-size: 0.8125rem; }
+.technical-details { margin-top: 0.5rem; }
 
-/* Compact aligned primary stats (two pairs per row when the popover is wide enough). */
-.ability-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.1rem 1rem; margin: 0.45rem 0; font-size: 0.8rem; line-height: 1.4; }
-.ability-stats > div { display: grid; grid-template-columns: 6.25rem minmax(0, 1fr); gap: 0.4rem; }
-.ability-stats dt { color: var(--color-muted); }
-.ability-stats dd { margin: 0; overflow-wrap: anywhere; }
-.ability-popover .ability-description { font-size: 0.8rem; line-height: 1.4; margin-block: 0.35rem 0; }
-.ability-popover .relevant-mods { margin-top: 0.35rem; }
-.technical-records { margin: 0.2rem 0; padding-left: 1rem; font-size: 0.7rem; }
+/* Primary stats: one `Label: Value` per line. The ability picker's tier facts keep two columns for density. */
+.ability-stats { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.125rem; margin: 0.75rem 0; font-size: 0.875rem; line-height: 1.5; }
+.ability-stats > div { display: flex; flex-wrap: wrap; gap: 0 0.375rem; }
+.ability-stats dt { color: #b3b3b3; }
+.ability-stats dt::after { content: ':'; }
+.ability-stats dd { margin: 0; min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+.tier .ability-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.1rem 1rem; margin: 0.45rem 0; font-size: 0.8125rem; }
+.technical-records { margin: 0.2rem 0; padding-left: 1rem; font-size: 0.75rem; }
 .technical-records code { white-space: normal; overflow-wrap: anywhere; }
-@media (max-width: 26rem) { .ability-stats { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 26rem) { .tier .ability-stats { grid-template-columns: minmax(0, 1fr); } }
 .technical-details > summary { list-style: none; }
 .technical-details > summary::-webkit-details-marker { display: none; }
 .technical-details > summary::before { content: '▸'; margin-right: 0.3rem; }
 .technical-details[open] > summary::before { content: '▾'; }
+
+/* Popover disclosures (Technical details, Edit bar) as quiet bordered rows with a trailing chevron. */
+.ability-popover .bar-edit-actions > summary::-webkit-details-marker { display: none; }
+.ability-popover .technical-details > summary::before { content: none; }
+.ability-popover .technical-details > summary::after, .ability-popover .bar-edit-actions > summary::after { content: ''; width: 0.45rem; height: 0.45rem; margin: 0 0.2rem 0.2rem 0.75rem; border-right: 1.5px solid var(--color-secondary); border-bottom: 1.5px solid var(--color-secondary); transform: rotate(45deg); }
+.ability-popover .technical-details[open] > summary::after, .ability-popover .bar-edit-actions[open] > summary::after { margin-bottom: -0.2rem; transform: rotate(-135deg); }
+.ability-popover .technical-details > summary:hover, .ability-popover .bar-edit-actions > summary:hover { background: var(--color-hover); }
+.ability-popover .technical-details .official-id { margin-top: 0; }
+
+/* Damage-type colors: reserved for actual published damage values. */
+.damage-value { color: var(--damage-color, var(--color-text)); }
+.damage-acid { --damage-color: #c6e84a; }
+.damage-poison { --damage-color: #8bd450; }
+.damage-nature { --damage-color: #4fd17b; }
+.damage-fire { --damage-color: #ff8a4c; }
+.damage-cold { --damage-color: #7cc8ff; }
+.damage-electricity { --damage-color: #f5e05a; }
+.damage-psychic { --damage-color: #e283f5; }
+.damage-darkness { --damage-color: #a78bfa; }
+.damage-trauma { --damage-color: #f87171; }
+.damage-demonic { --damage-color: #fb7185; }
+.damage-regeneration { --damage-color: #6ee7b7; }
+.damage-crushing, .damage-slashing, .damage-piercing { --damage-color: #e5e5e5; }
+
+/* Last resort (content taller than the viewport, e.g. a phone): a full-height sheet whose title and close stay visible. */
+.ability-popover[data-fit='scroll'] > .detail-heading { position: sticky; top: calc(-1 * var(--pop-pad-y)); z-index: 1; margin: calc(-1 * var(--pop-pad-y)) calc(-1 * var(--pop-pad-x)) 0; padding: var(--pop-pad-y) var(--pop-pad-x) calc(var(--pop-pad-y) * 0.5); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+
+/* T0022-F2 ability tooltip: one narrow column (440 px desktop, ≤480 px; viewport-bounded on phones), dense through
+ * typography — 15px title, 30px icon, 13px facts, 12px mod effects, line-height ~1.25, 11px padding, 4–6px section
+ * gaps. Placement (popover-placement.ts): below, then above, then a narrow card beside the slot; never wider or split.
+ * Bounded internal scrolling is only a last resort for content taller than the available room. */
+.ability-popover {
+  --pop-pad-y: 0.6875rem;
+  --pop-pad-x: 0.75rem;
+  --pop-gap: 0.375rem;
+  position: fixed; inset: auto; margin: 0; max-height: calc(100dvh - 2rem); overflow-y: auto; overscroll-behavior: contain;
+  color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: 0.5rem;
+  padding: var(--pop-pad-y) var(--pop-pad-x); box-shadow: var(--shadow-float);
+  font-size: 0.8125rem; line-height: 1.28;
+}
+.detail-heading { gap: 0.5rem; align-items: center; }
+.detail-heading h3 { font-family: var(--font-body); font-size: 0.9375rem; line-height: 1.2; font-weight: 600; overflow-wrap: anywhere; }
+.detail-heading > .ability-icon { width: 1.875rem; height: 1.875rem; flex-shrink: 0; border-radius: 0.3125rem; border: 1px solid #00000080; }
+.detail-heading > div { flex: 1; min-width: 0; }
+.detail-rank { color: var(--color-muted); font-size: 0.6875rem; }
+.planner-main .ability-popover button { min-height: 1.75rem; padding: 0.125rem 0.5rem; font-size: 0.75rem; }
+.planner-main .ability-popover .detail-heading > button { min-width: 1.75rem; min-height: 1.75rem; padding: 0; font-size: 1.25rem; font-weight: 300; background: transparent; border-color: transparent; color: var(--color-secondary); }
+.planner-main .ability-popover .detail-heading > button:hover:enabled { color: var(--color-text); background: var(--color-hover); }
+.ability-popover .ability-facts > .ability-description { margin: var(--pop-gap) 0 0; padding-bottom: var(--pop-gap); border-bottom: 1px solid var(--color-border); color: #c7c7c7; font-size: 1em; line-height: 1.3; }
+.ability-popover .ability-stats { gap: 0; margin: var(--pop-gap) 0 0; font-size: 1em; line-height: 1.3; }
+.ability-popover .ability-effects { margin-top: 0.125rem; }
+.ability-popover .ability-effects h4 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.ability-popover .ability-effects li { margin: 0; line-height: 1.3; font-size: 1em; }
+.ability-popover .relevant-mods { margin-top: var(--pop-gap); padding-top: var(--pop-gap); border-top: 1px solid var(--color-border); }
+.ability-popover .relevant-mods h4 { margin: 0 0 0.125rem; font-size: 0.8125rem; line-height: 1.25; letter-spacing: 0; text-transform: none; }
+.ability-popover .relevant-mods li { padding-block: 0.0625rem; font-size: 0.75rem; line-height: 1.3; }
+.ability-popover .relevant-mods li + li { margin-top: 0.125rem; }
+.ability-popover .relevant-mods .muted { font-size: 0.75rem; }
+.ability-popover .relevant-effect .effect-icon { width: 15px; height: 15px; vertical-align: -3px; }
+.ability-popover > .warning { margin-top: var(--pop-gap); font-size: 0.75rem; line-height: 1.3; }
+.ability-popover .technical-details, .ability-popover .bar-edit-actions { margin-top: var(--pop-gap); border: 1px solid var(--color-border-strong); border-radius: var(--radius-control); background: var(--color-input); }
+.ability-popover .technical-details > summary, .ability-popover .bar-edit-actions > summary { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 1.75rem; padding: 0.0625rem 0.625rem; color: var(--color-text); font-size: 0.75rem; line-height: 1.3; list-style: none; }
+.ability-popover .technical-details > :not(summary) { margin-inline: 0.625rem; font-size: 0.6875rem; line-height: 1.35; }
+.ability-popover .technical-details[open] { padding-bottom: 0.5rem; }
+.ability-popover .technical-details .technical-records { font-size: 0.6875rem; }
+.ability-popover .relevant-mod-sources { margin-bottom: 0.375rem; padding-bottom: 0.375rem; border-bottom: 1px solid var(--color-border); }
+.ability-popover .relevant-mod-sources ol { margin: 0.125rem 0 0; padding-left: 1.25rem; }
+.ability-popover .relevant-mod-sources li { overflow-wrap: anywhere; }
+.ability-popover .relevant-mod-sources .relevant-source { color: var(--color-text); font-size: inherit; white-space: normal; }
+.ability-popover .detail-actions { margin-top: var(--pop-gap); gap: 0.25rem; }
+.ability-popover .detail-actions .bar-edit-actions { margin-top: 0; }
+.ability-popover .bar-edit-actions > div { padding: 0 0.625rem 0.375rem; gap: 0.25rem; }
+.planner-main .ability-popover .remove-ability { align-self: flex-end; margin: 0; color: var(--color-danger); background: transparent; border-color: transparent; font-weight: 500; }
+.planner-main .ability-popover .remove-ability::before { content: '×'; margin-right: 0.3rem; font-size: 1.1em; }
+.planner-main .ability-popover .remove-ability:hover:enabled { color: #f87171; background: #ef44441a; border-color: transparent; }
+.ability-popover .detail-actions::before { content: ''; order: 1; border-top: 1px solid var(--color-border); }
+.ability-popover .bar-edit-actions { order: 0; }
+.ability-popover .remove-ability { order: 2; }
+@media (pointer: coarse) {
+  .planner-main .ability-popover button, .planner-main .ability-popover .detail-heading > button { min-height: 2.75rem; min-width: 2.75rem; }
+  .ability-popover .technical-details > summary, .ability-popover .bar-edit-actions > summary { min-height: 2.75rem; }
+}

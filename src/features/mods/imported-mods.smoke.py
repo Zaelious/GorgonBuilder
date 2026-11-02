@@ -84,9 +84,9 @@ def main():
                         cow = [chip for chip in chips if chip['text'] == 'Cow']
                         unarmed = [chip for chip in chips if chip['text'] == 'Unarmed']
                         assert len(cow) == 4 and len(unarmed) == 3
-                        assert len(set(chip['bg'] for chip in cow)) == 1 and cow[0]['bg'] == 'rgb(26, 95, 192)'
+                        assert len(set(chip['bg'] for chip in cow)) == 1 and cow[0]['bg'] == 'rgb(29, 78, 216)'
                         assert all(chip['border'] == 'solid' and chip['tone'] == 'skill-a' for chip in cow)
-                        assert all(chip['bg'] == 'rgb(242, 194, 48)' and chip['tone'] == 'skill-b' for chip in unarmed)
+                        assert all(chip['bg'] == 'rgb(234, 179, 8)' and chip['tone'] == 'skill-b' for chip in unarmed)
                         ids = editor.locator('[data-selected-power-id]').evaluate_all('es => es.map(e=>e.dataset.selectedPowerId)')
                         assert scope.locator('.item-stats [data-power-id]').evaluate_all('es => es.map(e=>e.dataset.powerId)') == ids
                         assert editor.evaluate('(e) => e.scrollWidth <= e.clientWidth + 1')

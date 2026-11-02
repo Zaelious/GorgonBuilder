@@ -1404,3 +1404,49 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 5. Test title, import, working local Save, autosave/retry, Clear cancel/confirm, refresh and protected/read-only warnings.
 6. Check 1440×900, 1920×1080, 375×812 and 320×812 plus keyboard/tab/touch behavior; run full quality suite.
 
+## T0022-F2 — Compact, Single-Column Ability Tooltip (PR #31 Correction)
+
+**Status:** Product-owner correction requested 2026-11-02; **not implemented**. Do this on the **existing PR #31 / existing branch `claude/great-feynman-4occf5`**. Do not start a different ticket, branch or PR; do not merge before screenshot approval.
+
+**Complexity:** Standard, focused presentation-only correction
+
+**Verification:** Real-browser screenshot comparison and customer acceptance required
+
+**Problem:** The T0022-F1 “fit without scroll” correction made longer ability hover cards expand into a very wide two-column inspector (up to ~920px) covering unrelated portions of the application. The customer explicitly rejects this behavior. Their two screenshots show the desired direction: the **original narrow, vertically stacked tooltip** rather than the latest oversized split layout. The original issue was excessive type size, repeated provenance labels and vertical spacing, **not insufficient horizontal space**.
+
+**Goal:** Restore a predictable **small, anchored, single-column ability tooltip**. Make its actual text and spacing compact enough that typical desktop abilities, including Chew Cud 10 with six Relevant Mods, fit at normal desktop viewport heights without internal scrolling. Preserve all actual mod effects and ability operations.
+
+**Dependencies:** Open T0022 implementation PR #31; existing T0022-F1 changes, including `popover-placement.ts`, available for targeted replacement/simplification. Ask the product owner to attach the **two before/after screenshots from the 2026-11-02 feedback** to the implementation agent; this ticket is the authority if a prior F1 test contradicts it.
+
+**Allowed areas:** `src/features/abilities/{AbilityPlanner.tsx,AbilityFacts.tsx,RelevantMods.tsx,popover-placement.ts,popover-placement.test.ts}`, the ability-popover-specific rules of `src/app/planner.css`, focused ability UI tests, `src/app/visual-redesign.smoke.py`, `src/app/verification/T0022.md`, and documentation of this correction. Touch other files only if essential and explain why.
+
+**Do not touch:** layout or behavior outside the ability popup; Gorgon branding/artwork, skill/equipment editors, mod aggregation/eligibility, official data, import parsing/evidence, BuildDocument schema, Sparks, persistence, damage calculations, remote save or dependencies.
+
+**Requirements:**
+1. **Remove the F1 oversized-layout strategy.** Never switch the ordinary hover card into `expanded-columns`, a two-column facts/mods inspector or a nearly full-width desktop overlay. Its information order remains **header → description → short facts/effects → Relevant Mods → Technical details / Edit bar → Remove**, one column. Keep desktop width in a predictable approximate **400–460px range (hard ceiling 480px at normal zoom)** and mobile width bounded by the viewport. Do not increase width merely to avoid wrapping; do not use CSS `transform: scale(...)` or move the panel across the page in a way that disconnects it from the ability slot.
+2. **Make content genuinely dense, primarily through typography.** Aim for ~15–16px ability heading, ~28–32px icon, **12–13px body/stat/mod text** (12px preferred for long mod effects), line-height ~1.2–1.3, 10–12px outer padding, and ~4–8px section separation. Labels and values must remain distinguishable; keep real damage-type coloring and a compact green Relevant Mods heading. Small desktop disclosure controls are fine; keep adequate coarse-pointer targets (44px where appropriate). Do not go below ~11.5px at 100% zoom just to pass a screenshot.
+3. **Preserve exact mod descriptions.** Keep every Relevant Mod's full original visible wording, including leading ability names such as "Chew Cud increases..." and repeated ability names across separate mods. Do not shorten, rewrite, merge, deduplicate or omit any effect description. Preserve all conditions, numbers and original data; optimize density through typography and spacing instead.
+
+4. **Make provenance secondary.** Remove persistent per-row “Chest”, “Hands”, “imported” and similar source labels from the default compact list: they consume width and are not needed to understand the ability effect. **Retain exact slot, item name, imported/planned status, power/tier identifiers and matching evidence** for each mod, discoverable in the existing Technical details disclosure or another keyboard-accessible, lightweight reveal. Do not rely solely on hover-only HTML `title` for accessibility; do not strip original source metadata from data attributes or records.
+5. **Avoid irrelevant facts:** When an ability like Chew Cud has no published damage and its damage type is a non-damaging sentinel, the default compact presentation should prioritize its healing/special effects instead of a prominent “Damage: Not published · Nothingness” line. Preserve truthful missing-data context in Technical details; never hide a meaningful published damage or unsupported/conditional warning.
+6. **Position simply.** Prefer below the trigger, then above; adjust horizontal alignment only enough to stay inside the viewport. If neither has room, a narrow left/right placement is permissible but **never grow the card or switch to columns**. Preserve 150ms hover handoff, click pin, focus/keyboard, Escape and focus return, viewport collision handling and dynamic recalculation when disclosures expand.
+7. **Scrolling:** At normal desktop zoom, the **default collapsed tooltip** for Chew Cud 10 with six relevant equipment mods and for Acid Arrow 13 should show **all normal information and controls with no internal scrollbar** at 1920×1080, 1440×900 and 1366×768. No hidden, clipped or truncated effect text. For genuinely unbounded mod lists, expanded Technical details or very small/touch screens, use a **bounded, accessible last-resort overflow** rather than illegible microtext or a huge sideways panel. Do not claim that arbitrary content can always fit without scrolling.
+
+**Non-goals:** New mod calculations or summaries, combining repeated mods, changing the wording of mod descriptions, changing item provenance or gameplay, a permanent/pinned side inspector, new global dialogs and unrelated visual redesigns.
+
+**Acceptance criteria:**
+- At 1920×1080, 1440×900 and 1366×768, Chew Cud 10 with six Relevant Mods fits in **one vertical column**, width ≤480px, without a default internal scrollbar; no giant header-spanning two-column panel.
+- Acid Arrow 13 remains compact and shows real damage, relevant mods and actions without scrolling on the same desktop viewports.
+- Default Relevant Mods displays each actual effect once per source instance, compactly, **without slot or imported tags**. Full provenance for each entry remains keyboard-discoverable on demand.
+- Every visible mod description retains the exact full original wording, including each occurrence of “Chew Cud”; source metadata remains inspectable on demand. Non-damaging abilities do not give primary prominence to bogus-looking “Nothingness” damage, but meaningful damage and warnings remain accurate.
+- A user can still open/close Technical details and Edit bar, replace/move/remove, use mouse hover/keyboard/touch, and see screen-edge placement without losing focus or controls.
+- Focused tests, lint/typecheck, full tests and build succeed. Browser smoke asserts **single-column**, width cap, default no-scroll cases, content parity, source access and narrow-screen accessibility. Delete or update F1 tests that assert the now-rejected two-column behavior.
+
+**Manual verification:**
+1. Attach the user's **two screenshots** to the agent and compare the corrected 1920×1080 Cow / Chew Cud popup with them. It must look like a compact tooltip, *not* the right-hand wide inspector.
+2. With Chew Cud 10, six relevant mods from different gear (including imported powers), verify every full unmodified mod description (including leading ability names), all numbers and conditional text appear in a single narrow column with no internal scrolling on 1920×1080, 1440×900 and 1366×768.
+3. Verify provenance (gear slot, item name, imported/planned, power/tier) is recoverable in the secondary details using both mouse and keyboard, but not repeated beside every visible line.
+4. Open Acid Arrow 13 and another healing ability; verify appropriate stats, published damage types and truthful non-damage presentation.
+5. Expand both Technical details and Edit bar; test Replace, Move, Remove, Escape, focus restoration, mouse-out handoff and 375/320px mobile access.
+6. Include before/after screenshots at 1920×1080 and 1366×768, document exact popup width/font/scrollHeight/clientHeight, run quality checks and request product-owner approval. **Do not merge PR #31 automatically.**
+
