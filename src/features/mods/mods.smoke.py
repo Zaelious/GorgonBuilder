@@ -509,7 +509,7 @@ def main():
                         assert '0 Poison' not in visible and 'BuffActivated' not in visible and 'DelayedDamage' not in visible, visible
                         expect(acid_popover.locator('.ability-stats')).to_contain_text('Damage529 Acid')
                         box = acid_popover.bounding_box(); stats_box = acid_popover.locator('.relevant-mods').bounding_box()
-                        assert 420 <= box['width'] <= 441 and stats_box['y'] + stats_box['height'] <= box['y'] + box['height'] + 1, (box, stats_box)
+                        assert 440 <= box['width'] <= 560 and stats_box['y'] + stats_box['height'] <= box['y'] + box['height'] + 1, (box, stats_box)
                         acid_popover.screenshot(path=str(output / f'{mode}-acid-arrow-popover-desktop.png'))
                         page.keyboard.press('Escape')
                         main_editor.get_by_label('Remove candidate 1', exact=True).click()

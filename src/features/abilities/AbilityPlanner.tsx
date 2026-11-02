@@ -8,6 +8,7 @@ import { AbilityFacts } from './AbilityFacts';
 import { AbilityPicker } from './AbilityPicker';
 import './bar.css';
 import { RelevantMods } from './RelevantMods';
+import { choosePopoverPlacement, type PopoverLayout } from './popover-placement';
 
 interface Props {
   slot: Slot;
@@ -24,7 +25,7 @@ interface Props {
 
 const NO_EQUIPMENT: readonly EquipmentSelection[] = [];
 
-function DetailPopover({ id, selection, anchor, warnings, data, equipment, onClose, onEnter, onLeave, children }: {
+function DetailPopover({ id, selection, anchor, warnings, data, equipment, onClose, onEnter, onLeave, onPin, children }: {
   id: string;
   equipment: readonly EquipmentSelection[];
   selection: AbilitySelection;
@@ -34,6 +35,8 @@ function DetailPopover({ id, selection, anchor, warnings, data, equipment, onClo
   onClose: (restoreFocus?: boolean) => void;
   onEnter: () => void;
   onLeave: () => void;
+  /** Pressing inside the card keeps it open while disclosures resize and re-place it. */
+  onPin: () => void;
   children: React.ReactNode;
 }) {
   const popup = useRef<HTMLDivElement>(null);
@@ -42,18 +45,30 @@ function DetailPopover({ id, selection, anchor, warnings, data, equipment, onClo
     const element = popup.current!;
     function position() {
       if (!anchor) return;
+      // Measure the natural height per candidate width/layout (synchronous, before paint), then place the whole card.
       const rect = anchor.getBoundingClientRect();
-      const width = Math.min(440, window.innerWidth - 32);
-      element.style.width = `${width}px`;
-      const desiredHeight = element.scrollHeight + 2;
-      const below = Math.max(0, window.innerHeight - rect.bottom - 24);
-      const above = Math.max(0, rect.top - 24);
-      const placeBelow = desiredHeight <= below || (desiredHeight > above && below >= above);
-      const room = placeBelow ? below : above;
-      element.style.maxHeight = `${room}px`;
-      const height = Math.min(desiredHeight, room);
-      element.style.left = `${Math.max(16, Math.min(rect.left, window.innerWidth - width - 16))}px`;
-      element.style.top = `${placeBelow ? Math.max(16, rect.bottom + 8) : Math.max(16, rect.top - height - 8)}px`;
+      const viewport = { width: window.innerWidth, height: window.innerHeight };
+      const measure = (width: number, layout: PopoverLayout) => {
+        element.dataset.layout = layout;
+        element.style.width = `${width}px`;
+        element.style.maxHeight = 'none';
+        return element.offsetHeight;
+      };
+      delete element.dataset.density;
+      let placement = choosePopoverPlacement(rect, viewport, measure);
+      if (!placement.fits) {
+        // Last resort before scrolling: 13px text. Keep 14px whenever the denser card would still not fit.
+        element.dataset.density = 'tight';
+        const tight = choosePopoverPlacement(rect, viewport, measure);
+        if (tight.fits) placement = tight; else delete element.dataset.density;
+      }
+      element.dataset.layout = placement.layout;
+      element.dataset.side = placement.side;
+      element.dataset.fit = placement.fits ? 'whole' : 'scroll';
+      element.style.width = `${placement.width}px`;
+      element.style.maxHeight = `${placement.maxHeight}px`;
+      element.style.left = `${placement.left}px`;
+      element.style.top = `${placement.top}px`;
     }
     // Associate the invoker so native Tab order enters the interactive panel.
     element.showPopover?.({ source: anchor });
@@ -82,7 +97,7 @@ function DetailPopover({ id, selection, anchor, warnings, data, equipment, onClo
     };
   }, [anchor, selection.abilityId, warnings.length]);
   return <div ref={popup} id={id} className="ability-popover" popover="manual" role="dialog" aria-label={`Ability details: ${ability?.displayName ?? selection.abilityId}`}
-    onMouseEnter={onEnter} onMouseLeave={onLeave}
+    onMouseEnter={onEnter} onMouseLeave={onLeave} onPointerDown={onPin}
     onBlur={e => { if (!(e.relatedTarget instanceof Node) || (!e.currentTarget.contains(e.relatedTarget) && e.relatedTarget !== anchor)) onClose(); }}
     onKeyDown={e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose(true); } }}>
     <div className="detail-heading"><AbilityIcon ability={ability} version={data.gameDataVersion} /><div><h3>{ability?.displayName ?? selection.abilityId}</h3>{ability && ability.rank !== null && <p className="detail-rank">{rankLabel(ability.rank)}</p>}</div><button type="button" aria-label="Close ability details" onClick={() => onClose(true)}>×</button></div>
@@ -181,7 +196,7 @@ export function AbilityBar({ slot, skill, bar, data, onEdit, readOnly, detailSlo
       : `Bar ${slot} is full. Remove or replace an equipped ability to make room.`}</p>}
     {bar.some(s => selectionWarnings(s, skill.skillId, data).length > 0) && <p className="bar-message warning">Marked slots need review. Open a slot for details; saved selections are retained.</p>}
     {detailSlot === slot && activeSelection && active !== null && <DetailPopover id={`equipped-ability-detail-${slot}`} key={`${slot}-${active}`} selection={activeSelection} anchor={triggers.current.get(active)}
-      warnings={selectionWarnings(activeSelection, skill.skillId, data)} data={data} equipment={equipment} onClose={closeDetail} onEnter={cancelLeave} onLeave={leaveDetail}>
+      warnings={selectionWarnings(activeSelection, skill.skillId, data)} data={data} equipment={equipment} onClose={closeDetail} onEnter={cancelLeave} onLeave={leaveDetail} onPin={() => { cancelLeave(); pinned.current = true; }}>
       <details className="bar-edit-actions"><summary>Edit bar</summary><div>
       <button type="button" disabled={readOnly} onClick={() => openPicker('replace', active)}>Replace</button>
       <button type="button" disabled={readOnly || active === 0} onClick={() => move(active, -1)} aria-label={`Move entry ${active + 1} up in bar ${slot}`}>← Move earlier</button>

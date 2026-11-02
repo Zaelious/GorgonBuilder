@@ -21,6 +21,14 @@ DRAFT = {'schemaVersion': 1, 'gameDataVersion': 'v490', 'title': 'Untitled build
     'equipment': [{'slot': 'MainHand', 'item': {'kind': 'database', 'itemId': 'item_46107'},
         'candidateMods': [{'powerId': 'power_10302', 'tierId': 'id_25'}], 'sparks': {'mode': 'none'}}],
     'target': {'count': 1, 'damageTypes': {}}}
+# T0022-F1: Chew Cud 10 with six long Relevant Mods (four Cow powers on six slots) plus Acid Arrow 13.
+CHEW = lambda slot, item, power: {'slot': slot, 'item': {'kind': 'database', 'itemId': item},
+    'candidateMods': [{'powerId': power, 'tierId': 'id_9'}], 'sparks': {'mode': 'none'}}
+TALL_DRAFT = {**DRAFT, 'title': 'Popover fit', 'skillSlotA': {'skillId': 'Cow', 'level': 125},
+    'abilityBarA': [{'abilityId': 'ability_6159', 'rank': None}], 'abilityBarB': [{'abilityId': 'ability_2627', 'rank': None}],
+    'equipment': [CHEW('Hands', 'item_43092', 'power_20062'), CHEW('Feet', 'item_40031', 'power_20062'),
+        CHEW('Chest', 'item_42100', 'power_20065'), CHEW('Ring', 'item_49071', 'power_20065'),
+        CHEW('Head', 'item_44032', 'power_20066'), CHEW('Necklace', 'item_48082', 'power_20067'), DRAFT['equipment'][0]]}
 
 GEOMETRY = '''() => {
   const box = element => { const r = element.getBoundingClientRect(); return {x: r.x, y: r.y, width: r.width, height: r.height, right: r.right, bottom: r.bottom}; };
@@ -39,7 +47,8 @@ POPOVER = '''() => {
   return {left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, viewport: [innerWidth, innerHeight],
     labels: terms.map(term => term.textContent), columns: new Set(terms.map(term => Math.round(term.getBoundingClientRect().left))).size,
     damageColor: damage && getComputedStyle(damage).color, textColor: getComputedStyle(popover).color,
-    scrollable: popover.scrollHeight > popover.clientHeight};
+    scrollable: popover.scrollHeight > popover.clientHeight + 1, layout: popover.dataset.layout, side: popover.dataset.side,
+    fontSize: parseFloat(getComputedStyle(popover).fontSize), mods: popover.querySelectorAll('.relevant-mods li').length};
 }'''
 
 
@@ -71,7 +80,7 @@ def main():
             browser = playwright.chromium.launch(executable_path=shutil.which('chromium'), headless=True,
                 args=['--no-sandbox', '--disable-dev-shm-usage'], proxy=proxy, env=browser_env)
 
-            def open_page(width, height, touch):
+            def open_page(width, height, touch, draft=DRAFT):
                 context = browser.new_context(viewport={'width': width, 'height': height}, has_touch=touch, is_mobile=touch)
                 page = context.new_page()
                 page.on('pageerror', lambda error: errors.append(f'{width}: {error}'))
@@ -79,7 +88,7 @@ def main():
                 page.on('console', lambda message: errors.append(f'{width}: {message.text}')
                     if message.type == 'error' and 'Failed to load resource' not in message.text else None)
                 page.goto(url)
-                page.evaluate('([key, value]) => localStorage.setItem(key, JSON.stringify(value))', [KEY, DRAFT])
+                page.evaluate('([key, value]) => localStorage.setItem(key, JSON.stringify(value))', [KEY, draft])
                 page.reload()
                 page.locator('#skill-A').wait_for()
                 page.wait_for_load_state('networkidle')
@@ -109,7 +118,7 @@ def main():
                 assert popover['labels'][:2] == ['Damage', 'Armor damage'] and popover['columns'] == 1, popover
                 assert popover['damageColor'] != popover['textColor'], popover
                 if width >= 1024:
-                    assert 420 <= popover['width'] <= 460, popover
+                    assert 440 <= popover['width'] <= 560 and not popover['scrollable'], popover
                 expect(page.locator('.ability-popover .relevant-mods')).to_contain_text('Acid Arrow Damage +110%')
                 if touch:
                     close = page.get_by_label('Close ability details', exact=True)
@@ -121,6 +130,47 @@ def main():
                     expect(page.locator('.ability-popover')).to_have_count(0)
                 measurements.append({'viewport': [width, height], 'touch': touch, **geometry, 'popover': popover})
                 context.close()
+
+            # T0022-F1: whole tooltip visible without internal scrolling; text never shrinks below 13px.
+            fit = []
+            for width, height, touch in [(1920, 1080, False), (1440, 900, False), (1366, 768, False), (1280, 720, False), (375, 812, True), (320, 568, True)]:
+                context, page = open_page(width, height, touch, TALL_DRAFT)
+                for panel, title, mods in [(0, 'Chew Cud 10', 6), (1, 'Acid Arrow 13', 1)]:
+                    trigger = page.locator('.skill-panel').nth(panel).locator('.slot-button').first
+                    trigger.tap() if touch else trigger.hover()
+                    expect(page.locator('.ability-popover h3')).to_have_text(title)
+                    metric = page.evaluate(POPOVER)
+                    assert metric['mods'] == mods and metric['fontSize'] >= 13, metric
+                    assert metric['left'] >= 0 and metric['right'] <= width and metric['top'] >= 0 and metric['bottom'] <= height, metric
+                    if not touch or title == 'Acid Arrow 13':
+                        assert not metric['scrollable'], (width, metric)
+                    if width >= 1024 and metric['side'] != 'overlay':
+                        # Beside/below/above the slot: the hovered slot stays visible.
+                        slot = trigger.bounding_box()
+                        assert slot['x'] + slot['width'] <= metric['left'] or slot['x'] >= metric['right'] or slot['y'] + slot['height'] <= metric['top'] or slot['y'] >= metric['bottom'], metric
+                    page.screenshot(path=str(output / f'fit-{width}-{title.split()[0].lower()}.png'))
+                    fit.append({'viewport': [width, height], 'title': title, **{key: metric[key] for key in ['side', 'layout', 'width', 'scrollable', 'fontSize']}})
+                    if touch:
+                        page.get_by_label('Close ability details', exact=True).tap()
+                    else:
+                        page.keyboard.press('Escape')
+                    expect(page.locator('.ability-popover')).to_have_count(0)
+                context.close()
+            measurements.append({'popoverFit': fit})
+            # Disclosures inside a hover-opened card re-place it; pressing inside pins it so it stays open.
+            context, page = open_page(1920, 1080, False, TALL_DRAFT)
+            page.locator('.skill-panel').nth(0).locator('.slot-button').first.hover()
+            expect(page.locator('.ability-popover h3')).to_have_text('Chew Cud 10')
+            page.locator('.ability-popover .technical-details > summary').click()
+            expect(page.locator('.ability-popover .technical-details .official-id')).to_contain_text('ability_6159')
+            page.locator('.ability-popover .bar-edit-actions > summary').click()
+            expect(page.get_by_label('Remove entry 1 from bar A', exact=True)).to_be_visible()
+            disclosed = page.evaluate(POPOVER)
+            assert disclosed['top'] >= 0 and disclosed['bottom'] <= 1080 and disclosed['right'] <= 1920, disclosed
+            page.screenshot(path=str(output / 'fit-1920-chew-disclosures.png'))
+            page.get_by_label('Remove entry 1 from bar A', exact=True).click()
+            page.wait_for_function('(key) => JSON.parse(localStorage.getItem(key)).abilityBarA.length === 0', arg=KEY)
+            context.close()
 
             context, page = open_page(1440, 900, False)
             trigger = page.locator('.skill-panel').nth(1).locator('.slot-button').first
@@ -189,8 +239,9 @@ def main():
     errors = [error for error in errors if 'branding' not in error]
     assert not errors, errors
     (output / 'measurements.json').write_text(json.dumps(measurements, indent=2))
+    print(json.dumps(next(m['popoverFit'] for m in measurements if 'popoverFit' in m)))
     print(json.dumps([{'viewport': m['viewport'], 'header': round(m['header']['height']), 'skillsTop': round(m['skills']['y']),
-        'popover': [round(m['popover']['left']), round(m['popover']['top']), round(m['popover']['width'])]} for m in measurements], indent=2))
+        'popover': [round(m['popover']['left']), round(m['popover']['top']), round(m['popover']['width'])]} for m in measurements if 'header' in m], indent=2))
     print(f'PASS T0022 header artwork, 1440/1920/375/320 layouts, ability inspector, local Save and dialogs. Artifacts: {output}')
 
 
