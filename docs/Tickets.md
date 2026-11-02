@@ -540,6 +540,8 @@ Guidelines:
 
 ## T0010 — Treasure Mod Planner
 
+**Status:** Customer-accepted and completed on 2026-11-01. [PR #22](https://github.com/Zaelious/GorgonBuilder/pull/22) squash-merged into `main` at `385e4b9`. [Verification report](T0010_Verification.md): 513 passing tests, GitHub Actions and Cloudflare checks, desktop/mobile Chromium smoke evidence. The completed inline UI includes skill/slot-aware Available↔Selected planning, exact tier persistence, full item STATS, active-skill cleanup with Undo and ability-specific Relevant Mods. Source/profile limitations are shown explicitly; no damage math or final legality enforcement.
+
 **Complexity:** High
 
 **Verification:** Customer hands-on
