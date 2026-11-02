@@ -1,0 +1,19 @@
+{
+  "Report": "CharacterSheet",
+  "ReportVersion": 1,
+  "Character": "Fixture Adventurer",
+  "ServerName": "Fixture Server",
+  "Timestamp": "2026-11-01T12:00:00Z",
+  "Race": "Human",
+  "Skills": {
+    "Psychology": {
+      "Level": 90,
+      "BonusLevels": 5,
+      "XpTowardNextLevel": 123,
+      "XpNeededForNextLevel": 456,
+      "Abilities": ["Psychoanalyze1", "ability_1205", "FixtureUnknownAbility"]
+    },
+    "FixtureUnknownSkill": { "Level": 1 }
+  },
+  "CurrentStats": { "MAX_HEALTH": 500, "BOOST_SKILL_ARCHERY": 0 }
+}

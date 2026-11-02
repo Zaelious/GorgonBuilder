@@ -1,0 +1,38 @@
+{
+  "Report": "Storage",
+  "ReportVersion": 1,
+  "Character": "Fixture Adventurer",
+  "ServerName": "Fixture Server",
+  "Timestamp": "2026-11-01T12:01:00Z",
+  "Items": [
+    {
+      "TypeID": 45640,
+      "Name": "Fixture Crafted Weapon",
+      "Level": 93,
+      "Slot": "MainHand",
+      "Rarity": "Legendary",
+      "StackSize": 1,
+      "Value": 1,
+      "IsInInventory": true,
+      "TSysPowers": [
+        { "Power": "ArcheryBoost", "Tier": 9 },
+        { "Power": "power_129", "Tier": 120 },
+        { "Power": "FixtureUnknownPower", "Tier": 777 }
+      ],
+      "IsCrafted": true,
+      "Crafter": "Fixture Crafter",
+      "AttunedTo": "Fixture Adventurer",
+      "Durability": 100,
+      "TransmuteCount": 2,
+      "CraftPoints": 110,
+      "TSysImbuePower": "ArcheryBoost",
+      "TSysImbuePowerTier": 1
+    },
+    {
+      "TypeID": 999999999,
+      "Name": "Fixture Unresolved Item",
+      "StorageVault": "Fixture Vault",
+      "StackSize": 2
+    }
+  ]
+}

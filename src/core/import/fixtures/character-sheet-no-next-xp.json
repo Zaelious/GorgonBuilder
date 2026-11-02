@@ -1,0 +1,16 @@
+{
+  "Report": "CharacterSheet",
+  "Character": "Fixture Adventurer",
+  "Timestamp": "2026-11-02 00:00:00Z",
+  "ReportVersion": 1,
+  "Skills": {
+    "FixtureCappedSkill": {
+      "Level": 110,
+      "BonusLevels": 10,
+      "XpTowardNextLevel": 0,
+      "XpNeededForNextLevel": -1,
+      "Abilities": []
+    }
+  },
+  "CurrentStats": {}
+}
