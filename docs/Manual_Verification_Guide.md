@@ -122,6 +122,16 @@ See [build domain README](../src/core/build/README.md). No new UI or remote save
 
 See [T0008 app README](../src/app/README.md) for detailed evidence.
 
+### T0008-F1 imported level and ability-picker acceptance (merged 2026-11-02)
+
+[PR #27](https://github.com/Zaelious/GorgonBuilder/pull/27) is customer-accepted, architect-reviewed and squash-merged as `445735e`. [Implementation evidence](../src/features/skills/verification/T0008-F1.md): 714 tests, successful final-head CI/Cloudflare and six synthetic Chromium dev/production-preview runs at 1440/375/320 px.
+
+1. Import real CharacterSheet/Storage reports locally and inspect Verify skill levels. Customer verified that exported `Level` **already includes** `BonusLevels`: Werewolf 106+source bonus 6 → planner 106; Deer 112/12 → 112; Cow 111/11 → 111; Unarmed 110/10 → 110. Prodigy levels are not combat levels. Never re-add reported bonus values.
+2. Deliberately select imported combat skills and check editable initialized levels. Manually override, reimport, and verify unchanged build. For an already-selected differing skill, **Apply imported level** updates only the level, not its abilities, equipped items, working mods, Sparks or target; refresh confirms autosave.
+3. General bar-side + stays open through repeated additions, preserves query/family/detail/scroll and shows live count to six. Duplicate markers are per bar; blocked add controls remain visible at capacity. Numbered empty + and Replace close after one selection; numbered empty + still appends to the next available contiguous position.
+4. Test occupied-icon × quick removal by hover/mouse, keyboard and mobile touch: correct ability is removed and bar compacts without activating details. Check read-only draft protections, focus, independent A/B bars and refresh.
+5. Keep [corrected source interpretation](../src/features/import/skill-levels.md) and tests synchronized if report semantics evolve. Private full-v490 item/power/tier resolution counts remain separate outstanding verification.
+
 ### KI-0008 pre-T0009 gzip transport checks
 
 This is a separate narrow preflight PR, not part of T0009's equipment UI.
