@@ -1,4 +1,4 @@
-# GorgonBuilder — Tickets T0001–T0021
+# GorgonBuilder — Tickets T0001–T0022
 
 **Status:** Condensed v1 implementation series approved  
 **Version:** 2.0  
@@ -1356,3 +1356,51 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 4. Create an A/B comparison.
 5. Save/share the build, test read-only/duplicate in incognito, then verify owner editing.
 6. Run the release checklist and confirm no unexpected console errors.
+
+## T0022 — GorgonBuilder Visual Identity and Planner UI Redesign
+
+**Status:** Proposed 2026-11-02; review/approve before Codex kickoff. **Scheduling exception:** if accepted, implement **before T0013** without renumbering the existing T0001–T0021 sequence.
+
+**Complexity:** High (cohesive visual slice; suitable as **one** high-effort Codex implementation ticket once the approved reference screenshot and original art assets are available)
+
+**Verification:** Customer hands-on visual review + automated and real-browser regression
+
+**Goal:** Implement the product owner's **first approved 2026-11-02 ChatGPT UI concept** across the real current build planner: cinematic gorgon/ruins identity, neutral charcoal dark UI, two colored skill bars, compact equipment rows and vertically stacked floating ability popover. Keep functioning controls and game behavior unchanged.
+
+**Design reference:** [UI Visual Identity and Redesign](UI_Visual_Redesign.md). Attach the approved `GorgonBuilder_Approved_UI_Concept.png` from the customer conversation to Codex; the image is a composition reference, not an exact rendering of current app features.
+
+**Dependencies:** T0008-F1, T0009-F1, T0010-F1, T0011-F3, T0012 (all merged); independently created original logo/header art available or produced by an image-capable design workflow.
+
+**Suggested branch:** `feature/t0022-gorgon-visual-redesign`
+
+**Allowed areas:** `public/branding/`, UI styles/tokens, current `src/app` layout, visual presentation in `src/features/skills`, `abilities`, `equipment`, `mods`, `import`, focused UI tests and browser verification notes.
+
+**Do not touch:** core game formulas or aggregator, BuildDocument schema, official data generation, mod/item eligibility, import parsing, Spark behavior, remote saving, unrelated backend or architecture.
+
+**Requirements:**
+- Create/bundle original grayscale Gorgon head and panoramic ruined moonlit landscape as distinct optimized local assets, and reproduce the concept's restrained cinematic header/wordmark. No screenshot crops, stock hotlinks or fake substitute icons.
+- Apply global neutral dark tokens, sans-serif typography, consistent borders, density, inputs, buttons and legible focus states to **all** current screens, dialogs, errors, My Items and shared mod controls.
+- Restyle skills/ability slots and all actual equipment rows; preserve official item/ability icons, both independently configured bars, levels, pickers, all primary and secondary gear rows, selected mods, import and local persistence.
+- Preserve the existing hover/focus/click ability-details popover while changing its information presentation to one vertically stacked list. Keep all content, Relevant Mods, Technical details, Edit bar and Remove accessible and working.
+- Honor the mockup's green Save affordance only as a real **local draft** action wired to the existing autosave flush/retry and status (no false cloud saving); preserve confirmation/undo/error/protected behavior.
+- Match the screenshot's visual intent, not its fictitious text or limited equipment sample. Never hardcode illustrated `+88%`/`+110%` badges without a trustworthy current value.
+- Maintain responsive behavior and keyboard/touch access at the checked viewport sizes.
+
+**Non-goals:** No damage-engine implementation (T0013), new skills/slots, item/mod features, remote save/share, backend migrations, or unrelated refactors.
+
+**Acceptance criteria:**
+- Brand portrait and ruins banner visibly match the approved visual direction as separate optimized assets; customer approves rendered screenshot.
+- Main builder and expanded equipment/My Items/mod dialogs share one cohesive dark design and have no missing controls.
+- Acid Arrow (and unrelated abilities) open a **floating** vertically stacked inspection card on hover, click, focus; keyboard escape and actions work.
+- All previously working editing, clear, import, save/retry, mod search and tier workflows still work; no fake Save or hardcoded mod values.
+- 1440/1920 desktop and 375/320 mobile have readable layouts and no horizontal overflow or trapped controls.
+- Repository's data check, lint, typecheck, tests and build succeed; real-browser screenshot and interaction smoke evidence supplied.
+
+**Manual verification:**
+1. Open editor on desktop; compare header, Gorgon portrait/banner, font, colors and spacing to the approved first mockup.
+2. Test Druid/Archery bars, both skill selectors/levels, full and empty slots, real icons, + picker and bonus indicators.
+3. Hover/click/focus Acid Arrow and another ability; inspect vertical stats, relevant mods, Technical details, Edit bar, move/remove, Escape and screen-edge position.
+4. Inspect all nine primary equipment rows, Other slots, selected/imported item STATS/mods, search and Mod Browser Settings; switch gear without losing search/filter state.
+5. Test title, import, working local Save, autosave/retry, Clear cancel/confirm, refresh and protected/read-only warnings.
+6. Check 1440×900, 1920×1080, 375×812 and 320×812 plus keyboard/tab/touch behavior; run full quality suite.
+
