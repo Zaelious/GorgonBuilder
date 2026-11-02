@@ -6,7 +6,7 @@
 
 ## Current Status
 
-T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on verified v490 data, normalized runtime lookups and BuildDocument v1/local autosave. T0008 supplies independent skill/ability bars; T0009 adds nine always-visible primary equipment rows, official item icons with fallbacks, collapsed other slots, item search and persistent equip/replace/clear. T0009-F1 removes duplicated expanded headings and makes official OffHand/OffHandShield alternatives mutually exclusive in one loadout position, preserving exact source slots and explicit legacy conflict recovery. Treasure-mod editing, damage calculations, character import and remote save/share remain future work.
+T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on verified v490 data, normalized runtime lookups and BuildDocument v1/local autosave. T0008 supplies independent skill/ability bars; T0009 adds nine always-visible primary equipment rows, official item icons with fallbacks, collapsed other slots, item search and persistent equip/replace/clear. T0009-F1 removes duplicated expanded headings and makes official OffHand/OffHandShield alternatives mutually exclusive in one loadout position, preserving exact source slots and explicit legacy conflict recovery. T0010 treasure-mod editing is now merged and customer accepted, including inline Available/Selected, source-backed item/skill filtering, compact item STATS and ability Relevant Mods. Damage calculations, character import and remote save/share remain future work.
 
 ## Completed Tickets
 
@@ -23,15 +23,17 @@ T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on
 - **T0009 — Equipment Search and Planner** (merged 2026-11-01 via [PR #18](https://github.com/Zaelious/GorgonBuilder/pull/18); squash commit `7cd03eef7aaf4bea7bf79fcb3850bf7d6d03746d`). Customer accepted the revised nine-slot equipment UI, official icon display/fallbacks, exact canonical slot selection, searchable fixed effects and target-level preferences, saved equip/replace/clear and a collapsed Other slots area. See [T0009 verification](T0009_Verification.md).
 - **T0009-F1 — Compact Equipment Details and Exclusive Offhand Position** (merged 2026-11-01 via [PR #20](https://github.com/Zaelious/GorgonBuilder/pull/20); squash commit `09257ce95ae7e6e5500d10cdfbf58ace9ad84b75`). Customer accepted removal of duplicate expanded item header and one exclusive offhand position for canonical OffHand/OffHandShield equipment, with explicit legacy conflict resolution. 418 tests, dev/preview Chromium, gzip verification and CI passed. See [verification](T0009_F1_Verification.md).
 
+- **T0010 — Treasure Mod Planner** (merged 2026-11-01 via [PR #22](https://github.com/Zaelious/GorgonBuilder/pull/22); squash commit `385e4b96b52e53d4f8d7db5cc5455a9148ed1ef2`). Customer accepted after multiple UI revisions: compact skill-based power search and staged selection, full readable item stats, Max/90/100 tier previews, Druid+Archery MainHand visibility with profile warnings, per-skill cleanup with Undo and ability-specific Relevant Mods. 513 automated tests pass; Cloudflare and Chromium smoke evidence captured. [Verification report](T0010_Verification.md).
+
 **Deployment housekeeping completed** via [PR #2](https://github.com/Zaelious/GorgonBuilder/pull/2) (squash commit `9df290379b396f8bb4cc2717e154bbbca577af98`): explicit static-assets `wrangler.jsonc`, Wrangler 4.156.0 and synchronized lockfile, deploy/preview scripts, GitHub CI with Cloudflare dry-run, and deployment instructions.
 
 ## Active Ticket
 
-None. T0009-F1 was customer-accepted and merged via PR #20. T0010 has not started.
+None. T0010 has been customer-accepted and merged via PR #22. Do not begin T0011 until explicitly requested.
 
 ## Planned Next Ticket
 
-**T0010 — Treasure Mod Planner** (next planned ticket; not started).
+**T0011 — Character Import Core and Sanitized Fixtures** (next planned ticket; not started).
 
 The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/DPS deferred to the following ticket series.
 
@@ -39,7 +41,7 @@ The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/D
 
 - Vite 8, React 19, strict TypeScript 6
 - ESLint 10 with TypeScript rules and core-layer import restrictions
-- Vitest 5 with jsdom for 418 tests at accepted T0009-F1 head, including equipment/editor tests and Vite transport integration tests; optional Chromium/Playwright layout, transport and equipment smoke
+- Vitest 5 with jsdom for 513 tests at accepted T0010 head, including equipment/editor tests and Vite transport integration tests; optional Chromium/Playwright layout, transport and equipment smoke
 - Shared CSS variables and responsive baseline styles
 - Cloudflare Workers Static Assets for the Vite frontend (no Cloudflare Vite plugin or backend yet)
 - T0008 connects T0007's injected local draft/autosave to the actual planner; remote provider-agnostic saving remains future work
@@ -87,11 +89,11 @@ src/
 │  ├─ repository/            (typed contracts, integrity, loader, indexed lookups, tests, README)
 │  └─ search/                (pure equipment name/effect/slot/target-level filters)
 ├─ features/
-│  ├─ abilities/             (picker, six-slot bars, official icons, source facts)
+│  ├─ abilities/             (picker, bars, official icons/facts, equipped Relevant Mods)
 │  ├─ comparison/            (placeholder)
 │  ├─ equipment/             (nine-slot planner, picker, official icons, tests/browser smoke)
 │  ├─ import/                (placeholder)
-│  ├─ mods/                  (placeholder)
+│  ├─ mods/                  (inline mod editor, equipped STATS, source formatting, tests)
 │  ├─ skills/                (compact combat-skill/level controls)
 │  └─ sparks/                (placeholder)
 ├─ generated/
@@ -112,6 +114,9 @@ Root application/configuration files include `index.html`, `package.json`, `pack
 GitHub CI: `.github/workflows/ci.yml` (npm install, lint, typecheck, test, build, Wrangler dry-run). Deployment instructions: `docs/Cloudflare_Deployment.md`.
 
 ## Build/Test Status
+
+**Latest accepted T0010 baseline (2026-11-01):** [PR #22](https://github.com/Zaelious/GorgonBuilder/pull/22) merged as `385e4b9`. [GitHub Actions CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41361363719) passed lint, typecheck, 513/513 tests in 24 files, production build and Wrangler deploy dry-run; Cloudflare Workers Preview check passed. The implementation agent reported desktop/mobile Chromium dev and production-preview smoke runs; screenshot evidence and risks appear in [T0010 verification](T0010_Verification.md). Exact saved power/tier IDs, 500ms local autosave and the exclusive OffHand behavior remain intact. Profile membership is not proven equipping legality; unvalidated ability-wide effects and inferred attribute display formats remain explicit caveats.
+
 
 **T0001 Codex-reported verification (2026-10-31):**
 
