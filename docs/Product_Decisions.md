@@ -285,6 +285,13 @@ Priorities:
 
 Desktop-first full editing is acceptable initially. Shared/read-only builds should remain reasonably usable on smaller screens.
 
+## Approved Visual Identity Direction (proposed 2026-11-02)
+
+- Product owner selected the **first** generated GorgonBuilder UI mockup as the target composition: a grayscale Gorgon/Medusa head and moonlit ruins banner, dark charcoal backgrounds without the previous green cast, coherent sans-serif typography, blue/amber skill accents, slim stacked equipment rows and a **vertically arranged floating** ability hover inspector.
+- Preserve “Simple by Default, Detailed on Demand.” The concept image represents styling, not authorization to omit existing equipment, mod, My Items, import, warnings or editor functionality.
+- Require standalone original/rights-clear header and portrait assets. A screenshot crop is not a deployable design asset. Do not invent game-data bonuses to match illustrative numbers.
+- T0022 is the proposed single cohesive implementation ticket, scheduled before T0013 if approved. See [UI_Visual_Redesign.md](UI_Visual_Redesign.md).
+
 ## Working Product Name
 
 - Repository: `GorgonBuilder`
