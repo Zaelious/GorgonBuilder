@@ -26,7 +26,8 @@ body { margin: 0; min-width: 20rem; }
 h1, h2, p { margin: 0; }
 
 .app-shell {
-  width: min(100% - var(--space-4), 75rem);
+  /* Responsive desktop width: 16–32px gutters, up to 100rem (1600px) at 100% zoom. */
+  width: min(100% - clamp(var(--space-4), 4vw, 4rem), 100rem);
   margin-inline: auto;
 }
 

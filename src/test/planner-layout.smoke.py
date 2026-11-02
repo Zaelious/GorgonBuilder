@@ -39,8 +39,11 @@ def main():
     try:
         with sync_playwright() as playwright:
             proxy = {'server': os.environ['HTTPS_PROXY'], 'bypass': '127.0.0.1,localhost'} if os.environ.get('HTTPS_PROXY') else None
+            browser_env = dict(os.environ)
+            if os.environ.get('CHROMIUM_TRUST_HOME'):
+                browser_env['HOME'] = os.environ['CHROMIUM_TRUST_HOME']
             browser = playwright.chromium.launch(executable_path=shutil.which('chromium'), headless=True,
-                args=['--no-sandbox', '--disable-dev-shm-usage'], proxy=proxy)
+                args=['--no-sandbox', '--disable-dev-shm-usage'], proxy=proxy, env=browser_env)
             page = browser.new_page(viewport={'width': 1440, 'height': 900})
             page.on('pageerror', lambda error: errors.append(str(error)))
             page.on('console', lambda message: errors.append(message.text) if message.type == 'error' else None)
@@ -71,7 +74,7 @@ def main():
                     restore(document(state))
                     metric = page.evaluate('''() => {
                         const box = element => {const r = element.getBoundingClientRect(); return {x:r.x,y:r.y,width:r.width,height:r.height};};
-                        return {section:box(document.querySelector('.skills-section')), titleSize:parseFloat(getComputedStyle(document.querySelector('h1')).fontSize),
+                        return {section:box(document.querySelector('.skills-section')), equipment:box(document.querySelector('.equipment-section')), titleSize:parseFloat(getComputedStyle(document.querySelector('h1')).fontSize),
                           rows:[...document.querySelectorAll('.skill-panel')].map(row => ({box:box(row),
                             controls:[row.querySelector('select'),row.querySelector('input[type=number]'),...row.querySelectorAll('.slot-button'),row.querySelector('.open-picker')].map(box)})),
                           overflow:document.documentElement.scrollWidth > innerWidth};
@@ -80,6 +83,11 @@ def main():
                     assert metric['section']['y'] <= 160, metric
                     assert 22 <= metric['titleSize'] <= 28, metric
                     assert not metric['overflow'], metric
+                    # Full planner width at 100% zoom: 16-32px gutters, up to 100rem; no 832px section cap.
+                    shell = min(width - min(max(32, width * 0.04), 64), 1600)
+                    assert abs(metric['section']['width'] - shell) <= 2, (shell, metric['section'])
+                    assert abs(metric['equipment']['width'] - shell) <= 2, (shell, metric['equipment'])
+                    assert metric['section']['width'] > 832 * 1.5, metric['section']
                     for row in metric['rows']:
                         assert 70 <= row['box']['height'] <= 95, row
                         centers = [control['y'] + control['height'] / 2 for control in row['controls']]
@@ -91,14 +99,48 @@ def main():
                     page.screenshot(path=str(output / f'{width}-{state}.png'), full_page=True)
                     measurements.append({'viewport': [width, height], 'state': state, **metric})
 
+            def level_fits(target):
+                return target.evaluate('''() => [...document.querySelectorAll('.skill-level input')].map(input => {
+                    const style = getComputedStyle(input); const context = document.createElement('canvas').getContext('2d');
+                    context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`; const text = context.measureText(input.value).width;
+                    const room = input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 16;
+                    return {value: input.value, text, room, fits: text <= room, right: input.getBoundingClientRect().right};
+                })''')
+
+            # Three-digit skill levels: fully visible with room for native spin controls at 100% zoom.
+            level_checks = []
+            for width in [1440, 1920, 2560]:
+                page.set_viewport_size({'width': width, 'height': 900})
+                restore(document('full'))
+                for value in ['90', '100', '110', '125']:
+                    for slot in ['A', 'B']:
+                        page.locator(f'#level-{slot}').fill(value)
+                    page.wait_for_function('([key, level]) => { const d = JSON.parse(localStorage.getItem(key)); return d.skillSlotA.level === level && d.skillSlotB.level === level; }', arg=[key, int(value)])
+                    checks = level_fits(page)
+                    assert all(check['fits'] and check['value'] == value for check in checks), checks
+                    level_checks.append({'viewport': width, 'value': value, 'checks': checks})
+                saved_levels = page.evaluate('(key) => JSON.parse(localStorage.getItem(key))', key)
+                assert saved_levels['skillSlotA']['level'] == 125 and saved_levels['skillSlotB']['level'] == 125, saved_levels
+                page.locator('#level-A').hover()
+                page.locator('.skills-section').screenshot(path=str(output / f'{width}-levels-125.png'))
+                assert not page.evaluate('document.documentElement.scrollWidth > innerWidth')
+            measurements.append({'levelChecks': level_checks})
+            # Secondary regression only: 80% browser zoom on a 1440px screen (1800 CSS px at 0.8 DPR).
+            zoomed = browser.new_context(viewport={'width': 1800, 'height': 1125}, device_scale_factor=0.8)
+            zoom_page = zoomed.new_page()
+            zoom_page.goto(url)
+            zoom_page.evaluate('([key, value]) => localStorage.setItem(key, JSON.stringify(value))', [key, document('full')])
+            zoom_page.reload(); zoom_page.locator('#skill-A').wait_for()
+            zoom_page.locator('#level-A').fill('125')
+            assert all(check['fits'] for check in level_fits(zoom_page))
+            assert not zoom_page.evaluate('document.documentElement.scrollWidth > innerWidth')
+            zoom_page.screenshot(path=str(output / '1440-at-80-percent-zoom.png'))
+            zoomed.close()
+
             restore(document('partial'))
-            page.get_by_label('Filter skills for Skill A', exact=True).focus()
-            page.keyboard.press('Enter')
-            expect(page.locator('#skill-search-A')).to_be_focused()
-            page.locator('#skill-search-A').fill('psych')
-            expect(page.locator('#skill-A option')).to_have_count(2)
-            page.keyboard.press('Escape')
-            expect(page.get_by_label('Filter skills for Skill A', exact=True)).to_be_focused()
+            expect(page.locator('.skill-filter, [id^="skill-search"]')).to_have_count(0)
+            page.locator('#skill-A').focus()
+            expect(page.locator('#skill-A')).to_be_focused()
             page.locator('.skill-panel').first.locator('.slot-button').first.focus()
             expect(page.locator('.ability-popover')).to_be_visible()
             page.keyboard.press('Escape')
@@ -135,11 +177,14 @@ def main():
             mobile.locator('.slot-button[aria-haspopup]').first.tap()
             expect(mobile.locator('.ability-popover')).to_be_visible()
             mobile.get_by_label('Close ability details', exact=True).tap()
-            mobile.get_by_label('Filter skills for Skill A', exact=True).tap()
-            expect(mobile.locator('#skill-search-A')).to_be_focused()
-            mobile.keyboard.press('Escape')
+            expect(mobile.locator('.skill-filter, [id^="skill-search"]')).to_have_count(0)
+            mobile.locator('#skill-A').select_option('Archery')
+            expect(mobile.locator('#skill-A')).to_have_value('Archery')
+            mobile.locator('#level-A').fill('125')
+            assert all(check['fits'] for check in level_fits(mobile)), level_fits(mobile)
             mobile.set_viewport_size({'width': 320, 'height': 812})
             assert not mobile.evaluate('document.documentElement.scrollWidth > innerWidth')
+            assert all(check['fits'] and check['right'] <= 320 for check in level_fits(mobile)), level_fits(mobile)
             mobile.screenshot(path=str(output / '320-touch.png'), full_page=True)
             browser.close()
     finally:
@@ -147,7 +192,7 @@ def main():
         server.server_close()
     assert not errors, errors
     (output / 'measurements.json').write_text(json.dumps(measurements, indent=2))
-    print(json.dumps([{'viewport': item['viewport'], 'state': item['state'], 'section': item['section'], 'rows': [row['box']['height'] for row in item['rows']]} for item in measurements], indent=2))
+    print(json.dumps([{'viewport': item['viewport'], 'state': item['state'], 'section': item['section'], 'rows': [row['box']['height'] for row in item['rows']]} for item in measurements if 'state' in item], indent=2))
     print(f'PASS desktop empty/partial/full layout, responsive touch, keyboard, title and legacy checks. Artifacts: {output}')
 
 

@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { AbilitySelection, SkillSlot } from '../../core/build/document';
+import type { AbilitySelection, EquipmentSelection, SkillSlot } from '../../core/build/document';
 import type { GameDataRepository } from '../../data/repository/repository';
 import { COMBAT_BAR_SIZE, selectionWarnings, type BuildEdit, type Slot } from '../../app/editor/build-editor';
 import { rankLabel } from './groups';
 import { AbilityIcon } from './AbilityIcon';
 import { AbilityFacts } from './AbilityFacts';
 import { AbilityPicker } from './AbilityPicker';
+import { RelevantMods } from './RelevantMods';
 
 interface Props {
   slot: Slot;
@@ -16,10 +17,15 @@ interface Props {
   readOnly: boolean;
   detailSlot: Slot | null;
   onDetailOpen: (slot: Slot) => void;
+  /** Read-only equipped gear for the Relevant Mods section. */
+  equipment?: readonly EquipmentSelection[];
 }
 
-function DetailPopover({ id, selection, anchor, warnings, data, onClose, onEnter, onLeave, children }: {
+const NO_EQUIPMENT: readonly EquipmentSelection[] = [];
+
+function DetailPopover({ id, selection, anchor, warnings, data, equipment, onClose, onEnter, onLeave, children }: {
   id: string;
+  equipment: readonly EquipmentSelection[];
   selection: AbilitySelection;
   anchor: HTMLButtonElement | undefined;
   warnings: string[];
@@ -36,7 +42,7 @@ function DetailPopover({ id, selection, anchor, warnings, data, onClose, onEnter
     function position() {
       if (!anchor) return;
       const rect = anchor.getBoundingClientRect();
-      const width = Math.min(360, window.innerWidth - 32);
+      const width = Math.min(440, window.innerWidth - 32);
       element.style.width = `${width}px`;
       const desiredHeight = element.scrollHeight + 2;
       const below = Math.max(0, window.innerHeight - rect.bottom - 24);
@@ -79,13 +85,13 @@ function DetailPopover({ id, selection, anchor, warnings, data, onClose, onEnter
     onBlur={e => { if (!(e.relatedTarget instanceof Node) || (!e.currentTarget.contains(e.relatedTarget) && e.relatedTarget !== anchor)) onClose(); }}
     onKeyDown={e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose(true); } }}>
     <div className="detail-heading"><AbilityIcon ability={ability} version={data.gameDataVersion} /><div><h3>{ability?.displayName ?? selection.abilityId}</h3>{ability && ability.rank !== null && <p className="detail-rank">{rankLabel(ability.rank)}</p>}</div><button type="button" aria-label="Close ability details" onClick={() => onClose(true)}>×</button></div>
-    {ability && <AbilityFacts ability={ability} />}
+    {ability && <AbilityFacts ability={ability} afterStats={<RelevantMods ability={ability} equipment={equipment} data={data} />} />}
     {warnings.map(w => <p key={w} className="warning">{w}</p>)}
     <div className="detail-actions">{children}</div>
   </div>;
 }
 
-export function AbilityBar({ slot, skill, bar, data, onEdit, readOnly, detailSlot, onDetailOpen }: Props) {
+export function AbilityBar({ slot, skill, bar, data, onEdit, readOnly, detailSlot, onDetailOpen, equipment = NO_EQUIPMENT }: Props) {
   const [picker, setPicker] = useState<{ replaceIndex: number | null; returnFocus: HTMLElement | null } | null>(null);
   const [active, setActive] = useState<number | null>(null);
   const triggers = useRef(new Map<number, HTMLButtonElement>());
@@ -160,7 +166,7 @@ export function AbilityBar({ slot, skill, bar, data, onEdit, readOnly, detailSlo
       : `Bar ${slot} is full. Remove or replace an equipped ability to make room.`}</p>}
     {bar.some(s => selectionWarnings(s, skill.skillId, data).length > 0) && <p className="bar-message warning">Marked slots need review. Open a slot for details; saved selections are retained.</p>}
     {detailSlot === slot && activeSelection && active !== null && <DetailPopover id={`equipped-ability-detail-${slot}`} key={`${slot}-${active}`} selection={activeSelection} anchor={triggers.current.get(active)}
-      warnings={selectionWarnings(activeSelection, skill.skillId, data)} data={data} onClose={closeDetail} onEnter={cancelLeave} onLeave={leaveDetail}>
+      warnings={selectionWarnings(activeSelection, skill.skillId, data)} data={data} equipment={equipment} onClose={closeDetail} onEnter={cancelLeave} onLeave={leaveDetail}>
       <details className="bar-edit-actions"><summary>Edit bar</summary><div>
       <button type="button" disabled={readOnly} onClick={() => openPicker(active)}>Replace</button>
       <button type="button" disabled={readOnly || active === 0} onClick={() => move(active, -1)} aria-label={`Move entry ${active + 1} up in bar ${slot}`}>← Move earlier</button>

@@ -1,0 +1,89 @@
+.equipment-mods { margin-block: 0.5rem; font-size: 0.8rem; min-width: 0; }
+.mod-planner { border-top: 1px solid var(--color-border); padding-top: 0.5rem; }
+.mod-toolbar { display: flex; gap: 0.5rem; align-items: end; }
+.mod-toolbar > label:first-child { width: 6.5rem; flex-shrink: 0; }
+.mod-search-label { flex: 1; min-width: 0; }
+.mod-category-toggles { display: flex; gap: 0.25rem 0.75rem; flex-wrap: wrap; margin-block: 0.4rem; }
+.planner-main .mod-category-toggles label { display: flex; align-items: center; gap: 0.3rem; margin: 0; min-height: 2rem; }
+.planner-main .mod-category-toggles input { width: 1rem; height: 1rem; min-height: 1rem; }
+.mod-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.75rem; }
+.mod-columns > section { min-width: 0; }
+.mod-columns h3 { font-size: 0.9rem; font-weight: 600; margin-block: 0.25rem; }
+.mod-columns h4 { font-size: 0.8rem; color: var(--color-accent); margin: 0; padding-block: 0.4rem; }
+.mod-columns h4 small { color: var(--color-muted); font-weight: 400; }
+.mod-available-scroll, .candidate-list { max-height: 29rem; overflow: auto; scrollbar-gutter: stable; border: 1px solid var(--color-border); border-radius: 0.3rem; padding: 0.35rem; }
+.mod-available ul, .mod-tier-alternatives, .candidate-list { list-style: none; padding: 0; margin: 0; }
+.mod-available-scroll { padding: 0.35rem; }
+.mod-available-power + li, .candidate-list > li + li { border-top: 1px solid var(--color-border); }
+.planner-main .available-effect { display: flex; gap: 0.3rem; width: 100%; text-align: left; border: 0; background: transparent; padding: 0.35rem 0.25rem; font-size: 0.8rem; line-height: 1.4; min-height: 2rem; overflow-wrap: anywhere; min-width: 0; }
+.mod-add-mark { flex-shrink: 0; margin-left: auto; color: var(--color-accent); }
+.mod-more { font-size: 0.75rem; line-height: 1.45; overflow-wrap: anywhere; }
+.mod-more > summary { cursor: pointer; min-height: 1.5rem; display: flex; align-items: center; color: var(--color-muted); }
+.mod-more > summary::before { content: '▸'; margin-right: 0.3rem; }
+.mod-more[open] > summary::before { content: '▾'; }
+.mod-more > summary::-webkit-details-marker { display: none; }
+.mod-more p { margin-block: 0.35rem; }
+.mod-tier-facts { font-size: 0.75rem; }
+.mod-tier-facts ul { padding-left: 1rem; }
+.mod-tier-alternatives button { text-align: left; width: 100%; font-size: 0.75rem; }
+.candidate-list > li { padding: 0.4rem; overflow-wrap: anywhere; }
+.mod-effect-text { padding: 0; margin: 0.2rem 0; list-style: none; white-space: pre-wrap; overflow-wrap: anywhere; }
+.mod-tier-select { display: block; margin-top: 0.25rem; }
+.planner-main .mod-tier-select select { font-size: 0.75rem; padding: 0.2rem; min-height: 2rem; }
+.mod-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
+.planner-main .mod-actions button { min-height: 2rem; padding: 0.2rem 0.5rem; font-size: 0.75rem; }
+.candidate-controls { display: flex; gap: 0.3rem; align-items: end; }
+.candidate-controls .mod-tier-select { flex: 1; min-width: 0; }
+.candidate-controls .mod-actions { flex-wrap: nowrap; margin: 0; }
+.mod-mismatch { display: block; font-size: 0.7rem; color: #f2c588; }
+.mod-guidance { margin-top: 0.35rem; }
+@media (max-width: 42rem) {
+  .mod-columns { grid-template-columns: minmax(0, 1fr); }
+  .mod-available-scroll, .candidate-list { max-height: 22rem; }
+}
+@media (pointer: coarse), (max-width: 30rem) {
+  .planner-main .available-effect, .mod-more > summary, .planner-main .mod-actions button, .planner-main .mod-tier-select select, .planner-main .mod-category-toggles label { min-height: 2.75rem; }
+}
+/* Compact effect rows: up to two visible lines, full content and controls on demand. */
+.mod-available-power { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 26px; align-items: start; }
+.planner-main .available-effect { min-height: 30px; padding: 4px 3px; font-size: 13px; line-height: 20px; }
+/* Readable by default: short/medium effects show in full; long ones wrap to two lines, full text on demand. */
+.available-effect-text, .candidate-effect { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; min-width: 0; overflow: hidden; white-space: normal; overflow-wrap: break-word; }
+.available-details { grid-column: 2; }
+.available-details > summary, .candidate-details > summary { position: absolute; top: 1px; right: 0; width: 26px; min-height: 28px; justify-content: center; font-size: 18px; }
+.available-details > summary::before, .candidate-details > summary::before, .saved-power-details > summary::before { content: none; }
+.available-details[open] { grid-column: 1 / -1; padding: 0.3rem; background: var(--color-background); }
+.available-details[open] .available-effect-text { -webkit-line-clamp: unset; line-clamp: none; }
+.mod-columns h4 { padding-block: 3px; font-size: 12px; }
+.mod-available-scroll, .candidate-list { max-height: 420px; }
+.candidate-list > li { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 26px 26px; padding: 0; min-height: 30px; align-items: start; }
+/* Spacing is margin, not padding, so a two-line clamp never reveals part of a third line. */
+.candidate-effect { grid-column: 1; grid-row: 1; padding: 0 3px; margin-block: 5px; font-size: 13px; line-height: 20px; }
+.candidate-list > li:has(> .candidate-details[open]) > .candidate-effect { -webkit-line-clamp: unset; line-clamp: none; }
+.candidate-effect .mod-effect-text { white-space: normal; margin: 0; }
+.candidate-effect p { display: inline; margin: 0; }
+.candidate-details { grid-column: 2; grid-row: 1; }
+.candidate-details > summary { right: 26px; }
+.candidate-details[open] { grid-column: 1 / -1; grid-row: 2; }
+.candidate-detail-content { padding: 0.5rem; background: var(--color-background); }
+.planner-main .candidate-remove { grid-column: 3; grid-row: 1; border: 0; padding: 0; min-height: 30px; font-size: 18px; }
+.mod-mismatch { position: absolute; top: -1px; right: 53px; font-size: 12px; line-height: 12px; }
+.candidate-unresolved .candidate-effect { display: block; }
+.candidate-unresolved .candidate-effect p { display: block; }
+.saved-power-details { display: inline-block; vertical-align: middle; }
+.saved-power-details > summary { display: inline-flex; justify-content: center; width: 24px; min-height: 24px; font-size: 18px; }
+.saved-power-details[open] { display: block; }
+@media (pointer: coarse), (max-width: 30rem) {
+  .planner-main .available-effect { min-height: 44px; padding-block: 10px; }
+  .candidate-effect { align-self: center; margin-block: 12px; }
+  .mod-available-power { grid-template-columns: minmax(0, 1fr) 44px; }
+  .available-details > summary, .candidate-details > summary { width: 44px; min-height: 44px; }
+  .candidate-list > li { grid-template-columns: minmax(0, 1fr) 44px 44px; min-height: 44px; }
+  .candidate-details > summary { right: 44px; }
+  .planner-main .candidate-remove { min-height: 44px; }
+  .mod-mismatch { right: 89px; }
+  .mod-available-scroll, .candidate-list { max-height: 300px; }
+}
+.mod-fit-flag { display: inline-block; margin-left: 0.35rem; padding: 0 5px; border: 1px dashed #c9a24a; border-radius: 3px; color: #f2c588; font-size: 10.5px; line-height: 15px; white-space: nowrap; vertical-align: 1px; }
+.mod-fit-flag.fit-other-slot { border-color: var(--color-border); color: var(--color-muted); }
+.mod-columns h4 .mod-fit-note { color: #f2c588; font-weight: 400; }

@@ -119,10 +119,11 @@ it('adds chosen official ranks to separate bars, reorders, removes and restores 
   expect(draft()).toEqual(saved);
 });
 
-it('searches names and descriptions without autosaving transient controls', async () => {
+it('keeps alphabetic skill choices and ability search without autosaving transient controls', async () => {
   await render();
-  await change('#skill-search-A', 'psych');
-  expect(control<HTMLSelectElement>('#skill-A').options).toHaveLength(2);
+  expect(container.querySelector('.skill-filter, [id^=skill-search]')).toBeNull();
+  const names = [...control<HTMLSelectElement>('#skill-A').options].slice(1).map(option => option.text);
+  expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
   await tick();
   expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
   await change('#skill-A', 'Psychology');
@@ -324,7 +325,7 @@ it('searches official upgrade families, expands exact tiers and quick-adds the h
   expect(draft().abilityBarA).toEqual([{ abilityId: highest.id, rank: highest.rank }]);
   expect(container.querySelector('.slot-warning')).toBeNull();
   await inspect('A', 1);
-  expect(container.textContent).toContain('Min Level');
+  expect(container.textContent).toContain('Min level');
   expect(container.textContent).not.toContain('exceeds configured skill level');
   expect(container.textContent).not.toContain('Rank not published');
 });
@@ -404,8 +405,8 @@ it('opens equipped details on hover, focus and click, supports Escape and expose
   await act(async () => { trigger.dispatchEvent(new MouseEvent('mouseout', { bubbles: true })); vi.advanceTimersByTime(150); });
   expect(container.querySelector('.ability-popover')).toBeNull();
   await act(async () => { trigger.focus(); });
-  expect(control('[role="dialog"]').textContent).toContain('Base damage');
-  expect(container.textContent).toContain('Power');
+  expect(control('[role="dialog"]').textContent).toContain('Damage');
+  expect(container.textContent).toContain('Power cost');
   expect(container.textContent).toContain('Reuse');
   expect(container.textContent).toContain('Range');
   expect(container.textContent).toContain('Target needs 50% more Rage');
@@ -450,7 +451,7 @@ it('shows one equipped detail panel when switching between the independent bars'
 });
 
 
-it('keeps technical facts behind More details and explicitly expands a long description', async () => {
+it('shows full published facts and ability effects immediately, with only technical fields under Technical details', async () => {
   const ability = data.abilities.find(a => a.description.length > 240 && data.getSkill(a.skill.skillId ?? '')?.combat)!;
   const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
   build.skillSlotA.skillId = ability.skill.skillId;
@@ -458,17 +459,15 @@ it('keeps technical facts behind More details and explicitly expands a long desc
   localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build));
   await render();
   await inspect('A', 1);
-  const more = control<HTMLDetailsElement>('.supplementary-facts');
-  const description = control<HTMLDetailsElement>('.full-description');
-  expect(more.open).toBe(false);
-  expect(description.open).toBe(false);
-  expect(control('.official-id').closest('details')).toBe(more);
-  expect(control('.ability-description > p').textContent!.length).toBeLessThan(245);
-  await click('.full-description summary');
-  expect(description.open).toBe(true);
-  expect(control('.full-description > p').textContent).toBe(ability.description);
-  await click('.supplementary-facts summary');
-  expect(more.open).toBe(true);
+  expect(control('.ability-description').textContent).toBe(ability.description);
+  expect(container.querySelector('.full-description')).toBeNull();
+  const technical = control<HTMLDetailsElement>('.technical-details');
+  expect(technical.open).toBe(false);
+  expect(technical.querySelector('summary')!.textContent).toBe('Technical details');
+  expect(control('.official-id').closest('details')).toBe(technical);
+  expect(container.textContent).not.toContain('More details');
+  await click('.technical-details summary');
+  expect(technical.open).toBe(true);
 });
 
 it('commits a title with Enter through the existing 500 ms autosave and restores it on remount', async () => {
@@ -526,27 +525,19 @@ it.each(['', '   '])('rejects a blank title on Enter and blur while keeping the 
   expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
 });
 
-it('keeps help and skill filtering on demand while preserving accessible controls', async () => {
+it('keeps help on demand and removes the skill search control while preserving the native dropdown and levels', async () => {
   await render();
   expect(container.querySelector('.planner-heading .eyebrow')).toBeNull();
   expect(container.querySelector('.introduction')).toBeNull();
+  expect(container.querySelector('.skill-filter, .skill-search-panel, [id^=skill-search]')).toBeNull();
   const help = control<HTMLDetailsElement>('.planner-help');
-  const filter = control<HTMLDetailsElement>('.skill-filter');
   expect(help.open).toBe(false);
-  expect(filter.open).toBe(false);
   expect(control('#level-A').getAttribute('aria-label')).toBe('Skill A level');
-  expect(control('.skill-filter summary').getAttribute('aria-label')).toBe('Filter skills for Skill A');
+  expect(control<HTMLSelectElement>('#skill-A').options.length).toBeGreaterThan(25);
   await click('.planner-help summary');
   expect(help.open).toBe(true);
   await act(async () => { help.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); });
   expect(help.open).toBe(false);
-  await click('.skill-filter summary');
-  expect(filter.open).toBe(true);
-  await change('#skill-search-A', 'psych');
-  expect(control<HTMLSelectElement>('#skill-A').options).toHaveLength(2);
-  await act(async () => { filter.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); });
-  expect(filter.open).toBe(false);
-  expect(document.activeElement).toBe(control('.skill-filter summary'));
   await tick();
   expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
 });

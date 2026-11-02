@@ -32,6 +32,8 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
   const [detailSlot, setDetailSlot] = useState<Slot | null>(null);
   const [recoveryVisible, setRecoveryVisible] = useState(true);
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
+  // Undo for mods cleared automatically by a skill change; valid only until the next edit.
+  const [cleared, setCleared] = useState<{ previous: BuildDocument; next: BuildDocument; message: string } | null>(null);
   const [saveState, setSaveState] = useState(session.restored.status === 'restored' ? 'Local draft restored' : 'No changes saved yet');
   const [autosave] = useState(() => createDraftAutosave(session.local, {
     onResult: result => {
@@ -58,15 +60,27 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
     };
   }, [autosave]);
 
-  function commit(edit: BuildEdit) {
-    if (readOnly) return;
-    const next: BuildDocument = editBuild(current.current, edit, data);
-    if (next === current.current) return;
+  function apply(next: BuildDocument) {
     current.current = next;
     setBuild(next);
     setSaveResult(null);
     setSaveState('Saving changes…');
     autosave.schedule(next);
+  }
+
+  function commit(edit: BuildEdit) {
+    if (readOnly) return;
+    const previous = current.current;
+    const next: BuildDocument = editBuild(previous, edit, data);
+    if (next === previous) return;
+    apply(next);
+    setCleared(edit.type === 'skill' ? clearedNotice(previous, next, edit.slot, data) : null);
+  }
+
+  function undoCleared() {
+    if (readOnly || !cleared || current.current !== cleared.next) { setCleared(null); return; }
+    apply(cleared.previous);
+    setCleared(null);
   }
 
   const preferenceProtected = preferenceResult !== null && !preferenceResult.ok &&
@@ -95,16 +109,35 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
       <details className="planner-help" onKeyDown={e => {
         if (e.key === 'Escape') { e.preventDefault(); e.currentTarget.open = false; e.currentTarget.querySelector<HTMLElement>('summary')?.focus(); }
       }}><summary aria-label="Planner help">?</summary><div className="planner-help-content">
-        <p>Select skills and levels, then use + to browse abilities. Open an equipped icon for details and bar controls. Changing a skill clears only its bar. Both slots can use the same skill.</p>
+        <p>Select skills and levels, then use + to browse abilities. Open an equipped icon for details and bar controls. Changing a skill clears its bar and staged mods for a skill no longer in either slot (with Undo). Both slots can use the same skill.</p>
       </div></details>
     </div><div className="planner-grid">
-      <SkillPlanner slot="A" skill={build.skillSlotA} bar={build.abilityBarA} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} />
-      <SkillPlanner slot="B" skill={build.skillSlotB} bar={build.abilityBarB} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} />
-    </div></section>
+      <SkillPlanner slot="A" skill={build.skillSlotA} bar={build.abilityBarA} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} equipment={build.equipment} />
+      <SkillPlanner slot="B" skill={build.skillSlotB} bar={build.abilityBarB} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} equipment={build.equipment} />
+    </div>
+    <div className="skill-change-notice" aria-live="polite">{cleared && <p>
+      <span>{cleared.message}</span>
+      <button type="button" onClick={undoCleared}>Undo</button>
+      <button type="button" className="notice-dismiss" aria-label="Dismiss cleared mods notice" onClick={() => setCleared(null)}>×</button>
+    </p>}</div></section>
     <EquipmentPlanner build={build} data={data} onEdit={commit} readOnly={readOnly} minimum={minimumEquipmentLevel}
       preferenceProtected={preferenceProtected} preferenceNotice={preferenceNotice} onMinimumChange={updateMinimum} />
     <footer className="planner-footer"><span>Draft game data: {build.gameDataVersion} · Loaded: {data.gameDataVersion} · Schema {build.schemaVersion}</span><span>Some portions copyright {new Date().getFullYear()} Elder Game, LLC. · Local draft only</span></footer>
   </>;
+}
+
+function stagedCount(build: BuildDocument) {
+  return build.equipment.reduce((sum, selection) => sum + selection.candidateMods.length, 0);
+}
+
+/** Concise feedback for candidates removed atomically with a skill change. */
+function clearedNotice(previous: BuildDocument, next: BuildDocument, slot: Slot, data: GameDataRepository) {
+  const removed = stagedCount(previous) - stagedCount(next);
+  if (removed <= 0) return null;
+  const items = previous.equipment.filter((selection, index) => next.equipment[index] !== selection).length;
+  const departed = (slot === 'A' ? previous.skillSlotA : previous.skillSlotB).skillId ?? '';
+  const name = data.getSkill(departed)?.name ?? departed;
+  return { previous, next, message: `Removed ${removed} staged ${name} mod${removed === 1 ? '' : 's'} from ${items} item${items === 1 ? '' : 's'}.` };
 }
 
 type LoadState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; data: GameDataRepository };

@@ -1,16 +1,12 @@
+import type { ReactNode } from 'react';
 import type { EquipmentDefinition } from '../../data/search/equipment';
+import { EffectDescription } from '../mods/EffectDescription';
 import { matchesEquipmentText } from '../../data/search/equipment';
 import type { GameDataRepository } from '../../data/repository/repository';
 
-/** Display a published token/value pair without inferring units or mechanics. */
-function effectLabel(description: string): string {
-  const token = /^\{([A-Z_]+)\}\{([^{}]+)\}$/u.exec(description);
-  if (!token) return description;
-  const label = token[1]!.toLowerCase().replaceAll('_', ' ');
-  return `${label[0]!.toUpperCase()}${label.slice(1)}: ${token[2]}`;
-}
-
-export function ItemFacts({ item, data, query = '' }: { item: EquipmentDefinition; data: GameDataRepository; query?: string }) {
+/** Every published fixed effect is shown immediately, using the shared effect formatter. `stats` replaces the
+ * plain list with the structured STATS panel for equipped items. */
+export function ItemFacts({ item, data, query = '', stats }: { item: EquipmentDefinition; data: GameDataRepository; query?: string; stats?: ReactNode }) {
   const effects = [...(item.fixedEffects ?? [])].sort((a, b) =>
     Number(matchesEquipmentText(b.description, query)) - Number(matchesEquipmentText(a.description, query)));
   const source = data.getSourceMetadata(item.source);
@@ -20,11 +16,8 @@ export function ItemFacts({ item, data, query = '' }: { item: EquipmentDefinitio
     <p className="item-requirements">Published skill requirements: {item.skillRequirements?.length
       ? item.skillRequirements.map(req => `${data.getSkill(req.skill.skillId ?? '')?.name ?? req.skill.sourceId} ${req.level}`).join(', ')
       : 'none published'}</p>
-    {effects.length > 0 ? <ul className="item-effects">{effects.slice(0, 3).map((effect, index) => <li key={index}>{effectLabel(effect.description)}</li>)}</ul>
-      : <p className="muted">No fixed effects published.</p>}
-    {effects.length > 3 && <details className="item-more"><summary>{effects.length - 3} more fixed effects</summary>
-      <ul className="item-effects">{effects.slice(3).map((effect, index) => <li key={index}>{effectLabel(effect.description)}</li>)}</ul>
-    </details>}
+    {stats ?? (effects.length > 0 ? <ul className="item-effects">{effects.map((effect, index) => <li key={index}><EffectDescription description={effect.description} data={data} /></li>)}</ul>
+      : <p className="muted">No fixed effects published.</p>)}
     <details className="item-more"><summary>Description &amp; official source</summary>
       <p className="item-description">{item.description || 'No description published.'}</p>
       <p>{item.id} · {item.slot} · {item.internalName}</p>

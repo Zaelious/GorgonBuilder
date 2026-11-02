@@ -1,0 +1,33 @@
+/* Compact STATS panel: aligned chip column + full readable effect text. */
+.item-stats { margin-block: 0.5rem; padding: 0.3rem 0.6rem 0.4rem; border: 1px solid var(--color-border); border-radius: 0.3rem; background: var(--color-background); }
+.item-stats-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; padding-bottom: 0.2rem; }
+.item-stats-heading h4 { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); }
+.item-stats-legend { display: flex; gap: 0.6rem; font-size: 10.5px; color: var(--color-muted); }
+.stat-rows { list-style: none; margin: 0; padding: 0; }
+.stat-row { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); align-items: baseline; gap: 0.6rem; padding-block: 3px; font-size: 13px; line-height: 19px; }
+.stat-row + .stat-row { border-top: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent); }
+.stat-base + .stat-imported, .stat-base + .stat-planned, .stat-imported + .stat-planned { border-top-color: var(--color-border); }
+.stat-text { min-width: 0; overflow-wrap: break-word; }
+.stat-base .stat-text { color: var(--color-text); }
+.stat-chip { justify-self: start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 6px; border-radius: 3px; font-size: 10.5px; line-height: 17px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
+.stat-chip-base { color: var(--color-muted); background: #ffffff0d; border: 1px solid var(--color-border); }
+/* Slot tones (GorgonExplorer-like): Skill A strong blue, Skill B gold. Filled-chip text contrast: A 6.1:1, B 10.9:1, others >= 7:1 (WCAG AA+).
+ * Non-slot categories are neutral/muted so they never look like a combat slot. Labels always name the skill. */
+.stat-chip { --tone-fg: var(--color-text); --tone-bg: #ffffff12; --tone-border: #8a958d; }
+.tone-skill-a { --tone-fg: #ffffff; --tone-bg: #1a5fc0; --tone-border: #5aa6ff; }
+.tone-skill-b { --tone-fg: #1c1400; --tone-bg: #f2c230; --tone-border: #ffd966; }
+.tone-generic { --tone-fg: #d5dde8; --tone-bg: #3a4452; --tone-border: #6c7a8c; }
+.tone-endurance { --tone-fg: #f0d9c2; --tone-bg: #4a3626; --tone-border: #8d6a4c; }
+.tone-shamanic { --tone-fg: #c8f0e8; --tone-bg: #1f4740; --tone-border: #4f8f84; }
+.tone-other { --tone-fg: #d9ddd9; --tone-bg: #2f3532; --tone-border: #737d76; }
+.tone-unknown { --tone-fg: var(--color-muted); --tone-bg: transparent; --tone-border: var(--color-border); border-style: dashed !important; }
+.stat-chip-planned { color: var(--tone-fg); background: var(--tone-bg); border: 1px solid var(--tone-border); }
+/* Imported existing powers: same tone, outlined (not filled) so they stay distinct from planned mods. */
+.stat-chip-imported { color: var(--tone-border); background: transparent; border: 1px dashed var(--tone-border); }
+.tone-skill-b.stat-chip-imported { color: #ffd966; }
+.item-stats-legend .legend-tone { padding: 0 5px; border-radius: 3px; font-weight: 600; color: var(--tone-fg); background: var(--tone-bg); border: 1px solid var(--tone-border); }
+.stat-empty { display: block; font-size: 12px; }
+@media (max-width: 30rem) {
+  .stat-row { grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.4rem; font-size: 12.5px; }
+  .item-stats { padding-inline: 0.45rem; }
+}
