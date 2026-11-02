@@ -771,6 +771,118 @@ Guidelines:
 5. Search, set rarity/location/level filters, navigate to page 2, equip/unequip; assert page and scroll do not reset. Verify keyboard, 375px and 320px.
 6. Run pinned-data check, lint, typecheck, full tests, build, Cloudflare dry-run, diff whitespace and dev/production browser smoke. Provide PR, preview, screenshots and private customer-relevant counts only (never uploaded files).
 
+## Approved UI Follow-ups — Scheduled Before T0012
+
+These product-owner-approved follow-ups refine already-merged UI flows without changing the T0012 calculation scope. Implement in separate feature branches, one ticket at a time. Neither ticket is started or completed merely by being added here.
+
+## T0008-F1 — Imported Effective Skill Levels and Ability Picker UX
+
+**Status:** Approved; not started
+
+**Complexity:** Standard
+
+**Verification:** Customer hands-on
+
+**Goal:** Make imported skill levels immediately useful in the two-skill planner and streamline adding multiple abilities to each bar.
+
+**Dependencies:** T0008,T0011-F1
+
+**Allowed areas:**
+- src/features/skills
+- src/features/abilities
+- src/features/import (import-to-build UI integration only)
+- src/app/editor (only the related build edit path)
+- focused UI/behavior tests
+
+**Do not touch:**
+- damage formulas or modifier aggregation
+- official data ingestion/normalization
+- equipment/mod/Spark editing
+- BuildDocument schema v1 or unrelated persistence behavior
+
+**Requirements:**
+- When a user selects a combat skill after importing a CharacterSheet, initialize that slot's level from its matching resolved imported skill. Keep the level editable and autosaved.
+- Treat bonus skill levels as part of the same **effective skill level** for ability availability and applicable progression effects; do not use a separate bonus-level mechanic. Preserve the report's raw `Level` and `BonusLevels` values for provenance. Verify whether report `Level` already includes `BonusLevels` before combining them so bonuses are not double-counted; document and test the verified interpretation. If the report semantics cannot be verified, surface the limitation instead of silently guessing.
+- Importing or replacing a report alone must not overwrite existing skill selections, manually edited levels, ability bars, or equipment. A deliberate subsequent skill selection may initialize the selected slot's level from the imported report.
+- General bar-side **+** opens continuous add mode: keep picker/search/scroll position open across additions, display an updating bar count, and disable further adds at six without forcibly closing.
+- Numbered empty-slot **+** and existing-slot Replace remain single-choice and close on successful selection. Preserve focus/keyboard accessibility.
+- Mark abilities already on **that bar** in the picker, but allow duplicates. Keep bars A and B independent, including same-skill A+A behavior.
+- A later T0014 optional **Respect Skill Level** mode remains separate; this ticket must not automatically replace already-selected ability tiers or implement damage math.
+
+**Non-goals:**
+- No automatic character-wide loadout replacement.
+- No mandatory skill-level gating of abilities.
+- No damage/progression formula implementation.
+- No schema migration or remote upload.
+
+**Acceptance criteria:**
+- Imported and manually edited effective levels display correctly in both skill selectors and survive refresh.
+- Missing/unresolved skill data leaves the existing/manual behavior intact; report replacement does not silently overwrite the build.
+- Tests cover bonus-level interpretation without double-counting, synchronization of the level input, and non-destructive import behavior.
+- General + supports multiple additions with unchanged search and a live count; numbered + and Replace close after one choice; full-bar behavior is clear.
+- Already-present abilities are marked, duplicates remain selectable, and independent bars are preserved.
+- Automated quality checks pass.
+
+**Manual verification:**
+1. Import a CharacterSheet, choose two imported skills, and compare displayed effective levels with in-game totals including bonus levels; manually override one, refresh, and verify persistence.
+2. Reimport reports and verify that existing skill/ability choices and manual levels remain untouched; select another imported skill and verify its initialized level.
+3. Use bar-side + to add several abilities without reopening the picker; verify selection markers, retained search, count, full-bar behavior and keyboard dismissal.
+4. Use a numbered empty-slot + and Replace to confirm each closes after selection; test a same-skill A+A build.
+5. Run lint, typecheck, tests and build.
+
+## T0010-F1 — Shared Equipment Mod Controls and Compact Item Metadata
+
+**Status:** Approved; not started
+
+**Complexity:** Standard
+
+**Verification:** Customer hands-on
+
+**Goal:** Eliminate repeated item-level filter controls and prioritize actionable STATS/mods over verbose item-source metadata.
+
+**Dependencies:** T0010,T0011-F2
+
+**Allowed areas:**
+- src/features/equipment
+- src/features/mods
+- src/features/import (item metadata presentation only)
+- src/app (shared equipment UI state only)
+- related styles and focused tests
+
+**Do not touch:**
+- normalized official treasure data, eligibility rules or original imported evidence
+- damage/calculation engine, Sparks or ability planner
+- BuildDocument schema v1 or existing editable imported-power semantics
+
+**Requirements:**
+- Lift treasure-mod search, target-level preview, category toggles, All skills and Other slots & profiles filters out of per-item editors into one **shared equipment-scoped** control state above the equipment/My Items rows.
+- Keep the mod search input visible; put target-level preview and less-frequently used filters in a compact expandable **Mod Browser Settings** section.
+- Preserve shared search/filter selections while switching among equipment slots or opening and closing panels. Apply the same search intent to each item's Available Mods while retaining each item's own slot/profile eligibility indicators and currently selected mods.
+- Preserve existing Max, 90, 100 and valid custom numeric target-level preview behavior; do not confuse mod-tier preview target level with the separate minimum-equipment-level picker preference.
+- Remove repeated per-item mod filter toolbars. Keep STATS, Available/Selected mod editing, effective imported working powers, original historical evidence and warnings intact.
+- Collapse the verbose metadata block above STATS into a single default-closed **Item details & source** section, covering imported instance/rarity/location/actual level, original imported item, target level, published skill requirements and source/provenance details; do not remove these values.
+- Do not hide actionable compatibility or unresolved-data warnings in the collapsed section. Do not repeat the expanded item's name or icon unnecessarily.
+
+**Non-goals:**
+- No new global multi-slot mod assignment or cross-equipment optimizer.
+- No change to TSys eligibility logic or treasure-tier selection semantics.
+- No change to imported instance identity or saved modifier data.
+- No new BuildDocument field for transient browser filters.
+
+**Acceptance criteria:**
+- One visible mod search and one expandable settings section control all equipment Available Mods views without duplicated toolbars.
+- Search and filter state persists when moving among Head, Chest, Ring, Necklace and other slots during the current editing session.
+- Per-item slot/profile warnings, exact tiers and editing behavior are unchanged; minimum-equipment-level filtering remains independent.
+- STATS is immediately visible when a selected item's row is expanded; source and level metadata is available under one default-closed disclosure; important warnings remain visible.
+- Test common and imported equipment cases at desktop and narrow widths; automated quality checks pass.
+
+**Manual verification:**
+1. Search for a mod term such as lightning, change preview level/category/All skills and switch between several item rows; verify controls and results stay consistent without falsely changing eligibility.
+2. Check a custom numeric preview target and the independent minimum equipment search filter.
+3. Expand an imported Head or Necklace: confirm STATS is visible immediately, source metadata is collapsed, and original instance/requirements/provenance are still accessible.
+4. Edit/remove/restore an imported treasure power and stage a candidate mod to verify nothing is lost or double-counted visually.
+5. Check narrow layouts, keyboard interaction, console, lint, typecheck, tests and build.
+
 ## T0012 — Build Modifier Aggregation Engine
 
 **Complexity:** High
