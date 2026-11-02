@@ -76,6 +76,21 @@ describe('CharacterSheet', () => {
     expect(value.source.server).toBeNull();
     expect(value.skills[0]).toMatchObject({ level: 0, bonusLevels: null, xpTowardNextLevel: null, abilities: [] });
   });
+  it('preserves the -1 next-XP sentinel from the sanitized review reproduction', () => {
+    const text = readFileSync(new URL('./fixtures/character-sheet-no-next-xp.json', import.meta.url), 'utf8');
+    const input = JSON.parse(text) as CharacterFixture;
+    for (const lookup of [undefined, resolver]) {
+      const result = parseCharacterSheetJson(text, lookup);
+      const value = success(result);
+      expect(value.skills[0]).toMatchObject({
+        xpNeededForNextLevel: -1, xpTowardNextLevel: 0,
+        metadata: { XpNeededForNextLevel: -1 },
+      });
+      expect(parseCharacterSheet(input, lookup)).toEqual(result);
+      expect(success(JSON.parse(JSON.stringify(result)) as ImportResult<typeof value>).skills[0]?.xpNeededForNextLevel).toBe(-1);
+    }
+    expect(input.Skills.FixtureCappedSkill?.XpNeededForNextLevel).toBe(-1);
+  });
   it('preserves known-ability ordering and repeated source references', () => {
     const input = character();
     input.Skills.Psychology!.Abilities = ['Psychoanalyze1', 'Psychoanalyze1'];
@@ -92,8 +107,10 @@ describe('CharacterSheet', () => {
     error(parseCharacterSheet(input), 'unsupported-structure', `/${key}`);
   });
   it.each([
-    ['Level', '90'], ['Level', -1], ['Level', 1.5], ['BonusLevels', false],
+    ['Level', '90'], ['Level', -1], ['Level', 1.5], ['BonusLevels', false], ['BonusLevels', -1],
     ['XpTowardNextLevel', '123'], ['XpNeededForNextLevel', null], ['Abilities', {}],
+    ['XpTowardNextLevel', -1], ['XpNeededForNextLevel', -2], ['XpNeededForNextLevel', -1.5],
+    ['XpNeededForNextLevel', -0.5], ['XpNeededForNextLevel', '-1'],
   ] as const)('rejects malformed skill %s', (key, value) => {
     const input = character(); input.Skills.Psychology![key] = value as JsonValue;
     error(parseCharacterSheet(input), key === 'Abilities' ? 'unsupported-structure' : 'invalid-field-type', `/Skills/Psychology/${key}`);

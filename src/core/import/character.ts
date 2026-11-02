@@ -23,7 +23,10 @@ export function parseCharacterSheet(input: unknown, resolver?: ImportReferenceRe
         level: numberField(raw, 'Level', path, true, true)!,
         bonusLevels: numberField(raw, 'BonusLevels', path, false, true),
         xpTowardNextLevel: numberField(raw, 'XpTowardNextLevel', path),
-        xpNeededForNextLevel: numberField(raw, 'XpNeededForNextLevel', path),
+        // The report uses -1 when there is no next XP threshold. Retain it only
+        // for this field; other negative XP/progression values remain invalid.
+        xpNeededForNextLevel: raw.XpNeededForNextLevel === -1
+          ? -1 : numberField(raw, 'XpNeededForNextLevel', path),
         abilities, metadata: raw,
       };
     });

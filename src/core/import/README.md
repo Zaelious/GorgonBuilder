@@ -97,6 +97,15 @@ Explicit assumptions/limits:
   nonnegative integer `Level`. Bonus levels/XP/abilities are optional. Storage
   requires an `Items` array; each item requires source `TypeID` and `Name`.
   Empty collections are valid. A new incompatible required shape fails clearly.
+- `XpNeededForNextLevel` additionally accepts the exact numeric sentinel `-1`
+  for a skill with no next XP threshold. The typed value and raw skill metadata
+  preserve `-1`; it is not coerced to zero/null or used to infer a level cap.
+  All other negative values in this field, and negative XP/progression values
+  in other fields, remain invalid. This case is based on the
+  [sanitized real-export review reproduction](https://github.com/Zaelious/GorgonBuilder/pull/23#pullrequestreview-5731057013),
+  reproduced in `fixtures/character-sheet-no-next-xp.json`. The regression tests
+  cover both pure APIs and the Node CLI with pinned v490 data using only that
+  synthetic fixture; current customer-export resolution counts remain unverified.
 - Fixture version `1`, timestamps, names, levels and crafting values are synthetic
   example values, not a version compatibility whitelist or validated gameplay
   state. The fixture treasure pairs also exercise source preservation rather
@@ -169,19 +178,26 @@ unknown metadata, source safety, missing Spark history, inventory/equipment
 separation, and actual Node smoke execution with privacy sentinels and failure
 exit codes. All fixture values are synthetic; no real exports are committed.
 
-Implementation verification (Node 24.19.0, based on main `8137232`):
+Implementation verification after the next-XP sentinel review fix
+(Node 24.19.0, based on main `8137232`):
 
 | Command | Result |
 | --- | --- |
 | `npm ci --cache /tmp/gorgonbuilder-npm-cache` | Passed, committed lockfile unchanged |
 | `npm run data:update -- --check` | Passed, pinned official v490 reused unchanged |
-| `npx vitest run src/core/import` | 90 passed in 2 files |
+| `npx vitest run src/core/import` | 98 passed in 2 files |
 | `npm run lint` | Passed, zero warnings |
 | `npm run typecheck` | Passed |
-| `npm test` | 603 passed in 26 files (513 existing + 90 import tests) |
+| `npm test` | 611 passed in 26 files (513 existing + 98 import tests) |
 | `npm run build` | Passed |
 | `git diff --check` / `git diff --cached --check` | Passed |
 | Sanitized local smoke command above | Passed; expected counts and unavailable equipped state |
+| Same smoke command with `character-sheet-no-next-xp.json` as CharacterSheet | Passed with pinned v490; sentinel report recognized |
+
+The new sentinel regression was run before the fix and reproduced the rejection.
+After the fix, both pure APIs preserve `-1` in typed data and metadata, including
+JSON round-tripping. Tests also reject `-2`, negative fractions, the string `"-1"`,
+and negative values in other XP/level fields. Only synthetic reports were executed.
 
 Environment notes: the first dependency install could not write the executor's
 default npm cache; using a writable temporary cache resolved it. CLI subprocess

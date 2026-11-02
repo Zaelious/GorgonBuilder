@@ -51,6 +51,7 @@ export interface ImportedSkill {
   level: number;
   bonusLevels: number | null;
   xpTowardNextLevel: number | null;
+  /** Source -1 sentinel means no next XP threshold; preserved verbatim. */
   xpNeededForNextLevel: number | null;
   /** Original known abilities, including order and duplicates. */
   abilities: ImportedReference[];

@@ -63,6 +63,17 @@ it('runs both sanitized reports locally with official resolution and private sou
   expect(result.stdout).toContain('"unresolvedItemReferences": 1');
 });
 
+it('recognizes the next-XP sentinel fixture through the Node CLI with pinned official data', () => {
+  const character = fixture('character-sheet-no-next-xp');
+  character.Character = sentinel;
+  const result = run(JSON.stringify(character), JSON.stringify(fixture('storage')));
+  expect(result.status).toBe(0);
+  expect(result.stdout).toContain('"report": "CharacterSheet"');
+  expect(result.stdout).toContain('"skills": 1');
+  expect(result.stdout).toContain('"unresolvedReferences": 1');
+  expect(result.stdout).not.toContain('invalid-field-type');
+});
+
 it('reports each failure separately without leaking malformed input or filesystem paths', () => {
   const result = run(`{ ${sentinel}`, JSON.stringify(fixture('storage')), true);
   expect(result.status).toBe(1);
