@@ -118,7 +118,7 @@ it('shows Acid Arrow Damage +110% from MainHand under Acid Arrow 13 immediately,
   await open();
   expect(control('.ability-popover h3').textContent).toBe('Acid Arrow 13');
   const stats = Object.fromEntries([...container.querySelectorAll('.ability-stats > div')].map(row => [row.querySelector('dt')!.textContent, row.querySelector('dd')!.textContent]));
-  expect(stats).toMatchObject({ 'Min level': '125', 'Power cost': '70', Reuse: '10s', Range: '30', Damage: '529 Acid', 'Armor damage': '529 Acid' });
+  expect(stats).toMatchObject({ 'Min level': '125', 'Power cost': '70', 'Reuse time': '10s', Range: '30', Damage: '529 Acid', 'Armor damage': '529 Acid' });
   expect(rows().map(row => [row.querySelector('.relevant-effect')!.textContent, row.querySelector('.relevant-source')!.textContent, row.dataset.powerId, row.dataset.tierId]))
     .toEqual([['Acid Arrow Damage +110%', 'MainHand', 'power_10302', 'id_25']]);
   expect(control('.ability-stats').nextElementSibling!.classList.contains('relevant-mods')).toBe(true);

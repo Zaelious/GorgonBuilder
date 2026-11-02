@@ -32,21 +32,28 @@ export function playerEffects(ability: Ability): { effects: string[]; technical:
   return { effects, technical };
 }
 
+/** Stable CSS hook for a published damage type's display color, e.g. `damage-acid`. */
+export function damageTypeClass(damageType: string): string {
+  return `damage-${damageType.toLowerCase().replace(/[^a-z0-9]+/gu, '-')}`;
+}
+
 /**
- * Compact facts: description, aligned primary stats, then `afterStats` (Relevant Mods in the skill-bar popover), then
+ * Compact facts: description, one vertical list of primary stats (damage first), then `afterStats` (Relevant Mods in the skill-bar popover), then
  * non-zero published effects. IDs, keywords, zero-value/conditional DoT records and rule names stay in Technical details.
  */
 export function AbilityFacts({ ability, afterStats }: { ability: Ability; afterStats?: ReactNode }) {
   const { damage, pve, timing, targeting } = ability;
   const { effects, technical } = playerEffects(ability);
+  // Presentation only: published values in one vertical list (damage first), damage values in their type's color.
+  const typed = (value: number) => <span className={`damage-value ${damageTypeClass(damage.damageType)}`}>{value} {damage.damageType}</span>;
   const stats: [string, ReactNode][] = [
-    ['Min level', ability.level], ['Power cost', pve.powerCost], ['Reuse', `${timing.resetTime}s`],
-    ['Range', `${targeting.range}${targeting.aoe !== null ? ` · AoE ${targeting.aoe}` : ''}`],
-    ['Damage', damage.damage !== null ? `${damage.damage} ${damage.damageType}` : `Not published · ${damage.damageType}`],
+    ['Damage', damage.damage !== null ? typed(damage.damage) : `Not published · ${damage.damageType}`],
   ];
-  if (damage.healthSpecificDamage !== null) stats.push(['Health damage', `${damage.healthSpecificDamage} ${damage.damageType}`]);
-  if (damage.armorSpecificDamage !== null) stats.push(['Armor damage', `${damage.armorSpecificDamage} ${damage.damageType}`]);
+  if (damage.healthSpecificDamage !== null) stats.push(['Health damage', typed(damage.healthSpecificDamage)]);
+  if (damage.armorSpecificDamage !== null) stats.push(['Armor damage', typed(damage.armorSpecificDamage)]);
   if (damage.extraDamageIfTargetVulnerable !== null) stats.push(['If vulnerable', `+${damage.extraDamageIfTargetVulnerable}`]);
+  stats.push(['Power cost', pve.powerCost], ['Reuse time', `${timing.resetTime}s`],
+    ['Range', `${targeting.range}${targeting.aoe !== null ? ` · AoE ${targeting.aoe}` : ''}`], ['Min level', ability.level]);
   return <div className="ability-facts">
     <p className="ability-description">{ability.description || 'No description published.'}</p>
     <dl className="ability-stats">{stats.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>

@@ -10,6 +10,7 @@ import { createDraftAutosave } from '../persistence/local/autosave';
 import { createLocalPersistence, type SaveResult } from '../persistence/local/storage';
 import { editBuild, type BuildEdit, type Slot } from './editor/build-editor';
 import { BuildTitle } from './editor/BuildTitle';
+import { BrandHeader } from './BrandHeader';
 import './planner.css';
 
 function saveError(result: Exclude<SaveResult, { ok: true }>): string {
@@ -80,6 +81,14 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
     setCleared(edit.type === 'skill' ? clearedNotice(previous, next, edit.slot, data) : null);
   }
 
+  /** Explicit local Save: the existing autosave flush path for the current draft (no remote save). */
+  function saveNow() {
+    if (readOnly) return;
+    setSaveState('Saving changes…');
+    autosave.schedule(current.current);
+    autosave.flush();
+  }
+
   function clearBuild() {
     if (readOnly || !window.confirm('Clear the current working build? This removes configured skills and levels, both ability bars, equipment, imported working powers and planned mods, Spark configurations, title and notes, and target settings. My Items, imported CharacterSheet/Storage reports and browser preferences are kept. This cannot be undone.')) return;
     setCleared(null);
@@ -111,11 +120,20 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
   </div> : null;
 
   return <>
-    <div className="planner-heading"><BuildTitle title={build.title} readOnly={readOnly} onCommit={title => commit({ type: 'title', title })} /><ImportCharacter data={data} session={imported} onApply={setImported} /><p className="save-status" role="status">{saveState}</p><button type="button" className="clear-build" disabled={readOnly} onClick={clearBuild}>Clear build</button></div>
+    <div className="planner-heading"><BuildTitle title={build.title} readOnly={readOnly} onCommit={title => commit({ type: 'title', title })} />
+      <div className="planner-actions">
+        <p className="save-status" id="save-status" role="status">{saveState}</p>
+        <ImportCharacter data={data} session={imported} onApply={setImported} />
+        <button type="button" className="save-draft" disabled={readOnly} onClick={saveNow} aria-label="Save local draft" aria-describedby="save-status"
+          title="Save this draft in this browser now. Changes also save automatically; nothing is uploaded.">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2zM8 3v5h7V3M8 21v-7h8v7" /></svg>Save</button>
+        <button type="button" className="clear-build" disabled={readOnly} onClick={clearBuild}>Clear build</button>
+      </div>
+    </div>
     {recoveryVisible && session.restored.status === 'fallback' && <p className="notice warning" role="alert">{saveError(session.restored.error)}</p>}
     {versionMismatch && <p className="notice warning" role="alert">This draft uses game data {build.gameDataVersion}; loaded data is {data.gameDataVersion}. The saved version and selections are preserved. Editing is disabled because the original snapshot is unavailable.</p>}
     {saveResult && !saveResult.ok && <div className="notice warning" role="alert"><p>{saveError(saveResult)}</p><button type="button" onClick={() => autosave.flush()}>Retry saving</button></div>}
-    <section className="skills-section" aria-labelledby="skills-abilities-title"><div className="section-heading"><h2 id="skills-abilities-title">Skills &amp; Abilities</h2>
+    <section className="skills-section" aria-labelledby="skills-abilities-title"><div className="section-heading"><h2 id="skills-abilities-title"><svg className="section-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"><path d="M12 2.5c.6 4.6 2.9 6.9 7.5 7.5-4.6.6-6.9 2.9-7.5 7.5-.6-4.6-2.9-6.9-7.5-7.5 4.6-.6 6.9-2.9 7.5-7.5Z" /></svg>Skills &amp; Abilities</h2>
       <details className="planner-help" onKeyDown={e => {
         if (e.key === 'Escape') { e.preventDefault(); e.currentTarget.open = false; e.currentTarget.querySelector<HTMLElement>('summary')?.focus(); }
       }}><summary aria-label="Planner help">?</summary><div className="planner-help-content">
@@ -166,7 +184,7 @@ export function App() {
   }, [attempt]);
 
   return <div className="app-shell">
-    <header className="site-header"><span className="wordmark">Gorgon Builder</span><span className="project-label">Project Gorgon build planner</span></header>
+    <BrandHeader />
     <main className="planner-main">
       {load.status === 'loading' && <section className="notice" role="status"><h1>Loading official game data…</h1><p>Preparing the build planner.</p></section>}
       {load.status === 'error' && <section className="notice" role="alert"><h1>Game data could not be loaded</h1><p>Check your connection and retry. Your stored draft has not been changed.</p><button type="button" onClick={() => { setLoad({ status: 'loading' }); setAttempt(n => n + 1); }}>Retry loading game data</button></section>}

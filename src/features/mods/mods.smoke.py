@@ -432,7 +432,7 @@ def main():
                         expect(planned.locator('.stat-chip')).to_have_text(['Druid', 'Druid', 'Archery'])
                         assert planned.evaluate_all('(es) => es.map(e => e.dataset.candidateEffect)') == ['0', '2', '1']
                         chip_colors = planned.locator('.stat-chip').evaluate_all('(es) => es.map(e => getComputedStyle(e).backgroundColor)')
-                        assert chip_colors == ['rgb(26, 95, 192)', 'rgb(26, 95, 192)', 'rgb(242, 194, 48)'], chip_colors
+                        assert chip_colors == ['rgb(29, 78, 216)', 'rgb(29, 78, 216)', 'rgb(234, 179, 8)'], chip_colors
                         chip_x = chest.locator('.item-stats .stat-text').evaluate_all('(es) => [...new Set(es.map(e => Math.round(e.getBoundingClientRect().left)))]')
                         assert len(chip_x) == 1, chip_x  # every STATS effect starts in one aligned column
                         expect(chest).not_to_contain_text('CANDIDATE')

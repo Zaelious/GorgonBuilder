@@ -44,7 +44,7 @@ export function SkillPlanner({ slot, skill, bar, data, onEdit, readOnly, detailS
   const importedLevel = importedSkillLevel(imported, skill.skillId, data);
   const unavailable = skill.skillId !== null && !selected;
   return (
-    <section className="skill-panel" aria-labelledby={`slot-${slot}`}>
+    <section className={`skill-panel skill-panel-${slot}`} aria-labelledby={`slot-${slot}`}>
       <h3 id={`slot-${slot}`} className="sr-only">Skill {slot}: {selected?.name ?? skill.skillId ?? 'Empty slot'}</h3>
       <fieldset disabled={readOnly} className="skill-controls">
         <legend className="sr-only">Skill {slot} configuration</legend>

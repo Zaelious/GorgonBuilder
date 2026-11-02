@@ -80,7 +80,8 @@ def main():
                           overflow:document.documentElement.scrollWidth > innerWidth};
                     }''')
                     assert 190 <= metric['section']['height'] <= 250, metric
-                    assert metric['section']['y'] <= 160, metric
+                    # T0022: the cinematic header stays modest; the skills editor starts within the first ~200px.
+                    assert metric['section']['y'] <= 200, metric
                     assert 22 <= metric['titleSize'] <= 28, metric
                     assert not metric['overflow'], metric
                     # Full planner width at 100% zoom: 16-32px gutters, up to 100rem; no 832px section cap.
@@ -93,7 +94,8 @@ def main():
                         centers = [control['y'] + control['height'] / 2 for control in row['controls']]
                         assert max(centers) - min(centers) <= 2, row
                         for icon in row['controls'][2:8]:
-                            assert 44 <= icon['width'] <= 48 and 44 <= icon['height'] <= 48, icon
+                            # T0022: ~52px skill-bar tiles on desktop.
+                            assert 50 <= icon['width'] <= 54 and 50 <= icon['height'] <= 54, icon
                     for image in page.locator('.combat-slot img').all():
                         expect(image).to_have_js_property('naturalWidth', 64)
                     page.screenshot(path=str(output / f'{width}-{state}.png'), full_page=True)

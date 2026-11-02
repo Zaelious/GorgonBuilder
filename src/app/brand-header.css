@@ -1,0 +1,63 @@
+/* T0022 cinematic header. Bronze/gold tones come only from the mosaic artwork itself. */
+.site-header {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 6rem;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+  background: radial-gradient(ellipse at 78% 30%, #1d2129 0%, #121417 45%, var(--color-background) 100%);
+}
+.site-banner { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+/* Right-anchored and wider than the header so the banner's own Gorgon (left third) stays out of view behind the
+ * left fade; only the moonlit ruins show beside the portrait, never two faces. */
+.site-banner-image {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: min(140%, 2400px);
+  min-width: 100%;
+  height: auto;
+  max-width: none;
+  transform: translateY(-22%);
+  user-select: none;
+}
+.site-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, var(--color-background) 0%, #0f0f0ff0 18%, #0f0f0fb3 38%, #0f0f0f40 62%, #0f0f0f1a 100%),
+    linear-gradient(180deg, #0f0f0f33 0%, transparent 40%, #0f0f0fcc 100%);
+}
+.site-header-inner { display: flex; align-items: center; gap: 0.875rem; min-width: 0; padding-block: 0.75rem; }
+.brand-portrait {
+  flex: 0 0 auto;
+  width: 4.5rem;
+  height: 4.5rem;
+  margin-block: -0.5rem;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px #000000b3);
+}
+.site-header .wordmark { font-size: 1.75rem; font-weight: 600; letter-spacing: 0.005em; line-height: 1.15; color: var(--color-text); text-shadow: 0 1px 8px #000000cc; white-space: nowrap; }
+.site-header .project-label {
+  padding-left: 0.875rem;
+  border-left: 1px solid #ffffff2e;
+  color: var(--color-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  white-space: nowrap;
+  text-shadow: 0 1px 6px #000000cc;
+}
+@media (max-width: 40rem) {
+  .site-header { min-height: 4.5rem; }
+  .site-banner-image { width: 170%; transform: translateY(-20%); }
+  .site-header-inner { gap: 0.625rem; padding-block: 0.5rem; }
+  .brand-portrait { width: 3.25rem; height: 3.25rem; margin-block: -0.25rem; }
+  .site-header .wordmark { font-size: 1.3rem; }
+  .site-header .project-label { padding-left: 0.625rem; font-size: 0.8125rem; }
+}
+@media (max-width: 23rem) {
+  .site-header .project-label { display: none; }
+}

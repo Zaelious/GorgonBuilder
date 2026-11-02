@@ -128,7 +128,7 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
   }
 
   return <section className="equipment-section" aria-labelledby="equipment-title">
-    <div className="section-heading"><h2 id="equipment-title">Equipment</h2><button type="button" disabled={!imported} onClick={event => setPicker({ mode: 'general', slot: '', index: null, returnFocus: event.currentTarget, fallbackFocus: event.currentTarget, initialSource: 'owned' })}>My Items{imported ? ` (${imported.storage.items.filter(item => importedSlot(item, data)).length})` : ''}</button><span className="muted">{build.equipment.length} selected</span></div>
+    <div className="section-heading"><h2 id="equipment-title"><svg className="section-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 16v-5a7 7 0 0 1 14 0v5M5 12h14M9 12v7m6-7v7M5 16l4 3h6l4-3" /></svg>Equipment</h2><button type="button" disabled={!imported} onClick={event => setPicker({ mode: 'general', slot: '', index: null, returnFocus: event.currentTarget, fallbackFocus: event.currentTarget, initialSource: 'owned' })}>My Items{imported ? ` (${imported.storage.items.filter(item => importedSlot(item, data)).length})` : ''}</button><span className="muted">{build.equipment.length} selected</span></div>
     <ModBrowserControls browser={modBrowser} onChange={setModBrowser} />
     {!picker && preferenceNotice}
     <div className="equipment-primary">{PRIMARY_SLOTS.map(renderRow)}</div>

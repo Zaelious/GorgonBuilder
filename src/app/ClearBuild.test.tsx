@@ -118,7 +118,7 @@ it.each(['unsupported-schema', 'unreadable-storage', 'game-data-mismatch'])('dis
 it('retains the imported reports, My Items and minimum preference after reset without auto-equipping', async () => {
   const preferences = localStorage.getItem(PREFERENCES_STORAGE_KEY);
   vi.spyOn(window, 'confirm').mockReturnValue(true);
-  await render(); await click('.planner-heading > button:not(.clear-build)');
+  await render(); await click('.planner-heading .import-character');
   for (const [selector, path] of [['#character-file', 'src/core/import/fixtures/character-sheet.json'], ['#storage-file', 'src/features/import/fixtures/storage.json']]) {
     const file = new File([readFileSync(path!, 'utf8')], 'synthetic.json', { type: 'application/json' });
     Object.defineProperty(file, 'text', { value: () => Promise.resolve(readFileSync(path!, 'utf8')) });
