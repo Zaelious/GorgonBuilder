@@ -12,7 +12,7 @@ Known confirmed example:
 
 - Skill Base Damage references original ability base only.
 
-**Action:** Add formula rules incrementally with confidence states and real-game regression fixtures.
+**Action:** T0013 merged through [PR #32](https://github.com/Zaelious/GorgonBuilder/pull/32) with a pure damage engine, original-base Skill Base contribution and explicit provisional stacking assumptions. Finish T0014's visible damage breakdown and T0015's Spark integration before customer in-game formula validation; do not promote assumed rules based on synthetic tests. Keep internal confidence/provenance without repetitive UI badges; show specific warnings for genuinely unmodeled mechanics. Minor T0013 confidence nuance: a minimal synthetic base-only case can be marked validated while published-hit direct delivery remains assumed; address when clarifying result display/validation, not as a blocker to UI integration.
 
 ## KI-0002 — Storage Export Does Not Reliably Mark Active Equipment
 

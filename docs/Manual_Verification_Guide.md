@@ -174,6 +174,10 @@ skill base +50%
 expected contribution +250
 ```
 
+### T0013 accepted calculation foundation (2026-11-02)
+
+[PR #32](https://github.com/Zaelious/GorgonBuilder/pull/32) squash-merged as `86c2e34` with 810 automated tests and green GitHub CI. [Verification](T0013_Verification.md) and [four calculation reports](calculation-reports/T0013-psychology-mock.txt) demonstrate exact ability IDs, skill/ability/damage-type filtering, original-base Skill Base rule and per-modifier ordered breakdowns. Confirm `500 × 0.50 = +250` regardless of other flats; missing/unknown powers and crits remain explicitly unmodeled. The preview formula is provisional; no damage result UI or Spark integration exists yet. Hands-on game-math acceptance is deferred until T0014/T0015 allow comparing working gear and Sparks with actual in-game results. At T0014 verify visible values and drill-down follow each edit, distinguish omitted interactions, and preserve exact source and UI accessibility.
+
 ## Spark Tickets
 
 Verify:
