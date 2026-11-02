@@ -14,13 +14,13 @@ export function TierFacts({ tier, data }: { tier: Runtime<NormalizedTreasureTier
   </div>;
 }
 
-export function TierSelect({ power, tierId, onChange, disabled, label }: {
-  power: TreasurePower | undefined; tierId: string | null; onChange: (id: string | null) => void; disabled: boolean; label: string;
+export function TierSelect({ power, tierId, onChange, disabled, label, allowUnset = true }: {
+  power: TreasurePower | undefined; tierId: string | null; onChange: (id: string | null) => void; disabled: boolean; label: string; allowUnset?: boolean;
 }) {
   const tiers = [...(power?.tiers ?? [])].sort((a, b) => a.minLevel - b.minLevel || a.id.localeCompare(b.id, undefined, { numeric: true }));
   return <label className="mod-tier-select">Tier
     <select aria-label={label} value={tierId ?? ''} disabled={disabled} onChange={event => onChange(event.target.value || null)}>
-      <option value="">No tier chosen</option>
+      {allowUnset && <option value="">No tier chosen</option>}
       {tierId !== null && !tiers.some(tier => tier.id === tierId) && <option value={tierId}>{tierId} — unavailable (retained)</option>}
       {tiers.map(tier => <option value={tier.id} key={tier.id}>Levels {tier.minLevel}–{tier.maxLevel} · {tier.minRarity}{tiers.filter(other => other.minLevel === tier.minLevel && other.maxLevel === tier.maxLevel && other.minRarity === tier.minRarity).length > 1 ? ` · ${tier.id}` : ''}</option>)}
     </select>

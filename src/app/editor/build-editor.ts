@@ -1,4 +1,5 @@
 import { editCandidateMods, pruneCandidateModsForSkill, type CandidateModEdit } from '../../core/build/candidate-mods';
+import { editExistingMods, type ExistingModEdit } from '../../core/build/existing-mods';
 import type { AbilitySelection, BuildDocument, ItemInstance } from '../../core/build/document';
 import { validateBuildDocument } from '../../core/build/validation';
 import type { GameDataRepository } from '../../data/repository/repository';
@@ -7,6 +8,7 @@ export const COMBAT_BAR_SIZE = 6;
 export type Slot = 'A' | 'B';
 export type BuildEdit =
   | CandidateModEdit
+  | ExistingModEdit
   | { type: 'title'; title: string }
   | { type: 'equipment-equip'; slot: string; itemId: string; index: number | null }
   | { type: 'equipment-import'; slot: string; instance: ItemInstance; index: number | null }
@@ -28,9 +30,19 @@ export function isOffhandSlot(slot: string): boolean {
  * candidates resolved to the departed skill once neither slot still uses it. */
 export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataRepository): BuildDocument {
   if (build.gameDataVersion !== data.gameDataVersion) return build;
+  if (edit.type === 'existing-mod-remove' || edit.type === 'existing-mod-tier' || edit.type === 'existing-mod-restore') {
+    const previous = build.equipment[edit.equipmentIndex];
+    if (!Number.isInteger(edit.equipmentIndex) || !previous) return build;
+    const selection = editExistingMods(previous, edit, data);
+    if (selection === previous) return build;
+    const equipment = [...build.equipment]; equipment[edit.equipmentIndex] = selection;
+    return { ...build, equipment };
+  }
   if (edit.type === 'mod-add' || edit.type === 'mod-tier' || edit.type === 'mod-remove' || edit.type === 'mod-move') {
     const selection = build.equipment[edit.equipmentIndex];
     if (!Number.isInteger(edit.equipmentIndex) || !selection) return build;
+    if (edit.type === 'mod-add' && selection.item.kind !== 'database' &&
+      selection.item.instance.existingPowers.some(mod => mod.powerId === edit.powerId)) return build;
     const candidateMods = editCandidateMods(selection.candidateMods, edit, data);
     if (candidateMods === selection.candidateMods) return build;
     const equipment = [...build.equipment];

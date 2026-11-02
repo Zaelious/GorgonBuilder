@@ -256,7 +256,7 @@ def main():
                         wait_saved(); rich['equipment'][0]['candidateMods'][0]['tierId'] = 'id_10'
                         assert saved() == rich
                         expect(page.locator('[data-selection-index="0"] .item-stats [data-existing-power="0"]')).to_have_attribute('data-tier-id', 'id_120')
-                        expect(page.locator('[data-selection-index="0"] .item-stats [data-existing-power="0"] .stat-chip')).to_have_text('◇ Endurance')
+                        expect(page.locator('[data-selection-index="0"] .item-stats [data-existing-power="0"] .stat-chip')).to_have_text('Endurance')
                         editor().get_by_label('All skills', exact=True).check()
                         editor().get_by_label('Other slots & profiles', exact=True).check()
                         for query in ['Psychology', 'Cow', 'Unarmed']:
@@ -277,13 +277,16 @@ def main():
                         editor().get_by_label('Other slots & profiles', exact=True).check()
                         icon_power_ids = [p['id'] for p in treasure['treasurePowers'] if p['skill']['sourceId'] == 'AnimalHandling'][:8]
                         for power_id in icon_power_ids:
+                            if power_id == 'power_12301':
+                                continue  # Already present as an effective imported power.
                             inline_search(power_id)
                             shown_tier = power(power_id).get_attribute('data-preview-tier')
                             add(power_id)
                             proof['equipment'][0]['candidateMods'].append({'powerId': power_id, 'tierId': shown_tier})
                         wait_saved(); assert saved() == proof
                         inline_search('power_12301')
-                        icon = power('power_12301').locator(':scope > button img.effect-icon')
+                        expect(power('power_12301')).to_have_count(0)
+                        icon = page.locator('[data-selection-index="0"] .item-stats [data-existing-power="0"] img.effect-icon').first
                         expect(icon).to_have_attribute('src', 'https://cdn.projectgorgon.com/v490/icons/icon_2160.png')
                         expect(icon).to_have_js_property('complete', True)
                         page.wait_for_function('(img) => img.naturalWidth > 0', arg=icon.element_handle())
@@ -329,7 +332,7 @@ def main():
                         add('power_12192')
                         expect(power('power_12192')).to_have_count(0)
                         proof['equipment'][0]['candidateMods'].append({'powerId': 'power_12192', 'tierId': 'id_25'})
-                        paired_candidate = editor().locator('.candidate-effect').last
+                        paired_candidate = editor().locator('.candidate-effect > .mod-effect-text').last
                         paired_candidate.scroll_into_view_if_needed()
                         expect(paired_candidate).to_have_text(paired)
                         expect(page.locator('[data-selection-index="0"] [data-candidate-effect]').last).to_contain_text(paired)
@@ -357,8 +360,10 @@ def main():
                         inline_search('power_12301'); page.reload(); page.locator('.equipment-section').wait_for(); expand('Head')
                         editor().get_by_label('Other slots & profiles', exact=True).check()
                         inline_search('power_12301')
-                        expect(power('power_12301').locator('.effect-icon-fallback')).to_be_visible()
-                        assert '<icon=' not in power('power_12301').locator(':scope > button').inner_text()
+                        imported_stat = page.locator('[data-selection-index="0"] .item-stats [data-existing-power="0"]')
+                        imported_stat.scroll_into_view_if_needed()
+                        expect(imported_stat.locator('.effect-icon-fallback')).to_be_visible()
+                        assert '<icon=' not in imported_stat.inner_text()
                         fallback_errors = errors[before_fallback:]
                         assert all('404' in error for error in fallback_errors), fallback_errors
                         del errors[before_fallback:]
@@ -527,8 +532,9 @@ def main():
                         page.evaluate('([key, build]) => localStorage.setItem(key, JSON.stringify(build))', [key, rich])
                         page.reload(); page.locator('.equipment-section').wait_for(); expand('Head')
                         editor().get_by_label('Other slots & profiles', exact=True).check()
-                        inline_search('power_12301'); preview_level('90')
-                        expect(power('power_12301').locator(':scope > button')).to_be_disabled()
+                        inline_search(''); preview_level('90')
+                        expect(power('power_12301')).to_have_count(0)
+                        expect(editor().locator('.available-effect').first).to_be_disabled()
                         assert all(e.is_disabled() for e in editor().locator('.candidate-list button, .candidate-list select').all())
                         page.wait_for_timeout(600); assert saved() == rich
                         assert errors == [], errors

@@ -44,6 +44,7 @@ export interface ItemInstance {
   displayName?: string;
   level?: number;
   rarity?: string;
+  /** Effective working powers, including edits/removals. Original imports stay in metadata.sourceItem. */
   existingPowers: TreasureTierSelection[];
   provenance?: SourceMetadata;
   metadata?: JsonObject;

@@ -1,9 +1,10 @@
 import { useId, useMemo, useState } from 'react';
 import type { EquipmentSelection } from '../../core/build/document';
 import type { CandidateModEdit } from '../../core/build/candidate-mods';
+import { isResolvedExistingPower, restoredExistingPowers, sameExistingPowers, type ExistingModEdit } from '../../core/build/existing-mods';
 import type { GameDataRepository } from '../../data/repository/repository';
 import { browseTreasurePowers, indexTreasurePowers, powerName, treasureRelevance, type TreasureContext, type TreasurePower, type TreasureRelevance } from '../../data/search/treasure';
-import { availableTreasurePowers, groupTreasurePowers, itemFit, type ItemFit, orderTreasureTiers, previewTreasureTiers, type ModCategories, type ModTargetLevel, type TreasureTier } from '../../data/search/treasure-planning';
+import { availableTreasurePowers, groupEffectiveMods, groupTreasurePowers, itemFit, type ItemFit, orderTreasureTiers, previewTreasureTiers, type ModCategories, type ModTargetLevel, type TreasureTier } from '../../data/search/treasure-planning';
 import { EffectDescriptions } from './EffectDescription';
 import { CandidateList } from './CandidateList';
 import { PowerFacts, TierFacts } from './PowerFacts';
@@ -46,9 +47,10 @@ function AvailablePower({ power, relevance, context, target, data, onAdd, readOn
 }
 
 /** Inline UI state is transient; candidate edits still use the existing schema/autosave. */
-export function ModPlanner({ selection, equipmentIndex, context, data, onEdit, readOnly }: {
+export function ModPlanner({ selection, equipmentIndex, context, skillA, skillB, data, onEdit, readOnly }: {
   selection: EquipmentSelection; equipmentIndex: number; context: TreasureContext; data: GameDataRepository;
-  onEdit: (edit: CandidateModEdit) => void; readOnly: boolean;
+  skillA: string | null; skillB: string | null;
+  onEdit: (edit: CandidateModEdit | ExistingModEdit) => void; readOnly: boolean;
 }) {
   const id = useId();
   const [query, setQuery] = useState('');
@@ -60,7 +62,11 @@ export function ModPlanner({ selection, equipmentIndex, context, data, onEdit, r
   const [categories, setCategories] = useState<ModCategories>({ generic: true, endurance: true, shamanic: true });
   const index = useMemo(() => indexTreasurePowers(data.treasurePowers), [data]);
   const relevance = useMemo(() => new Map(data.treasurePowers.map(power => [power.id, treasureRelevance(power, context, data)])), [data, context]);
-  const staged = useMemo(() => new Set(selection.candidateMods.map(mod => mod.powerId)), [selection.candidateMods]);
+  const effective = groupEffectiveMods(selection, skillA, skillB, data);
+  const selected = effective.filter(row => row.origin === 'planned' || (selection.item.kind === 'imported' && row.mod.tierId !== null && isResolvedExistingPower({ powerId: row.mod.powerId, tierId: row.mod.tierId }, data)));
+  const staged = new Set(effective.map(row => row.mod.powerId));
+  const restore = useMemo(() => selection.item.kind === 'imported' ? restoredExistingPowers(selection.item.instance, data) : null, [selection.item, data]);
+  const canRestore = restore !== null && selection.item.kind === 'imported' && !sameExistingPowers(restore, selection.item.instance.existingPowers);
   const matches = useMemo(() => availableTreasurePowers(browseTreasurePowers(index, query, relevance, 'relevant'), relevance, staged, allSlots, data, context.skillIds),
     [index, query, relevance, staged, allSlots, data, context.skillIds]);
   const groups = useMemo(() => groupTreasurePowers(matches, context.skillIds, categories, allSkills, data), [matches, context.skillIds, categories, allSkills, data]);
@@ -99,11 +105,18 @@ export function ModPlanner({ selection, equipmentIndex, context, data, onEdit, r
           </section>)}
         </div>}
       </section>
-      <section className="mod-selected" aria-labelledby={`${id}-selected`}><h3 id={`${id}-selected`} aria-live="polite">Selected ({selection.candidateMods.length})</h3>
-        <CandidateList mods={selection.candidateMods} data={data} equipmentIndex={equipmentIndex} onEdit={onEdit} readOnly={readOnly} target={target} />
+      <section className="mod-selected" aria-labelledby={`${id}-selected`}><h3 id={`${id}-selected`} aria-live="polite">Selected ({selected.length})</h3>
+        <CandidateList rows={selected} candidateCount={selection.candidateMods.length} skillA={skillA} skillB={skillB} data={data} equipmentIndex={equipmentIndex} onEdit={onEdit} readOnly={readOnly} target={target} />
+        {selection.item.kind === 'imported' && <button className="restore-imported-mods" type="button" disabled={readOnly || !canRestore} onClick={() => {
+          if (!restore) return;
+          const collision = restore.some(mod => selection.candidateMods.some(candidate => candidate.powerId === mod.powerId));
+          if (collision && !window.confirm('Some original imported powers are also staged as planned mods. Restore the original imported powers and keep those planned copies too?')) return;
+          onEdit({ type: 'existing-mod-restore', equipmentIndex });
+        }}>Restore Imported Mods</button>}
+        {selection.item.kind === 'imported' && effective.some(row => row.origin === 'imported' && !selected.includes(row)) && <p className="warning">Unresolved working pairs are retained read-only in Stats. Original unresolved entries and imbues remain under Original imported item.</p>}
       </section>
     </div>
-    {readOnly && <p className="warning">This draft is read-only. Candidate changes are disabled.</p>}
+    {readOnly && <p className="warning">This draft is read-only. Mod changes are disabled.</p>}
     <details className="mod-more mod-guidance"><summary>Categories, target levels &amp; relevance</summary>
       <p>Generic lists the published AnySkill selector; its skill association and eligibility are unknown. Endurance and Shamanic Infusions use exact published skill associations. Missing associations have their own Unknown group.</p>
       <p>Each official power appears once. Available lists powers whose published slots include {context.item ? context.item.slot : 'this item\'s slot'}{profile ? ` and whose published profile list includes item profile ${profile}` : ' (this item publishes no treasure profile)'}; Endurance and Shamanic Infusions use slot only, because their published profiles are not referenced by any item. Slot-compatible powers of your active combat skills that the item profile does not list are still shown, flagged “outside profile” (eligibility unconfirmed). Selecting a power moves it to Selected; removing it restores it. These are published-data filters, not full legality. All skills and Other slots &amp; profiles enable broader exploration. No final mod-count limit is imposed.</p>
