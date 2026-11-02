@@ -5,3 +5,6 @@ export {
   type AttributeInterpretation, type MappingIndex, type ModifierDataContext, type ModifierMappingRule, type ModifierRegistry, type ParsedEffect,
 } from './registry';
 export { formatAggregationReport } from './report';
+export { calculateAbilityDamage, ABILITY_DAMAGE_ASSUMPTIONS } from './ability-damage';
+export * from './ability-damage-types';
+export { formatAbilityDamageReport } from './ability-damage-report';

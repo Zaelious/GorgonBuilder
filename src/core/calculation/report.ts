@@ -20,6 +20,8 @@ function sourceText(source: ModifierSource | ModifierAggregationResult['unsuppor
   }
 }
 
+export { sourceText as formatModifierSource };
+
 function valueText(modifier: NormalizedModifier): string {
   return modifier.unit === 'fraction' ? `${modifier.sourceValue} (fraction)` : modifier.sourceValue;
 }
