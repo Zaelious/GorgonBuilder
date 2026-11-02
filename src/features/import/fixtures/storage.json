@@ -1,0 +1,36 @@
+{
+  "Report": "Storage",
+  "ReportVersion": 1,
+  "Character": "Fixture Adventurer",
+  "ServerName": "Fixture Server",
+  "Timestamp": "2026-11-01T12:01:00Z",
+  "Items": [
+    {
+      "TypeID": 45640, "Name": "Twin Fixture Blade", "Slot": "MainHand", "Level": 91,
+      "Rarity": "Legendary", "IsInInventory": true,
+      "TSysPowers": [{ "Power": "ArcheryBoost", "Tier": 9 }, { "Power": "FixtureUnresolvedPower", "Tier": 777 }],
+      "TSysImbuePower": "power_129", "TSysImbuePowerTier": 120,
+      "IsCrafted": true, "Crafter": "Fixture Crafter", "CraftPoints": 110
+    },
+    {
+      "TypeID": 45640, "Name": "Twin Fixture Blade", "Slot": "MainHand", "Level": 100,
+      "Rarity": "Rare", "StorageVault": "Fixture Vault",
+      "TSysPowers": [{ "Power": "power_129", "Tier": 120 }, { "Power": "ArcheryBoost", "Tier": 120 }],
+      "FixtureAugmentationMetadata": { "synthetic": true }
+    },
+    {
+      "TypeID": 45052, "Name": "Fixture Shield", "Slot": "OffHandShield", "Level": 80,
+      "Rarity": "Rare", "IsInInventory": true,
+      "TSysPowers": [{ "Power": "power_129", "Tier": 120 }]
+    },
+    {
+      "TypeID": 45722, "Name": "Fixture Dirk", "Slot": "OffHand", "Level": 92,
+      "Rarity": "Legendary", "StorageVault": "Fixture Vault"
+    },
+    {
+      "TypeID": 999999999, "Name": "Fixture Unknown Ring", "Slot": "Ring",
+      "Rarity": "Rare", "TSysPowers": [{ "Power": "ArcheryBoost", "Tier": { "futureExactTier": "variant" } }]
+    },
+    { "TypeID": 1114, "Name": "Fixture Tooth", "IsInInventory": true }
+  ]
+}
