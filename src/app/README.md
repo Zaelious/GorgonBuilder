@@ -1,11 +1,6 @@
 # T0008 — Skill and Ability Planner UI
 
-Continues the existing `feature/t0008-skill-ability-planner` branch and PR #12.
-Implements the [latest customer layout review](https://github.com/Zaelious/GorgonBuilder/pull/12#pullrequestreview-5727514978)
-under the **Simple by Default, Detailed on Demand** rule read from main
-`6603e12` / PR #13. Earlier accepted title, skill-switch, picker and detail behavior
-remains intact. Customer usability acceptance remains
-pending; do not merge or begin T0009.
+Historical compact layout was accepted in [PR #12](https://github.com/Zaelious/GorgonBuilder/pull/12). The subsequently accepted [T0008-F1 PR #27](https://github.com/Zaelious/GorgonBuilder/pull/27), squash commit `445735e`, adds validated imported skill levels, continuous picker, selected markers and quick removal under **Simple by Default, Detailed on Demand**. See the [T0008-F1 verification report](../features/skills/verification/T0008-F1.md).
 
 ## Current layout revision
 
@@ -71,6 +66,14 @@ Truly unresolved IDs, incompatible restored selections, explicit conflicting
 published ranks, snapshot/schema incompatibility and storage failures remain
 visible and actionable. Six-slot capacity feedback and legacy overflow are
 retained.
+
+## T0008-F1 imported levels and picker behavior (accepted 2026-11-02)
+
+Customer-verified CharacterSheet `Level` already contains `BonusLevels`; the planner uses the exported `Level` directly and excludes Prodigy points. Raw fields remain preserved for inspection. Deliberately changing to an imported skill initializes its editable level atomically; import/reimport alone does not overwrite the current build. If an existing selected skill differs from the currently imported snapshot, **Apply imported level** explicitly changes only that skill's level without clearing abilities, gear, mods or Sparks. Saved levels remain manually editable and autosaved.
+
+The general bar-side **+** opens a continuous ability picker: successive additions do not close it and preserve search, expanded families/details and dialog scroll. A sticky count shows progress to six and Add disables at capacity. Family/exact-tier indicators mark abilities already on the current bar, but duplicates remain allowed until full. Numbered empty-slot **+** and Replace still make one selection and close; the numbered + appends to the next contiguous position, not necessarily its displayed number.
+
+An occupied ability icon has a compact adjacent × quick-remove control (keyboard reachable and touch accessible), which removes that exact entry immediately without activating details. The details Remove action remains available. Bars A and B remain separate, even if the same skill is selected in each. The saved BuildDocument v1 schema, data ingestion, damage engine and equipment/mod/Spark rules are unchanged.
 
 ## Inline build title
 
