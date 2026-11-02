@@ -1359,7 +1359,7 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 
 ## T0022 — GorgonBuilder Visual Identity and Planner UI Redesign
 
-**Status:** Proposed 2026-11-02; review/approve before Codex kickoff. **Scheduling exception:** if accepted, implement **before T0013** without renumbering the existing T0001–T0021 sequence.
+**Status:** Product-owner approved visual direction 2026-11-02; planning PR #30 prepared for merge. Implementation begins separately when T0022 is kicked off. **Scheduling exception:** if accepted, implement **before T0013** without renumbering the existing T0001–T0021 sequence.
 
 **Complexity:** High (cohesive visual slice; suitable as **one** high-effort Codex implementation ticket once the approved reference screenshot and original art assets are available)
 
@@ -1367,9 +1367,9 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 
 **Goal:** Implement the product owner's **first approved 2026-11-02 ChatGPT UI concept** across the real current build planner: cinematic gorgon/ruins identity, neutral charcoal dark UI, two colored skill bars, compact equipment rows and vertically stacked floating ability popover. Keep functioning controls and game behavior unchanged.
 
-**Design reference:** [UI Visual Identity and Redesign](UI_Visual_Redesign.md). Attach the approved `GorgonBuilder_Approved_UI_Concept.png` from the customer conversation to Codex; the image is a composition reference, not an exact rendering of current app features.
+**Design reference:** [UI Visual Identity and Redesign](UI_Visual_Redesign.md). **Attach three files to Codex:** the original `GorgonBuilder_Approved_UI_Concept.png` (UI layout/behavior reference), `mosaic_medusa_with_serpent_crown.png` (chosen Gorgon art) and `moonlit_gorgon_mosaic_ruins.png` (chosen Greek mosaic banner). The latter two **replace** the old grayscale artwork direction; do not regenerate new images.
 
-**Dependencies:** T0008-F1, T0009-F1, T0010-F1, T0011-F3, T0012 (all merged); independently created original logo/header art available or produced by an image-capable design workflow.
+**Dependencies:** T0008-F1, T0009-F1, T0010-F1, T0011-F3, T0012 (all merged); the user's two approved original Greek-mosaic assets attached to the Codex implementation task.
 
 **Suggested branch:** `feature/t0022-gorgon-visual-redesign`
 
@@ -1378,7 +1378,7 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 **Do not touch:** core game formulas or aggregator, BuildDocument schema, official data generation, mod/item eligibility, import parsing, Spark behavior, remote saving, unrelated backend or architecture.
 
 **Requirements:**
-- Create/bundle original grayscale Gorgon head and panoramic ruined moonlit landscape as distinct optimized local assets, and reproduce the concept's restrained cinematic header/wordmark. No screenshot crops, stock hotlinks or fake substitute icons.
+- Bundle the two supplied original Greek mosaic Gorgon head and panoramic Greek-mosaic ruins assets as separate optimized local images, preserving their charcoal/slate and muted antique bronze palette, and reproduce the first mockup's restrained cinematic header/wordmark. Do not regenerate artwork, crop the reference UI screenshot, hotlink stock images or substitute icons.
 - Apply global neutral dark tokens, sans-serif typography, consistent borders, density, inputs, buttons and legible focus states to **all** current screens, dialogs, errors, My Items and shared mod controls.
 - Restyle skills/ability slots and all actual equipment rows; preserve official item/ability icons, both independently configured bars, levels, pickers, all primary and secondary gear rows, selected mods, import and local persistence.
 - Preserve the existing hover/focus/click ability-details popover while changing its information presentation to one vertically stacked list. Keep all content, Relevant Mods, Technical details, Edit bar and Remove accessible and working.
@@ -1389,7 +1389,7 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 **Non-goals:** No damage-engine implementation (T0013), new skills/slots, item/mod features, remote save/share, backend migrations, or unrelated refactors.
 
 **Acceptance criteria:**
-- Brand portrait and ruins banner visibly match the approved visual direction as separate optimized assets; customer approves rendered screenshot.
+- Supplied Greek-mosaic Gorgon portrait and moonlit ruins banner render as separate optimized assets, while the application UI remains neutral charcoal with functional skill/damage/action accents; customer approves the in-app screenshot.
 - Main builder and expanded equipment/My Items/mod dialogs share one cohesive dark design and have no missing controls.
 - Acid Arrow (and unrelated abilities) open a **floating** vertically stacked inspection card on hover, click, focus; keyboard escape and actions work.
 - All previously working editing, clear, import, save/retry, mod search and tier workflows still work; no fake Save or hardcoded mod values.
