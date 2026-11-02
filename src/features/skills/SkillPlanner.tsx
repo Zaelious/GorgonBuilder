@@ -4,6 +4,7 @@ import type { GameDataRepository } from '../../data/repository/repository';
 import type { BuildEdit, Slot } from '../../app/editor/build-editor';
 import type { ImportedCharacterSnapshot } from '../../core/import';
 import { importedSkillLevel } from '../import/skill-levels';
+import './skills.css';
 import { AbilityBar } from '../abilities/AbilityPlanner';
 
 interface Props {
@@ -40,6 +41,7 @@ export function SkillPlanner({ slot, skill, bar, data, onEdit, readOnly, detailS
   const skills = useMemo(() => data.skills.filter(s => s.combat)
     .toSorted((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id)), [data]);
   const selected = skill.skillId === null ? undefined : data.getSkill(skill.skillId);
+  const importedLevel = importedSkillLevel(imported, skill.skillId, data);
   const unavailable = skill.skillId !== null && !selected;
   return (
     <section className="skill-panel" aria-labelledby={`slot-${slot}`}>
@@ -60,10 +62,13 @@ export function SkillPlanner({ slot, skill, bar, data, onEdit, readOnly, detailS
           <div className="skill-level"><label htmlFor={`level-${slot}`}><span aria-hidden="true">Lv</span><span className="sr-only">Skill {slot} level</span></label>
             <SkillLevel key={skill.skillId ?? 'empty'} slot={slot} level={skill.level} onEdit={onEdit} />
           </div>
+          {importedLevel !== null && importedLevel !== skill.level && <button type="button" className="apply-imported-level"
+            aria-label={`Apply imported level for skill ${slot}: ${importedLevel}`} title={`Set Skill ${slot} level to ${importedLevel}`}
+            onClick={() => onEdit({ type: 'level', slot, level: importedLevel })}>Apply imported level</button>}
         </div>
       </fieldset>
       <AbilityBar key={skill.skillId ?? 'empty'} slot={slot} skill={skill} bar={bar} data={data} onEdit={onEdit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={onDetailOpen} equipment={equipment} />
-      {imported && skill.skillId && importedSkillLevel(imported, skill.skillId, data) === null && <p className="muted">Imported effective level unavailable for this skill. Your manual level is retained.</p>}
+      {imported && skill.skillId && importedLevel === null && <p className="muted">Imported effective level unavailable for this skill. Your manual level is retained.</p>}
       {unavailable && <p role="alert" className="warning">Official skill {skill.skillId} is unavailable. Your saved selection has been retained.</p>}
       {selected && !selected.combat && <p role="alert" className="warning">The saved skill is not marked as a combat skill in loaded data.</p>}
 

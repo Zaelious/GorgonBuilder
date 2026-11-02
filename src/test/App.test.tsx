@@ -639,3 +639,48 @@ it('replacement at capacity closes, retains every other exact entry and restores
   expect(draft().abilityBarA).toEqual(build.abilityBarA.map((entry, index) => index === 2 ? { abilityId: 'ability_1708', rank: '2' } : entry));
   expect(draft().abilityBarB).toEqual(build.abilityBarB);
 });
+
+it('quick-remove deletes only the chosen duplicate, compacts the bar, stops click propagation and never opens details', async () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  build.skillSlotA.skillId = 'Psychology'; build.skillSlotB.skillId = 'Psychology';
+  const entries = data.getAbilitiesForSkill('Psychology').slice(0, 2).map(ability => ({ abilityId: ability.id, rank: ability.rank }));
+  build.abilityBarA = [entries[0]!, entries[1]!, entries[0]!]; build.abilityBarB = [entries[0]!];
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build)); await render();
+  const remove = control<HTMLButtonElement>('.skill-panel:first-child .combat-slot:nth-child(3) .quick-remove-ability');
+  expect(remove.parentElement!.tagName).toBe('LI');
+  expect(remove.closest('.slot-button')).toBeNull();
+  expect(remove.getAttribute('aria-label')).toBe(`Remove ${data.getAbility(entries[0]!.abilityId)!.displayName} from bar A, slot 3`);
+  const bubbled = vi.fn(); document.body.addEventListener('click', bubbled);
+  try {
+    await act(async () => { remove.dispatchEvent(new MouseEvent('mouseover', { bubbles: true })); remove.click(); });
+    expect(bubbled).not.toHaveBeenCalled();
+  } finally { document.body.removeEventListener('click', bubbled); }
+  await tick();
+  expect(container.querySelector('.ability-popover')).toBeNull();
+  expect(draft()).toEqual({ ...build, abilityBarA: [entries[0]!, entries[1]!] });
+  await act(async () => { root.unmount(); }); root = createRoot(container); await render();
+  expect(container.querySelectorAll('.skill-panel:first-child .quick-remove-ability')).toHaveLength(2);
+});
+
+it('quick-remove is keyboard focusable, closes existing details, and handles the last entry without opening a popover', async () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  build.skillSlotA.skillId = 'Psychology'; build.abilityBarA = [{ abilityId: 'ability_1201', rank: null }];
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build)); await render();
+  await inspect('A', 1); expect(container.querySelector('.ability-popover')).not.toBeNull();
+  const remove = control<HTMLButtonElement>('.quick-remove-ability');
+  await act(async () => { remove.focus(); });
+  expect(document.activeElement).toBe(remove); expect(container.querySelector('.ability-popover')).toBeNull();
+  await act(async () => { remove.click(); }); await tick();
+  expect(container.querySelector('.ability-popover')).toBeNull();
+  expect(draft().abilityBarA).toEqual([]);
+  expect(document.activeElement).toBe(control('[aria-label="Add ability to bar A, empty slot 1"]'));
+});
+
+it('read-only bars expose disabled quick-remove controls without altering the saved draft', async () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: 'other' });
+  build.skillSlotA.skillId = 'Psychology'; build.abilityBarA = [{ abilityId: 'ability_1201', rank: null }];
+  const bytes = JSON.stringify(build); localStorage.setItem(DRAFT_STORAGE_KEY, bytes); await render();
+  expect(control<HTMLButtonElement>('.quick-remove-ability').disabled).toBe(true);
+  await click('.quick-remove-ability'); await tick();
+  expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(bytes);
+});

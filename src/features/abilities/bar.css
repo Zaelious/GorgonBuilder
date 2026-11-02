@@ -1,0 +1,10 @@
+.combat-slot { position: relative; }
+.planner-main .quick-remove-ability { position: absolute; top: -0.2rem; right: -0.2rem; width: 1.5rem; height: 1.5rem; min-height: 0; padding: 0; line-height: 1; font-size: 1.1rem; border-radius: 50%; z-index: 1; }
+.combat-slot .slot-warning { right: auto; left: -0.4rem; }
+@media (hover: hover) and (pointer: fine) {
+  .quick-remove-ability { opacity: 0; pointer-events: none; }
+  .combat-slot:hover .quick-remove-ability, .combat-slot:focus-within .quick-remove-ability { opacity: 1; pointer-events: auto; }
+}
+@media (hover: none), (pointer: coarse) {
+  .planner-main .quick-remove-ability { width: 1.75rem; height: 1.75rem; }
+}

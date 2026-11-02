@@ -305,24 +305,24 @@ async function importSkills(skills: Record<string, object>, replace = false) {
 it('initializes both A+A slots once, preserves manual typing, and restores independent levels through autosave', async () => {
   await importSkills({ Psychology: { Level: 90, BonusLevels: 5 }, Deer: { Level: 60 } });
   await change('#skill-A', 'Psychology');
-  expect(control<HTMLInputElement>('#level-A').value).toBe('95');
+  expect(control<HTMLInputElement>('#level-A').value).toBe('90');
   await change('#level-A', '007');
   expect(control<HTMLInputElement>('#level-A').value).toBe('007');
   await change('#skill-B', 'Psychology');
-  expect(control<HTMLInputElement>('#level-B').value).toBe('95');
+  expect(control<HTMLInputElement>('#level-B').value).toBe('90');
   expect(control<HTMLInputElement>('#level-A').value).toBe('007');
   await change('#level-A', '');
   expect(control('#level-A').getAttribute('aria-invalid')).toBe('true');
   await change('#skill-A', 'Deer');
   expect(control<HTMLInputElement>('#level-A').value).toBe('60');
   await change('#skill-A', 'Psychology');
-  expect(control<HTMLInputElement>('#level-A').value).toBe('95');
+  expect(control<HTMLInputElement>('#level-A').value).toBe('90');
   await change('#level-A', '101'); await tick();
   expect(draft().skillSlotA).toEqual({ skillId: 'Psychology', level: 101 });
-  expect(draft().skillSlotB).toEqual({ skillId: 'Psychology', level: 95 });
+  expect(draft().skillSlotB).toEqual({ skillId: 'Psychology', level: 90 });
   await remount();
   expect(control<HTMLInputElement>('#level-A').value).toBe('101');
-  expect(control<HTMLInputElement>('#level-B').value).toBe('95');
+  expect(control<HTMLInputElement>('#level-B').value).toBe('90');
 });
 
 it('import/reimport leaves the whole build untouched; later skill changes use only the newest snapshot', async () => {
@@ -336,7 +336,7 @@ it('import/reimport leaves the whole build untouched; later skill changes use on
   await tick(); expect(draft()).toEqual(before);
   expect(control<HTMLInputElement>('#level-A').value).toBe('73');
   await change('#skill-B', 'Psychology');
-  expect(control<HTMLInputElement>('#level-B').value).toBe('103');
+  expect(control<HTMLInputElement>('#level-B').value).toBe('100');
   await tick(); expect(draft().skillSlotA).toEqual(before.skillSlotA);
   expect(draft().abilityBarA).toEqual(before.abilityBarA);
 });
@@ -361,7 +361,7 @@ it('imported skill initialization retains staged-mod cleanup and Undo restores t
   localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build)); await remount();
   await importSkills({ Deer: { Level: 60, BonusLevels: 5 } });
   await change('#skill-A', 'Deer');
-  expect(control<HTMLInputElement>('#level-A').value).toBe('65');
+  expect(control<HTMLInputElement>('#level-A').value).toBe('60');
   await tick(); expect(draft().equipment[0]!.candidateMods).toEqual([]);
   expect(draft().abilityBarA).toEqual([]); expect(draft().skillSlotB).toEqual(build.skillSlotB);
   await button('Undo');
@@ -377,4 +377,49 @@ it.each(['future', 'mismatch'])('import inspection cannot overwrite a protected 
   await change('#skill-A', 'Psychology'); await tick();
   expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(bytes);
   expect(control('[aria-label="Open ability picker for bar A"]').matches(':disabled')).toBe(true);
+});
+
+it.each([['Werewolf', 106, 6], ['Deer', 112, 12], ['Cow', 111, 11], ['Unarmed', 110, 10]] as const)(
+  'deliberately selecting %s displays exported Level %s including its %s bonus levels', async (skillId, level, bonus) => {
+    await importSkills({ [skillId]: { Level: level, BonusLevels: bonus, ProdigyLevel: 42 } });
+    await change('#skill-A', skillId);
+    expect(control<HTMLInputElement>('#level-A').value).toBe(String(level));
+    expect(container.querySelector('.apply-imported-level')).toBeNull();
+    await tick(); expect(draft().skillSlotA.level).toBe(level);
+  });
+
+it('explicitly applies an imported level to only one slot without clearing any other build state', async () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  build.skillSlotA = { skillId: 'Deer', level: 124 }; build.skillSlotB = { skillId: 'Deer', level: 80 };
+  const ability = data.getAbilitiesForSkill('Deer')[0]!;
+  build.abilityBarA = [{ abilityId: ability.id, rank: ability.rank }, { abilityId: ability.id, rank: ability.rank }];
+  build.abilityBarB = [...build.abilityBarA];
+  build.equipment = [{ slot: 'MainHand', item: { kind: 'database', itemId: 'item_45640' },
+    candidateMods: [{ powerId: 'power_10001', tierId: 'id_9' }],
+    sparks: { mode: 'simulated', input: { category: 'skill-damage', skillId: 'Deer', count: 7, seed: 'synthetic' } } }];
+  build.notes = 'Preserve all settings';
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build)); await remount();
+  expect(container.querySelector('.apply-imported-level')).toBeNull();
+  await importSkills({ Deer: { Level: 112, BonusLevels: 12, ProdigyLevel: 50 } });
+  await tick(); expect(draft()).toEqual(build);
+  await importSkills({ Deer: { Level: 112, BonusLevels: 12 } }, true);
+  await tick(); expect(draft()).toEqual(build);
+  await click('[aria-label="Apply imported level for skill A: 112"]');
+  expect(control<HTMLInputElement>('#level-A').value).toBe('112');
+  expect(control<HTMLInputElement>('#level-B').value).toBe('80');
+  expect(container.querySelector('[aria-label="Apply imported level for skill A: 112"]')).toBeNull();
+  expect(container.querySelector('[aria-label="Apply imported level for skill B: 112"]')).not.toBeNull();
+  await tick(); expect(draft()).toEqual({ ...build, skillSlotA: { skillId: 'Deer', level: 112 } });
+  await remount(); expect(control<HTMLInputElement>('#level-A').value).toBe('112');
+  expect(control<HTMLInputElement>('#level-B').value).toBe('80');
+});
+
+it('disables Apply imported level in a read-only data-version draft', async () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: 'other' });
+  build.skillSlotA = { skillId: 'Deer', level: 124 };
+  const bytes = JSON.stringify(build); localStorage.setItem(DRAFT_STORAGE_KEY, bytes); await remount();
+  await importSkills({ Deer: { Level: 112, BonusLevels: 12 } });
+  expect(control('.apply-imported-level').matches(':disabled')).toBe(true);
+  await click('.apply-imported-level'); await tick();
+  expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(bytes);
 });

@@ -1,42 +1,39 @@
-# T0008-F1: CharacterSheet effective level evidence
+# T0008-F1: corrected CharacterSheet effective level evidence
 
-The planner uses `Level + (BonusLevels ?? 0)` once, directly from the immutable
-parsed snapshot. It never adds a snapshot bonus to an existing planner level.
-Raw `level`, `bonusLevels` and original skill metadata remain untouched in the
-browser import session. Only the initialized single effective number enters the
-existing schema-v1 skill slot and autosave. Snapshot bonuses are historical;
-changing equipment does not recalculate them in this ticket.
+Use the exported **Level directly** as the effective combat skill level.
+`BonusLevels` is already included in that value. Preserve both fields and their
+original metadata for inspection; never add the bonus again. Prodigy levels are
+separate progression points used to purchase bonuses and do not contribute to
+the effective combat skill level.
 
-Evidence inspected at pinned Mithril commit
-`0d1415ffcef4f5db8d3f038615b3d5a431abe976`:
+Customer hands-on verification supplied these non-identifying examples:
 
-- [CharacterReportLoader.cs](https://github.com/moumantai-gg/mithril/blob/0d1415ffcef4f5db8d3f038615b3d5a431abe976/src/Mithril.GameReports/CharacterReportLoader.cs)
-  copies exported `v.Level ?? 0` and `v.BonusLevels ?? 0` separately into
-  `CharacterSkill`; it does not subtract a bonus from Level. Omitted bonus is zero.
-- [CharacterSnapshot.cs](https://github.com/moumantai-gg/mithril/blob/0d1415ffcef4f5db8d3f038615b3d5a431abe976/src/Mithril.GameReports/CharacterSnapshot.cs)
-  documents Level as the progression track and explicitly implements
-  `EffectiveLevel => Level + BonusLevels` as the level shown in game.
-- [player-skill-state-service.md](https://github.com/moumantai-gg/mithril/blob/0d1415ffcef4f5db8d3f038615b3d5a431abe976/docs/player-skill-state-service.md#live-level-up-capture-verification-resolved)
-  corroborates the interpretation with a captured Tailoring event: raw=10,
-  bonus=2, and game chat “reached level 12”. Its progression-only consumers
-  intentionally keep the values separate; this planner stores an effective
-  planning number rather than implementing XP progression.
+| Skill | Export Level | BonusLevels | Correct planner level | Previous incorrect result |
+| --- | --- | --- | --- | --- |
+| Werewolf | 106 | 6 | 106 | 112 |
+| Deer | 112 | 12 | 112 | 124 |
+| Cow | 111 | 11 | 111 | 122 |
+| Unarmed | 110 | 10 | 110 | 120 |
 
-These are inspectable secondary export-model and observation evidence, not a new
-canonical game-data source or direct observation of the customer's current
-export. Current-export/in-game total comparison remains customer acceptance work.
-No private report has been read or committed for this implementation.
+This customer-verified export behavior supersedes the earlier interpretation of
+[Mithril's CharacterSkill.EffectiveLevel](https://github.com/moumantai-gg/mithril/blob/0d1415ffcef4f5db8d3f038615b3d5a431abe976/src/Mithril.GameReports/CharacterSnapshot.cs).
+That third-party model adds Level and BonusLevels; applying its interpretation to
+the customer's CharacterSheet double-counted bonuses. Its separate raw-log
+Tailoring observation did not establish the semantics of this export's Level.
+The previous implementation and documentation were incorrect.
 
-Absent, unresolved, unchecked, ambiguous, invalid/unsafe numeric values and
-mismatched resolver versions return no initialization. A deliberate skill change
-then retains the manual level and displays that limitation. The existing parser
-atomically rejects malformed reports; replacing an import never edits a build.
-There is no guessed display-name matching, level cap, tier gating, or ongoing
-bonus-level subsystem. Noncombat skills have no planner-effective value here.
+Only an explicit skill change or **Apply imported level** commits this snapshot
+number through the existing immutable edit/autosave path. Import/reimport alone
+never changes existing selections or manual levels. Previously inflated saved
+levels are not automatically migrated; users can apply the imported value per
+slot without clearing abilities, equipment, mods, Sparks or other settings.
+Same-skill A+A slots remain independently editable.
 
-Regression examples: 90+5=95, 10+2=12 (neither 10 nor 14), 90+0=90,
-90 with omitted BonusLevels=90; repeated selection after switching away reads the
-original snapshot again and stays 95, rather than becoming 100. Same-skill A+A
-slots receive independent editable numbers. Tests also cover invalid values,
-manual overrides, report replacement, autosave reload, skill cleanup/Undo,
-protected drafts, and external level-input synchronization.
+Absent, unresolved, unchecked, ambiguous, invalid numeric values and mismatched
+resolver versions still decline initialization. Source Level and optional bonus
+retain safe-integer/nonnegative validation. The parser's atomic rejection of
+malformed reports is unchanged. No display-name matching, tier gating, new bonus
+subsystem, progression calculation or saved-schema change is introduced.
+
+Regression fixtures reconstruct only the four numeric examples above and
+synthetic Prodigy metadata. No private customer reports were read or committed.

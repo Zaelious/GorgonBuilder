@@ -6,6 +6,7 @@ import { rankLabel } from './groups';
 import { AbilityIcon } from './AbilityIcon';
 import { AbilityFacts } from './AbilityFacts';
 import { AbilityPicker } from './AbilityPicker';
+import './bar.css';
 import { RelevantMods } from './RelevantMods';
 
 interface Props {
@@ -135,6 +136,17 @@ export function AbilityBar({ slot, skill, bar, data, onEdit, readOnly, detailSlo
     onEdit({ type: 'move', slot, index, direction });
     requestAnimationFrame(() => triggers.current.get(index + direction)?.focus());
   }
+  function quickRemove(index: number) {
+    if (readOnly) return;
+    closeDetail();
+    onEdit({ type: 'remove', slot, index });
+    requestAnimationFrame(() => {
+      // Restore keyboard position without activating the next ability's details.
+      ignoreFocus.current = true;
+      triggers.current.get(Math.max(0, Math.min(index, bar.length - 2)))?.focus();
+      ignoreFocus.current = false;
+    });
+  }
   const activeSelection = active === null ? undefined : bar[active];
   return <section className="ability-bar" aria-labelledby={`bar-${slot}`}>
     <div className="bar-heading sr-only"><h3 id={`bar-${slot}`}>Combat bar {slot}</h3><span id={`bar-count-${slot}`}>{bar.length} / {COMBAT_BAR_SIZE} abilities selected</span></div>
@@ -144,7 +156,10 @@ export function AbilityBar({ slot, skill, bar, data, onEdit, readOnly, detailSlo
         const ability = selection && data.getAbility(selection.abilityId);
         const warnings = selection ? selectionWarnings(selection, skill.skillId, data) : [];
         return <li key={index} className={`combat-slot ${index >= COMBAT_BAR_SIZE ? 'legacy-slot' : ''}`}>
-          {selection ? <button type="button" className="slot-button" ref={element => { if (element) triggers.current.set(index, element); else triggers.current.delete(index); }}
+          {selection ? <><button key="remove" type="button" className="quick-remove-ability" disabled={readOnly}
+            aria-label={`Remove ${ability?.displayName ?? selection.abilityId} from bar ${slot}, slot ${index + 1}`}
+            onMouseEnter={() => closeDetail()} onFocus={() => closeDetail()}
+            onClick={event => { event.stopPropagation(); quickRemove(index); }}>×</button><button key="slot" type="button" className="slot-button" ref={element => { if (element) triggers.current.set(index, element); else triggers.current.delete(index); }}
             aria-label={`Bar ${slot} slot ${index + 1}: ${ability?.displayName ?? selection.abilityId}${warnings.length ? ' (needs review)' : ''}`}
             aria-haspopup="dialog" aria-expanded={detailSlot === slot && active === index} aria-controls={detailSlot === slot && active === index ? `equipped-ability-detail-${slot}` : undefined}
             onMouseEnter={() => openDetail(index, false)} onMouseLeave={leaveDetail}
@@ -155,7 +170,7 @@ export function AbilityBar({ slot, skill, bar, data, onEdit, readOnly, detailSlo
             onKeyDown={e => { if (e.key === 'Escape') { e.preventDefault(); closeDetail(true); } }}>
             <AbilityIcon ability={ability} version={data.gameDataVersion} />
             <span className="slot-number">{index + 1}</span>{warnings.length > 0 && <span className="slot-warning" aria-hidden="true">!</span>}
-          </button> : <button type="button" className="slot-button empty-slot" ref={element => { if (element) triggers.current.set(index, element); else triggers.current.delete(index); }} disabled={readOnly || skill.skillId === null}
+          </button></> : <button key="slot" type="button" className="slot-button empty-slot" ref={element => { if (element) triggers.current.set(index, element); else triggers.current.delete(index); }} disabled={readOnly || skill.skillId === null}
             aria-label={`Add ability to bar ${slot}, empty slot ${index + 1}`} onClick={() => openPicker('single')}><span aria-hidden="true">+</span><span className="slot-number">{index + 1}</span></button>}
         </li>;
       })}

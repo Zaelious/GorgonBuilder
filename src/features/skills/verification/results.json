@@ -3,13 +3,20 @@
     "mode": "dev",
     "width": 1440,
     "levels": [
-      95,
+      90,
       102
     ],
     "bars": [
-      6,
+      5,
       1
     ],
+    "customer_levels": {
+      "Werewolf": 106,
+      "Deer": 112,
+      "Cow": 111,
+      "Unarmed": 110
+    },
+    "quick_remove": "mouse + Enter",
     "scroll_positions": [
       494,
       494,
@@ -25,13 +32,20 @@
     "mode": "dev",
     "width": 375,
     "levels": [
-      95,
+      90,
       102
     ],
     "bars": [
-      6,
+      5,
       1
     ],
+    "customer_levels": {
+      "Werewolf": 106,
+      "Deer": 112,
+      "Cow": 111,
+      "Unarmed": 110
+    },
+    "quick_remove": "touch + Space",
     "scroll_positions": [
       787,
       787,
@@ -47,13 +61,20 @@
     "mode": "dev",
     "width": 320,
     "levels": [
-      95,
+      90,
       102
     ],
     "bars": [
-      6,
+      5,
       1
     ],
+    "customer_levels": {
+      "Werewolf": 106,
+      "Deer": 112,
+      "Cow": 111,
+      "Unarmed": 110
+    },
+    "quick_remove": "touch + Space",
     "scroll_positions": [
       1061,
       1061,
@@ -69,13 +90,20 @@
     "mode": "preview",
     "width": 1440,
     "levels": [
-      95,
+      90,
       102
     ],
     "bars": [
-      6,
+      5,
       1
     ],
+    "customer_levels": {
+      "Werewolf": 106,
+      "Deer": 112,
+      "Cow": 111,
+      "Unarmed": 110
+    },
+    "quick_remove": "mouse + Enter",
     "scroll_positions": [
       494,
       494,
@@ -91,13 +119,20 @@
     "mode": "preview",
     "width": 375,
     "levels": [
-      95,
+      90,
       102
     ],
     "bars": [
-      6,
+      5,
       1
     ],
+    "customer_levels": {
+      "Werewolf": 106,
+      "Deer": 112,
+      "Cow": 111,
+      "Unarmed": 110
+    },
+    "quick_remove": "touch + Space",
     "scroll_positions": [
       787,
       787,
@@ -113,13 +148,20 @@
     "mode": "preview",
     "width": 320,
     "levels": [
-      95,
+      90,
       102
     ],
     "bars": [
-      6,
+      5,
       1
     ],
+    "customer_levels": {
+      "Werewolf": 106,
+      "Deer": 112,
+      "Cow": 111,
+      "Unarmed": 110
+    },
+    "quick_remove": "touch + Space",
     "scroll_positions": [
       1061,
       1061,

@@ -21,7 +21,8 @@ def main():
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
     report = json.loads((repo / 'src/core/import/fixtures/character-sheet.json').read_text())
-    report['Skills']['Deer'] = {'Level': 60}
+    customer_levels = [('Werewolf', 106, 6), ('Deer', 112, 12), ('Cow', 111, 11), ('Unarmed', 110, 10)]
+    report['Skills'].update({skill: {'Level': level, 'BonusLevels': bonus, 'ProdigyLevel': 42} for skill, level, bonus in customer_levels})
     storage = repo / 'src/features/import/fixtures/storage.json'
     key = 'gorgonbuilder.current-draft'
     results = []
@@ -42,7 +43,7 @@ def main():
                             except URLError:
                                 time.sleep(.1)
                         for width in [1440, 375, 320]:
-                            context = browser.new_context(viewport={'width': width, 'height': 960})
+                            context = browser.new_context(viewport={'width': width, 'height': 960}, has_touch=width < 500, is_mobile=width < 500)
                             # Exercise the supported icon fallback without depending on CDN networking.
                             context.route('https://cdn.projectgorgon.com/**', lambda route: route.abort())
                             page = context.new_page()
@@ -64,15 +65,16 @@ def main():
 
                             imported()
                             assert page.evaluate('(key) => JSON.parse(localStorage.getItem(key))', key) == baseline
-                            page.locator('#skill-A').select_option('Deer')
-                            expect(page.locator('#level-A')).to_have_value('60')
+                            for skill, level, bonus in customer_levels:
+                                page.locator('#skill-A').select_option(skill)
+                                expect(page.locator('#level-A')).to_have_value(str(level))
                             page.locator('#skill-A').select_option('Psychology')
                             page.locator('#skill-B').select_option('Psychology')
-                            expect(page.locator('#level-A')).to_have_value('95')
-                            expect(page.locator('#level-B')).to_have_value('95')
+                            expect(page.locator('#level-A')).to_have_value('90')
+                            expect(page.locator('#level-B')).to_have_value('90')
                             page.locator('#level-B').fill('102')
                             imported(True)
-                            expect(page.locator('#level-A')).to_have_value('95')
+                            expect(page.locator('#level-A')).to_have_value('90')
                             expect(page.locator('#level-B')).to_have_value('102')
                             opener = page.get_by_role('button', name='Open ability picker for bar A', exact=True)
                             opener.click()
@@ -118,17 +120,64 @@ def main():
                             expect(dialog).to_have_count(0)
                             expect(selected).to_be_focused()
                             page.keyboard.press('Escape')
+                            # Repair a saved inflated level explicitly, preserving the entire build.
+                            page.locator('#level-A').fill('95')
+                            page.wait_for_timeout(600)
+                            before_apply = page.evaluate('(key) => JSON.parse(localStorage.getItem(key))', key)
+                            imported(True)
+                            expect(page.locator('#level-A')).to_have_value('95')
+                            expect(page.locator('#level-B')).to_have_value('102')
+                            page.screenshot(path=str(output / f'{mode}-apply-{width}.png'))
+                            page.get_by_role('button', name='Apply imported level for skill A: 90', exact=True).click()
+                            expect(page.locator('#level-A')).to_have_value('90')
+                            expect(page.get_by_role('button', name='Apply imported level for skill A: 90', exact=True)).to_have_count(0)
+                            page.wait_for_timeout(600)
+                            after_apply = page.evaluate('(key) => JSON.parse(localStorage.getItem(key))', key)
+                            expected_apply = json.loads(json.dumps(before_apply))
+                            expected_apply['skillSlotA']['level'] = 90
+                            assert after_apply == expected_apply
+                            # Remove the replaced entry by mouse or actual touch, then a duplicate by keyboard.
+                            remove = page.locator('.skill-panel').first.locator('.quick-remove-ability').nth(2)
+                            if width < 500:
+                                expect(remove).to_be_visible()
+                                assert remove.bounding_box()['width'] >= 28
+                                remove.tap()
+                            else:
+                                page.locator('.skill-panel').first.locator('.combat-slot').nth(2).hover()
+                                remove.hover()
+                                remove.click()
+                            expect(page.locator('.ability-popover')).to_have_count(0)
+                            page.wait_for_timeout(600)
+                            after_remove = page.evaluate('(key) => JSON.parse(localStorage.getItem(key))', key)
+                            expected_remove = json.loads(json.dumps(after_apply))
+                            expected_remove['abilityBarA'].pop(2)
+                            assert after_remove == expected_remove
+                            page.locator('#level-A').focus()
+                            page.keyboard.press('Tab')
+                            expect(page.locator('.skill-panel').first.locator('.quick-remove-ability').first).to_be_focused()
+                            expect(page.locator('.ability-popover')).to_have_count(0)
+                            page.keyboard.press('Space' if width < 500 else 'Enter')
+                            page.wait_for_timeout(600)
+                            expect(page.locator('.ability-popover')).to_have_count(0)
+                            after_keyboard = page.evaluate('(key) => JSON.parse(localStorage.getItem(key))', key)
+                            expected_remove['abilityBarA'].pop(0)
+                            assert after_keyboard == expected_remove
+                            # Numbered slot 6 still appends to the next available entry (slot 5).
+                            page.get_by_role('button', name='Add ability to bar A, empty slot 6', exact=True).click()
+                            page.locator('.quick-add').first.click()
+                            expect(dialog).to_have_count(0)
+                            page.keyboard.press('Escape')
                             page.wait_for_timeout(600)
                             saved = page.evaluate('(key) => JSON.parse(localStorage.getItem(key))', key)
-                            assert len(saved['abilityBarA']) == 6 and len(saved['abilityBarB']) == 1
+                            assert len(saved['abilityBarA']) == 5 and len(saved['abilityBarB']) == 1
                             page.reload()
-                            expect(page.locator('#level-A')).to_have_value('95')
+                            expect(page.locator('#level-A')).to_have_value('90')
                             expect(page.locator('#level-B')).to_have_value('102')
                             assert page.evaluate('(key) => JSON.parse(localStorage.getItem(key))', key) == saved
                             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
                             page.screenshot(path=str(output / f'{mode}-planner-{width}.png'))
                             assert errors == [], errors
-                            results.append({'mode': mode, 'width': width, 'levels': [95, 102], 'bars': [6, 1],
+                            results.append({'mode': mode, 'width': width, 'levels': [90, 102], 'bars': [5, 1], 'customer_levels': {skill: level for skill, level, _ in customer_levels}, 'quick_remove': 'touch + Space' if width < 500 else 'mouse + Enter',
                                             'scroll_positions': scrolls, 'page_errors': errors, 'passed': True})
                             context.close()
                     finally:
