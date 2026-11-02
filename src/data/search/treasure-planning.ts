@@ -2,6 +2,7 @@ import type { NormalizedTreasureTier } from '../normalized/items-treasure';
 import type { Runtime } from '../repository/contracts';
 import type { GameDataRepository } from '../repository/repository';
 import type { TreasurePower, TreasureRelevance } from './treasure';
+import type { CandidateMod, EquipmentSelection } from '../../core/build/document';
 
 export type TreasureTier = Runtime<NormalizedTreasureTier>;
 export type ModTargetLevel = number | 'max';
@@ -143,4 +144,16 @@ export function groupPlannedMods<T extends { powerId: string }>(mods: readonly T
   const otherOrder = [...new Set(rows.filter(row => row.tone === 'other').map(row => row.category))];
   const rank = (row: typeof rows[number]) => TONE_ORDER.indexOf(row.tone) * 10000 + (row.tone === 'other' ? otherOrder.indexOf(row.category) : 0);
   return [...rows].sort((a, b) => rank(a) - rank(b) || a.index - b.index).map(({ mod, index, tone }) => ({ mod, index, tone }));
+}
+
+export interface EffectiveModRow { mod: CandidateMod; index: number; origin: 'imported' | 'planned'; tone: SkillTone }
+
+/** Shared presentation for STATS and Selected. Original metadata is never an effective source.
+ * Indices still address each saved origin array; grouping cannot mutate or deduplicate them. */
+export function groupEffectiveMods(selection: EquipmentSelection, skillA: string | null, skillB: string | null,
+  data: GameDataRepository): EffectiveModRow[] {
+  const existing = selection.item.kind === 'database' ? [] : selection.item.instance.existingPowers;
+  const rows = [...existing.map((mod, index) => ({ mod, index, powerId: mod.powerId, origin: 'imported' as const })),
+    ...selection.candidateMods.map((mod, index) => ({ mod, index, powerId: mod.powerId, origin: 'planned' as const }))];
+  return groupPlannedMods(rows, skillA, skillB, data).map(({ mod: row, tone }) => ({ mod: row.mod, index: row.index, origin: row.origin, tone }));
 }

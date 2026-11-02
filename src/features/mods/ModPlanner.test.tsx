@@ -80,7 +80,7 @@ it('moves mods between Available and Selected with immediate STATS rows, >6 diff
   await add();
   // Mutually exclusive: the staged power leaves Available immediately and appears in Selected and STATS.
   expect(container.querySelector(`${editor} [data-power-id="power_10001"]`)).toBeNull();
-  expect(control(`${editor} .mod-selected h3`).textContent).toBe('Selected (1)');
+  expect(control(`${editor} .mod-selected h3`).textContent).toBe('Selected (2)');
   const row = control(`${scope} .item-stats [data-candidate-effect="0"]`);
   expect(row.querySelector('.stat-chip')!.textContent).toBe('Archery');
   expect(row.textContent).toBe('ArcheryArchery Base Damage +60%, Anatomy-Based Critical Hit Chance +4%');
@@ -104,7 +104,7 @@ it('moves mods between Available and Selected with immediate STATS rows, >6 diff
   }
   expect(new Set(expected.map(mod => mod.powerId)).size).toBe(8);
   for (const mod of expected) expect(container.querySelector(`${editor} [data-power-id="${mod.powerId}"]`)).toBeNull();
-  expect(control(`${editor} .mod-selected h3`).textContent).toBe('Selected (8)');
+  expect(control(`${editor} .mod-selected h3`).textContent).toBe('Selected (9)');
   await change(`${editor} [aria-label="Tier for candidate 1"]`, 'id_11');
   expect(control(`${scope} [data-candidate-effect="0"]`).textContent).toContain('Archery Base Damage +55%');
   await click(`${editor} [aria-label="Move candidate 1 down"]`);
@@ -120,7 +120,7 @@ it('moves mods between Available and Selected with immediate STATS rows, >6 diff
   expect({ ...next.equipment[0], candidateMods: [] }).toEqual(original.equipment[0]);
   expect(next.equipment[1]).toEqual(original.equipment[1]);
   await remount();
-  expect(control(`${editor} .mod-selected h3`).textContent).toBe('Selected (7)');
+  expect(control(`${editor} .mod-selected h3`).textContent).toBe('Selected (8)');
   expect(control<HTMLInputElement>(`${editor} [aria-label="Mod target level"]`).value).toBe('Max');
   expect(control(`${scope} .item-stats [data-existing-power="0"]`).dataset.powerId).toBe('power_129');
   expect(control(`${scope} .item-stats [data-existing-power="0"]`).dataset.tierId).toBe('id_120');
@@ -350,12 +350,16 @@ it('renders actual inline icon images in Available, Selected, STATS rows (planne
   const build = seed(); build.skillSlotA.skillId = 'AnimalHandling';
   build.equipment[0]!.item = { kind: 'imported', instance: { baseItemId: 'item_45052', existingPowers: [{ powerId: 'power_12301', tierId: 'id_12' }] } };
   localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build)); await render(); await open(); await search('power_12301');
+  expect(control(`${scope} .item-stats [data-existing-power]`).querySelector('img.effect-icon')).not.toBeNull();
+  expect(control(`${editor} [data-existing-mod-index="0"]`).querySelector('img.effect-icon')).not.toBeNull();
+  expect(container.querySelector(`${editor} .available-effect`)).toBeNull();
+  await click(`${editor} [aria-label="Remove imported mod 1"]`);
   const img = control<HTMLImageElement>(`${editor} .available-effect img`);
   expect(img.src).toBe('https://cdn.projectgorgon.com/v490/icons/icon_2160.png');
   expect(img.alt).toBe('Official effect icon 2160');
   expect(control(`${editor} .available-effect`).textContent).not.toContain('<icon=');
   await add('power_12301');
-  for (const selector of [`${editor} .candidate-effect`, `${scope} .item-stats [data-candidate-effect]`, `${scope} .item-stats [data-existing-power]`]) {
+  for (const selector of [`${editor} .candidate-effect`, `${scope} .item-stats [data-candidate-effect]`]) {
     expect(control(selector).querySelector('img.effect-icon')).not.toBeNull();
   }
   await click(`${editor} [aria-label="Details and tier for candidate 1"]`);
@@ -377,15 +381,15 @@ it('renders paired Animal Handling attributes as one readable +25%/+25% effect i
   expect(row.querySelector('.mod-fit-flag')!.textContent).toBe('other slot'); // Head-only power explored on a Shield
   expect(row.textContent).not.toMatch(/modifier|source value|context:|\{MOD_/u);
   await add('power_12192');
-  expect(control(`${editor} .candidate-effect`).textContent).toBe(expected);
+  expect(control(`${editor} [data-mod-index="0"] .mod-effect-text`).textContent).toBe(expected);
   expect(control(`${scope} [data-candidate-effect="0"]`).textContent).toBe(`Animal Handling${expected}`);
-  expect(control(`${editor} .candidate-effect .effect-description`).getAttribute('title')).toContain('Requires Animal Handling active');
+  expect(control(`${editor} [data-mod-index="0"] .candidate-effect .effect-description`).getAttribute('title')).toContain('Requires Animal Handling active');
   await tick(500);
   expect(saved().equipment[0]!.candidateMods).toEqual([{ powerId: 'power_12192', tierId: 'id_25' }]);
   expect(saved().skillSlotB).toEqual({ skillId: 'AnimalHandling', level: 125 });
 });
 
-it('groups planned STATS rows by skill (Druid, Druid, Archery) with A blue / B gold, without changing saved order or Selected', async () => {
+it('groups STATS and Selected by skill (Druid, Druid, Archery) with A blue / B gold, without changing saved order', async () => {
   seedChest('Druid', 'Archery'); await render(); await click('[data-equipment-row="Chest"] > summary');
   const archery = control(`${chestEditor} [data-mod-group="Archery"] [data-power-id]`);
   const archeryMod = { powerId: archery.dataset.powerId!, tierId: archery.dataset.previewTier! };
@@ -398,9 +402,9 @@ it('groups planned STATS rows by skill (Druid, Druid, Archery) with A blue / B g
   expect(rows().map(row => (row.querySelector('.stat-chip') as HTMLElement).dataset.tone)).toEqual(['skill-a', 'skill-a', 'skill-b']);
   expect(control(`${chest} .item-stats-legend`).textContent).toContain('A · Druid');
   expect(control(`${chest} .item-stats-legend`).textContent).toContain('B · Archery');
-  // Selected keeps saved order and its index-based controls.
+  // Selected shares display grouping while its controls still address saved indices.
   expect([...container.querySelectorAll<HTMLElement>(`${chestEditor} .candidate-list > [data-mod-index]`)].map(row => row.textContent)).toEqual([
-    expect.stringContaining('Indirect Poison Damage'), expect.anything(), expect.stringContaining('Brambleskin')]);
+    expect.stringContaining('Indirect Poison Damage'), expect.stringContaining('Brambleskin'), expect.anything()]);
   await tick();
   const savedOrder = [{ powerId: 'power_14005', tierId: 'id_25' }, archeryMod, { powerId: 'power_14154', tierId: control<HTMLSelectElement>(`${chestEditor} [aria-label="Tier for candidate 3"]`).value }];
   expect(saved().equipment[2]!.candidateMods).toEqual(savedOrder);

@@ -24,13 +24,13 @@ it('colours follow the current slots: swapping A/B swaps colours and group order
   expect(await render('Druid', 'Druid')).toEqual(['Druid:skill-a', 'Druid:skill-a', ...tail.slice(0, 3), 'Archery:other', 'Unknown:unknown']);
   expect(container.querySelector('.item-stats-legend')!.textContent).toContain('A · Druid');
   expect(container.querySelector('.item-stats-legend')!.textContent).not.toContain('B ·');
-  expect(await render(null, null)).toEqual(['Generic:generic', 'Endurance:endurance', 'Shamanic:shamanic', 'Druid:other', 'Druid:other', 'Archery:other', 'Unknown:unknown']);
-  // Imported powers keep the outlined style with their slot tone; base rows stay neutral.
+  expect(await render(null, null)).toEqual(['Generic:generic', 'Endurance:endurance', 'Shamanic:shamanic', 'Archery:other', 'Druid:other', 'Druid:other', 'Unknown:unknown']);
+  // Imported powers share the filled skill chip; base rows stay neutral.
   await render('Archery', 'Druid');
   const imported = container.querySelector<HTMLElement>('[data-stat-kind="imported"] .stat-chip')!;
   expect(imported.className).toContain('stat-chip-imported');
   expect(imported.dataset.tone).toBe('skill-a');
-  expect(imported.textContent).toBe('◇ Archery');
+  expect(imported.textContent).toBe('Archery');
   expect([...container.querySelectorAll<HTMLElement>('[data-stat-kind="base"] .stat-chip')].every(chip => chip.dataset.tone === 'base')).toBe(true);
   expect([...container.querySelectorAll<HTMLElement>('[data-stat-kind="planned"]')].map(row => row.dataset.candidateEffect)).toEqual(['1', '0', '3', '2', '4', '5', '6']);
 });

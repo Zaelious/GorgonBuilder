@@ -35,6 +35,28 @@ transient editor state, remote record, or ownership credentials.
 
 ## Validation and serialization
 
+T0011-F2 treats an imported instance's `existingPowers` as its **effective working
+pairs**. `existing-mods.ts` validates remove/tier edits against exact official
+power-owned tiers. Separately staged `candidateMods` retain their own identities,
+order and edit controls. STATS and Selected use the same display grouping without
+sorting either saved array. Changing active skills can prune staged candidates
+under the existing rule, but never prunes imported existing pairs.
+
+The selected source item in `metadata.sourceItem` remains historical evidence.
+Restore reuses the import parser and reference adapter to recover its original
+known pairs, including duplicate occurrences in source order. It changes only
+working existing powers; candidates, Sparks, bars and other equipment survive.
+The UI confirms a restore that overlaps a planned power and keeps both copies
+only after that explicit choice. Unknown source powers and imbues remain in the
+original evidence, never inferred into editable pairs. Unknown legacy working
+pairs remain read-only and are retained after the restored known sequence.
+
+For legacy imported instances without source evidence, the first working edit
+stores `metadata.originalWorkingPowers` as an initial working baseline. This is
+schema-v1 metadata, not a fabricated report; its known pairs can be restored.
+Future aggregation must consume only effective working pairs plus planned
+candidates, never the original evidence or baseline as an additional source.
+
 `validateBuildDocument`, `serializeBuildDocument` and
 `deserializeBuildDocument` return discriminated results (`ok` with `value`, or
 `reason`). Errors distinguish invalid JSON, invalid structure and unsupported
