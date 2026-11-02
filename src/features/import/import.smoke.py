@@ -127,7 +127,7 @@ def main():
                         expect(page.locator('.equipment-section > .section-heading button')).to_be_disabled()
                         page.locator('[data-equipment-row="MainHand"] > summary').click()
                         expect(page.locator('[data-equipment-row="MainHand"]')).to_contain_text('Actual level 91')
-                        page.locator('[data-equipment-row="MainHand"]').get_by_text('Original imported item', exact=True).click()
+                        page.locator('[data-equipment-row="MainHand"]').locator('.item-details-source > summary').click()
                         expect(page.locator('[data-equipment-row="MainHand"]')).to_contain_text('Exact source tier: 777')
                         page.get_by_role('button', name='Import Character', exact=True).click()
                         page.locator('#character-file').set_input_files(str(character))

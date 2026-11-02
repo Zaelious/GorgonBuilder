@@ -4,10 +4,11 @@ import type { CandidateModEdit } from '../../core/build/candidate-mods';
 import { isResolvedExistingPower, restoredExistingPowers, sameExistingPowers, type ExistingModEdit } from '../../core/build/existing-mods';
 import type { GameDataRepository } from '../../data/repository/repository';
 import { browseTreasurePowers, indexTreasurePowers, powerName, treasureRelevance, type TreasureContext, type TreasurePower, type TreasureRelevance } from '../../data/search/treasure';
-import { availableTreasurePowers, groupEffectiveMods, groupTreasurePowers, itemFit, type ItemFit, orderTreasureTiers, previewTreasureTiers, type ModCategories, type ModTargetLevel, type TreasureTier } from '../../data/search/treasure-planning';
+import { availableTreasurePowers, groupEffectiveMods, groupTreasurePowers, itemFit, type ItemFit, orderTreasureTiers, previewTreasureTiers, type ModTargetLevel, type TreasureTier } from '../../data/search/treasure-planning';
 import { EffectDescriptions } from './EffectDescription';
 import { CandidateList } from './CandidateList';
 import { PowerFacts, TierFacts } from './PowerFacts';
+import type { ModBrowserState } from './ModBrowserControls';
 import './mods.css';
 
 const FIT_FLAGS: Record<Exclude<ItemFit, 'listed'>, { text: string; title: (profile: string, slot: string) => string }> = {
@@ -47,19 +48,13 @@ function AvailablePower({ power, relevance, context, target, data, onAdd, readOn
 }
 
 /** Inline UI state is transient; candidate edits still use the existing schema/autosave. */
-export function ModPlanner({ selection, equipmentIndex, context, skillA, skillB, data, onEdit, readOnly }: {
+export function ModPlanner({ selection, equipmentIndex, context, skillA, skillB, data, onEdit, readOnly, browser }: {
   selection: EquipmentSelection; equipmentIndex: number; context: TreasureContext; data: GameDataRepository;
-  skillA: string | null; skillB: string | null;
+  skillA: string | null; skillB: string | null; browser: ModBrowserState;
   onEdit: (edit: CandidateModEdit | ExistingModEdit) => void; readOnly: boolean;
 }) {
   const id = useId();
-  const [query, setQuery] = useState('');
-  const [target, setTarget] = useState<ModTargetLevel>('max');
-  const [targetText, setTargetText] = useState('Max');
-  const validTarget = targetText.trim().toLowerCase() === 'max' || (/^\d+$/u.test(targetText.trim()) && Number.isSafeInteger(Number(targetText)));
-  const [allSkills, setAllSkills] = useState(false);
-  const [allSlots, setAllSlots] = useState(false);
-  const [categories, setCategories] = useState<ModCategories>({ generic: true, endurance: true, shamanic: true });
+  const { query, target, allSkills, allSlots, categories } = browser;
   const index = useMemo(() => indexTreasurePowers(data.treasurePowers), [data]);
   const relevance = useMemo(() => new Map(data.treasurePowers.map(power => [power.id, treasureRelevance(power, context, data)])), [data, context]);
   const effective = groupEffectiveMods(selection, skillA, skillB, data);
@@ -70,26 +65,8 @@ export function ModPlanner({ selection, equipmentIndex, context, skillA, skillB,
   const matches = useMemo(() => availableTreasurePowers(browseTreasurePowers(index, query, relevance, 'relevant'), relevance, staged, allSlots, data, context.skillIds),
     [index, query, relevance, staged, allSlots, data, context.skillIds]);
   const groups = useMemo(() => groupTreasurePowers(matches, context.skillIds, categories, allSkills, data), [matches, context.skillIds, categories, allSkills, data]);
-  const profile = context.item?.treasureProfile?.status === 'resolved' ? context.item.treasureProfile.profileId : null;
   const active = context.skillIds.some(skill => data.getSkill(skill)?.combat);
   return <section className="mod-planner" aria-label={`Mods for equipment ${equipmentIndex + 1}`}>
-    <div className="mod-toolbar">
-      <label htmlFor={`${id}-target`}>Target level
-        <input id={`${id}-target`} aria-label="Mod target level" list={`${id}-levels`} value={targetText} aria-invalid={!validTarget} onBlur={() => { if (!validTarget) setTargetText(target === 'max' ? 'Max' : String(target)); }} onChange={event => {
-          setTargetText(event.target.value);
-          const text = event.target.value.trim();
-          if (text.toLowerCase() === 'max') setTarget('max');
-          else if (/^\d+$/u.test(text) && Number.isSafeInteger(Number(text))) setTarget(Number(text));
-        }} />
-        <datalist id={`${id}-levels`}><option value="Max" /><option value="90" /><option value="100" /></datalist>
-      </label>
-      <label className="mod-search-label" htmlFor={`${id}-search`}>Search mods<input id={`${id}-search`} type="search" aria-label="Search treasure powers" value={query} onChange={event => setQuery(event.target.value)} placeholder="Effect, name, or ID…" /></label>
-    </div>
-    {!validTarget && <p className="warning">Use Max or a nonnegative whole target level. The previous preview is retained.</p>}
-    <div className="mod-category-toggles">{([['generic', 'Generic'], ['endurance', 'Endurance'], ['shamanic', 'Shamanic Infusions']] as const).map(([key, label]) => <label key={key}>
-      <input type="checkbox" checked={categories[key]} onChange={event => setCategories(previous => ({ ...previous, [key]: event.target.checked }))} />{label}
-    </label>)}<label><input type="checkbox" checked={allSkills} onChange={event => setAllSkills(event.target.checked)} />All skills</label>
-      <label title="Explore powers whose published slot or item profile does not list this item"><input type="checkbox" checked={allSlots} onChange={event => setAllSlots(event.target.checked)} />Other slots &amp; profiles</label></div>
     <div className="mod-columns">
       <section className="mod-available" aria-labelledby={`${id}-available`}><h3 id={`${id}-available`}>Available</h3>
         {!active ? <p className="muted">Select a combat skill to view mods.</p> : <div className="mod-available-scroll">
@@ -117,10 +94,5 @@ export function ModPlanner({ selection, equipmentIndex, context, skillA, skillB,
       </section>
     </div>
     {readOnly && <p className="warning">This draft is read-only. Mod changes are disabled.</p>}
-    <details className="mod-more mod-guidance"><summary>Categories, target levels &amp; relevance</summary>
-      <p>Generic lists the published AnySkill selector; its skill association and eligibility are unknown. Endurance and Shamanic Infusions use exact published skill associations. Missing associations have their own Unknown group.</p>
-      <p>Each official power appears once. Available lists powers whose published slots include {context.item ? context.item.slot : 'this item\'s slot'}{profile ? ` and whose published profile list includes item profile ${profile}` : ' (this item publishes no treasure profile)'}; Endurance and Shamanic Infusions use slot only, because their published profiles are not referenced by any item. Slot-compatible powers of your active combat skills that the item profile does not list are still shown, flagged “outside profile” (eligibility unconfirmed). Selecting a power moves it to Selected; removing it restores it. These are published-data filters, not full legality. All skills and Other slots &amp; profiles enable broader exploration. No final mod-count limit is imposed.</p>
-      <p>Target changes only the available preview, never saved candidates, item target level or skill levels. Max uses the highest published minimum level, not calculated effect strength. Overlapping ranges/rarities remain explicit tier alternatives. Effects are exact published text, without damage math.</p>
-    </details>
   </section>;
 }

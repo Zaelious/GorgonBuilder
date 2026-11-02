@@ -4,7 +4,7 @@ import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { App } from '../../app/App';
 import { createDefaultBuildDocument, type BuildDocument } from '../../core/build/document';
 import { loadGameDataRepository } from '../../data/repository/load';
-import { DRAFT_STORAGE_KEY } from '../../persistence/local/storage';
+import { DRAFT_STORAGE_KEY, PREFERENCES_STORAGE_KEY } from '../../persistence/local/storage';
 import { loadPlannerFixture } from '../../test/planner-fixture';
 vi.mock('../../data/repository/load', () => ({ loadGameDataRepository: vi.fn() }));
 let data: ReturnType<typeof loadPlannerFixture>;
@@ -51,13 +51,13 @@ function seed() {
 }
 const scope = '[data-selection-index="0"]';
 const editor = `${scope} .mod-planner`;
-const search = (text: string) => change(`${editor} [aria-label="Search treasure powers"]`, text);
-const target = (text: string) => change(`${editor} [aria-label="Mod target level"]`, text);
+const search = (text: string) => change(`.mod-browser-controls [aria-label="Search treasure powers"]`, text);
+const target = (text: string) => change(`.mod-browser-controls [aria-label="Mod target level"]`, text);
 const open = () => click('[data-equipment-row="OffHand"] > summary');
 const add = (id = 'power_10001') => click(`${editor} [data-power-id="${id}"] > .available-effect`);
 async function remount() { await act(async () => root.unmount()); root = createRoot(container); await render(); await open(); }
 /** The seeded Shield (profile Shield) does not list ArcheryBoost etc.; exploring shows other slots/profiles. */
-const explore = () => click(`${editor} [title^="Explore powers"] input`);
+const explore = () => click(`.mod-browser-controls [title^="Explore powers"] input`);
 const availableIds = (selector = editor) => [...container.querySelectorAll<HTMLElement>(`${selector} [data-power-id]`)].map(row => row.dataset.powerId!);
 const DRUID_CHEST = ['power_14005', 'power_14012', 'power_14051', 'power_14052', 'power_14101', 'power_14154', 'power_14159', 'power_14201', 'power_14351', 'power_14501', 'power_14602'];
 function seedChest(skillA: string | null, skillB: string | null = null) {
@@ -69,10 +69,41 @@ function seedChest(skillA: string | null, skillB: string | null = null) {
 const chest = '[data-selection-index="2"]';
 const chestEditor = `${chest} .mod-planner`;
 
+it('shows filtering help once in shared settings, collapsed by default, with no per-item guidance or draft edits', async () => {
+  seedChest('Druid', 'Archery');
+  const bytes = localStorage.getItem(DRAFT_STORAGE_KEY);
+  await render(); await open();
+  await click('[data-equipment-row="Ring"] > summary');
+  await click('[data-equipment-row="Chest"] > summary');
+  expect(container.querySelectorAll('.mod-planner')).toHaveLength(3);
+  expect(container.textContent).not.toContain('Categories, target levels & relevance');
+  expect(container.querySelectorAll('.mod-planner .mod-guidance')).toHaveLength(0);
+  expect(container.querySelectorAll('.mod-guidance')).toHaveLength(1);
+  const settings = control<HTMLDetailsElement>('.mod-browser-settings');
+  const help = control<HTMLDetailsElement>('.mod-browser-settings .mod-guidance');
+  expect(settings.open).toBe(false);
+  expect(help.open).toBe(false);
+  expect(help.querySelector('summary')!.textContent).toBe('How mod filtering works');
+  await click('.mod-browser-settings > summary');
+  expect(help.open).toBe(false);
+  await click('.mod-guidance > summary');
+  expect(help.open).toBe(true);
+  expect(help.textContent).toContain('Generic (AnySkill)');
+  expect(help.textContent).toContain('eligibility is unconfirmed');
+  expect(help.textContent).toContain('custom target level');
+  expect(help.textContent).toContain('Preview settings never change selected mods or their tiers.');
+  // Opening shared documentation does not hide actionable item-specific flags.
+  expect(container.querySelectorAll(`${editor} .mod-fit-flag`).length).toBeGreaterThan(0);
+  await click('.mod-guidance > summary');
+  expect(help.open).toBe(false);
+  await tick();
+  expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(bytes);
+});
+
 it('moves mods between Available and Selected with immediate STATS rows, >6 different exact candidates and non-destructive previews through autosave/reload', async () => {
   const original = seed(); await render(); await open();
   expect(container.querySelector('dialog')).toBeNull();
-  expect(control<HTMLInputElement>(`${editor} [aria-label="Mod target level"]`).value).toBe('Max');
+  expect(control<HTMLInputElement>(`.mod-browser-controls [aria-label="Mod target level"]`).value).toBe('Max');
   await explore(); await search('power_10001');
   const preview = () => control(`${editor} [data-power-id="power_10001"]`);
   expect(preview().dataset.previewTier).toBe('id_12');
@@ -121,7 +152,7 @@ it('moves mods between Available and Selected with immediate STATS rows, >6 diff
   expect(next.equipment[1]).toEqual(original.equipment[1]);
   await remount();
   expect(control(`${editor} .mod-selected h3`).textContent).toBe('Selected (8)');
-  expect(control<HTMLInputElement>(`${editor} [aria-label="Mod target level"]`).value).toBe('Max');
+  expect(control<HTMLInputElement>(`.mod-browser-controls [aria-label="Mod target level"]`).value).toBe('Max');
   expect(control(`${scope} .item-stats [data-existing-power="0"]`).dataset.powerId).toBe('power_129');
   expect(control(`${scope} .item-stats [data-existing-power="0"]`).dataset.tierId).toBe('id_120');
   expect(saved()).toEqual(next);
@@ -136,7 +167,7 @@ it('shows one Available entry per official Druid power for a Chest, with Max/100
   const max = previews();
   expect(max.power_14005).toBe('id_25');
   expect(control(`${chestEditor} [data-power-id="power_14005"] .available-effect-text`).textContent).toBe('Indirect Poison Damage +58%');
-  await change(`${chestEditor} [aria-label="Mod target level"]`, '100');
+  await change(`.mod-browser-controls [aria-label="Mod target level"]`, '100');
   expect(druid().sort()).toEqual(DRUID_CHEST);
   const hundred = previews();
   expect(hundred.power_14005).not.toBe(max.power_14005);
@@ -144,7 +175,7 @@ it('shows one Available entry per official Druid power for a Chest, with Max/100
   expect(tier.minLevel <= 100 && 100 <= tier.maxLevel).toBe(true);
   // Same-effect variants for other slots (e.g. BrambleSkinMaxArmorBoost on OffHand) are not repeated here.
   expect(druid()).not.toContain('power_14153');
-  await click(`${chestEditor} [title^="Explore powers"] input`);
+  await click(`.mod-browser-controls [title^="Explore powers"] input`);
   expect(druid().length).toBe(65);
 });
 
@@ -158,7 +189,7 @@ it('shows every fixed effect with readable official labels in one STATS panel, w
     'Health from Combat Refresh Abilities +45', 'Armor from Combat Refresh Abilities +45', 'Power from Combat Refresh Abilities +45']);
   expect(rows.every(row => row.querySelector('.stat-chip')!.textContent === 'Base')).toBe(true);
   expect(control(chest).textContent).not.toMatch(/more fixed effects|Vuln electricity|CANDIDATE/u);
-  const details = control<HTMLDetailsElement>(`${chest} .item-facts > details.item-more`);
+  const details = control<HTMLDetailsElement>(`${chest} > details.item-details-source`);
   expect(details.open).toBe(false);
   expect(details.textContent).toContain('{VULN_ELECTRICITY}{-0.2}');
   await click(`${chestEditor} [data-power-id="power_14005"] > .available-effect`);
@@ -238,7 +269,7 @@ it('updates unique skill groups for A+B/A+A', async () => {
 
 it('uses independent default-checked source-category toggles, supports broad search and does not save transient controls', async () => {
   const build = seedChest('Archery'); await render(); await click('[data-equipment-row="Chest"] > summary');
-  const toggle = (n: number) => `${chestEditor} .mod-category-toggles label:nth-child(${n}) input`;
+  const toggle = (n: number) => `.mod-browser-controls .mod-category-toggles label:nth-child(${n}) input`;
   for (const [n, id] of [[1, 'AnySkill'], [2, 'Endurance'], [3, 'ShamanicInfusion']] as const) {
     expect(control<HTMLInputElement>(toggle(n)).checked).toBe(true);
     expect(container.querySelector(`${chestEditor} [data-mod-group="${id}"]`)).not.toBeNull();
@@ -248,9 +279,9 @@ it('uses independent default-checked source-category toggles, supports broad sea
   }
   expect(control(`${chestEditor} [data-mod-group="AnySkill"] h4`).textContent).toContain('association unknown');
   await click(toggle(4));
-  for (const skill of ['Psychology', 'Cow', 'Unarmed']) { await change(`${chestEditor} [aria-label="Search treasure powers"]`, skill); expect(container.querySelectorAll(`${chestEditor} [data-power-id]`).length).toBeGreaterThan(0); }
-  await change(`${chestEditor} [aria-label="Search treasure powers"]`, 'no-such-power'); expect(control(`${chestEditor} .mod-available`).textContent).toContain('No matching powers');
-  await change(`${chestEditor} [aria-label="Mod target level"]`, '90'); await tick(); expect(saved()).toEqual(build);
+  for (const skill of ['Psychology', 'Cow', 'Unarmed']) { await change(`.mod-browser-controls [aria-label="Search treasure powers"]`, skill); expect(container.querySelectorAll(`${chestEditor} [data-power-id]`).length).toBeGreaterThan(0); }
+  await change(`.mod-browser-controls [aria-label="Search treasure powers"]`, 'no-such-power'); expect(control(`${chestEditor} .mod-available`).textContent).toContain('No matching powers');
+  await change(`.mod-browser-controls [aria-label="Mod target level"]`, '90'); await tick(); expect(saved()).toEqual(build);
 });
 
 it('makes overlapping tier options explicit and stages the exact alternative or null on request', async () => {
@@ -271,7 +302,7 @@ it('retains unknown saved IDs and absent base/profile data until explicit candid
   const build = seed(); build.equipment[0]!.item = { kind: 'manual', instance: { baseItemId: null, existingPowers: [{ powerId: 'missing-existing', tierId: 'keep' }] } };
   build.equipment[0]!.candidateMods = [{ powerId: 'missing', tierId: 'keep' }, { powerId: 'power_10001', tierId: 'missing-tier' }];
   localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build)); await render(); await open();
-  expect(control(`${editor} .mod-guidance`).textContent).toContain('publishes no treasure profile');
+  expect(container.querySelector(`${editor} .mod-guidance`)).toBeNull();
   expect(control(`${editor} .mod-available`).textContent).toContain('slot/profile filtering is off');
   expect(control(`${scope} .item-stats [data-existing-power="0"]`).textContent).toContain('missing-existing · Official power unavailable (retained)');
   expect(control<HTMLSelectElement>(`${editor} [aria-label="Tier for candidate 1"]`).value).toBe('keep');
@@ -340,7 +371,7 @@ it.each(['future-schema', 'read-failed'])('protects a %s draft from candidate wr
 it('keeps the last preview on invalid transient target input and does not edit the draft', async () => {
   const build = seed(); await render(); await open(); await explore(); await target('90'); await search('power_10001');
   for (const text of ['-1', '1.5', 'bad']) {
-    await target(text); expect(control<HTMLInputElement>(`${editor} [aria-label="Mod target level"]`).getAttribute('aria-invalid')).toBe('true');
+    await target(text); expect(control<HTMLInputElement>(`.mod-browser-controls [aria-label="Mod target level"]`).getAttribute('aria-invalid')).toBe('true');
     expect(control(`${editor} [data-power-id="power_10001"]`).dataset.previewTier).toBe('id_9');
   }
   await tick(); expect(saved()).toEqual(build);
@@ -437,4 +468,78 @@ it('shows Druid MainHand powers outside a Sword profile beside listed Archery po
   expect(control('[data-selection-index="2"] .item-stats [data-candidate-effect="0"] .stat-chip').textContent).toBe('Druid');
   await tick();
   expect(saved().equipment[2]!.candidateMods).toEqual([{ powerId, tierId }]);
+});
+
+it('shares one search/settings across Head, Chest, Ring and Necklace, independently of the minimum equipment preference', async () => {
+  const build = seedChest('Druid', 'Archery');
+  for (const slot of ['Head', 'Necklace']) {
+    build.equipment.push({ slot, item: { kind: 'database', itemId: data.items.find(item => item.slot === slot)!.id }, candidateMods: [], sparks: { mode: 'none' } });
+  }
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build));
+  await render();
+  expect(container.querySelectorAll('[aria-label="Search treasure powers"]')).toHaveLength(1);
+  expect(container.querySelectorAll('.mod-browser-settings')).toHaveLength(1);
+  expect(control<HTMLDetailsElement>('.mod-browser-settings').open).toBe(false);
+  await click('.mod-browser-settings > summary');
+  await search('lightning'); await target('100');
+  await click('.mod-category-toggles label:nth-child(1) input');
+  await click('.mod-category-toggles label:nth-child(4) input');
+  await explore();
+  for (const slot of ['Head', 'Chest', 'Ring', 'Necklace', 'Head']) {
+    const row = `[data-equipment-row="${slot}"]`;
+    await click(`${row} > summary`);
+    expect(control<HTMLInputElement>('[aria-label="Search treasure powers"]').value).toBe('lightning');
+    expect(control<HTMLInputElement>('[aria-label="Mod target level"]').value).toBe('100');
+    expect(control<HTMLInputElement>('.mod-category-toggles label:nth-child(1) input').checked).toBe(false);
+    expect(control<HTMLInputElement>('.mod-category-toggles label:nth-child(4) input').checked).toBe(true);
+    expect(control<HTMLInputElement>('.mod-category-toggles label:nth-child(5) input').checked).toBe(true);
+    const ids = availableIds(`${row} .mod-planner`);
+    expect(ids.length).toBeGreaterThan(0);
+    expect(container.querySelector(`${row} .mod-toolbar, ${row} .mod-category-toggles, ${row} input[type="search"]`)).toBeNull();
+    await click(`${row} > summary`);
+  }
+  await click('[data-equipment-row="Ring"] > summary');
+  await click('[data-equipment-row="Ring"] .equipment-actions button');
+  expect(control<HTMLInputElement>('#minimum-target-level').value).toBe('90');
+  await change('#minimum-target-level', '80');
+  await click('[aria-label="Close equipment picker"]');
+  expect(control<HTMLInputElement>('[aria-label="Mod target level"]').value).toBe('100');
+  await target('125');
+  await click('[data-equipment-row="Ring"] .equipment-actions button');
+  expect(control<HTMLInputElement>('#minimum-target-level').value).toBe('80');
+  await click('[aria-label="Close equipment picker"]');
+  await tick();
+  expect(saved()).toEqual(build);
+  expect(JSON.parse(localStorage.getItem(PREFERENCES_STORAGE_KEY)!)).toMatchObject({ minimumEquipmentLevel: 80 });
+});
+
+it('keeps custom and last-valid previews across row changes and restores invalid text on blur', async () => {
+  seed(); await render(); await open(); await explore(); await search('power_10001');
+  for (const [text, tier] of [['90', 'id_9'], ['100', 'id_10'], ['125', 'id_12'], ['Max', 'id_12']]) {
+    await target(text!);
+    expect(control(`${editor} [data-power-id="power_10001"]`).dataset.previewTier).toBe(tier);
+  }
+  await target('90');
+  for (const text of ['', '-1', '1.5', 'invalid', '9007199254740992']) {
+    await target(text);
+    expect(control('[aria-label="Mod target level"]').getAttribute('aria-invalid')).toBe('true');
+    expect(control(`${editor} [data-power-id="power_10001"]`).dataset.previewTier).toBe('id_9');
+    await open(); await click('[data-equipment-row="Ring"] > summary');
+    expect(control('[data-equipment-row="Ring"] [data-power-id="power_10001"]').dataset.previewTier).toBe('id_9');
+    await click('[data-equipment-row="Ring"] > summary'); await open();
+  }
+  await act(async () => { control('[aria-label="Mod target level"]').dispatchEvent(new FocusEvent('focusout', { bubbles: true })); });
+  expect(control<HTMLInputElement>('[aria-label="Mod target level"]').value).toBe('90');
+});
+
+it('puts database STATS first and all published metadata in a single closed disclosure', async () => {
+  seedChest('Druid'); await render(); await click('[data-equipment-row="Chest"] > summary');
+  const selection = control(chest);
+  expect(selection.firstElementChild?.className).toBe('item-stats');
+  expect(control<HTMLDetailsElement>(`${chest} > .item-details-source`).open).toBe(false);
+  expect(container.querySelectorAll(`${chest} > details`)).toHaveLength(1);
+  expect(control(`${chest} .item-details-source`).textContent).toContain('Target level');
+  expect(control(`${chest} .item-details-source`).textContent).toContain('Published skill requirements');
+  expect(control(`${chest} .item-details-source`).textContent).toContain('Official v490');
+  expect(selection.querySelectorAll('.equipment-icon, .equipment-result-heading')).toHaveLength(0);
 });

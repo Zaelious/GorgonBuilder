@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { BuildDocument } from '../core/build/document';
+import { createDefaultBuildDocument, type BuildDocument } from '../core/build/document';
 import { loadGameDataRepository } from '../data/repository/load';
 import type { GameDataRepository } from '../data/repository/repository';
 import { SkillPlanner } from '../features/skills/SkillPlanner';
@@ -80,6 +80,13 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
     setCleared(edit.type === 'skill' ? clearedNotice(previous, next, edit.slot, data) : null);
   }
 
+  function clearBuild() {
+    if (readOnly || !window.confirm('Clear the current working build? This removes configured skills and levels, both ability bars, equipment, imported working powers and planned mods, Spark configurations, title and notes, and target settings. My Items, imported CharacterSheet/Storage reports and browser preferences are kept. This cannot be undone.')) return;
+    setCleared(null);
+    setDetailSlot(null);
+    apply(createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion }));
+  }
+
   function undoCleared() {
     if (readOnly || !cleared || current.current !== cleared.next) { setCleared(null); return; }
     apply(cleared.previous);
@@ -104,7 +111,7 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
   </div> : null;
 
   return <>
-    <div className="planner-heading"><BuildTitle title={build.title} readOnly={readOnly} onCommit={title => commit({ type: 'title', title })} /><ImportCharacter data={data} session={imported} onApply={setImported} /><p className="save-status" role="status">{saveState}</p></div>
+    <div className="planner-heading"><BuildTitle title={build.title} readOnly={readOnly} onCommit={title => commit({ type: 'title', title })} /><ImportCharacter data={data} session={imported} onApply={setImported} /><p className="save-status" role="status">{saveState}</p><button type="button" className="clear-build" disabled={readOnly} onClick={clearBuild}>Clear build</button></div>
     {recoveryVisible && session.restored.status === 'fallback' && <p className="notice warning" role="alert">{saveError(session.restored.error)}</p>}
     {versionMismatch && <p className="notice warning" role="alert">This draft uses game data {build.gameDataVersion}; loaded data is {data.gameDataVersion}. The saved version and selections are preserved. Editing is disabled because the original snapshot is unavailable.</p>}
     {saveResult && !saveResult.ok && <div className="notice warning" role="alert"><p>{saveError(saveResult)}</p><button type="button" onClick={() => autosave.flush()}>Retry saving</button></div>}
