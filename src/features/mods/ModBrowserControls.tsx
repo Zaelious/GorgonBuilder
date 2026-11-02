@@ -46,6 +46,15 @@ export function ModBrowserControls({ browser, onChange }: { browser: ModBrowserS
       </label>)}<label><input type="checkbox" checked={browser.allSkills} onChange={event => onChange({ ...browser, allSkills: event.target.checked })} />All skills</label>
         <label title="Explore powers whose published slot or item profile does not list this item"><input type="checkbox" checked={browser.allSlots} onChange={event => onChange({ ...browser, allSlots: event.target.checked })} />Other slots &amp; profiles</label>
       </div>
+      <details className="mod-more mod-guidance">
+        <summary>How mod filtering works</summary>
+        <ul>
+          <li>Mods are grouped by skill. Generic (AnySkill) has an unconfirmed skill association; Endurance and Shamanic Infusions are separate categories. Unknown means the skill association is missing.</li>
+          <li>Outside profile means the mod is not listed in this item's published mod pool; eligibility is unconfirmed. Other slots &amp; profiles broadens browsing, without confirming eligibility.</li>
+          <li>Max previews tiers with the highest published starting level, not necessarily the strongest effect. A custom target level previews tiers whose published level range includes it; exact tiers remain available in each mod's details.</li>
+          <li>Preview settings never change selected mods or their tiers.</li>
+        </ul>
+      </details>
     </details>
   </div>;
 }

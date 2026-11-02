@@ -65,7 +65,6 @@ export function ModPlanner({ selection, equipmentIndex, context, skillA, skillB,
   const matches = useMemo(() => availableTreasurePowers(browseTreasurePowers(index, query, relevance, 'relevant'), relevance, staged, allSlots, data, context.skillIds),
     [index, query, relevance, staged, allSlots, data, context.skillIds]);
   const groups = useMemo(() => groupTreasurePowers(matches, context.skillIds, categories, allSkills, data), [matches, context.skillIds, categories, allSkills, data]);
-  const profile = context.item?.treasureProfile?.status === 'resolved' ? context.item.treasureProfile.profileId : null;
   const active = context.skillIds.some(skill => data.getSkill(skill)?.combat);
   return <section className="mod-planner" aria-label={`Mods for equipment ${equipmentIndex + 1}`}>
     <div className="mod-columns">
@@ -95,10 +94,5 @@ export function ModPlanner({ selection, equipmentIndex, context, skillA, skillB,
       </section>
     </div>
     {readOnly && <p className="warning">This draft is read-only. Mod changes are disabled.</p>}
-    <details className="mod-more mod-guidance"><summary>Categories, target levels &amp; relevance</summary>
-      <p>Generic lists the published AnySkill selector; its skill association and eligibility are unknown. Endurance and Shamanic Infusions use exact published skill associations. Missing associations have their own Unknown group.</p>
-      <p>Each official power appears once. Available lists powers whose published slots include {context.item ? context.item.slot : 'this item\'s slot'}{profile ? ` and whose published profile list includes item profile ${profile}` : ' (this item publishes no treasure profile)'}; Endurance and Shamanic Infusions use slot only, because their published profiles are not referenced by any item. Slot-compatible powers of your active combat skills that the item profile does not list are still shown, flagged “outside profile” (eligibility unconfirmed). Selecting a power moves it to Selected; removing it restores it. These are published-data filters, not full legality. All skills and Other slots &amp; profiles enable broader exploration. No final mod-count limit is imposed.</p>
-      <p>Target changes only the available preview, never saved candidates, item target level or skill levels. Max uses the highest published minimum level, not calculated effect strength. Overlapping ranges/rarities remain explicit tier alternatives. Effects are exact published text, without damage math.</p>
-    </details>
   </section>;
 }

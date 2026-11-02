@@ -69,6 +69,37 @@ function seedChest(skillA: string | null, skillB: string | null = null) {
 const chest = '[data-selection-index="2"]';
 const chestEditor = `${chest} .mod-planner`;
 
+it('shows filtering help once in shared settings, collapsed by default, with no per-item guidance or draft edits', async () => {
+  seedChest('Druid', 'Archery');
+  const bytes = localStorage.getItem(DRAFT_STORAGE_KEY);
+  await render(); await open();
+  await click('[data-equipment-row="Ring"] > summary');
+  await click('[data-equipment-row="Chest"] > summary');
+  expect(container.querySelectorAll('.mod-planner')).toHaveLength(3);
+  expect(container.textContent).not.toContain('Categories, target levels & relevance');
+  expect(container.querySelectorAll('.mod-planner .mod-guidance')).toHaveLength(0);
+  expect(container.querySelectorAll('.mod-guidance')).toHaveLength(1);
+  const settings = control<HTMLDetailsElement>('.mod-browser-settings');
+  const help = control<HTMLDetailsElement>('.mod-browser-settings .mod-guidance');
+  expect(settings.open).toBe(false);
+  expect(help.open).toBe(false);
+  expect(help.querySelector('summary')!.textContent).toBe('How mod filtering works');
+  await click('.mod-browser-settings > summary');
+  expect(help.open).toBe(false);
+  await click('.mod-guidance > summary');
+  expect(help.open).toBe(true);
+  expect(help.textContent).toContain('Generic (AnySkill)');
+  expect(help.textContent).toContain('eligibility is unconfirmed');
+  expect(help.textContent).toContain('custom target level');
+  expect(help.textContent).toContain('Preview settings never change selected mods or their tiers.');
+  // Opening shared documentation does not hide actionable item-specific flags.
+  expect(container.querySelectorAll(`${editor} .mod-fit-flag`).length).toBeGreaterThan(0);
+  await click('.mod-guidance > summary');
+  expect(help.open).toBe(false);
+  await tick();
+  expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(bytes);
+});
+
 it('moves mods between Available and Selected with immediate STATS rows, >6 different exact candidates and non-destructive previews through autosave/reload', async () => {
   const original = seed(); await render(); await open();
   expect(container.querySelector('dialog')).toBeNull();
@@ -271,7 +302,7 @@ it('retains unknown saved IDs and absent base/profile data until explicit candid
   const build = seed(); build.equipment[0]!.item = { kind: 'manual', instance: { baseItemId: null, existingPowers: [{ powerId: 'missing-existing', tierId: 'keep' }] } };
   build.equipment[0]!.candidateMods = [{ powerId: 'missing', tierId: 'keep' }, { powerId: 'power_10001', tierId: 'missing-tier' }];
   localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build)); await render(); await open();
-  expect(control(`${editor} .mod-guidance`).textContent).toContain('publishes no treasure profile');
+  expect(container.querySelector(`${editor} .mod-guidance`)).toBeNull();
   expect(control(`${editor} .mod-available`).textContent).toContain('slot/profile filtering is off');
   expect(control(`${scope} .item-stats [data-existing-power="0"]`).textContent).toContain('missing-existing · Official power unavailable (retained)');
   expect(control<HTMLSelectElement>(`${editor} [aria-label="Tier for candidate 1"]`).value).toBe('keep');
