@@ -94,12 +94,15 @@ it('adds chosen official ranks to separate bars, reorders, removes and restores 
   await click('.quick-add');
   await openPicker('A');
   await click('.quick-add');
+  await click('[aria-label="Close ability picker"]');
   await openPicker('B');
   await click('.family summary');
   await click('.tier button');
+  await click('[aria-label="Close ability picker"]');
   await openPicker('A');
   await click('.family:nth-child(2) .quick-add');
   const secondId = highestTier(groups[1]!).id;
+  await click('[aria-label="Close ability picker"]');
   await inspect('A', 3);
   await click('[aria-label="Move entry 3 up in bar A"]');
   await inspect('A', 2);
@@ -555,4 +558,84 @@ it('associates full-bar guidance with the add action without a separate visible 
   await openPicker('A');
   expect(control('dialog [role="status"]').textContent).toContain('Bar A is full');
   expect(control<HTMLButtonElement>('.quick-add').disabled).toBe(true);
+});
+
+it('keeps the continuous picker mounted with search, families, details, scroll, live counts and duplicate markers through capacity', async () => {
+  await render();
+  await change('#skill-A', 'Psychology');
+  await change('#skill-B', 'Psychology');
+  const opener = control<HTMLButtonElement>('[aria-label="Open ability picker for bar A"]');
+  await act(async () => { opener.focus(); });
+  await openPicker('A');
+  const dialog = control<HTMLDialogElement>('dialog');
+  await change('#ability-search-A', 'Psychoanalyze');
+  await click('.family summary');
+  await click('.tier-details-toggle');
+  const family = control<HTMLDetailsElement>('.family details');
+  const tier = control<HTMLElement>('.tier [id^="tier-detail"]');
+  dialog.scrollTop = 180;
+  const showModal = vi.spyOn(HTMLDialogElement.prototype, 'showModal');
+  for (let count = 1; count <= 6; count++) {
+    await click('.quick-add');
+    expect(control('dialog')).toBe(dialog);
+    expect(control<HTMLInputElement>('#ability-search-A').value).toBe('Psychoanalyze');
+    expect(family.open).toBe(true);
+    expect(tier.hidden).toBe(false);
+    expect(dialog.scrollTop).toBe(180);
+    expect(control('.picker-count').textContent).toBe(`${count} / 6 abilities`);
+    expect(control('.family summary').textContent).toContain('On this bar');
+    expect(control('.selected-ability').textContent).toBe(count === 1 ? 'On this bar' : `On this bar ×${count}`);
+  }
+  expect(showModal).not.toHaveBeenCalled();
+  expect(control<HTMLButtonElement>('.quick-add').disabled).toBe(true);
+  expect(control<HTMLButtonElement>('.tier-add').disabled).toBe(true);
+  expect(dialog.textContent).toContain('Bar A is full');
+  await click('.quick-add');
+  await tick();
+  expect(draft().abilityBarA).toHaveLength(6);
+  expect(draft().abilityBarB).toEqual([]);
+  await act(async () => { dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); });
+  expect(container.querySelector('dialog')).toBeNull();
+  expect(document.activeElement).toBe(opener);
+  await openPicker('B');
+  expect(container.querySelector('.selected-ability')).toBeNull();
+  expect(control('.picker-count').textContent).toBe('0 / 6 abilities');
+});
+
+it('numbered + closes after one selection and restores focus to the newly occupied slot', async () => {
+  await render(); await change('#skill-A', 'BattleChemistry');
+  const opener = control<HTMLButtonElement>('[aria-label="Add ability to bar A, empty slot 1"]');
+  await act(async () => { opener.focus(); opener.click(); });
+  await change('#ability-search-A', 'ability_1707');
+  await click('.family summary');
+  await click('[aria-label$="ability_1708"]');
+  expect(container.querySelector('dialog')).toBeNull();
+  expect(document.activeElement).toBe(opener);
+  await tick();
+  expect(draft().abilityBarA).toEqual([{ abilityId: 'ability_1708', rank: '2' }]);
+  await openPicker('A');
+  await change('#ability-search-A', 'ability_1707');
+  await click('.family summary');
+  expect(control('.family summary').textContent).toContain('On this bar');
+  expect(control('[aria-label$="ability_1708"]').closest('.tier')!.textContent).toContain('On this bar');
+  expect(control('[aria-label$="ability_1707"]').closest('.tier')!.querySelector('.selected-ability')).toBeNull();
+  expect(control<HTMLButtonElement>('[aria-label$="ability_1708"]').disabled).toBe(false);
+});
+
+it('replacement at capacity closes, retains every other exact entry and restores occupied-slot focus', async () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  build.skillSlotA.skillId = 'BattleChemistry';
+  build.abilityBarA = Array.from({ length: 6 }, () => ({ abilityId: 'ability_1707', rank: '1' }));
+  build.skillSlotB.skillId = 'BattleChemistry';
+  build.abilityBarB = [{ abilityId: 'ability_1708', rank: '2' }];
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build));
+  await render(); await inspect('A', 3); await click('.bar-edit-actions summary'); await click('.bar-edit-actions button');
+  await change('#ability-search-A', 'ability_1707'); await click('.family summary');
+  expect(control<HTMLButtonElement>('[aria-label$="ability_1708"]').disabled).toBe(false);
+  await click('[aria-label$="ability_1708"]');
+  expect(container.querySelector('dialog')).toBeNull();
+  expect(document.activeElement).toBe(control('.skill-panel:first-child .combat-slot:nth-child(3) .slot-button'));
+  await tick();
+  expect(draft().abilityBarA).toEqual(build.abilityBarA.map((entry, index) => index === 2 ? { abilityId: 'ability_1708', rank: '2' } : entry));
+  expect(draft().abilityBarB).toEqual(build.abilityBarB);
 });

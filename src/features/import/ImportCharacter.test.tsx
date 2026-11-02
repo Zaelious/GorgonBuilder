@@ -294,3 +294,87 @@ it('allows inspection but disables Equipped/Unequip and Replace in a read-only s
   await click('[data-import-path="/Items/0"] button'); await tick();
   expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(bytes);
 });
+
+async function importSkills(skills: Record<string, object>, replace = false) {
+  const report = { ...JSON.parse(characterText), Skills: skills };
+  await button('Import Character'); await upload('#character-file', JSON.stringify(report));
+  if (!replace) await upload('#storage-file', storageText);
+  await button(replace ? 'Replace My Items inventory' : 'Use these reports');
+}
+
+it('initializes both A+A slots once, preserves manual typing, and restores independent levels through autosave', async () => {
+  await importSkills({ Psychology: { Level: 90, BonusLevels: 5 }, Deer: { Level: 60 } });
+  await change('#skill-A', 'Psychology');
+  expect(control<HTMLInputElement>('#level-A').value).toBe('95');
+  await change('#level-A', '007');
+  expect(control<HTMLInputElement>('#level-A').value).toBe('007');
+  await change('#skill-B', 'Psychology');
+  expect(control<HTMLInputElement>('#level-B').value).toBe('95');
+  expect(control<HTMLInputElement>('#level-A').value).toBe('007');
+  await change('#level-A', '');
+  expect(control('#level-A').getAttribute('aria-invalid')).toBe('true');
+  await change('#skill-A', 'Deer');
+  expect(control<HTMLInputElement>('#level-A').value).toBe('60');
+  await change('#skill-A', 'Psychology');
+  expect(control<HTMLInputElement>('#level-A').value).toBe('95');
+  await change('#level-A', '101'); await tick();
+  expect(draft().skillSlotA).toEqual({ skillId: 'Psychology', level: 101 });
+  expect(draft().skillSlotB).toEqual({ skillId: 'Psychology', level: 95 });
+  await remount();
+  expect(control<HTMLInputElement>('#level-A').value).toBe('101');
+  expect(control<HTMLInputElement>('#level-B').value).toBe('95');
+});
+
+it('import/reimport leaves the whole build untouched; later skill changes use only the newest snapshot', async () => {
+  await change('#skill-A', 'Psychology'); await change('#level-A', '73');
+  await change('#skill-B', 'Deer'); await change('#level-B', '88');
+  await click('[aria-label="Add ability to bar A, empty slot 1"]'); await click('.quick-add');
+  await tick(); const before = draft();
+  await importSkills({ Psychology: { Level: 90, BonusLevels: 5 }, Deer: { Level: 60 } });
+  await tick(); expect(draft()).toEqual(before);
+  await importSkills({ Psychology: { Level: 100, BonusLevels: 3 }, Deer: { Level: 61 } }, true);
+  await tick(); expect(draft()).toEqual(before);
+  expect(control<HTMLInputElement>('#level-A').value).toBe('73');
+  await change('#skill-B', 'Psychology');
+  expect(control<HTMLInputElement>('#level-B').value).toBe('103');
+  await tick(); expect(draft().skillSlotA).toEqual(before.skillSlotA);
+  expect(draft().abilityBarA).toEqual(before.abilityBarA);
+});
+
+it('missing or unresolved imported skills preserve the manual level and disclose the limitation', async () => {
+  await change('#level-A', '42');
+  await importSkills({ FutureSkill: { Level: 99 }, Psychology: { Level: 50 } });
+  await change('#skill-A', 'Deer');
+  expect(control<HTMLInputElement>('#level-A').value).toBe('42');
+  expect(container.textContent).toContain('Imported effective level unavailable');
+  await tick(); expect(draft().skillSlotA).toEqual({ skillId: 'Deer', level: 42 });
+});
+
+it('imported skill initialization retains staged-mod cleanup and Undo restores the original level immediately', async () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  build.skillSlotA = { skillId: 'Archery', level: 71 };
+  build.skillSlotB = { skillId: 'Psychology', level: 62 };
+  const ability = data.getAbilitiesForSkill('Archery')[0]!;
+  build.abilityBarA = [{ abilityId: ability.id, rank: ability.rank }];
+  build.equipment = [{ slot: 'MainHand', item: { kind: 'database', itemId: 'item_45640' },
+    candidateMods: [{ powerId: 'power_10001', tierId: 'id_9' }], sparks: { mode: 'none' } }];
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build)); await remount();
+  await importSkills({ Deer: { Level: 60, BonusLevels: 5 } });
+  await change('#skill-A', 'Deer');
+  expect(control<HTMLInputElement>('#level-A').value).toBe('65');
+  await tick(); expect(draft().equipment[0]!.candidateMods).toEqual([]);
+  expect(draft().abilityBarA).toEqual([]); expect(draft().skillSlotB).toEqual(build.skillSlotB);
+  await button('Undo');
+  expect(control<HTMLInputElement>('#level-A').value).toBe('71');
+  await tick(); expect(draft()).toEqual(build);
+});
+
+it.each(['future', 'mismatch'])('import inspection cannot overwrite a protected %s draft through skill selection', async kind => {
+  const original = kind === 'future' ? { schemaVersion: 999 } : createDefaultBuildDocument({ gameDataVersion: 'other' });
+  const bytes = JSON.stringify(original); localStorage.setItem(DRAFT_STORAGE_KEY, bytes); await remount();
+  await importSkills({ Psychology: { Level: 90, BonusLevels: 5 } });
+  expect(control('#skill-A').matches(':disabled')).toBe(true);
+  await change('#skill-A', 'Psychology'); await tick();
+  expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(bytes);
+  expect(control('[aria-label="Open ability picker for bar A"]').matches(':disabled')).toBe(true);
+});

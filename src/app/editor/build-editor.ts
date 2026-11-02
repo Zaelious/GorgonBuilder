@@ -15,7 +15,7 @@ export type BuildEdit =
   | { type: 'equipment-import'; slot: string; instance: ItemInstance; index: number | null }
   | { type: 'equipment-clear'; index: number }
   | { type: 'equipment-resolve-offhand'; keepIndex: number }
-  | { type: 'skill'; slot: Slot; skillId: string | null }
+  | { type: 'skill'; slot: Slot; skillId: string | null; level?: number }
   | { type: 'level'; slot: Slot; level: number }
   | { type: 'add'; slot: Slot; abilityId: string }
   | { type: 'replace'; slot: Slot; index: number; abilityId: string }
@@ -97,10 +97,11 @@ export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataR
   if (edit.type === 'skill') {
     if (edit.skillId !== null && !data.getSkill(edit.skillId)?.combat) return build;
     if (edit.skillId === skill.skillId) return build;
+    if (edit.level !== undefined && (!Number.isSafeInteger(edit.level) || edit.level < 0)) return build;
     const other = edit.slot === 'A' ? build.skillSlotB : build.skillSlotA;
     const departed = skill.skillId !== null && skill.skillId !== other.skillId ? skill.skillId : null;
     const equipment = departed === null ? build.equipment : pruneCandidateModsForSkill(build.equipment, departed, data);
-    return { ...build, [skillKey]: { ...skill, skillId: edit.skillId }, [barKey]: [], equipment };
+    return { ...build, [skillKey]: { ...skill, skillId: edit.skillId, level: edit.level ?? skill.level }, [barKey]: [], equipment };
   }
   if (edit.type === 'level') {
     if (!Number.isSafeInteger(edit.level) || edit.level < 0) return build;

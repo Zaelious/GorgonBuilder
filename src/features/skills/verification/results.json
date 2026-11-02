@@ -1,0 +1,134 @@
+[
+  {
+    "mode": "dev",
+    "width": 1440,
+    "levels": [
+      95,
+      102
+    ],
+    "bars": [
+      6,
+      1
+    ],
+    "scroll_positions": [
+      494,
+      494,
+      494,
+      494,
+      494,
+      494
+    ],
+    "page_errors": [],
+    "passed": true
+  },
+  {
+    "mode": "dev",
+    "width": 375,
+    "levels": [
+      95,
+      102
+    ],
+    "bars": [
+      6,
+      1
+    ],
+    "scroll_positions": [
+      787,
+      787,
+      787,
+      787,
+      787,
+      787
+    ],
+    "page_errors": [],
+    "passed": true
+  },
+  {
+    "mode": "dev",
+    "width": 320,
+    "levels": [
+      95,
+      102
+    ],
+    "bars": [
+      6,
+      1
+    ],
+    "scroll_positions": [
+      1061,
+      1061,
+      1061,
+      1061,
+      1061,
+      1061
+    ],
+    "page_errors": [],
+    "passed": true
+  },
+  {
+    "mode": "preview",
+    "width": 1440,
+    "levels": [
+      95,
+      102
+    ],
+    "bars": [
+      6,
+      1
+    ],
+    "scroll_positions": [
+      494,
+      494,
+      494,
+      494,
+      494,
+      494
+    ],
+    "page_errors": [],
+    "passed": true
+  },
+  {
+    "mode": "preview",
+    "width": 375,
+    "levels": [
+      95,
+      102
+    ],
+    "bars": [
+      6,
+      1
+    ],
+    "scroll_positions": [
+      787,
+      787,
+      787,
+      787,
+      787,
+      787
+    ],
+    "page_errors": [],
+    "passed": true
+  },
+  {
+    "mode": "preview",
+    "width": 320,
+    "levels": [
+      95,
+      102
+    ],
+    "bars": [
+      6,
+      1
+    ],
+    "scroll_positions": [
+      1061,
+      1061,
+      1061,
+      1061,
+      1061,
+      1061
+    ],
+    "page_errors": [],
+    "passed": true
+  }
+]

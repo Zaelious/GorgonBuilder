@@ -4,6 +4,7 @@ import type { ImportIssue, ImportResult, ImportedCharacterSnapshot, ImportedStor
 import { createImportReferenceResolver } from '../../data/adapters/import-references';
 import type { GameDataRepository } from '../../data/repository/repository';
 import { identityMismatch, inventoryDiagnostics, type ImportSession } from './inventory';
+import { importedSkillLevel } from './skill-levels';
 import './import.css';
 
 function ReportSummary({ result, label }: { result: ImportResult<ImportedCharacterSnapshot | ImportedStorageSnapshot> | null; label: string }) {
@@ -21,8 +22,8 @@ function Inspection({ session, data }: { session: ImportSession; data: GameDataR
   return <>
     <details className="import-inspection"><summary>Verify skill levels ({session.character.skills.length})</summary>
       <label htmlFor="verify-skill">Find a representative skill</label><input id="verify-skill" type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Psychology, Deer, Cow…" />
-      <div className="import-table-scroll"><table><thead><tr><th>Source skill</th><th>Level</th><th>Bonus</th><th>Official mapping</th></tr></thead><tbody>{skills.slice(0, 12).map((skill, index) => <tr key={index}><td>{skill.reference.sourceId}</td><td>{skill.level}</td><td>{skill.bonusLevels ?? '—'}</td><td>{skill.reference.id ?? 'Unresolved'}</td></tr>)}</tbody></table></div>
-      <p className="muted">{skills.length} matching skills; showing the first 12. Filter to check any skill.</p>
+      <div className="import-table-scroll"><table><thead><tr><th>Source skill</th><th>Level</th><th>Bonus</th><th>Effective</th><th>Official mapping</th></tr></thead><tbody>{skills.slice(0, 12).map((skill, index) => <tr key={index}><td>{skill.reference.sourceId}</td><td>{skill.level}</td><td>{skill.bonusLevels ?? '—'}</td><td>{importedSkillLevel(session.character, skill.reference.id, data) ?? 'Unavailable'}</td><td>{skill.reference.id ?? 'Unresolved'}</td></tr>)}</tbody></table></div>
+      <p className="muted">{skills.length} matching skills; showing the first 12. Effective combat level = Level + Bonus (once; omitted Bonus is zero). It initializes only when you change a planner skill. Unresolved or invalid levels keep your manual value. Levels remain editable; raw values stay in this snapshot.</p>
     </details>
     <details className="import-inspection"><summary>Import diagnostics · official {data.gameDataVersion}</summary>
       <dl className="import-counts">{Object.entries(inventoryDiagnostics(session, data)).map(([label, count]) => <div key={label}><dt>{label}</dt><dd>{count}</dd></div>)}</dl>
