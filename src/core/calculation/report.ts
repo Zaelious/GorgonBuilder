@@ -1,0 +1,45 @@
+import type { ModifierAggregationResult, ModifierScope, ModifierSource, NormalizedModifier } from './modifiers';
+
+function scopeText(scope: ModifierScope): string {
+  switch (scope.kind) {
+    case 'general': return `general${scope.delivery ? ` (${scope.delivery})` : ''}`;
+    case 'skill': return `skill ${scope.skillId}`;
+    case 'ability-attribute-hook': return `abilities hooking ${scope.attributeId} via ${scope.hook}`;
+    case 'damage-type': return `${scope.damageType}${scope.delivery ? ` (${scope.delivery})` : ' (delivery unspecified)'}`;
+  }
+}
+
+function sourceText(source: ModifierSource | ModifierAggregationResult['unsupported'][number]['source']): string {
+  switch (source.kind) {
+    case 'skill-advancement': return `${source.skillId} [${source.slots.join('+')}] L${source.level} ${source.advancement} ${source.tableId} (${source.levels.length} level entries)`;
+    case 'skill': return `${source.skillId} [${source.slots.join('+')}] L${source.levels.join('/')}`;
+    case 'item-fixed-effect': return `${source.equipmentKey} ${source.itemKind} ${source.itemId ?? '(no base)'} fixed[${source.effectIndex}]`;
+    case 'existing-power':
+    case 'candidate-mod': return `${source.equipmentKey} ${source.itemKind} ${source.origin} ${source.powerId}/${source.tierId} effect[${source.effectIndex}]`;
+    case 'equipment': return `${source.equipmentKey} ${source.itemKind} ${source.itemId ?? '(no base)'}`;
+  }
+}
+
+function valueText(modifier: NormalizedModifier): string {
+  return modifier.unit === 'fraction' ? `${modifier.sourceValue} (fraction)` : modifier.sourceValue;
+}
+
+/** Deterministic plain-text review report (architect review / later breakdown prototyping). */
+export function formatAggregationReport(result: ModifierAggregationResult, title: string): string {
+  const lines = [`# ${title}`, '',
+    `Game data ${result.gameDataVersion} (build saved with ${result.buildGameDataVersion}); active skills: ${result.activeSkillIds.join(', ') || '(none)'}`,
+    `Modifiers ${result.summary.modifierCount} · unsupported ${result.summary.unsupportedCount} · warnings ${result.summary.warningCount}`,
+    `By confidence: ${Object.entries(result.summary.byConfidence).map(([k, v]) => `${k} ${v}`).join(', ')}`,
+    `By source: ${Object.entries(result.summary.bySourceKind).map(([k, v]) => `${k} ${v}`).join(', ')}`,
+    '', '## Supported modifiers', ''];
+  for (const m of result.modifiers) {
+    lines.push(`- ${m.category} | ${m.operation} ${valueText(m)} | ${m.attributeId} "${m.attributeLabel ?? ''}" | ${scopeText(m.scope)} | ${m.applicability}`
+      + `${m.conditions.length ? ` [${m.conditions.map(c => c.kind === 'requires-active-skill' ? `requires ${c.skillId}: ${c.status}` : `qualifier ${c.qualifier}`).join('; ')}]` : ''}`
+      + ` | ${m.confidence} | ${sourceText(m.source)}`);
+  }
+  lines.push('', '## Unsupported / unresolved effects', '');
+  for (const u of result.unsupported) lines.push(`- ${u.reason}${u.attributeId ? ` ${u.attributeId}` : ''} | ${sourceText(u.source)} | ${u.message}`);
+  lines.push('', '## Warnings', '');
+  for (const w of result.warnings) lines.push(`- ${w.code} | ${w.message}`);
+  return `${lines.join('\n')}\n`;
+}
