@@ -6,7 +6,7 @@
 
 ## Current Status
 
-T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on verified v490 data, normalized runtime lookups and BuildDocument v1/local autosave. T0008 supplies independent skill/ability bars; T0009 adds nine always-visible primary equipment rows, official item icons with fallbacks, collapsed other slots, item search and persistent equip/replace/clear. T0009-F1 removes duplicated expanded headings and makes official OffHand/OffHandShield alternatives mutually exclusive in one loadout position, preserving exact source slots and explicit legacy conflict recovery. T0010 treasure-mod editing is now merged and customer accepted, including inline Available/Selected, source-backed item/skill filtering, compact item STATS and ability Relevant Mods. T0011 pure CharacterSheet/Storage parsing is completed and merged. The browser-local My Items workflow is merged via T0011-F1. **T0011-F2 is under review in PR #25** to make imported existing mods editable in the working build and unify skill color/grouping before modifier aggregation; damage calculations, CurrentStats validation and remote save/share remain future work. Actual customer-export ID/power/tier reference-resolution still requires private hands-on checking.
+T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on verified v490 data, normalized runtime lookups and BuildDocument v1/local autosave. T0008 supplies independent skill/ability bars; T0009 adds nine always-visible primary equipment rows, official item icons with fallbacks, collapsed other slots, item search and persistent equip/replace/clear. T0009-F1 removes duplicated expanded headings and makes official OffHand/OffHandShield alternatives mutually exclusive in one loadout position, preserving exact source slots and explicit legacy conflict recovery. T0010 treasure-mod editing is now merged and customer accepted, including inline Available/Selected, source-backed item/skill filtering, compact item STATS and ability Relevant Mods. T0011 pure CharacterSheet/Storage parsing is completed and merged. The browser-local My Items workflow is merged via T0011-F1. **T0011-F2 has been accepted and merged** in PR #25, enabling effective working imported treasure powers in Selected, exact tier edits/removal/restore and consistent skill-color grouping before modifier aggregation; damage calculations, CurrentStats validation and remote save/share remain future work. Actual customer-export ID/power/tier reference-resolution still requires private hands-on checking.
 
 ## Completed Tickets
 
@@ -33,11 +33,11 @@ T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on
 
 ## Active Ticket
 
-**T0011-F2 / PR #25 is open, architect-reviewed with green checks; product-owner hands-on acceptance is underway.** The owner reports the imported gear display/editing appears good so far but has not explicitly authorized a merge. A non-blocking quick-equip UI follow-up T0011-F3 is now planned separately.
+None. T0011-F2 was reviewed, accepted and merged as PR #25. The scoped T0011-F3 quick-equipment UI follow-up is planned but not started.
 
 ## Planned Next Ticket
 
-**Current:** T0011-F2 / [PR #25](https://github.com/Zaelious/GorgonBuilder/pull/25) (open, passing GitHub CI/Cloudflare, 660 reported tests, architect code review passed; waiting for explicit product-owner approval before merge). **Next planned:** T0011-F3 — My Items Quick Equip/Unequip Without Closing Inventory. This separate UX follow-up responds to live import testing: general My Items should allow rapid multi-slot loadout editing and show exact-instance Equipped/Unequip state, while per-slot picker closes normally. T0012 calculations follow the import UX milestone. Actual private-export ID/tier resolution counts remain unverified.
+**T0011-F3 — My Items Quick Equip/Unequip Without Closing Inventory** (next planned, not started). This separate UX follow-up responds to live import testing: the general My Items view should support multiple equip/replace/unequip actions and exact-instance Equipped/Unequip status while keeping filters/page/scroll and dialog open; slot-specific pickers remain one-shot. T0012 calculations follow this UX milestone. Actual private-export ID/tier resolution counts remain unverified.
 
 The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/DPS deferred to the following ticket series.
 
@@ -45,7 +45,7 @@ The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/D
 
 - Vite 8, React 19, strict TypeScript 6
 - ESLint 10 with TypeScript rules and core-layer import restrictions
-- Vitest 5 with jsdom for 640 tests at accepted T0011-F1 head, including equipment/editor tests and Vite transport integration tests; optional Chromium/Playwright layout, transport and equipment smoke
+- Vitest 5 with jsdom for 660 tests at accepted T0011-F2 head, including equipment/editor tests and Vite transport integration tests; optional Chromium/Playwright layout, transport and equipment smoke
 - Shared CSS variables and responsive baseline styles
 - Cloudflare Workers Static Assets for the Vite frontend (no Cloudflare Vite plugin or backend yet)
 - T0008 connects T0007's injected local draft/autosave to the actual planner; remote provider-agnostic saving remains future work
@@ -119,7 +119,9 @@ GitHub CI: `.github/workflows/ci.yml` (npm install, lint, typecheck, test, build
 
 ## Build/Test Status
 
-**Latest accepted T0011-F1 baseline (2026-11-02):** [PR #24](https://github.com/Zaelious/GorgonBuilder/pull/24) merged as `4b84960`. [GitHub CI #76](https://github.com/Zaelious/GorgonBuilder/actions/runs/41372543825) and Cloudflare Workers Builds passed with 640 total tests (29 F1 tests). Codex reports Chromium dev and production preview checks at 1440/375/320px with synthetic files; deployed preview was not remotely browser-smoked because of executor network restrictions. Architect reviewed core contracts/instance selection/persistence and found no blocking issue. Customer gave conditional approval after confirming Spark rolls are not inferred. Actual customer-export mapping accuracy and resolved/unresolved counts are still unverified.
+**Latest accepted T0011-F2 baseline (2026-11-02):** [PR #25](https://github.com/Zaelious/GorgonBuilder/pull/25) squash-merged as `8932f0a`. [GitHub CI run #80](https://github.com/Zaelious/GorgonBuilder/actions/runs/41428572320) and Cloudflare Workers Builds passed, with 660 tests in 30 files, lint/typecheck/build/Cloudflare dry-run and v490 pin check. Synthetic Chromium dev and production-preview smoke at 1440/375/320px showed unified imported and planned Selected/STATS rows, editable imported power/tier, original metadata preservation, refresh and Restore. Deployed remote Chromium smoke was blocked by the implementation environment proxy, and actual private customer-export ID/tier resolution counts are still unverified. Product owner explicitly accepted/authorized merge after browser feedback. [Verification](T0011_F2_Verification.md).
+
+**Prior accepted T0011-F1 baseline (2026-11-02):** [PR #24](https://github.com/Zaelious/GorgonBuilder/pull/24) merged as `4b84960`. [GitHub CI #76](https://github.com/Zaelious/GorgonBuilder/actions/runs/41372543825) and Cloudflare Workers Builds passed with 640 total tests (29 F1 tests). Codex reports Chromium dev and production preview checks at 1440/375/320px with synthetic files; deployed preview was not remotely browser-smoked because of executor network restrictions. Architect reviewed core contracts/instance selection/persistence and found no blocking issue. Customer gave conditional approval after confirming Spark rolls are not inferred. Actual customer-export mapping accuracy and resolved/unresolved counts are still unverified.
 
 **Prior accepted T0011 baseline (2026-11-02):** [PR #23](https://github.com/Zaelious/GorgonBuilder/pull/23) merged as `a197599`. [Actions CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41369780469) and Cloudflare checks passed (611 total, 98 focused import tests). Independent review of two privately supplied real reports against exact field/type constraints had zero errors, including the 47 valid -1 next-XP values. Exact Node v490 ID/tier resolution was not run on the private reports and must be checked through T0011-F1. Customer originals were never committed.
 

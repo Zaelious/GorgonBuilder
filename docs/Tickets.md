@@ -663,7 +663,7 @@ Guidelines:
 
 ## T0011-F2 — Editable Imported Treasure Mods and Unified Skill Styling
 
-**Status:** Planned follow-up based on customer hands-on feedback (2026-11-02). Not started; create a separate Codex branch/PR. Complete before T0012 modifier aggregation so the effective mod semantics are stable.
+**Status:** Completed, reviewed, product-owner accepted and squash-merged 2026-11-02 via [PR #25](https://github.com/Zaelious/GorgonBuilder/pull/25), commit `8932f0a`. [Verification](T0011_F2_Verification.md): 660 passing tests / 30 files, GitHub CI #80 and Cloudflare build passed, synthetic Chromium dev/production previews across 1440/375/320px. Product owner stated imported item behavior looks good and explicitly authorized merge. Exact real customer-export resolution counts remain unverified.
 
 **Complexity:** High
 
@@ -725,7 +725,7 @@ Guidelines:
 
 ## T0011-F3 — My Items Quick Equip/Unequip Without Closing Inventory
 
-**Status:** Planned product-owner UX follow-up from hands-on testing (2026-11-02); separate Codex branch and PR. Do not mix into open T0011-F2 / PR #25. Schedule after F2 acceptance and before the next feature ticket.
+**Status:** Next planned ticket; separate Codex branch and PR after T0011-F2 was accepted and merged via PR #25. Not started. Implement before T0012 to complete the rapid imported-gear loadout UX.
 
 **Complexity:** Medium
 

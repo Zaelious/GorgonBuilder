@@ -1,7 +1,6 @@
 # T0011-F2 — Editable Imported Treasure Mods and Unified Skill Styling
 
-Implementation branch: `feature/t0011-f2-editable-imported-mods`, based on
-`main` at `f3af20c`. Awaiting product-owner verification; do not merge automatically.
+**Status:** Product-owner accepted, architect code-reviewed, squash-merged into `main` 2026-11-02 via [PR #25](https://github.com/Zaelious/GorgonBuilder/pull/25) as [`8932f0a`](https://github.com/Zaelious/GorgonBuilder/commit/8932f0a58a7b31f8bbf4946dc0e76c5e52d3b143). Implementation branch: `feature/t0011-f2-editable-imported-mods`, based on main at `f3af20c`.
 
 ## Working item behavior
 
@@ -176,7 +175,4 @@ it uses the explicitly retained initial working baseline in that case.
 
 No T0012 calculations, CurrentStats comparison, Spark simulation/history import,
 automatic equipment inference, remote uploads or schema migration were added.
-No new follow-up issue is required. After acceptance and merge, synchronize
-Tickets, Repo_Current_State, Manual_Verification_Guide and the effective-power
-sections of the technical/import design documents. They remain unchanged while
-this implementation is under review.
+Related UX follow-up T0011-F3 has been scheduled to allow rapid equip/unequip from general My Items without closing the dialog; this is a separate scoped ticket. Post-merge documentation is synchronized. Private source-item mapping accuracy is still subject to customer browser verification.
