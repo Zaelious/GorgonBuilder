@@ -253,3 +253,13 @@ T0010 was customer-accepted and squash-merged in [PR #22](https://github.com/Zae
 6. Test browser zoom 100% on desktop and 320/375px mobile; verify scroll, keyboard focus, no text overflow, and autosave/reload preserving exact source identities and selection ordering.
 
 Published item treasure profiles are generation pools, not a complete legality engine. T0010 does not calculate damage or final equipment legality.
+
+### T0010-F1 — Shared Equipment Mod Browser, Item Metadata and Clear Build (accepted 2026-11-02)
+
+[PR #28](https://github.com/Zaelious/GorgonBuilder/pull/28) was product-owner accepted and squash-merged as `a1b2d6d` after 727 automated tests, lint/typecheck/build, green final-head GitHub Actions and Cloudflare PR-preview build. [Verification report, original browser screenshots and final cleanup details](../src/features/equipment/verification/T0010-F1.md). The initial implementation passed Chromium dev/preview checks at 1440/375/320px. The subsequent help-disclosure cleanup passed its focused component tests but **could not run the updated Chromium smoke** due to the execution environment blocking Chromium; retain keyboard/narrow-screen verification as a regression check.
+
+1. Search `lightning` from the single shared Equipment mod search; switch among Head/Chest/Ring/Necklace. Shared search, categories, All skills, Other slots & profiles and target preview must persist while item-specific Available/Selected eligibility and flags remain correct.
+2. Expand **Mod Browser Settings** and **How mod filtering works**. The guidance should be collapsed by default, occur once, be keyboard-operable, and never appear at the bottom of an item's mod editor. Verify wrapping at 375/320px.
+3. Open database and imported gear: STATS and important warnings are immediately visible, while source levels, requirements, original powers/imbues and provenance remain under **Item details & source**.
+4. Verify Max/90/100/custom previews do not alter selected candidate tiers, and do not change the independent minimum equipment level. Recheck edit/remove/restore of imported working powers against unchanged historical evidence.
+5. Cancel **Clear build**: no draft or autosave change. Confirm: skills, both bars, gear, mods/Sparks, title/notes and target reset and persist after refresh. Browser preferences and in-page My Items inventory remain; protected/read-only drafts cannot reset.

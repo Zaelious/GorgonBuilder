@@ -98,6 +98,12 @@ Expanded equipment information repeats the already-visible selected item icon an
 
 **Action:** Remove the duplicate item header inside details. Combine offhand weapon/shield browsing into a single user-facing offhand position, and enforce one occupant on *new edits* while preserving canonical source item slots. On cross-type swaps, safeguard staged mods/Sparks/manual/imported instance metadata; on loading older dual selections, warn and require explicit resolution rather than deleting saved data. Verify across reload and mobile/keyboard. [T0009-F1 scope](Tickets.md). Do not include treasure-mod editing (T0010) or unrelated rule inference.
 
+## KI-0012 — Mismatched Saved Ability-Bar Entries Can Overflow Narrow Screens
+
+**Status:** Nonblocking pre-existing layout issue, observed independently on accepted `main` during T0010-F1 testing (2026-11-02).
+
+At 375px width, a saved ability-bar entry that does not match its current selected combat skill can trigger the “Marked slots need review” warning and expand the page to approximately 501px scroll width. Reproduced on untouched pre-T0010-F1 `main`; matching ability selections fit correctly. T0010-F1 made no ability-bar changes. Fix warning-content sizing in a separate scoped UI follow-up; preserve mismatch diagnostics and mobile/keyboard behavior. See [T0010-F1 verification](../src/features/equipment/verification/T0010-F1.md).
+
 ## Follow-Up Candidates After T0021
 
 - Rotation Simulator explicit sequence

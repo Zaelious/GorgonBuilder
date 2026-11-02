@@ -834,7 +834,7 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 
 ## T0010-F1 — Shared Equipment Mod Controls and Compact Item Metadata
 
-**Status:** Approved; not started
+**Status:** Customer-accepted and squash-merged 2026-11-02 via [PR #28](https://github.com/Zaelious/GorgonBuilder/pull/28), commit `a1b2d6d73123d7aa1fd1bc7cf19dd4fa26497743`. Shared mod search/settings persist across equipment rows, STATS remain prominent, item source metadata is collapsed, and confirmed Clear build preserves imported inventory/preferences and protected drafts. Repeated item-level help was removed in the final correction; one compact **How mod filtering works** help lives in shared settings. 727 tests, GitHub CI and Cloudflare PR-preview build passed. [Verification report](../src/features/equipment/verification/T0010-F1.md). Customer approved merging; the final correction's Chromium smoke was blocked by its execution environment, so narrow-screen interactive guidance remains a normal regression check.
 
 **Complexity:** Standard
 

@@ -6,7 +6,7 @@
 
 ## Current Status
 
-T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on verified v490 data, normalized runtime lookups and BuildDocument v1/local autosave. T0008 supplies independent skill/ability bars; T0009 adds nine always-visible primary equipment rows, official item icons with fallbacks, collapsed other slots, item search and persistent equip/replace/clear. T0009-F1 removes duplicated expanded headings and makes official OffHand/OffHandShield alternatives mutually exclusive in one loadout position, preserving exact source slots and explicit legacy conflict recovery. T0010 treasure-mod editing is now merged and customer accepted, including inline Available/Selected, source-backed item/skill filtering, compact item STATS and ability Relevant Mods. T0011 pure CharacterSheet/Storage parsing is completed and merged. The browser-local My Items workflow is merged via T0011-F1. **T0011-F2 and T0011-F3 have been accepted and merged** via PRs #25/#26. F2 enables editable working imported treasure powers with unified Selected/STATS and restore; F3 adds live exact-instance Equipped/Unequip and repeated equip/replace/unequip in the general My Items dialog while preserving one-shot slot pickers before modifier aggregation; damage calculations, CurrentStats validation and remote save/share remain future work. Actual customer-export ID/power/tier reference-resolution still requires private hands-on checking. T0008-F1 was subsequently customer-accepted and merged in PR #27 with corrected imported levels and improved ability controls.
+T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on verified v490 data, normalized runtime lookups and BuildDocument v1/local autosave. T0008 supplies independent skill/ability bars; T0009 adds nine always-visible primary equipment rows, official item icons with fallbacks, collapsed other slots, item search and persistent equip/replace/clear. T0009-F1 removes duplicated expanded headings and makes official OffHand/OffHandShield alternatives mutually exclusive in one loadout position, preserving exact source slots and explicit legacy conflict recovery. T0010 treasure-mod editing is now merged and customer accepted, including inline Available/Selected, source-backed item/skill filtering, compact item STATS and ability Relevant Mods. T0011 pure CharacterSheet/Storage parsing is completed and merged. The browser-local My Items workflow is merged via T0011-F1. **T0011-F2 and T0011-F3 have been accepted and merged** via PRs #25/#26. F2 enables editable working imported treasure powers with unified Selected/STATS and restore; F3 adds live exact-instance Equipped/Unequip and repeated equip/replace/unequip in the general My Items dialog while preserving one-shot slot pickers before modifier aggregation; damage calculations, CurrentStats validation and remote save/share remain future work. Actual customer-export ID/power/tier reference-resolution still requires private hands-on checking. T0008-F1 was subsequently customer-accepted and merged in PR #27 with corrected imported levels and improved ability controls. T0010-F1 is now customer-accepted and squash-merged in PR #28, with shared equipment-wide mod search/filters, compact source metadata, a single shared help disclosure and confirmed Clear build.
 
 ## Completed Tickets
 
@@ -30,20 +30,17 @@ T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on
 - **T0011-F1 — Browser Import and My Items Picker** (customer conditionally accepted and squash-merged 2026-11-02 via [PR #24](https://github.com/Zaelious/GorgonBuilder/pull/24), commit `4b84960`). Browser-local CharacterSheet/Storage upload, skill/metadata diagnostics, searchable and filterable concrete My Items inventory, exact source TSys powers/tiers and imbues, manual selection with version-1 imported instance persistence, offhand exclusivity, protected draft handling. [Verification](T0011_F1_Verification.md): 640 passing tests and synthetic dev/preview Chromium smoke at 1440/375/320px, green GitHub CI and Workers Builds. Private customer-export v490 resolution remains an explicit follow-up. **No Spark-roll import**, no CurrentStats comparison.
 
 - **T0008-F1 — Imported Effective Skill Levels and Ability Picker UX** (customer-accepted and squash-merged 2026-11-02 via [PR #27](https://github.com/Zaelious/GorgonBuilder/pull/27), commit `445735e`). Customer-verified CharacterSheet Level already includes BonusLevels and excludes Prodigy. Explicit level repair preserves bars/gear, quick icon × removal is accessible, general picker + supports repeated additions and bar-local duplicate indicators. 714 automated tests, GitHub CI and Cloudflare passed. [Verification](../src/features/skills/verification/T0008-F1.md).
+- **T0010-F1 — Shared Equipment Mod Controls and Compact Item Metadata** (customer-accepted and squash-merged 2026-11-02 via [PR #28](https://github.com/Zaelious/GorgonBuilder/pull/28), commit `a1b2d6d`). One shared mod search/settings persists across equipment rows, STATS and warnings appear before collapsed Item details & source, and Clear build resets only the working draft with confirmation. Final cleanup removes duplicated per-item help, retaining one collapsed shared guidance section. 727 tests and final-head GitHub CI/Cloudflare PR-preview checks passed; follow-up Chromium smoke could not launch in the correction environment. [Verification](../src/features/equipment/verification/T0010-F1.md).
 
 **Deployment housekeeping completed** via [PR #2](https://github.com/Zaelious/GorgonBuilder/pull/2) (squash commit `9df290379b396f8bb4cc2717e154bbbca577af98`): explicit static-assets `wrangler.jsonc`, Wrangler 4.156.0 and synchronized lockfile, deploy/preview scripts, GitHub CI with Cloudflare dry-run, and deployment instructions.
 
 ## Active Ticket
 
-None. T0008-F1 was customer-tested, architect-reviewed and squash-merged via [PR #27](https://github.com/Zaelious/GorgonBuilder/pull/27), commit `445735e`. Corrected CharacterSheet `Level` semantics (bonus already included), explicit Apply imported level, accessible quick ability removal, continuous general + and bar-local duplicate indicators are accepted. BuildDocument schema v1 and damage logic remain unchanged. [Verification](../src/features/skills/verification/T0008-F1.md): 714 tests, successful final-head GitHub CI and Cloudflare preview, six synthetic dev/production Chromium scenarios and customer hands-on acceptance.
-
-## Approved Follow-up Tickets (Not Started)
-
-**T0010-F1 — Shared Equipment Mod Controls and Compact Item Metadata**, approved for implementation after T0008-F1. Consolidate equipment-wide mod search/filters, prioritize STATS over verbose metadata, and add a scoped **Clear build** action with confirmation. The reset affects only the current working BuildDocument, preserves browser preferences and imported inventory, protects read-only drafts, and uses existing autosave. See [Tickets.md](Tickets.md) for scope and manual checks. T0010-F1 has not started.
+None. T0010-F1 was customer-accepted and merged via [PR #28](https://github.com/Zaelious/GorgonBuilder/pull/28), commit `a1b2d6d`; no implementation branch is active.
 
 ## Planned Next Tickets
 
-**T0010-F1**, followed by **T0012 — Build Modifier Aggregation Engine**. Begin each follow-up on its own branch from accepted `main` only after explicit kickoff. T0012 remains unstarted and retains its approved calculation scope. Actual private-export v490 ID/tier resolution counts have not been captured as a formal report; keep this validation limitation visible. Implement only effective working imported existing powers plus separately staged candidates, not original historical source metadata.
+**T0012 — Build Modifier Aggregation Engine** is next but not started; begin only upon explicit kickoff. Its calculation inputs must use effective working imported treasure powers and separately staged candidates, never original historical source metadata. Actual private-export v490 reference-resolution counts remain unverified.
 
 The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/DPS deferred to the following ticket series.
 
@@ -51,7 +48,7 @@ The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/D
 
 - Vite 8, React 19, strict TypeScript 6
 - ESLint 10 with TypeScript rules and core-layer import restrictions
-- Vitest 5 with jsdom for 714 tests at accepted T0008-F1 head, including equipment/editor tests and Vite transport integration tests; optional Chromium/Playwright layout, transport and equipment smoke
+- Vitest 5 with jsdom for 727 tests at accepted T0010-F1 head, including equipment/editor tests and Vite transport integration tests; optional Chromium/Playwright layout, transport and equipment smoke
 - Shared CSS variables and responsive baseline styles
 - Cloudflare Workers Static Assets for the Vite frontend (no Cloudflare Vite plugin or backend yet)
 - T0008 connects T0007's injected local draft/autosave to the actual planner; remote provider-agnostic saving remains future work
@@ -103,7 +100,7 @@ src/
 │  ├─ comparison/            (placeholder)
 │  ├─ equipment/             (nine-slot planner, picker, official icons, tests/browser smoke)
 │  ├─ import/                (T0011-F1 browser import, inventory/picker UI and verification tests)
-│  ├─ mods/                  (inline mod editor, equipped STATS, source formatting, tests)
+│  ├─ mods/                  (shared equipment-wide mod browser/settings, inline mod editor, equipped STATS, source formatting, tests)
 │  ├─ skills/                (compact combat-skill/level controls)
 │  └─ sparks/                (placeholder)
 ├─ generated/
