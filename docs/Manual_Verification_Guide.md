@@ -209,3 +209,16 @@ Create build A, duplicate to B, change one controlled input, and confirm:
 ## Review Evidence
 
 The ticket completion report should include enough detail that ChatGPT can compare what was tested with acceptance criteria.
+
+### T0010 — Treasure Mod Planner (accepted 2026-11-01)
+
+T0010 was customer-accepted and squash-merged in [PR #22](https://github.com/Zaelious/GorgonBuilder/pull/22) at `385e4b9`. [Verification evidence](T0010_Verification.md) records 513 passing tests, GitHub Actions/Cloudflare checks, Chromium desktop/mobile smoke, and screenshots. Repeat these core checks for later regressions:
+
+1. Choose Druid and Archery, equip a Sword-profile MainHand item. Verify Druid's 12 MainHand powers remain discoverable with **outside profile** eligibility caveats while Archery's 13 appear; Chest still shows 11 distinct Druid powers at Max and at level 100.
+2. Move official treasure powers between Available and Selected; verify exact IDs/tiers, visually grouped blue Skill A and gold Skill B STATS, the complete readable fixed effects list and immediate update on removal.
+3. Deselect the last occurrence of a combat skill: only mods officially associated with the departed skill clear, with Undo restoring the full prior draft. Generic, imported powers, Sparks, legacy OffHand and unresolved IDs remain protected.
+4. With Acid Arrow 13 on the bar, stage MainHand Acid Arrow Damage +110%; inspect the compact ability popover for **529 Acid**, **529 Acid armor damage**, and the mod under **Relevant Mods**. Removing the mod immediately removes the relevant entry. Brambleskin retains duplicate relevant effects from different items.
+5. Confirm technical zero-value or conditional DoT records are hidden from normal damage effects but retained in Technical details; nonzero published effects remain readable.
+6. Test browser zoom 100% on desktop and 320/375px mobile; verify scroll, keyboard focus, no text overflow, and autosave/reload preserving exact source identities and selection ordering.
+
+Published item treasure profiles are generation pools, not a complete legality engine. T0010 does not calculate damage or final equipment legality.
