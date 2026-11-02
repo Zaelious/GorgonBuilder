@@ -157,3 +157,14 @@ it('commits a trimmed title without modifying other fields and rejects blank or 
   const oldSnapshot = { ...original, gameDataVersion: 'old' };
   expect(editBuild(oldSnapshot, { type: 'title', title: 'Do not overwrite' }, data)).toBe(oldSnapshot);
 });
+
+it('validates an atomic skill-and-level transition and keeps reselecting the same skill a no-op', () => {
+  const original = skill(empty(), 'A', 'Psychology');
+  for (const level of [-1, NaN, Infinity, 0.5, Number.MAX_SAFE_INTEGER + 1]) {
+    expect(editBuild(original, { type: 'skill', slot: 'A', skillId: 'Deer', level }, data)).toBe(original);
+  }
+  const next = editBuild(original, { type: 'skill', slot: 'A', skillId: 'Deer', level: 95 }, data);
+  expect(next.skillSlotA).toEqual({ skillId: 'Deer', level: 95 });
+  expect(next.skillSlotB).toBe(original.skillSlotB);
+  expect(editBuild(next, { type: 'skill', slot: 'A', skillId: 'Deer', level: 100 }, data)).toBe(next);
+});

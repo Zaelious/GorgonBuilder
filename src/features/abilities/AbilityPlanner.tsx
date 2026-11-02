@@ -6,6 +6,7 @@ import { rankLabel } from './groups';
 import { AbilityIcon } from './AbilityIcon';
 import { AbilityFacts } from './AbilityFacts';
 import { AbilityPicker } from './AbilityPicker';
+import './bar.css';
 import { RelevantMods } from './RelevantMods';
 
 interface Props {
@@ -92,7 +93,7 @@ function DetailPopover({ id, selection, anchor, warnings, data, equipment, onClo
 }
 
 export function AbilityBar({ slot, skill, bar, data, onEdit, readOnly, detailSlot, onDetailOpen, equipment = NO_EQUIPMENT }: Props) {
-  const [picker, setPicker] = useState<{ replaceIndex: number | null; returnFocus: HTMLElement | null } | null>(null);
+  const [picker, setPicker] = useState<{ mode: 'continuous' | 'single' | 'replace'; replaceIndex: number | null; returnFocus: HTMLElement | null } | null>(null);
   const [active, setActive] = useState<number | null>(null);
   const triggers = useRef(new Map<number, HTMLButtonElement>());
   const pinned = useRef(false);
@@ -125,15 +126,26 @@ export function AbilityBar({ slot, skill, bar, data, onEdit, readOnly, detailSlo
   }
   useEffect(() => () => clearTimeout(leaveTimer.current), []);
 
-  function openPicker(replaceIndex: number | null) {
+  function openPicker(mode: 'continuous' | 'single' | 'replace', replaceIndex: number | null = null) {
     const returnFocus = active !== null ? triggers.current.get(active) ?? null : document.activeElement instanceof HTMLElement ? document.activeElement : null;
     closeDetail();
-    setPicker({ replaceIndex, returnFocus });
+    setPicker({ mode, replaceIndex, returnFocus });
   }
   function move(index: number, direction: -1 | 1) {
     closeDetail();
     onEdit({ type: 'move', slot, index, direction });
     requestAnimationFrame(() => triggers.current.get(index + direction)?.focus());
+  }
+  function quickRemove(index: number) {
+    if (readOnly) return;
+    closeDetail();
+    onEdit({ type: 'remove', slot, index });
+    requestAnimationFrame(() => {
+      // Restore keyboard position without activating the next ability's details.
+      ignoreFocus.current = true;
+      triggers.current.get(Math.max(0, Math.min(index, bar.length - 2)))?.focus();
+      ignoreFocus.current = false;
+    });
   }
   const activeSelection = active === null ? undefined : bar[active];
   return <section className="ability-bar" aria-labelledby={`bar-${slot}`}>
@@ -144,7 +156,10 @@ export function AbilityBar({ slot, skill, bar, data, onEdit, readOnly, detailSlo
         const ability = selection && data.getAbility(selection.abilityId);
         const warnings = selection ? selectionWarnings(selection, skill.skillId, data) : [];
         return <li key={index} className={`combat-slot ${index >= COMBAT_BAR_SIZE ? 'legacy-slot' : ''}`}>
-          {selection ? <button type="button" className="slot-button" ref={element => { if (element) triggers.current.set(index, element); else triggers.current.delete(index); }}
+          {selection ? <><button key="remove" type="button" className="quick-remove-ability" disabled={readOnly}
+            aria-label={`Remove ${ability?.displayName ?? selection.abilityId} from bar ${slot}, slot ${index + 1}`}
+            onMouseEnter={() => closeDetail()} onFocus={() => closeDetail()}
+            onClick={event => { event.stopPropagation(); quickRemove(index); }}>×</button><button key="slot" type="button" className="slot-button" ref={element => { if (element) triggers.current.set(index, element); else triggers.current.delete(index); }}
             aria-label={`Bar ${slot} slot ${index + 1}: ${ability?.displayName ?? selection.abilityId}${warnings.length ? ' (needs review)' : ''}`}
             aria-haspopup="dialog" aria-expanded={detailSlot === slot && active === index} aria-controls={detailSlot === slot && active === index ? `equipped-ability-detail-${slot}` : undefined}
             onMouseEnter={() => openDetail(index, false)} onMouseLeave={leaveDetail}
@@ -155,12 +170,12 @@ export function AbilityBar({ slot, skill, bar, data, onEdit, readOnly, detailSlo
             onKeyDown={e => { if (e.key === 'Escape') { e.preventDefault(); closeDetail(true); } }}>
             <AbilityIcon ability={ability} version={data.gameDataVersion} />
             <span className="slot-number">{index + 1}</span>{warnings.length > 0 && <span className="slot-warning" aria-hidden="true">!</span>}
-          </button> : <button type="button" className="slot-button empty-slot" ref={element => { if (element) triggers.current.set(index, element); else triggers.current.delete(index); }} disabled={readOnly || skill.skillId === null}
-            aria-label={`Add ability to bar ${slot}, empty slot ${index + 1}`} onClick={() => openPicker(null)}><span aria-hidden="true">+</span><span className="slot-number">{index + 1}</span></button>}
+          </button></> : <button key="slot" type="button" className="slot-button empty-slot" ref={element => { if (element) triggers.current.set(index, element); else triggers.current.delete(index); }} disabled={readOnly || skill.skillId === null}
+            aria-label={`Add ability to bar ${slot}, empty slot ${index + 1}`} onClick={() => openPicker('single')}><span aria-hidden="true">+</span><span className="slot-number">{index + 1}</span></button>}
         </li>;
       })}
     </ol>
-    <button type="button" className="open-picker" disabled={readOnly || skill.skillId === null} onClick={() => openPicker(null)} aria-label={`Open ability picker for bar ${slot}`} aria-describedby={full ? `bar-capacity-${slot}` : `bar-count-${slot}`}><span aria-hidden="true">+</span></button>
+    <button type="button" className="open-picker" disabled={readOnly || skill.skillId === null} onClick={() => openPicker('continuous')} aria-label={`Open ability picker for bar ${slot}`} aria-describedby={full ? `bar-capacity-${slot}` : `bar-count-${slot}`}><span aria-hidden="true">+</span></button>
     {full && <p id={`bar-capacity-${slot}`} className={bar.length > COMBAT_BAR_SIZE ? 'bar-message warning' : 'sr-only'}>{bar.length > COMBAT_BAR_SIZE
       ? `Legacy draft has ${bar.length} abilities in bar ${slot}; all are retained. Remove entries to return to six.`
       : `Bar ${slot} is full. Remove or replace an equipped ability to make room.`}</p>}
@@ -168,16 +183,16 @@ export function AbilityBar({ slot, skill, bar, data, onEdit, readOnly, detailSlo
     {detailSlot === slot && activeSelection && active !== null && <DetailPopover id={`equipped-ability-detail-${slot}`} key={`${slot}-${active}`} selection={activeSelection} anchor={triggers.current.get(active)}
       warnings={selectionWarnings(activeSelection, skill.skillId, data)} data={data} equipment={equipment} onClose={closeDetail} onEnter={cancelLeave} onLeave={leaveDetail}>
       <details className="bar-edit-actions"><summary>Edit bar</summary><div>
-      <button type="button" disabled={readOnly} onClick={() => openPicker(active)}>Replace</button>
+      <button type="button" disabled={readOnly} onClick={() => openPicker('replace', active)}>Replace</button>
       <button type="button" disabled={readOnly || active === 0} onClick={() => move(active, -1)} aria-label={`Move entry ${active + 1} up in bar ${slot}`}>← Move earlier</button>
       <button type="button" disabled={readOnly || active === bar.length - 1} onClick={() => move(active, 1)} aria-label={`Move entry ${active + 1} down in bar ${slot}`}>Move later →</button>
       </div></details>
       <button type="button" className="remove-ability" disabled={readOnly} onClick={() => { closeDetail(); onEdit({ type: 'remove', slot, index: active }); requestAnimationFrame(() => triggers.current.get(Math.max(0, active - 1))?.focus()); }} aria-label={`Remove entry ${active + 1} from bar ${slot}`}>Remove</button>
     </DetailPopover>}
-    {picker && <AbilityPicker slot={slot} skill={skill} data={data} full={full} replaceIndex={picker.replaceIndex} returnFocus={picker.returnFocus} onClose={() => setPicker(null)}
+    {picker && <AbilityPicker slot={slot} skill={skill} data={data} bar={bar} full={full || readOnly} replaceIndex={picker.replaceIndex} returnFocus={picker.returnFocus} onClose={() => setPicker(null)}
       onChoose={ability => {
         onEdit(picker.replaceIndex === null ? { type: 'add', slot, abilityId: ability.id } : { type: 'replace', slot, index: picker.replaceIndex, abilityId: ability.id });
-        setPicker(null);
+        if (picker.mode !== 'continuous') setPicker(null);
       }} />}
   </section>;
 }

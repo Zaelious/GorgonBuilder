@@ -1,0 +1,176 @@
+[
+  {
+    "mode": "dev",
+    "width": 1440,
+    "levels": [
+      90,
+      102
+    ],
+    "bars": [
+      5,
+      1
+    ],
+    "customer_levels": {
+      "Werewolf": 106,
+      "Deer": 112,
+      "Cow": 111,
+      "Unarmed": 110
+    },
+    "quick_remove": "mouse + Enter",
+    "scroll_positions": [
+      494,
+      494,
+      494,
+      494,
+      494,
+      494
+    ],
+    "page_errors": [],
+    "passed": true
+  },
+  {
+    "mode": "dev",
+    "width": 375,
+    "levels": [
+      90,
+      102
+    ],
+    "bars": [
+      5,
+      1
+    ],
+    "customer_levels": {
+      "Werewolf": 106,
+      "Deer": 112,
+      "Cow": 111,
+      "Unarmed": 110
+    },
+    "quick_remove": "touch + Space",
+    "scroll_positions": [
+      787,
+      787,
+      787,
+      787,
+      787,
+      787
+    ],
+    "page_errors": [],
+    "passed": true
+  },
+  {
+    "mode": "dev",
+    "width": 320,
+    "levels": [
+      90,
+      102
+    ],
+    "bars": [
+      5,
+      1
+    ],
+    "customer_levels": {
+      "Werewolf": 106,
+      "Deer": 112,
+      "Cow": 111,
+      "Unarmed": 110
+    },
+    "quick_remove": "touch + Space",
+    "scroll_positions": [
+      1061,
+      1061,
+      1061,
+      1061,
+      1061,
+      1061
+    ],
+    "page_errors": [],
+    "passed": true
+  },
+  {
+    "mode": "preview",
+    "width": 1440,
+    "levels": [
+      90,
+      102
+    ],
+    "bars": [
+      5,
+      1
+    ],
+    "customer_levels": {
+      "Werewolf": 106,
+      "Deer": 112,
+      "Cow": 111,
+      "Unarmed": 110
+    },
+    "quick_remove": "mouse + Enter",
+    "scroll_positions": [
+      494,
+      494,
+      494,
+      494,
+      494,
+      494
+    ],
+    "page_errors": [],
+    "passed": true
+  },
+  {
+    "mode": "preview",
+    "width": 375,
+    "levels": [
+      90,
+      102
+    ],
+    "bars": [
+      5,
+      1
+    ],
+    "customer_levels": {
+      "Werewolf": 106,
+      "Deer": 112,
+      "Cow": 111,
+      "Unarmed": 110
+    },
+    "quick_remove": "touch + Space",
+    "scroll_positions": [
+      787,
+      787,
+      787,
+      787,
+      787,
+      787
+    ],
+    "page_errors": [],
+    "passed": true
+  },
+  {
+    "mode": "preview",
+    "width": 320,
+    "levels": [
+      90,
+      102
+    ],
+    "bars": [
+      5,
+      1
+    ],
+    "customer_levels": {
+      "Werewolf": 106,
+      "Deer": 112,
+      "Cow": 111,
+      "Unarmed": 110
+    },
+    "quick_remove": "touch + Space",
+    "scroll_positions": [
+      1061,
+      1061,
+      1061,
+      1061,
+      1061,
+      1061
+    ],
+    "page_errors": [],
+    "passed": true
+  }
+]
