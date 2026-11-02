@@ -94,6 +94,15 @@ Serializable build examples:
 
 **Implemented in T0008:** The UI commits immutable edits to `BuildDocument.title`, two independent skill/level choices, and ordered six-slot bars via `src/app/editor/build-editor.ts`. Changing a skill clears only its corresponding bar. The picker uses official UpgradeOf families and published IDs/ranks; tier search, expanded facts, title draft text, and popovers stay transient. Configured skill level is stored for planning but does not restrict current ability quick-add; T0014 will introduce an optional Respect Skill Level mode (default off), without changing the saved schema.
 
+## Approved UI Follow-up Decisions (2026-11-02)
+
+These decisions are approved for later implementation in T0008-F1 and T0010-F1; they are **not yet implemented**.
+
+- Imported CharacterSheet level selection: skill `Level` plus any applicable `BonusLevels` yields one effective combat skill level, used wherever ability and advancement rules refer to skill level. Preserve original report fields for provenance; verify whether `Level` already includes bonuses and prevent double-counting. Deliberately selecting a matching imported skill initializes its editable level; importing/reimporting a report alone must not overwrite an existing build. Effective level calculations are an input to future formula work, not proof of a direct damage multiplier.
+- Ability picker: general bar-side + stays open for repeated additions, shows live count, preserves search/scroll, and marks already-on-bar abilities without preventing duplicates. Numbered empty-slot + and replacement are one-choice operations; bar capacity remains six.
+- Equipment mod browser: one equipment-wide search stays visible above the equipment rows; target-level preview and other filter toggles live under one expandable settings control. Shared filters remain active while changing item rows but do not change per-item eligibility, tier provenance or selected mods. Mod preview target is distinct from equipment minimum target-level filtering.
+- Expanded item view: show STATS promptly and collapse technical metadata (imported source/instance, levels, rarity, location, requirements, historical source details) under one `Item details & source` disclosure by default. Keep compatibility warnings visible and preserve original imported evidence.
+
 ## Game Data
 
 Do not fetch a changing live dataset on every user visit.
