@@ -113,7 +113,7 @@ def main():
                         expect(first).to_contain_text('Imbues (1)')
                         assert page.locator('dialog').evaluate('(element) => element.scrollWidth <= element.clientWidth + 1'), f'Dialog overflow at {width}'
                         page.screenshot(path=str(output / f'{mode}-my-items-{width}.png'))
-                        first.get_by_role('button', name='Equip owned').click()
+                        first.get_by_role('button', name='Replace owned').click()
                         page.wait_for_function('(key) => JSON.parse(localStorage.getItem(key)).equipment[0].item.kind === "imported"', arg=draft_key)
                         selected = page.evaluate('(key) => JSON.parse(localStorage.getItem(key))', draft_key)
                         assert selected['equipment'][0]['item']['instance']['level'] == 91
@@ -136,11 +136,12 @@ def main():
                         page.locator('.equipment-section > .section-heading button').click()
                         page.locator('[data-import-path="/Items/2"] button').click()
                         page.wait_for_function('(key) => JSON.parse(localStorage.getItem(key)).equipment.some(e=>e.slot==="OffHandShield")', arg=draft_key)
-                        page.locator('.equipment-section > .section-heading button').click()
+                        expect(page.locator('dialog')).to_be_visible()
                         page.locator('[data-import-path="/Items/3"] button').click()
                         page.wait_for_function('(key) => JSON.parse(localStorage.getItem(key)).equipment.some(e=>e.slot==="OffHand")', arg=draft_key)
                         equipment = page.evaluate('(key) => JSON.parse(localStorage.getItem(key)).equipment', draft_key)
                         assert len([item for item in equipment if item['slot'] in ['OffHand', 'OffHandShield']]) == 1
+                        page.locator('[aria-label="Close equipment picker"]').click()
                         page.locator('[data-equipment-row="OffHand"] > summary').click()
                         page.get_by_role('button', name='Clear OffHand', exact=True).click()
                         page.wait_for_function('(key) => !JSON.parse(localStorage.getItem(key)).equipment.some(e=>e.slot==="OffHand")', arg=draft_key)

@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
+import { sameImportedInstance } from '../../core/build/imported-identity';
 import { getUniqueActiveSkillIds } from '../../core/build/document';
 import { EquipmentMods } from '../mods/EquipmentMods';
 import { ItemStats } from '../mods/ItemStats';
@@ -34,7 +35,7 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
   // Offhand types share a position; saved selections retain canonical slot values.
   const otherSlots = [...new Set([...officialSlots, ...build.equipment.map(selection => selection.slot)])]
     .filter(slot => !PRIMARY_SLOTS.some(primary => primary === slot) && slot !== 'OffHandShield').sort();
-  const [picker, setPicker] = useState<{ slot: string; index: number | null; returnFocus: HTMLElement; fallbackFocus: HTMLElement | null; initialSource?: 'database' | 'owned' } | null>(null);
+  const [picker, setPicker] = useState<{ mode: 'general' | 'slot'; slot: string; index: number | null; returnFocus: HTMLElement; fallbackFocus: HTMLElement | null; initialSource?: 'database' | 'owned' } | null>(null);
   const offhandCount = build.equipment.filter(selection => isOffhandSlot(selection.slot)).length;
 
   function definition(selection: EquipmentSelection) {
@@ -47,7 +48,16 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
       ?? (selection.item.kind === 'database' ? selection.item.itemId : selection.item.instance.baseItemId ?? 'Manual item');
   }
   function openPicker(slot: string, index: number | null, opener: HTMLButtonElement) {
-    setPicker({ slot: isOffhandSlot(slot) ? 'OffHand' : slot, index, returnFocus: opener, fallbackFocus: opener.closest('.equipment-row')?.querySelector<HTMLElement>('summary') ?? null });
+    setPicker({ mode: 'slot', slot: isOffhandSlot(slot) ? 'OffHand' : slot, index, returnFocus: opener, fallbackFocus: opener.closest('.equipment-row')?.querySelector<HTMLElement>('summary') ?? null });
+  }
+  function clearSelection(index: number): boolean {
+    if (readOnly) return false;
+    const selection = build.equipment[index];
+    if (!selection) return false;
+    const retainedData = selection.item.kind !== 'database' || selection.candidateMods.length > 0 || selection.sparks.mode !== 'none';
+    if (retainedData && !window.confirm(`Clear ${name(selection)} and its saved instance, staged mods, and Spark settings from this slot?`)) return false;
+    onEdit({ type: 'equipment-clear', index });
+    return true;
   }
   function renderSelection(selection: EquipmentSelection, index: number, multiple: boolean) {
     const item = definition(selection);
@@ -64,12 +74,10 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
       <EquipmentMods selection={selection} equipmentIndex={index} item={item} skillIds={skillIds} skillA={build.skillSlotA.skillId} skillB={build.skillSlotB.skillId} data={data} onEdit={onEdit} readOnly={readOnly} expanded={expanded.has(isOffhandSlot(selection.slot) ? 'OffHand' : selection.slot)} />
       <div className="equipment-actions"><button type="button" disabled={readOnly || conflict || !officialSlots.has(selection.slot)} onClick={event => openPicker(selection.slot, index, event.currentTarget)}>Replace {isOffhandSlot(selection.slot) ? 'OffHand' : selection.slot}</button>
         <button type="button" disabled={readOnly} onClick={event => {
-          const retainedData = selection.item.kind !== 'database' || selection.candidateMods.length > 0 || selection.sparks.mode !== 'none';
-          if (retainedData && !window.confirm(`Clear ${name(selection)} and its saved instance, staged mods, and Spark settings from this slot?`)) return;
+          if (!clearSelection(index)) return;
           // Always-visible primary row summaries survive clearing their selection.
           const summary = event.currentTarget.closest('.equipment-row')?.querySelector<HTMLElement>('summary');
           const otherSummary = document.getElementById('other-equipment-summary');
-          onEdit({ type: 'equipment-clear', index });
           requestAnimationFrame(() => (summary?.isConnected ? summary : otherSummary)?.focus());
         }}>Clear {selection.slot}</button>
         {conflict && <button type="button" disabled={readOnly} aria-label={`Keep ${name(selection)} (${selection.slot}) in the offhand position`} onClick={event => {
@@ -114,16 +122,17 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
   }
 
   return <section className="equipment-section" aria-labelledby="equipment-title">
-    <div className="section-heading"><h2 id="equipment-title">Equipment</h2><button type="button" disabled={!imported} onClick={event => setPicker({ slot: '', index: null, returnFocus: event.currentTarget, fallbackFocus: event.currentTarget, initialSource: 'owned' })}>My Items{imported ? ` (${imported.storage.items.filter(item => importedSlot(item, data)).length})` : ''}</button><span className="muted">{build.equipment.length} selected</span></div>
+    <div className="section-heading"><h2 id="equipment-title">Equipment</h2><button type="button" disabled={!imported} onClick={event => setPicker({ mode: 'general', slot: '', index: null, returnFocus: event.currentTarget, fallbackFocus: event.currentTarget, initialSource: 'owned' })}>My Items{imported ? ` (${imported.storage.items.filter(item => importedSlot(item, data)).length})` : ''}</button><span className="muted">{build.equipment.length} selected</span></div>
     {!picker && preferenceNotice}
     <div className="equipment-primary">{PRIMARY_SLOTS.map(renderRow)}</div>
     <details className="equipment-other"><summary id="other-equipment-summary">Other slots{build.equipment.some(selection => otherSlots.includes(selection.slot)) && <span className="muted"> · {build.equipment.filter(selection => otherSlots.includes(selection.slot)).length} selected</span>}</summary>
       {otherSlots.map(renderRow)}
     </details>
-    {picker && <EquipmentPicker {...picker} data={data} imported={imported} offhandConflict={offhandCount > 1} minimum={minimum} preferenceProtected={preferenceProtected} preferenceNotice={preferenceNotice} onMinimumChange={onMinimumChange} readOnly={readOnly} replacing={picker.index !== null}
+    {picker && <EquipmentPicker {...picker} equipment={build.equipment} data={data} imported={imported} offhandConflict={offhandCount > 1} minimum={minimum} preferenceProtected={preferenceProtected} preferenceNotice={preferenceNotice} onMinimumChange={onMinimumChange} readOnly={readOnly} replacing={picker.index !== null}
       onClose={() => setPicker(null)} onChoose={itemId => {
+        if (readOnly) return;
         const item = data.getItem(itemId);
-        if (!item) return;
+        if (!item || (offhandCount > 1 && isOffhandSlot(item.slot))) return;
         const found = picker.slot ? picker.index : build.equipment.findIndex(entry => isOffhandSlot(item.slot) ? isOffhandSlot(entry.slot) : entry.slot === item.slot);
         const index = found === -1 ? null : found;
         const previous = index === null ? undefined : build.equipment[index];
@@ -134,12 +143,18 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
       }} onChooseImported={item => {
         if (readOnly) return;
         const slot = importedSlot(item, data);
-        if (!slot) return;
+        if (!slot || (offhandCount > 1 && isOffhandSlot(slot)) || (picker.mode === 'slot' && (isOffhandSlot(picker.slot) ? !isOffhandSlot(slot) : slot !== picker.slot))) return;
+        const instance = selectedImportedInstance(item);
+        if (build.equipment.some(entry => entry.item.kind === 'imported' && sameImportedInstance(entry.item.instance, instance))) return;
         const found = picker.slot ? picker.index : build.equipment.findIndex(entry => isOffhandSlot(slot) ? isOffhandSlot(entry.slot) : entry.slot === slot);
         const index = found === -1 ? null : found;
         if (index !== null && !window.confirm('Replace the selected item with this owned instance? The previous item and its existing powers/metadata will be replaced. Staged candidate mods and Spark settings are retained.')) return;
-        onEdit({ type: 'equipment-import', slot, index, instance: selectedImportedInstance(item) });
-        setPicker(null);
+        onEdit({ type: 'equipment-import', slot, index, instance });
+        if (picker.mode === 'slot') setPicker(null);
+      }} onUnequipImported={item => {
+        const instance = selectedImportedInstance(item);
+        const index = build.equipment.findIndex(entry => entry.item.kind === 'imported' && sameImportedInstance(entry.item.instance, instance));
+        if (index !== -1 && clearSelection(index) && picker.mode === 'slot') setPicker(null);
       }} />}
   </section>;
 }

@@ -3,6 +3,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { editBuild } from '../../app/editor/build-editor';
 import { App } from '../../app/App';
 import { createDefaultBuildDocument } from '../../core/build/document';
 import { loadGameDataRepository } from '../../data/repository/load';
@@ -126,6 +127,7 @@ it('persists selected imported gear including unresolved evidence, reopens detai
 
 it('re-imports inventory without replacing the current loadout and confirms an explicit instance replacement', async () => {
   await importReports(); await browse(); await click('[data-import-path="/Items/0"] button'); await tick(); const saved = draft();
+  await click('[aria-label="Close equipment picker"]');
   await button('Import Character'); await upload('#storage-file', storageText); await button('Replace My Items inventory'); await tick();
   expect(draft()).toEqual(saved);
   await browse(); const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
@@ -171,4 +173,124 @@ it('allows private import inspection while preserving a protected incompatible d
   await importReports(); await browse();
   expect([...container.querySelectorAll<HTMLButtonElement>('[data-import-path] button')].every(button => button.disabled)).toBe(true);
   await tick(); expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(bytes);
+});
+
+it('equips three slots, replaces only the exact twin and cancels/confirms unequip in one mounted general dialog', async () => {
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+  await importReports(); await browse();
+  const dialog = control<HTMLDialogElement>('dialog');
+  const search = control('#my-items-search');
+  const action = (index: number) => `[data-import-path="/Items/${index}"] .equipment-result-heading button`;
+  const row = (index: number) => control(`[data-import-path="/Items/${index}"]`);
+  await click(action(0));
+  expect(control('dialog')).toBe(dialog); expect(dialog.open).toBe(true);
+  expect(row(0).querySelector('.owned-equipped')?.textContent).toBe('Equipped');
+  expect(control(action(0)).textContent).toBe('Unequip');
+  expect(control(action(1)).textContent).toBe('Replace');
+  expect(row(1).querySelector('.owned-equipped')).toBeNull();
+  await click(action(2)); await click(action(4)); await tick();
+  expect(draft().equipment.map(entry => entry.slot)).toEqual(['MainHand', 'OffHandShield', 'Ring']);
+  expect(container.querySelectorAll('.owned-equipped')).toHaveLength(3);
+  expect(control('.equipment-section > .section-heading').textContent).toContain('3 selected');
+  await click(action(1)); await tick();
+  expect(row(0).querySelector('.owned-equipped')).toBeNull();
+  expect(control(action(0)).textContent).toBe('Replace');
+  expect(control(action(1)).textContent).toBe('Unequip');
+  const before = draft();
+  confirm.mockReturnValue(false); await click(action(2)); await tick();
+  expect(draft()).toEqual(before); expect(control(action(2)).textContent).toBe('Unequip');
+  confirm.mockReturnValue(true); await click(action(2)); await tick();
+  expect(draft().equipment).toEqual([before.equipment[0], before.equipment[2]]);
+  expect(control(action(2)).textContent).toBe('Equip');
+  // Clearing index 1 shifts Ring's index. Its action must use the fresh build.
+  await click(action(4)); await tick();
+  expect(draft().equipment).toEqual([before.equipment[0]]);
+  expect(control('dialog')).toBe(dialog); expect(control('#my-items-search')).toBe(search);
+  expect(dialog.open).toBe(true);
+});
+
+it('preserves query, all filters, page and scroll through equip and unequip', async () => {
+  const report = JSON.parse(storageText) as { Items: Record<string, unknown>[] };
+  report.Items = Array.from({ length: 23 }, () => structuredClone(report.Items[0]!));
+  vi.spyOn(window, 'confirm').mockReturnValue(true);
+  await importReports(JSON.stringify(report)); await browse();
+  await change('#my-items-search', 'twin'); await change('#my-items-slot', 'MainHand');
+  await change('#my-items-minimum', '90'); await change('#my-items-maximum', '100');
+  await change('#my-items-rarity', 'Legendary'); await change('#my-items-location', 'Inventory');
+  await button('Next');
+  const dialog = control('dialog'); dialog.scrollTop = 350;
+  const fields = [...dialog.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select')];
+  const values = fields.map(field => field.value);
+  await click('[data-import-path="/Items/11"] button');
+  expect(control('dialog')).toBe(dialog); expect(dialog.scrollTop).toBe(350);
+  expect(fields.map(field => field.value)).toEqual(values);
+  expect(control('.equipment-results-title').textContent).toContain('Page 2 of 3');
+  expect(container.querySelectorAll('[data-import-path]')).toHaveLength(10);
+  expect(control('[data-import-path="/Items/10"] button').textContent).toBe('Replace');
+  await click('[data-import-path="/Items/11"] button');
+  expect(control('dialog')).toBe(dialog); expect(dialog.scrollTop).toBe(350);
+  expect(fields.map(field => field.value)).toEqual(values);
+  expect(control('.equipment-results-title').textContent).toContain('Page 2 of 3');
+});
+
+it('slot-specific owned selections still close and restore focus, and Unequip closes after confirmation', async () => {
+  await importReports();
+  await click('[data-equipment-row="MainHand"] > summary');
+  await click('[aria-label="Browse MainHand items"]'); await button('My Items (6)');
+  expect(control<HTMLSelectElement>('#my-items-slot').disabled).toBe(true);
+  expect(container.querySelectorAll('[data-import-path]')).toHaveLength(2);
+  await click('[data-import-path="/Items/0"] button');
+  expect(container.querySelector('dialog')).toBeNull(); expect(document.activeElement).toBe(control('[data-equipment-row="MainHand"] > summary'));
+  await click('[data-equipment-row="MainHand"] .equipment-actions button'); await button('My Items (6)');
+  expect(control('[data-import-path="/Items/0"] button').textContent).toBe('Unequip');
+  vi.spyOn(window, 'confirm').mockReturnValue(true);
+  await click('[data-import-path="/Items/0"] button'); await tick();
+  expect(container.querySelector('dialog')).toBeNull(); expect(draft().equipment).toEqual([]);
+  expect(document.activeElement).toBe(control('[data-equipment-row="MainHand"] > summary'));
+});
+
+it('recognizes the same report after autosave/refresh and working power edits, but rejects a newer report', async () => {
+  await importReports(); await browse(); await click('[data-import-path="/Items/0"] button'); await tick();
+  const saved = draft();
+  const changed = editBuild(saved, { type: 'existing-mod-remove', equipmentIndex: 0, index: 0 }, data);
+  expect(changed).not.toBe(saved);
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(changed)); await remount();
+  await importReports(); await browse();
+  expect(control('[data-import-path="/Items/0"] button').textContent).toBe('Unequip');
+  expect(control('[data-import-path="/Items/1"] button').textContent).toBe('Replace');
+  await click('[aria-label="Close equipment picker"]');
+  const newer = JSON.parse(storageText) as Record<string, unknown>; newer.Timestamp = '2026-11-02T12:01:00Z';
+  await button('Import Character'); await upload('#storage-file', JSON.stringify(newer)); await button('Replace My Items inventory'); await browse();
+  expect(container.querySelectorAll('.owned-equipped')).toHaveLength(0);
+  expect(control('[data-import-path="/Items/0"] button').textContent).toBe('Replace');
+  expect(draft()).toEqual(changed);
+});
+
+it('retains candidates and Sparks on offhand replacement and protects them on removal', async () => {
+  vi.spyOn(window, 'confirm').mockReturnValue(true);
+  await importReports(); await browse(); await click('[data-import-path="/Items/2"] button'); await tick();
+  const saved = draft(); saved.equipment[0]!.candidateMods = [{ powerId: 'power_129', tierId: 'id_120' }];
+  saved.equipment[0]!.sparks = { mode: 'simulated', input: { category: 'skill-damage', skillId: 'Psychology', count: 7, seed: 'keep' } };
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(saved)); await remount(); await importReports(); await browse();
+  expect(control('[data-import-path="/Items/3"] button').textContent).toBe('Replace');
+  await click('[data-import-path="/Items/3"] button'); await tick();
+  expect(draft().equipment).toHaveLength(1); expect(draft().equipment[0]?.slot).toBe('OffHand');
+  expect(draft().equipment[0]?.candidateMods).toEqual(saved.equipment[0]?.candidateMods);
+  expect(draft().equipment[0]?.sparks).toEqual(saved.equipment[0]?.sparks);
+  expect(control('[data-import-path="/Items/2"] button').textContent).toBe('Replace');
+  expect(control('dialog')).toBeTruthy();
+  const confirm = vi.mocked(window.confirm); confirm.mockReturnValue(false);
+  const before = draft(); await click('[data-import-path="/Items/3"] button'); await tick(); expect(draft()).toEqual(before);
+  confirm.mockReturnValue(true); await click('[data-import-path="/Items/3"] button'); await tick(); expect(draft().equipment).toEqual([]);
+});
+
+it('allows inspection but disables Equipped/Unequip and Replace in a read-only snapshot', async () => {
+  await importReports(); await browse(); await click('[data-import-path="/Items/0"] button'); await tick();
+  const saved = { ...draft(), gameDataVersion: 'other-snapshot' };
+  const bytes = JSON.stringify(saved); localStorage.setItem(DRAFT_STORAGE_KEY, bytes); await remount();
+  await importReports(); await browse();
+  expect(control('[data-import-path="/Items/0"] button').textContent).toBe('Unequip');
+  expect([...container.querySelectorAll<HTMLButtonElement>('[data-import-path] button')].every(button => button.disabled)).toBe(true);
+  await click('[data-import-path="/Items/0"] button'); await tick();
+  expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(bytes);
 });

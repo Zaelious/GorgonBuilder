@@ -8,7 +8,12 @@ import type { ImportedItemInstance } from '../../core/import';
 import type { ImportSession } from '../import/inventory';
 import { MyItemsBrowser } from '../import/MyItemsBrowser';
 
+import type { EquipmentSelection } from '../../core/build/document';
+
 interface Props {
+  mode: 'general' | 'slot';
+  equipment: readonly EquipmentSelection[];
+  onUnequipImported: (item: ImportedItemInstance) => void;
   slot: string;
   data: GameDataRepository;
   minimum: number | null;
@@ -29,7 +34,7 @@ interface Props {
 
 const PAGE_SIZE = 10;
 
-export function EquipmentPicker({ slot, data, minimum, preferenceProtected, preferenceNotice, onMinimumChange, readOnly, replacing, returnFocus, fallbackFocus, onChoose, onClose, imported, initialSource = 'database', offhandConflict, onChooseImported }: Props) {
+export function EquipmentPicker({ mode, equipment, onUnequipImported, slot, data, minimum, preferenceProtected, preferenceNotice, onMinimumChange, readOnly, replacing, returnFocus, fallbackFocus, onChoose, onClose, imported, initialSource = 'database', offhandConflict, onChooseImported }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [query, setQuery] = useState('');
   const [includeUnknown, setIncludeUnknown] = useState(true);
@@ -69,10 +74,10 @@ export function EquipmentPicker({ slot, data, minimum, preferenceProtected, pref
       if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onClose(); }
     }}>
     <div className="picker-content">
-      <header className="dialog-heading"><div><p className="eyebrow">{slot}</p><h2 id="equipment-picker-title">{replacing ? 'Replace equipment' : 'Choose equipment'}</h2></div>
+      <header className="dialog-heading"><div><p className="eyebrow">{slot}</p><h2 id="equipment-picker-title">{mode === 'general' && source === 'owned' ? 'My Items' : replacing ? 'Replace equipment' : 'Choose equipment'}</h2></div>
         <button type="button" onClick={onClose} aria-label="Close equipment picker">×</button></header>
       <div className="equipment-source-buttons" aria-label="Equipment source"><button type="button" aria-pressed={source === 'database'} onClick={() => setSource('database')}>Official database</button><button type="button" aria-pressed={source === 'owned'} onClick={() => setSource('owned')}>My Items{imported ? ` (${imported.storage.items.length})` : ''}</button></div>
-      {source === 'owned' ? <MyItemsBrowser session={imported} slot={slot} data={data} readOnly={readOnly} offhandConflict={offhandConflict} onChoose={onChooseImported} /> : <>
+      {source === 'owned' ? <MyItemsBrowser equipment={equipment} onUnequip={onUnequipImported} session={imported} slot={slot} data={data} readOnly={readOnly} offhandConflict={offhandConflict} onChoose={onChooseImported} /> : <>
       <label htmlFor="equipment-search">Search equipment</label>
       <input id="equipment-search" type="search" autoFocus value={query} placeholder="Name, fixed effect, keyword, or ID…" onChange={event => { setQuery(event.target.value); setPage(0); }} />
       <div className="equipment-filters"><div><label htmlFor="minimum-target-level">Minimum target level</label>

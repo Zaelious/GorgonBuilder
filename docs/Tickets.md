@@ -725,7 +725,7 @@ Guidelines:
 
 ## T0011-F3 — My Items Quick Equip/Unequip Without Closing Inventory
 
-**Status:** Next planned ticket; separate Codex branch and PR after T0011-F2 was accepted and merged via PR #25. Not started. Implement before T0012 to complete the rapid imported-gear loadout UX.
+**Status:** Implemented on `feature/t0011-f3-quick-inventory-equip`; awaiting architectural review and product-owner acceptance. Separate from accepted T0011-F2 / PR #25. Do not merge automatically. See [verification and manual steps](T0011_F3_Verification.md).
 
 **Complexity:** Medium
 
