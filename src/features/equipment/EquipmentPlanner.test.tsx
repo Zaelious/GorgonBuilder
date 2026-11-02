@@ -285,7 +285,8 @@ it.each(['Head', 'MainHand', 'Ring', 'OffHand'])('shows the selected %s name/ico
   expect(row.querySelector('summary')!.textContent).toContain(item.displayName);
   expect(row.querySelectorAll('.equipment-icon')).toHaveLength(1);
   expect(row.querySelectorAll('.equipment-row-content .equipment-icon, .equipment-selection-heading')).toHaveLength(0);
-  expect(row.querySelector('.item-facts')).not.toBeNull();
+  expect(row.querySelector('.item-stats')).not.toBeNull();
+  expect(row.querySelector<HTMLDetailsElement>('.item-details-source')?.open).toBe(false);
   expect(row.querySelector('.item-requirements')).not.toBeNull();
   expect(row.querySelector('.item-more')).not.toBeNull();
   expect(row.querySelectorAll('.equipment-actions button')).toHaveLength(2);

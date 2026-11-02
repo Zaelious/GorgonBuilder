@@ -1,0 +1,80 @@
+[
+  {
+    "mode": "dev",
+    "width": 1440,
+    "errors": [],
+    "shared_controls": true,
+    "metadata_and_working_mods": true,
+    "confirmed_reset_and_refresh": true
+  },
+  {
+    "mode": "dev",
+    "width": 375,
+    "errors": [],
+    "shared_controls": true,
+    "metadata_and_working_mods": true,
+    "confirmed_reset_and_refresh": true
+  },
+  {
+    "mode": "dev",
+    "width": 320,
+    "errors": [],
+    "shared_controls": true,
+    "metadata_and_working_mods": true,
+    "confirmed_reset_and_refresh": true
+  },
+  {
+    "mode": "dev",
+    "protected": "schema",
+    "reset_disabled": true
+  },
+  {
+    "mode": "dev",
+    "protected": "snapshot",
+    "reset_disabled": true
+  },
+  {
+    "mode": "dev",
+    "protected": "read-failed",
+    "reset_disabled": true
+  },
+  {
+    "mode": "preview",
+    "width": 1440,
+    "errors": [],
+    "shared_controls": true,
+    "metadata_and_working_mods": true,
+    "confirmed_reset_and_refresh": true
+  },
+  {
+    "mode": "preview",
+    "width": 375,
+    "errors": [],
+    "shared_controls": true,
+    "metadata_and_working_mods": true,
+    "confirmed_reset_and_refresh": true
+  },
+  {
+    "mode": "preview",
+    "width": 320,
+    "errors": [],
+    "shared_controls": true,
+    "metadata_and_working_mods": true,
+    "confirmed_reset_and_refresh": true
+  },
+  {
+    "mode": "preview",
+    "protected": "schema",
+    "reset_disabled": true
+  },
+  {
+    "mode": "preview",
+    "protected": "snapshot",
+    "reset_disabled": true
+  },
+  {
+    "mode": "preview",
+    "protected": "read-failed",
+    "reset_disabled": true
+  }
+]

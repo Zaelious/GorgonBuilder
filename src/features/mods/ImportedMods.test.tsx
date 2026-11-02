@@ -45,7 +45,7 @@ const saved = () => JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)!) as Buil
 const selected = () => [...container.querySelectorAll<HTMLElement>(`${editor} [data-selected-power-id]`)];
 const stats = () => [...container.querySelectorAll<HTMLElement>(`${scope} [data-stat-kind]:not([data-stat-kind="base"])`)];
 const powers = () => selected().map(row => row.dataset.selectedPowerId);
-const search = (value: string) => change(`${editor} [aria-label="Search treasure powers"]`, value);
+const search = (value: string) => change(`.mod-browser-controls [aria-label="Search treasure powers"]`, value);
 async function remount() { await act(async () => root.unmount()); root = createRoot(container); await render(); }
 
 it('shows all six imported pairs in Selected immediately with matching skill grouping in Stats', () => {
@@ -135,4 +135,40 @@ it('disables imported edits/restoration on a protected read-only draft', async (
   expect(control<HTMLSelectElement>(`${editor} [aria-label="Tier for imported mod 1"]`).disabled).toBe(true);
   expect(control<HTMLButtonElement>(`${editor} .restore-imported-mods`).disabled).toBe(true);
   await tick(); expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(bytes);
+});
+
+it('keeps historical evidence under one default-closed disclosure and source warnings visible above Stats', async () => {
+  const details = control<HTMLDetailsElement>(`${scope} > .item-details-source`);
+  expect(details.open).toBe(false);
+  expect(container.querySelectorAll(`${scope} > details`)).toHaveLength(1);
+  expect(control('.imported-item-details').closest('.item-details-source')).toBe(details);
+  expect(control(`${scope} .item-stats`).closest('details')).toBe(control('[data-equipment-row="MainHand"]'));
+  const visibleWarning = control(`${scope} > .warning`);
+  expect(visibleWarning.textContent).toContain('original power/imbue entries are unresolved');
+  expect(visibleWarning.closest('.item-details-source')).toBeNull();
+  const sourceBefore = control('.imported-item-details').textContent;
+  expect(sourceBefore).toContain('Actual level 100');
+  expect(sourceBefore).toContain('Original TypeID: 45640');
+  expect(sourceBefore).toContain('FixtureUnknownPower');
+  expect(sourceBefore).toContain('futureTier');
+  expect(sourceBefore).toContain('Imbues (1)');
+  expect(sourceBefore).toContain('CraftPoints');
+  await click(`${editor} [aria-label="Remove imported mod 1"]`);
+  await tick();
+  expect(control('.imported-item-details').textContent).toBe(sourceBefore);
+  expect(saved().equipment[0]?.item.kind).toBe('imported');
+  expect(saved().equipment[0]?.item).not.toEqual(original.equipment[0]?.item);
+});
+
+it('shows source/base slot conflicts outside the closed metadata', async () => {
+  await act(async () => root.unmount());
+  const selection = original.equipment[0]!;
+  if (selection.item.kind !== 'imported') throw new Error('fixture');
+  const source = selection.item.instance.metadata!.sourceItem as Record<string, unknown>;
+  source.Slot = 'Head';
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(original));
+  root = createRoot(container); await render();
+  const warnings = [...container.querySelectorAll(`${scope} > .warning`)];
+  expect(warnings.some(warning => warning.textContent?.includes('Source slot Head differs from official base slot MainHand'))).toBe(true);
+  expect(control<HTMLDetailsElement>(`${scope} > .item-details-source`).open).toBe(false);
 });

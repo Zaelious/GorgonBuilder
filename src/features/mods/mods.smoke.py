@@ -106,13 +106,19 @@ def main():
                         def expand(slot):
                             row(slot)
 
+                        def settings():
+                            panel = page.locator('.mod-browser-settings')
+                            if not panel.evaluate('(e) => e.open'):
+                                panel.locator(':scope > summary').click()
+                            return page.locator('.mod-browser-controls')
+
                         def inline_search(value, index=0):
                             start = time.perf_counter()
-                            editor(index).get_by_label('Search treasure powers', exact=True).fill(value)
+                            page.get_by_label('Search treasure powers', exact=True).fill(value)
                             timings.append({'action': value, 'ms': (time.perf_counter() - start) * 1000})
 
                         def preview_level(value, index=0):
-                            editor(index).get_by_label('Mod target level', exact=True).fill(value)
+                            settings().get_by_label('Mod target level', exact=True).fill(value)
 
                         def power(power_id='power_10001', index=0):
                             return editor(index).locator(f'[data-power-id="{power_id}"]')
@@ -139,6 +145,7 @@ def main():
                             page.locator(f'#skill-{slot}').select_option(skill)
                             page.get_by_label(f'Open ability picker for bar {slot}', exact=True).click()
                             page.locator('.quick-add').first.click()
+                            page.get_by_role('button', name='Close ability picker', exact=True).click()
                         wait_saved()
                         equip('Ring', 'item_49070')
                         equip('OffHand', 'item_45052')
@@ -146,11 +153,11 @@ def main():
                         expand('Head')
                         expect(editor().locator('[data-mod-group="Archery"]')).to_have_count(1)
                         expect(editor().locator('[data-mod-group="Cow"]')).to_have_count(1)
-                        assert len(editor().locator('.mod-category-toggles input:checked').all()) == 3
+                        assert len(settings().locator('.mod-category-toggles input:checked').all()) == 3
                         for name, group in [('Generic', 'AnySkill'), ('Endurance', 'Endurance'), ('Shamanic Infusions', 'ShamanicInfusion')]:
-                            editor().get_by_role('checkbox', name=name, exact=True).uncheck()
+                            settings().get_by_role('checkbox', name=name, exact=True).uncheck()
                             expect(editor().locator(f'[data-mod-group="{group}"]')).to_have_count(0)
-                            editor().get_by_role('checkbox', name=name, exact=True).check()
+                            settings().get_by_role('checkbox', name=name, exact=True).check()
                         # Normal Available lists only powers publishing the item's slot (and profile where applicable).
                         slots_by_power = {p['id']: p['slots'] for p in treasure['treasurePowers']}
                         profile_orders = []
@@ -224,7 +231,7 @@ def main():
                         assert saved()['equipment'][0]['candidateMods'] == expected_mods
                         restored = saved(); restored['equipment'][0]['candidateMods'] = []
                         assert restored == baseline
-                        expect(editor().get_by_label('Mod target level', exact=True)).to_have_value('Max')
+                        expect(settings().get_by_label('Mod target level', exact=True)).to_have_value('Max')
                         # Skill changes: A=B keeps shared mods; removing the last Archery slot clears them, with Undo.
                         page.locator('#skill-B').select_option('Archery')
                         expect(editor().locator('[data-mod-group="Archery"]')).to_have_count(1)
@@ -257,8 +264,8 @@ def main():
                         assert saved() == rich
                         expect(page.locator('[data-selection-index="0"] .item-stats [data-existing-power="0"]')).to_have_attribute('data-tier-id', 'id_120')
                         expect(page.locator('[data-selection-index="0"] .item-stats [data-existing-power="0"] .stat-chip')).to_have_text('Endurance')
-                        editor().get_by_label('All skills', exact=True).check()
-                        editor().get_by_label('Other slots & profiles', exact=True).check()
+                        settings().get_by_label('All skills', exact=True).check()
+                        settings().get_by_label('Other slots & profiles', exact=True).check()
                         for query in ['Psychology', 'Cow', 'Unarmed']:
                             inline_search(query)
                             assert editor().locator('[data-power-id]').count() > 0
@@ -274,7 +281,7 @@ def main():
                         proof['equipment'][0]['item']['instance']['existingPowers'] = [{'powerId': 'power_12301', 'tierId': 'id_25'}]
                         page.evaluate('([key, build]) => localStorage.setItem(key, JSON.stringify(build))', [key, proof])
                         page.reload(); page.locator('.equipment-section').wait_for(); expand('Head')
-                        editor().get_by_label('Other slots & profiles', exact=True).check()
+                        settings().get_by_label('Other slots & profiles', exact=True).check()
                         icon_power_ids = [p['id'] for p in treasure['treasurePowers'] if p['skill']['sourceId'] == 'AnimalHandling'][:8]
                         for power_id in icon_power_ids:
                             if power_id == 'power_12301':
@@ -358,7 +365,7 @@ def main():
                         before_fallback = len(errors)
                         page.route('**/icons/icon_2160.png', lambda route: route.fulfill(status=404, body='missing icon'))
                         inline_search('power_12301'); page.reload(); page.locator('.equipment-section').wait_for(); expand('Head')
-                        editor().get_by_label('Other slots & profiles', exact=True).check()
+                        settings().get_by_label('Other slots & profiles', exact=True).check()
                         inline_search('power_12301')
                         imported_stat = page.locator('[data-selection-index="0"] .item-stats [data-existing-power="0"]')
                         imported_stat.scroll_into_view_if_needed()
@@ -403,11 +410,11 @@ def main():
                         druid_ids = sorted(druid_rows.evaluate_all('(es) => es.map(e => e.dataset.powerId)'))
                         assert druid_ids == ['power_14005', 'power_14012', 'power_14051', 'power_14052', 'power_14101', 'power_14154', 'power_14159', 'power_14201', 'power_14351', 'power_14501', 'power_14602'], druid_ids
                         max_previews = druid_rows.evaluate_all('(es) => Object.fromEntries(es.map(e => [e.dataset.powerId, e.dataset.previewTier]))')
-                        chest_editor.get_by_label('Mod target level', exact=True).fill('100')
+                        settings().get_by_label('Mod target level', exact=True).fill('100')
                         expect(druid_rows).to_have_count(11)
                         level_previews = druid_rows.evaluate_all('(es) => Object.fromEntries(es.map(e => [e.dataset.powerId, e.dataset.previewTier]))')
                         assert sorted(level_previews) == druid_ids and level_previews != max_previews, (max_previews, level_previews)
-                        chest_editor.get_by_label('Mod target level', exact=True).fill('Max')
+                        settings().get_by_label('Mod target level', exact=True).fill('Max')
                         base_rows = chest.locator('.item-stats [data-stat-kind="base"] .stat-text')
                         expect(base_rows).to_have_count(8)
                         assert 'Vulnerability to Electricity -20%' in base_rows.all_inner_texts() and 'Armor from Combat Refresh Abilities +45' in base_rows.all_inner_texts()
@@ -531,7 +538,7 @@ def main():
                         rich['gameDataVersion'] = 'other-version'
                         page.evaluate('([key, build]) => localStorage.setItem(key, JSON.stringify(build))', [key, rich])
                         page.reload(); page.locator('.equipment-section').wait_for(); expand('Head')
-                        editor().get_by_label('Other slots & profiles', exact=True).check()
+                        settings().get_by_label('Other slots & profiles', exact=True).check()
                         inline_search(''); preview_level('90')
                         expect(power('power_12301')).to_have_count(0)
                         expect(editor().locator('.available-effect').first).to_be_disabled()

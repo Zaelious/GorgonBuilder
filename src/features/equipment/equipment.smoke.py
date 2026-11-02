@@ -81,7 +81,8 @@ def main():
                             expect(row.locator(':scope > summary svg')).to_be_visible()
                         page.screenshot(path=str(output / f'{mode}-empty-desktop.png'), full_page=True)
                         empty_height = page.locator('.equipment-section').bounding_box()['height']
-                        assert empty_height < 540, empty_height
+                        # One shared search/settings area adds a compact block above the same nine rows.
+                        assert empty_height < 650, empty_height
                         responses = page.evaluate('''async urls => Promise.all([...new Set(urls)].map(async url => {
                             const response = await fetch(url); const bytes = await response.arrayBuffer();
                             return {url, status:response.status, headers:Object.fromEntries(response.headers), receivedBytes:bytes.byteLength,
@@ -128,6 +129,7 @@ def main():
                             page.locator(f'#skill-{slot}').select_option(skill)
                             page.get_by_label(f'Open ability picker for bar {slot}', exact=True).click()
                             page.locator('.quick-add').first.click()
+                            page.get_by_role('button', name='Close ability picker', exact=True).click()
                         wait_saved()
                         baseline = saved()
                         # Empty primary rows are keyboard actionable; advanced slots stay collapsed.
@@ -250,7 +252,8 @@ def main():
                             row.locator(':scope > summary').click()
                             expect(row.locator('.equipment-icon')).to_have_count(1)
                             expect(row.locator('.equipment-row-content .equipment-icon, .equipment-selection-heading')).to_have_count(0)
-                            expect(row.locator('.item-facts')).to_be_visible()
+                            expect(row.locator('.item-stats')).to_be_visible()
+                            expect(row.locator('.item-details-source')).not_to_have_attribute('open', '')
                             expect(row.locator('.equipment-actions button')).to_have_count(2)
                             if slot == 'OffHand':
                                 page.screenshot(path=str(output / f'{mode}-compact-offhand-desktop.png'), full_page=True)
@@ -265,6 +268,10 @@ def main():
                         expect(page.locator('.equipment-results-title')).to_contain_text('Page 2')
                         expect(page.locator('.equipment-results-title')).to_be_focused()
                         page.locator('#equipment-search').focus()
+                        page.keyboard.press('Shift+Tab')
+                        expect(page.locator('.equipment-source-buttons button').last).to_be_focused()
+                        page.keyboard.press('Shift+Tab')
+                        expect(page.locator('.equipment-source-buttons button').first).to_be_focused()
                         page.keyboard.press('Shift+Tab')
                         expect(page.get_by_label('Close equipment picker', exact=True)).to_be_focused()
                         page.keyboard.press('Shift+Tab')
