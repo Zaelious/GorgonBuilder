@@ -635,7 +635,7 @@ Guidelines:
 
 ## T0011-F1 — Browser Import and My Items Picker
 
-**Status:** Planned; not started. Separate ticket/branch after T0011, before T0012.
+**Status:** Customer conditionally accepted and squash-merged 2026-11-02 via [PR #24](https://github.com/Zaelious/GorgonBuilder/pull/24), commit `4b84960`. Architect reviewed implementation and green CI/Cloudflare checks (640 tests). [Verification](T0011_F1_Verification.md) documents synthetic browser smoke; actual customer-export reference-resolution counts remain unverified pending private hands-on use. Mastery Spark outcomes were not imported.
 
 **Complexity:** High
 

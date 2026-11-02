@@ -1,7 +1,7 @@
 # GorgonBuilder — Character Import and Validation
 
-**Status:** T0011 parser implemented and accepted; browser My Items import and CurrentStats comparisons pending  
-**Version:** 1.1  
+**Status:** T0011 parser and T0011-F1 browser My Items import implemented/accepted; CurrentStats comparisons pending  
+**Version:** 1.2  
 **Date:** 2026-11-02
 
 ## Clarification About Export Freshness
@@ -59,10 +59,10 @@ Useful item-instance fields observed include:
 ## Implementation State
 
 - **T0011 (merged):** Pure local CharacterSheet/Storage parser, typed source snapshots, exact resolvable power/tier pairs, optional official v490 adapter, preserved unknowns, separate imbues, and sanitized regression tests. It does not equip any items.
-- **T0011-F1 (planned):** Browser-only file selection, searchable **My Items**, real owned item/power/tier inspection and manual equipment selection. This is the customer-preferred end-to-end import acceptance path.
+- **T0011-F1 (merged):** Browser-only file selection, searchable/filterable **My Items**, source exact power/tier and imbue inspection, manual equipment selection, schema-v1 selected instance persistence. Synthetic browser flows pass; real customer-export v490 resolution counts still await private hands-on testing. Mastery Spark history is unavailable and is not inferred.
 - **T0016 (later):** CurrentStats-vs-modeled aggregate comparisons; this no longer duplicates the basic import UI.
 
-Independent checks of fresh customer exports against T0011's typed field constraints succeeded after the next-XP sentinel fix. The exact full Node CLI with v490 reference-resolution on the real private files was **not** run; actual resolved/unresolved ID and tier counts remain to be checked in T0011-F1. Never commit original customer reports.
+Independent checks of fresh customer exports against T0011's typed field constraints succeeded after the next-XP sentinel fix. The exact full Node CLI with v490 reference-resolution on the real private files was **not** run; actual resolved/unresolved ID and tier counts remain to be checked through the now-available T0011-F1 UI using private customer files. Never commit original customer reports.
 
 ## What Import Can Do
 

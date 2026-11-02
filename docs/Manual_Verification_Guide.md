@@ -176,9 +176,12 @@ Use sanitized fixtures and fresh private exports without ever committing origina
 
 ### T0011 — Parser acceptance (2026-11-02)
 
-[PR #23](https://github.com/Zaelious/GorgonBuilder/pull/23) passed GitHub CI/Cloudflare with 611 tests (98 import-focused) and was squash-merged as `a197599`. The next-XP `-1` sentinel discovered in a real export was fixed and regression-tested. Independent real-file field-constraint review found zero structural/type errors. **Limitation:** exact Node reference-resolution counts for private exports were not run. The public browser-local T0011-F1 My Items workflow is the next verification gate and must check actual item/power/tier resolution, without publishing user data.
+[PR #23](https://github.com/Zaelious/GorgonBuilder/pull/23) passed GitHub CI/Cloudflare with 611 tests (98 import-focused) and was squash-merged as `a197599`. The next-XP `-1` sentinel discovered in a real export was fixed and regression-tested. Independent real-file field-constraint review found zero structural/type errors. **Limitation:** exact Node reference-resolution counts for private exports were not run. The T0011-F1 browser-local My Items workflow is now merged. The remaining private browser verification must check actual item/power/tier resolution without publishing user data.
 
 
+### T0011-F1 — Browser My Items UI (merged 2026-11-02)
+
+[PR #24](https://github.com/Zaelious/GorgonBuilder/pull/24) was architect-reviewed and merged as `4b84960` after GitHub CI/Cloudflare success (640 tests, 29 new). Synthetic Chromium dev/preview checks exercised 1440/375/320px, duplicate item instances, exact source tiers, selected gear persistence and offhand replacement. Customer conditional acceptance did not include uploading private files yet. **Still required:** use a current CharacterSheet and Storage export in the actual browser; inspect real v490 resolved/unresolved counts and 2–3 familiar items/power tiers. Confirm Spark rolls are not imported and not inferred from CraftPoints. Keep exports private; document non-identifying counts and bugs only.
 
 Verify:
 

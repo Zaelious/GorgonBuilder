@@ -1,6 +1,6 @@
 # T0011-F1 — Browser Import and My Items Picker
 
-Branch: `feature/t0011-f1-browser-my-items`, based on main `715cba5`.
+**Status:** Customer conditionally accepted; architect-reviewed and squash-merged 2026-11-02 via [PR #24](https://github.com/Zaelious/GorgonBuilder/pull/24), commit `4b849607431b2ca7d4f38083b222e3437ed4a45d`. Branch base: `715cba5`.
 
 ## User workflow
 
@@ -144,7 +144,4 @@ blocked storage can prevent selected gear from saving; the existing save-error
 and retry flow remains visible. There is no claim that real customer reference
 resolution has passed until the customer runs it in the browser.
 
-After architect review and customer acceptance/merge, update
-`Repo_Current_State.md`, T0011-F1 status in `Tickets.md`,
-`Manual_Verification_Guide.md`, and `Character_Import_And_Validation.md` with
-accepted browser evidence. KI-0002/0003 (equipped/Spark limitations) remain valid.
+Post-merge documentation was synchronized in the subsequent docs commit. The customer accepted after confirming that individual Mastery Sparks are **not** reconstructed from imports. Existing configured planner Spark settings are retained when equipment is replaced. KI-0002/0003 remain valid. The private real-export browser validation has **not** been completed; do not claim actual v490 mapping counts until checked.

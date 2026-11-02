@@ -6,7 +6,7 @@
 
 ## Current Status
 
-T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on verified v490 data, normalized runtime lookups and BuildDocument v1/local autosave. T0008 supplies independent skill/ability bars; T0009 adds nine always-visible primary equipment rows, official item icons with fallbacks, collapsed other slots, item search and persistent equip/replace/clear. T0009-F1 removes duplicated expanded headings and makes official OffHand/OffHandShield alternatives mutually exclusive in one loadout position, preserving exact source slots and explicit legacy conflict recovery. T0010 treasure-mod editing is now merged and customer accepted, including inline Available/Selected, source-backed item/skill filtering, compact item STATS and ability Relevant Mods. T0011 pure CharacterSheet/Storage parsing is now completed and merged. The browser My Items workflow, damage calculations and remote save/share remain future work.
+T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on verified v490 data, normalized runtime lookups and BuildDocument v1/local autosave. T0008 supplies independent skill/ability bars; T0009 adds nine always-visible primary equipment rows, official item icons with fallbacks, collapsed other slots, item search and persistent equip/replace/clear. T0009-F1 removes duplicated expanded headings and makes official OffHand/OffHandShield alternatives mutually exclusive in one loadout position, preserving exact source slots and explicit legacy conflict recovery. T0010 treasure-mod editing is now merged and customer accepted, including inline Available/Selected, source-backed item/skill filtering, compact item STATS and ability Relevant Mods. T0011 pure CharacterSheet/Storage parsing is now completed and merged. The browser-local My Items workflow is also merged via T0011-F1; damage calculations, CurrentStats validation and remote save/share remain future work. Actual customer-export ID/power/tier reference-resolution still requires private hands-on checking.
 
 ## Completed Tickets
 
@@ -27,15 +27,17 @@ T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on
 
 - **T0011 — Character Import Core and Sanitized Fixtures** (customer-accepted, squash-merged 2026-11-02 via [PR #23](https://github.com/Zaelious/GorgonBuilder/pull/23), commit `a197599`). Typed local report parsing, pure APIs, exact known treasure identities, privacy-safe CLI, unresolved reference preservation, and the -1 next-XP fix. [Verification](T0011_Verification.md): 611 tests, private actual-file field-constraint review; reference-resolution counts still need T0011-F1 browser testing.
 
+- **T0011-F1 — Browser Import and My Items Picker** (customer conditionally accepted and squash-merged 2026-11-02 via [PR #24](https://github.com/Zaelious/GorgonBuilder/pull/24), commit `4b84960`). Browser-local CharacterSheet/Storage upload, skill/metadata diagnostics, searchable and filterable concrete My Items inventory, exact source TSys powers/tiers and imbues, manual selection with version-1 imported instance persistence, offhand exclusivity, protected draft handling. [Verification](T0011_F1_Verification.md): 640 passing tests and synthetic dev/preview Chromium smoke at 1440/375/320px, green GitHub CI and Workers Builds. Private customer-export v490 resolution remains an explicit follow-up. **No Spark-roll import**, no CurrentStats comparison.
+
 **Deployment housekeeping completed** via [PR #2](https://github.com/Zaelious/GorgonBuilder/pull/2) (squash commit `9df290379b396f8bb4cc2717e154bbbca577af98`): explicit static-assets `wrangler.jsonc`, Wrangler 4.156.0 and synchronized lockfile, deploy/preview scripts, GitHub CI with Cloudflare dry-run, and deployment instructions.
 
 ## Active Ticket
 
-None. T0011 has been accepted and merged. The UI follow-up has not started.
+None. T0011-F1 has been customer conditionally accepted and merged. Real customer-export browser verification is still outstanding but not a code-merge blocker.
 
 ## Planned Next Ticket
 
-**T0011-F1 — Browser Import and My Items Picker** (planned; separate scoped PR after explicit kickoff). T0012 follows the hands-on import verification milestone.
+**T0012 — Build Modifier Aggregation Engine** (awaiting explicit kickoff). T0011-F1's real-export mapping counts and representative gear/tier checks are a separate customer follow-up; do not claim that verification has passed.
 
 The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/DPS deferred to the following ticket series.
 
@@ -43,7 +45,7 @@ The approved condensed v1 backlog is **T0001–T0021**, with stateful Rotation/D
 
 - Vite 8, React 19, strict TypeScript 6
 - ESLint 10 with TypeScript rules and core-layer import restrictions
-- Vitest 5 with jsdom for 611 tests at accepted T0011 head, including equipment/editor tests and Vite transport integration tests; optional Chromium/Playwright layout, transport and equipment smoke
+- Vitest 5 with jsdom for 640 tests at accepted T0011-F1 head, including equipment/editor tests and Vite transport integration tests; optional Chromium/Playwright layout, transport and equipment smoke
 - Shared CSS variables and responsive baseline styles
 - Cloudflare Workers Static Assets for the Vite frontend (no Cloudflare Vite plugin or backend yet)
 - T0008 connects T0007's injected local draft/autosave to the actual planner; remote provider-agnostic saving remains future work
@@ -94,7 +96,7 @@ src/
 │  ├─ abilities/             (picker, bars, official icons/facts, equipped Relevant Mods)
 │  ├─ comparison/            (placeholder)
 │  ├─ equipment/             (nine-slot planner, picker, official icons, tests/browser smoke)
-│  ├─ import/                (placeholder)
+│  ├─ import/                (T0011-F1 browser import, inventory/picker UI and verification tests)
 │  ├─ mods/                  (inline mod editor, equipped STATS, source formatting, tests)
 │  ├─ skills/                (compact combat-skill/level controls)
 │  └─ sparks/                (placeholder)
@@ -117,7 +119,9 @@ GitHub CI: `.github/workflows/ci.yml` (npm install, lint, typecheck, test, build
 
 ## Build/Test Status
 
-**Latest accepted T0011 baseline (2026-11-02):** [PR #23](https://github.com/Zaelious/GorgonBuilder/pull/23) merged as `a197599`. [Actions CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41369780469) and Cloudflare checks passed (611 total, 98 focused import tests). Independent review of two privately supplied real reports against exact field/type constraints had zero errors, including the 47 valid -1 next-XP values. Exact Node v490 ID/tier resolution was not run on the private reports and must be checked through T0011-F1. Customer originals were never committed.
+**Latest accepted T0011-F1 baseline (2026-11-02):** [PR #24](https://github.com/Zaelious/GorgonBuilder/pull/24) merged as `4b84960`. [GitHub CI #76](https://github.com/Zaelious/GorgonBuilder/actions/runs/41372543825) and Cloudflare Workers Builds passed with 640 total tests (29 F1 tests). Codex reports Chromium dev and production preview checks at 1440/375/320px with synthetic files; deployed preview was not remotely browser-smoked because of executor network restrictions. Architect reviewed core contracts/instance selection/persistence and found no blocking issue. Customer gave conditional approval after confirming Spark rolls are not inferred. Actual customer-export mapping accuracy and resolved/unresolved counts are still unverified.
+
+**Prior accepted T0011 baseline (2026-11-02):** [PR #23](https://github.com/Zaelious/GorgonBuilder/pull/23) merged as `a197599`. [Actions CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41369780469) and Cloudflare checks passed (611 total, 98 focused import tests). Independent review of two privately supplied real reports against exact field/type constraints had zero errors, including the 47 valid -1 next-XP values. Exact Node v490 ID/tier resolution was not run on the private reports and must be checked through T0011-F1. Customer originals were never committed.
 
 **Prior accepted T0010 baseline (2026-11-01):** [PR #22](https://github.com/Zaelious/GorgonBuilder/pull/22) merged as `385e4b9`. [GitHub Actions CI](https://github.com/Zaelious/GorgonBuilder/actions/runs/41361363719) passed lint, typecheck, 513/513 tests in 24 files, production build and Wrangler deploy dry-run; Cloudflare Workers Preview check passed. The implementation agent reported desktop/mobile Chromium dev and production-preview smoke runs; screenshot evidence and risks appear in [T0010 verification](T0010_Verification.md). Exact saved power/tier IDs, 500ms local autosave and the exclusive OffHand behavior remain intact. Profile membership is not proven equipping legality; unvalidated ability-wide effects and inferred attribute display formats remain explicit caveats.
 
