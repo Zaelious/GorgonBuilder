@@ -154,6 +154,10 @@ This is a separate narrow preflight PR, not part of T0009's equipment UI.
 
 ## Calculation Tickets
 
+### T0012 accepted modifier aggregation (2026-11-02)
+
+[PR #29](https://github.com/Zaelious/GorgonBuilder/pull/29) passed final-head GitHub CI, Cloudflare preview and product-owner optional browser regressions, and was squash-merged as `c611f72`. [T0012 evidence](T0012_Verification.md): 773 tests (46 new) and deterministic synthetic Psychology/Cow-Unarmed aggregation reports. Run `npx vitest run src/core/calculation` for 46 focused tests. Confirm skill deduplication; fixed-item and effective imported existing power sources; independently staged candidates; original imported metadata not counted; unknown mappings preserved; and removing/editing one source alters only its contributions. No visible calculation UI is expected yet. Advancement sums are assumed. The product owner confirmed duplicated selections of a skill cannot have different actual levels; T0012 warns and omits progression on legacy conflict, pending UI correction. Validate real-gear damage in T0013 and imported CurrentStats in T0016, with temporary buffs and passive effects accounted for.
+
 Verify:
 
 - exact fixture/input
