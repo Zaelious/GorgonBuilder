@@ -777,7 +777,7 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 
 ## T0008-F1 — Imported Effective Skill Levels and Ability Picker UX
 
-**Status:** Approved; not started
+**Status:** Customer-accepted and merged 2026-11-02 via [PR #27](https://github.com/Zaelious/GorgonBuilder/pull/27), squash commit `445735e`.
 
 **Complexity:** Standard
 
@@ -802,11 +802,12 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 
 **Requirements:**
 - When a user selects a combat skill after importing a CharacterSheet, initialize that slot's level from its matching resolved imported skill. Keep the level editable and autosaved.
-- Treat bonus skill levels as part of the same **effective skill level** for ability availability and applicable progression effects; do not use a separate bonus-level mechanic. Preserve the report's raw `Level` and `BonusLevels` values for provenance. Verify whether report `Level` already includes `BonusLevels` before combining them so bonuses are not double-counted; document and test the verified interpretation. If the report semantics cannot be verified, surface the limitation instead of silently guessing.
+- Customer-verified CharacterSheet `Level` already includes `BonusLevels`: use exported `Level` directly as the effective combat level, without re-adding bonus or Prodigy points. Preserve raw `Level`, `BonusLevels`, and metadata for provenance. See [corrected source evidence](../src/features/import/skill-levels.md).
 - Importing or replacing a report alone must not overwrite existing skill selections, manually edited levels, ability bars, or equipment. A deliberate subsequent skill selection may initialize the selected slot's level from the imported report.
 - General bar-side **+** opens continuous add mode: keep picker/search/scroll position open across additions, display an updating bar count, and disable further adds at six without forcibly closing.
 - Numbered empty-slot **+** and existing-slot Replace remain single-choice and close on successful selection. Preserve focus/keyboard accessibility.
 - Mark abilities already on **that bar** in the picker, but allow duplicates. Keep bars A and B independent, including same-skill A+A behavior.
+- For a selected skill with a differing resolved imported level, provide explicit **Apply imported level** without clearing abilities, equipment, mods, Sparks or manual overrides on reimport. Occupied ability icons have accessible compact × removal controls.
 - A later T0014 optional **Respect Skill Level** mode remains separate; this ticket must not automatically replace already-selected ability tiers or implement damage math.
 
 **Non-goals:**
@@ -818,17 +819,18 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 **Acceptance criteria:**
 - Imported and manually edited effective levels display correctly in both skill selectors and survive refresh.
 - Missing/unresolved skill data leaves the existing/manual behavior intact; report replacement does not silently overwrite the build.
-- Tests cover bonus-level interpretation without double-counting, synchronization of the level input, and non-destructive import behavior.
+- Tests cover customer-observed no-double-counting (Werewolf 106/6 → 106; Deer 112/12 → 112; Cow 111/11 → 111; Unarmed 110/10 → 110), synchronization of the level input, explicit level repair and non-destructive import behavior.
 - General + supports multiple additions with unchanged search and a live count; numbered + and Replace close after one choice; full-bar behavior is clear.
 - Already-present abilities are marked, duplicates remain selectable, and independent bars are preserved.
-- Automated quality checks pass.
+- Automated quality checks pass; 714 tests, final-head GitHub CI and Cloudflare preview passed. Customer hands-on accepted.
 
 **Manual verification:**
 1. Import a CharacterSheet, choose two imported skills, and compare displayed effective levels with in-game totals including bonus levels; manually override one, refresh, and verify persistence.
 2. Reimport reports and verify that existing skill/ability choices and manual levels remain untouched; select another imported skill and verify its initialized level.
 3. Use bar-side + to add several abilities without reopening the picker; verify selection markers, retained search, count, full-bar behavior and keyboard dismissal.
 4. Use a numbered empty-slot + and Replace to confirm each closes after selection; test a same-skill A+A build.
-5. Run lint, typecheck, tests and build.
+5. Check Apply imported level on an existing saved build and quick × removal by pointer/touch/keyboard; confirm unaffected equipment/mods and autosave after refresh.
+6. Run lint, typecheck, tests and build. [Implementation and browser evidence](../src/features/skills/verification/T0008-F1.md).
 
 ## T0010-F1 — Shared Equipment Mod Controls and Compact Item Metadata
 
@@ -846,7 +848,7 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 - src/features/equipment
 - src/features/mods
 - src/features/import (item metadata presentation only)
-- src/app (shared equipment UI state only)
+- src/app (shared equipment UI state and narrow confirmed current-build reset path)
 - related styles and focused tests
 
 **Do not touch:**
@@ -862,12 +864,14 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 - Remove repeated per-item mod filter toolbars. Keep STATS, Available/Selected mod editing, effective imported working powers, original historical evidence and warnings intact.
 - Collapse the verbose metadata block above STATS into a single default-closed **Item details & source** section, covering imported instance/rarity/location/actual level, original imported item, target level, published skill requirements and source/provenance details; do not remove these values.
 - Do not hide actionable compatibility or unresolved-data warnings in the collapsed section. Do not repeat the expanded item's name or icon unnecessarily.
+- Add a compact **Clear build** action with explicit confirmation for resetting the **current working build only** (skill selections/levels, both ability bars, equipped items including working mods/Sparks, title, notes, and target configuration) to the normal default build document. Cancel must leave the draft unchanged. A confirmed reset must use existing safe local autosave and survive refresh, without schema migration; disable the action for protected/read-only drafts. Keep separately imported in-memory CharacterSheet/Storage inventory and browser preferences intact; avoid deleting other unrelated local data.
 
 **Non-goals:**
 - No new global multi-slot mod assignment or cross-equipment optimizer.
 - No change to TSys eligibility logic or treasure-tier selection semantics.
 - No change to imported instance identity or saved modifier data.
 - No new BuildDocument field for transient browser filters.
+- No deletion of imported reports, browser preferences, unrelated saved builds, or remote data; reset does not alter the saved schema.
 
 **Acceptance criteria:**
 - One visible mod search and one expandable settings section control all equipment Available Mods views without duplicated toolbars.
@@ -875,13 +879,15 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 - Per-item slot/profile warnings, exact tiers and editing behavior are unchanged; minimum-equipment-level filtering remains independent.
 - STATS is immediately visible when a selected item's row is expanded; source and level metadata is available under one default-closed disclosure; important warnings remain visible.
 - Test common and imported equipment cases at desktop and narrow widths; automated quality checks pass.
+- Clear build confirmation explains the scope; Cancel causes no state/storage change, Confirm resets only the current working build and persists after refresh, read-only drafts remain protected.
 
 **Manual verification:**
 1. Search for a mod term such as lightning, change preview level/category/All skills and switch between several item rows; verify controls and results stay consistent without falsely changing eligibility.
 2. Check a custom numeric preview target and the independent minimum equipment search filter.
 3. Expand an imported Head or Necklace: confirm STATS is visible immediately, source metadata is collapsed, and original instance/requirements/provenance are still accessible.
 4. Edit/remove/restore an imported treasure power and stage a candidate mod to verify nothing is lost or double-counted visually.
-5. Check narrow layouts, keyboard interaction, console, lint, typecheck, tests and build.
+5. Build a populated draft (two skills/bars, equipment, imported working mods/Sparks, custom title/notes/target); cancel Clear build and verify it is unchanged, then confirm and verify a clean default build after refresh. Confirm preferences and imported inventory remain usable and protected drafts cannot reset.
+6. Check narrow layouts, keyboard interaction, console, lint, typecheck, tests and build.
 
 ## T0012 — Build Modifier Aggregation Engine
 
