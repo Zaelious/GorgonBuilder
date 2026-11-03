@@ -99,7 +99,7 @@ chance, target vulnerability (`VULN_*`, T0014), combat refresh, taunt, reset tim
 power cost, accuracy/evasion, `*_DIRECT`/`*_INDIRECT`/elite mitigation, pet and
 sender attributes, attributes outside ability hooks (e.g. `BOOST_ABILITY_COREATTACK`),
 and skill-named families whose label names something else (e.g.
-`BOOST_SKILL_ANIMALHANDLING`). All prose effects are also unsupported.
+`BOOST_SKILL_ANIMALHANDLING`). All prose effects are unsupported by default, except two exact curated Mock powers (`power_4066` and `power_4032`) added in T0014; see `treasure-effect-rules.ts`. T0013-F1 is prioritized to audit all combat treasure-effect tiers and expand shared direct-damage coverage across skills. This is *not* a general prose parser.
 
 ### Adding a mapping
 
