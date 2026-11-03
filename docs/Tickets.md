@@ -981,9 +981,66 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 2. Record mismatches rather than modifying formulas by guesswork.
 3. Run focused tests and the quality suite.
 
+## T0013-F1 — Combat Treasure Effect Coverage and Burst Estimate
+
+**Status:** Next priority, approved for implementation handoff 2026-11-03 after customer-accepted T0014. No implementation branch or PR yet.
+
+**Complexity:** High; deliver one auditable effect-family coverage batch, not unrestricted game-mechanics work.
+
+**Verification:** Automated dataset-wide inventory plus customer hands-on comparison.
+
+**Goal:** Make directly damage-affecting treasure effects work across combat skills instead of implementing only the two Mock prose examples. First enumerate *all* v490 combat treasure-power/tier effects, then implement shared source-backed families and explicit curated exceptions, with an honest per-skill coverage report. Add an optional transparent estimate for undocumented intermediate direct Burst falloff.
+
+**Dependencies:** T0005,T0012,T0013,T0014.
+
+**Allowed areas:**
+- src/core/calculation
+- targeted official-data lookup/normalization utilities only if necessary
+- src/features/abilities/AbilityResults.tsx for compact modeled/estimated information
+- tests, deterministic coverage report and verification documentation
+
+**Do not touch:**
+- Spark modeling/integration (T0015)
+- rotation/DPS simulator, actual monster selection, backend or build save schema
+- unrelated equipment UI, imported-report workflow, visual redesign
+- unconditional parsing of arbitrary English prose as a trusted damage formula
+
+**Requirements:**
+1. **Complete official-data inventory:** Walk the pinned v490 TSys treasure powers and every published tier/effect. Produce reproducible machine-readable and human-readable reports grouped by combat skill, power ID/InternalName, effect string, and normalized attribute/hook. Separate known direct-damage effects, indirect/DoT, conditional/stateful effects, conversions, non-damage effects and unresolved records. Track denominators and counts by skill and category; identify effects currently handled by generic attribute rules, the two Mock curated rules, and unsupported paths. A visible Relevant Mods match alone does *not* imply calculation support.
+2. **Coverage-first shared mappings:** Prioritize common deterministic direct-damage families (ability/skill/attack-type/damage-type flats and percents, base-only bonuses, multiplicative reductions, and stateless conversions) using official IDs, structured tokens, hook/keyword scope and published DisplayType. One mapping should work for every skill that shares a real mechanic; do not add hand-written per-skill duplicates for a general rule. Keep exact equipment/power/tier provenance, working imported powers and planned candidate mods, and prevent double counts. Unsupported or conditional effects remain traceable.
+3. **Curated prose exceptions:** For damage-affecting pure-text abilities, use exact official power ID, InternalName, tier wording/templates and validated hooks/keywords, as in T0014's Mock examples. Add grouped, well-tested families across combat skills based on audit priority. Do not equate unrelated conversion attacks, triggered extra attacks, DoTs, enemy-state effects, taunt, and cooldown with simple direct damage. Account for conflicts/duplicate conversions conservatively.
+4. **Honest coverage report:** Every classified damage-relevant effect must be labeled modeled, partially modeled, excluded as out-of-scope, or unmodeled with an exact reason; calculate per-skill and overall coverage. Distinguish 'all effects inventoried' from 'all effects simulated'. The primary review deliverable is meaningful expansion beyond Psychology, representative fixtures covering *every* combat skill, and explicit remaining families for small follow-ups. Do not assert comprehensive formula coverage merely because a power is displayed.
+5. **Burst 6–8 estimates:** For documented Burst attacks, preserve full damage through the published 3 + floor(radius/10) target threshold, documented direct floor 25% at nine-plus when not contradicted by the radius allowance, and indirect floor 50% at nine-plus for future DoT support. For currently undocumented intermediate **direct** target counts, show an **Estimated** value (not 'validated') using explicit linear interpolation from 100% at the last full-damage target count to 25% at nine targets: `100% - (n - fullThreshold) × (75% / (9 - fullThreshold))`. Example at 20 m: 5=100% documented, 6≈81.25% estimated, 7≈62.5% estimated, 8≈43.75% estimated, 9=25% documented. Preserve separate ability-specific ×0.5 penalties and exact/estimated provenance. Handle fullThreshold >= 9 without divide-by-zero or forcing contradictory documented claims. Do not invent a radius remainder's random roll; surface its uncertainty. Do not imply older 2018 measured falloff is current. Do not add indirect/DoT damage totals merely for this estimate.
+6. **Compact UI:** Display estimated direct Burst damage and totals wherever the existing engine previously said undocumented falloff, with an unobtrusive 'Estimated' label, and the actual interpolation equation and data source in the existing breakdown. Keep Damage analysis opt-in and all result/disclosure scroll behavior intact. Replace misleading ability-specific warnings based on build-wide unsupported counts with clearly build-wide wording unless applicability can be proven.
+7. **Validation:** Preserve the 178→254.54 Mock 11 +43% and the ×0.5 conversion regressions, unaffected off-skill abilities, skill-base contribution against original base, no double-counting, ordinary shield slot/import behavior and browser-session preferences. Controlled real-game differences must be recorded as evidence and not force unverified formula changes into validated status.
+
+**Non-goals:**
+- 100% simulation of all published combat prose, triggered chains, timed buffs, DoT, pets, target-state conditional effects, or crit systems within one PR.
+- Mastery Sparks (T0015), DPS, target-vulnerability formula rewrite or combat rotation.
+
+**Acceptance criteria:**
+- A reproducible v490 effect inventory with per-skill denominators and supported/unmodeled reasons covers the whole pinned combat power dataset, not just user-selected powers.
+- General direct-damage families work across skills with correct scope, effect provenance and no double counts. Representative regression fixtures touch every combat skill and include multi-skill builds; specific modeled vs unsupported categories remain explicit.
+- Curated exact prose rules expand meaningfully beyond Mock with tests. Document remaining uncovered families and recommended subsequent small tickets.
+- Mock 20 m direct Burst 6/7/8 targets presents approximate 81.25% / 62.5% / 43.75% (with label **Estimated**), while 5 full and 9 floor stay source-backed; invalid/edge radii and unknown delivery are covered.
+- No T0015 work, build schema changes, misleadingly validated estimates, unrelated UI redesign or regression in scrolling.
+- Pinned-data check, lint, typecheck, full tests, build, and focused real-browser checks pass.
+
+**Manual verification:**
+1. Test at least one statically modeled direct-damage treasure effect for Psychology, Cow/Unarmed and three other unrelated combat skills; compare controlled deltas, not only synthetic absolute totals.
+2. Check imported working power vs planned candidate mod and off-skill exclusion; removing one source reverses the exact delta.
+3. Inspect the coverage report for every combat skill, verify unmodeled special mechanics remain visible and are not silently applied.
+4. With 20 m Burst check 1, 5, 6, 7, 8 and 9 enemies; verify estimated labels and arithmetic for 6–8, and intact ×0.5 ability reduction.
+5. Verify Damage analysis off/on, compact popovers, expanded scrolling and mobile layout (1440×900, 375×812, 320×812); run the quality suite.
+
+**Reference evidence:**
+- [Official July 30, 2024 update](https://wiki.projectgorgon.com/wiki/Game_updates/2024-07-30): full-damage radius bonus, direct 25% floor, indirect 50% floor at nine targets; does *not* publish intermediate multipliers.
+- [2018 player AoE tests](https://forum.projectgorgon.com/archive/index.php/t-1516.html): an older, different non-linear direct curve; historical context only, not proof of the post-2024 values.
+- [T0014 verification](T0014_Verification.md): baseline code, Mock power IDs and known assumptions.
+
 ## T0014 — Ability Results UI and Custom Target Dummy
 
-**Status:** Next ticket; kickoff requested 2026-11-02 after T0013 merge. Implementation PR not yet opened.
+**Status:** Customer-accepted and squash-merged 2026-11-03 via [PR #34](https://github.com/Zaelious/GorgonBuilder/pull/34), commit `19a26bf3f6d30ef63f9bd80fbeb4b5e89e90efcf`. 851 tests and green CI; browser scroll regression at four viewport sizes. See [T0014 verification](T0014_Verification.md). Two exact Mock prose rules and documented Burst floor added; remaining combat-wide modifier coverage is prioritized in T0013-F1, before T0015.
 
 **Complexity:** Standard
 
