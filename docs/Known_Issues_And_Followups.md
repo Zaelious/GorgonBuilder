@@ -142,13 +142,20 @@ The published attribute token syntax is parsed separately in `src/features/mods/
 - optional accounts/claim anonymous builds
 - game-data diff/update automation
 
-## T0013-F1 follow-ups discovered (2026-11-03, implementation review pending)
+## T0013-F1 follow-ups discovered (2026-11-03, updated by the direct-damage correction; review pending)
 
-- **T0013-F2 candidate: remaining stateless treasure prose.** Continue from the
-  [complete inventory](treasure-coverage/README.md), prioritizing direct clauses
-  with authoritative attributes. Add exact allow-list batches; preserve secondary
-  mechanics. This is recommended before claiming complete direct-modifier coverage,
-  and can be scheduled before T0015 if broader direct coverage is required.
+- **Stateless prose (done in the T0013-F1 correction).** The reusable grammar covers
+  unconditional named-ability, skill and group damage clauses; 123 unconditional combat
+  entries remain (typos, missing attributes, split components). See the
+  [report](treasure-coverage/README.md).
+- **Next: critical hits** (Anatomy/Phrenology, creature-type target, ability crit rules,
+  equipment crit). The creature-type selector also unlocks 1,460 conditional
+  creature-type entries and 250 Elite entries.
+- **Target/state condition and buff toggles** for 2,563 conditional and 2,933 stateful
+  direct entries (sub-families listed in the report).
+- **Runtime label for non-damage remainders.** Taunt/reuse/Rage side clauses are still
+  listed as "Across build" unmodeled effects in the damage card; they do not change
+  the direct number. Consider a separate non-damage label in a UI ticket.
 - **T0013-F3 candidate: damage allocation and conversion measurements.** Establish
   flat allocation among ordinary/health/armor hit components, indirect delivery,
   stacking/order, stateless damage-type conversions and duplicate-conversion rules.

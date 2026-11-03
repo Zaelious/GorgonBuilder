@@ -1,60 +1,93 @@
-# T0013-F1 — Combat Treasure Effect Coverage and Burst Estimate
+# T0013-F1 — Combat Treasure Effect Coverage, Direct-Damage Correction and Burst Estimate
 
-Implemented for customer review; **not merged and not game-math accepted**.
-Base: latest `main` at `160b073` (PR #35), branch
-`feature/t0013-f1-combat-treasure-coverage`. No private character data was used.
+Implemented for customer review on PR #36; **not merged and not game-math accepted**.
+Base: `main` at `160b073` (PR #35), branch `feature/t0013-f1-combat-treasure-coverage`.
+No private character data was used. Critical hits, DoTs, pets and Sparks are not implemented here.
 
-## Outcome and coverage
+## Final correction (second T0013-F1 commit)
 
-The [reproducible report](treasure-coverage/README.md) inventories **all 1,947 powers,
-45,634 tiers and 52,039 effect entries**, with exact IDs/InternalNames, source text,
-attributes/DisplayTypes/hooks, conditions, before/after calculation support and reasons.
-All **35 official combat skills / 4,089 associated abilities** are represented;
-seven skills have no published positive direct hit and receive explicit absent fixtures.
-Combat-associated powers comprise **1,613 powers / 34,276 tiers / 35,330 entries**.
+The first commit's 22.83% figure measured *all* combat mechanics (DoT, pet, crit, reactive) and counted
+any taunt/reuse clause as partial. The [regenerated report](treasure-coverage/README.md) now keeps four
+measures separate: **inventory completeness**, **direct-damage coverage**, **other mechanics** and
+**validation confidence**. A power that adds +X% damage and changes taunt/reuse is *fully calculated*
+for direct damage; its taunt/reuse clause is recorded under other mechanics.
 
-The primary damage denominator is **21,808 combat-associated effect entries**, after
-excluding unrelated non-damage/defense effects. Each published tier/effect occurrence
-counts once. Generic/AnySkill and noncombat associations are inventoried separately;
-they are never counted repeatedly across skills. Relevance screening is an auditable
-conservative classification, not exhaustive human interpretation or executable prose.
+### Direct-damage coverage (same denominator, three snapshots)
 
-| Measure | T0014 before | T0013-F1 after |
-|---|---:|---:|
-| Fully modeled effects | 4,914 | 4,979 |
-| Partially modeled effects | 176 | 1,029 |
-| Unmodeled effects | 16,718 | 15,800 |
-| **Full coverage** | **22.53%** | **22.83%** |
-| Any contribution (full or partial) | 23.34% | 27.55% |
+| Scope | Direct entries / powers | T0014 baseline | F1 first commit | **F1 final** | Final full + partial |
+|---|---:|---:|---:|---:|---:|
+| Combat skills (35) | 16,565 / 745 | 30.40% | 35.94% | **59.64%** | 65.89% |
+| Generic / AnySkill / non-combat associations | 4,755 / 124 | 47.40% | 47.47% | **48.79%** | 53.00% |
+| All associations | 21,320 / 869 | 34.19% | 38.51% | **57.22%** | 63.01% |
 
-**918 previously unmodeled combat entries across 40 powers gain support.** Full
-coverage intentionally gives no credit to partial entries. Inventory completeness
-is 100% of published entries; calculation completeness is not. A working numeric
-contribution still uses the existing assumed stacking/order, not a newly validated
-combat formula. The report includes the required 35-row per-skill table.
+Power counts (combat skills, final): **428 fully / 49 partially / 268 unmodeled of 745** direct powers
+(T0014: 215 / 7 / 523). 5,019 direct entries across 220 powers gained a calculated contribution since the
+first commit. Generic/AnySkill entries are counted once in their own rows, never duplicated into skills.
+
+**Straightforward modifiers** (unconditional skill / ability / group-keyword / All Direct / damage-type
+direct / Skill Base) on combat skills: **11,012 entries, 89.48% fully calculated, 98.88% with a
+calculated contribution, only 123 unmodeled** (427 of 483 powers fully). The remaining direct gaps are
+conditional or stateful mechanics, not plain bonuses.
+
+### The earlier 5,044 unmodeled "direct-related" entries
+
+Reproduced exactly from the retained legacy screening (225 powers) and reclassified:
+
+| New classification | Entries | Result |
+|---|---:|---|
+| Unconditional flat / percentage | 3,283 | **3,021 fully + 176 partially calculated**, 86 unmodeled (typo/no attribute/split) |
+| Multi-hit, split or variable damage | 437 | unmodeled (armor/health components, random ranges, extra traps) |
+| Stateful combat | 333 | unmodeled (timed buffs, next attack, delayed) |
+| Conditional direct | 183 | unmodeled (creature type, Elite, target state) |
+| Damage-type conversion | 115 | unmodeled |
+| AoE / targeting change | 49 | unmodeled |
+| Pets / summons | 298 | misclassified: outside direct calculator |
+| Reactive (attackers, shields) | 199 | misclassified: outside direct calculator |
+| Defensive / incoming | 97 | misclassified: outside direct calculator |
+| Ally support | 50 | misclassified: outside direct calculator |
+
+### Remaining direct gaps by reusable family (final)
+
+| Family | Entries | Powers | Next approach |
+|---|---:|---:|---|
+| Stateful combat (timed self buffs 1,589; target debuffs 451; when-hit/stacking 280; next attack 116; delayed 197; combos 73) | 2,933 | 144 | explicit "assume buff/debuff active" toggles |
+| Conditional direct (creature type 1,460; target state 346; rage/armor threshold 235; Elite 250; next-attack type 197; active skill 75) | 2,563 | 79 | target-condition inputs; creature type shared with the critical-hit ticket |
+| Multi-hit / split / variable | 1,000 | 43 | component allocation + expected-value rules |
+| No applicable published combat hit (Sonic/Divine/Demonic, Crossbow, Fairy Magic, item abilities) | 550 | 18 | none possible with current data |
+| AoE / targeting change | 507 | 24 | generalize the Mock Burst conversion |
+| Split hit components: flat on multi-component hits (328 partial + 62 unmodeled) | 390 | 20 | allocation measurement |
+| Partial / unmodeled: damage-type conversion | 454 | 19 | conversion stage before type bonuses |
+| Partial: target debuff / timed buff / random / AoE / triggered / keyword side clauses | 663 | 28 | as above |
 
 ## Implementation and boundaries
 
-- `keyword-damage.ts` reads official static keyword damage hooks for attack families
-  across skills. All required keywords must match; excluded/conditional keywords,
-  active-skill-gated rules and effect-gated rules are not activated. Direct and
-  keyword hook membership is unioned; a modifier contributes once. DoTs do not
-  inherit hit hooks.
-- `direct-treasure-rules.ts` contains **38 audited exact power/template definitions across 16 skills**
-  sharing one flat/percentage implementation. Each requires ID, InternalName,
-  full sentence, official attribute DisplayType and exact skill/hook. Conditional
-  suffixes, renamed powers and unrecognized wording fail closed. Secondary taunt,
-  reuse, resource, accuracy, control and Rage clauses remain unsupported source
-  records. No arbitrary English expression becomes executable math.
-- Existing skill flat/percent, All Direct, damage-type direct, original-base Skill
-  Base and the two Mock curated examples remain. No new damage-type conversions,
-  pet/DoT/critical/proc simulation, Sparks or saved-build schema fields were added.
-- Existing imported working powers and independently planned candidates retain exact
-  source identity. Historical imported evidence is never an extra modifier. Tests
-  exercise removal and scope exclusion; duplicate conversions still yield no value.
-- Build-wide unsupported effects are labeled **Across build**, with unknown relevance
-  to the displayed ability. The UI keeps analysis off by default, session preferences,
-  compact popovers, Relevant Mods and expandable math.
+- **`prose-damage-grammar.ts` — one reusable mapping instead of hundreds of templates.** A sentence
+  is interpreted only when it starts with a fixed unconditional damage clause (`<Names> Damage +N[%]`,
+  `<Names> deal(s) +N[%] [direct|<published type>] damage`, `<Names>'s damage is +N[%]`, or
+  `<Names> <recognized side clause> and deal(s) +N damage`); every name resolves to an official
+  ability display name of the power's own skill (all ranks), the skill itself, or an official group
+  attribute named by label (e.g. *All Shield Bash Abilities Damage*, *Core Attack Damage*); exactly one
+  ability-specific damage attribute with the expected DisplayType is listed in that ability's damage hook
+  (label match, else the only hook exclusive to that ability family — recorded as an extra assumption);
+  and **all** remaining text is a sequence of recognized clauses. Anything else fails closed. The sentence
+  must be published by that exact power. Confidence is `assumed`.
+- Recognized side clauses are split into **other mechanics** (taunt, reuse/reset, Power, Rage, control,
+  range/accuracy, call-for-help, healing/resource, defensive, self buffs, DoT, critical, reflection, pet
+  ally, self-damage) and **direct side mechanics** that keep an entry partial (damage-type conversion,
+  target debuff, timed/next-attack buff, AoE change, chance-based extra damage, triggered eruption,
+  keyword grant). Non-damage side clauses remain unsupported source records in the aggregation.
+- A stated damage type ("Drink Blood deals +78 Piercing damage") is a restriction, never a conversion: it
+  must equal every named ability's published type. Skill-associated group bonuses ("Kick attacks", "Hammer
+  attacks") are restricted to that skill; AnySkill groups ("Core Attacks") are not.
+- The 38 audited exact-sentence definitions and two Mock rules keep precedence; the grammar reproduces
+  all 38 identically (tested). No new runtime categories, conversions, conditional evaluation, crit,
+  DoT, pet or Spark logic, and no saved-build schema change.
+- Coverage probing now uses direct hit components only: a DoT component's uncertainty is a DoT-stage
+  other mechanic, not a direct gap. Interpretation confidence is reported as `official-attribute`
+  (7,487 entries) versus `source-backed-assumption` (5,947); the additive formula order remains assumed.
+- Intentional result change: the Cow/Unarmed import fixture's `power_3007` ("Unarmed attacks deal +5
+  damage and have +9 Accuracy") now contributes `BOOST_SKILL_UNARMED` +5 to Unarmed hits; accuracy stays
+  an unsupported remainder. Cow Front Kick is unaffected (1526.4).
 
 One intentional baseline change has direct source evidence: Cow Front Kick
 `ability_6124` has the official `CoreAttack` keyword; `abilitykeywords` connects it
@@ -97,68 +130,44 @@ Indirect/DoT totals remain unavailable even where their documented floor is know
 
 | Command | Result |
 |---|---|
-| `npm ci --cache /tmp/gorgonbuilder-npm-cache` | Passed, 207 packages; default cache was unwritable |
-| `npm run data:update -- --check` | Passed, all 13 pinned v490 datasets |
+| `npm ci --cache <scratch>` | Passed, 207 packages |
+| `npm run data:update -- --check` | Passed, all pinned v490 datasets |
 | `npm run lint` | Passed, zero warnings |
 | `npm run typecheck` | Passed |
-| `npm test -- --maxWorkers=2 --testTimeout=15000` | **973 passed / 45 files** |
+| `npx vitest run --maxWorkers=2 --testTimeout=15000` | **1,009 passed / 46 files** (+36 new grammar/coverage tests) |
 | `npm run build` | Passed |
-| `npm run coverage:treasure` and `npm run coverage:treasure -- --check` | Passed, deterministic byte equality |
+| `npm run coverage:treasure` then `-- --check` | Passed, deterministic byte equality (~40 s) |
 | `git diff --check` | Clean |
-| Burst browser smoke / existing scroll smoke | 18 scenarios / four viewports passed |
-| `CHROMIUM_TRUST_HOME=/tmp/t0013-chromium-trust python src/test/vite-transport.smoke.py` | Passed dev + production preview, all compressed hashes, corruption/retry and planner persistence |
+| `prose-grammar.smoke.mjs` (new) | Passed 1440×900 and 375×812: Heavy Shot 1 29 → **34.51** (+29 × 0.19) with grammar `power_10201/id_9` + curated `power_10202/id_9`; breakdown shows the grammar attribute and the reuse remainder; no overflow or page errors ([results](verification/t0013-f1/grammar-results.json)) |
+| `burst-estimate.smoke.mjs` | Passed 18 scenarios at 1440/375/320 px (Mock 1/5/6/7/8/9 enemies, Estimated only at 6–8, ×0.5, disclosure, Remove reachable, analysis default-off and session persistence) |
+| `popover-scroll.smoke.mjs` | Passed 1440×900, 1920×1080, 375×812, 320×812 ([results](verification/t0013-f1/scroll-results.json)) |
+| `vite-transport.smoke.py` | **Not re-run**: Python Playwright is not installed in this environment; the change touches no data transport. The first-commit run passed. |
 
-The initial unbounded/default-timeout test runs exceeded 5 seconds in existing
-UI/data tests under shared environment load; a timed-out UI case also contaminated
-a following case. The complete final run uses bounded workers and a 15-second
-per-test timeout, with localhost permissions for transport tests. No assertions
-were removed or production behavior altered for these environmental timeouts.
-The focused numeric regressions and every published curated tier pass.
+Browser smokes accept `CHROMIUM_PATH` for the installed browser; no application dependency was added.
+The 320 px planner-help 2 px overflow remains the pre-existing main-branch condition.
 
-The new browser smoke passed **18 scenarios** at **1440×900, 375×812 and 320×812**:
-1/5/6/7/8/9 enemies, numeric hit/total values, Estimated labels only at 6–8,
-independent ×0.5, equation disclosure, viewport-bounded card, reachable Remove,
-analysis default-off/session persistence, Relevant Mods and no runtime page errors.
-[Results](verification/t0013-f1/results.json).
+## Customer acceptance checks
 
-The existing `popover-scroll.smoke.mjs` passed at **1440×900, 1920×1080,
-375×812 and 320×812**: wheel progression, bottom/Remove hit testing, preserved
-scroll after page movement, Escape. [Results](verification/t0013-f1/scroll-results.json).
-It now accepts `CHROMIUM_PATH` for the environment's installed browser, without adding
-an application dependency.
+1. Read the [report](treasure-coverage/README.md): headline snapshots, unconditional subset, per-association
+   table (35 skills plus Generic rows), reasons, other mechanics and the 5,044 reclassification.
+2. Plan a grammar-only bonus on an off-skill build and an on-skill build, e.g. Archery Heavy Shot with
+   `power_10201` (+10%), Staff Smash with `power_5003`, Unarmed with `power_3007`, AnySkill Core Attacks
+   `power_153` on two different skills. Confirm only the named abilities change and the math breakdown
+   lists the exact attribute; remove the mod and confirm the base returns.
+3. Swap/remove one imported working tier; confirm only its contribution changes.
+4. Repeat the Mock 1/5/6/7/8/9 enemy table with Damage analysis on and check mobile scrolling.
 
-Screenshots: [desktop](verification/t0013-f1/1440-estimated.png),
-[375 px](verification/t0013-f1/375-estimated.png),
-[320 px](verification/t0013-f1/320-estimated.png).
+## Follow-ups discovered
 
-**Pre-existing browser limitations:** at 320 px, `.planner-help` extends page width
-to 322 px on both untouched `main` and this branch. The changed card stays bounded.
-[Baseline comparison](verification/t0013-f1/baseline-overflow.json). The older Vite
-transport smoke assumed quick-add closes the picker; T0008-F1 deliberately keeps
-it open. The harness now explicitly closes it between bars, preserving accepted
-product behavior. Both dev and production-preview runs then passed, including
-compressed hash checks, all corrupt-response rejection/retry cases and saved-build
-round trips ([results](verification/t0013-f1/transport-results.json)). Chromium
-used the documented temporary NSS trust store for the injected environment CA;
-HTTPS verification remained enabled.
+- **Next (separate ticket): critical hits** — imported Anatomy/Phrenology, creature-type target selection,
+  ability crit rules, equipment crit chance/damage, expected damage per hit. The same creature-type selector
+  would unlock 1,460 conditional creature-type entries (mostly Generic powers) and 250 Elite entries.
+- **Target/state condition toggles** for conditional (2,563) and stateful (2,933) families.
+- **Damage-type conversion stage** (454 entries) and **AoE conversion generalization** (607 entries).
+- **Split-component allocation measurement** (390 entries) and chance-based expected values (100 partial + random-range entries in the multi-hit family).
+- Runtime UI still lists non-damage remainders (taunt, reuse...) under "Across build: N unmodeled effects";
+  consider a separate non-damage label in a UI ticket. Typos in official text (`Scintilatting Doom`) are
+  not aliased without review.
 
-## Customer acceptance and follow-ups
-
-1. Inspect the full per-skill table and a few exact source entries. Review partial
-   classifications separately from full support; compare the before/after profiles.
-2. Compare controlled gear deltas in Psychology, Cow/Unarmed, and at least three
-   unrelated skills (e.g. Archery, Ice Magic, Staff). Include a shared Core Attack
-   bonus, ability-specific flat and percent, and original-base Skill Base. Record
-   exact IDs, target/buff/Spark state and game version; synthetic tests prove code
-   behavior, not the game's stacking order.
-3. Swap one working imported tier, remove it, then stage a candidate. Confirm only
-   intended contributions change, and off-skill abilities remain excluded.
-4. Repeat the Mock target-count table with Damage analysis on; inspect the math and
-   mobile scrolling. Verify offhand warnings and picker/session behavior remain.
-5. Recommended next scoped work: T0013-F2 remaining stateless prose batches;
-   T0013-F3 measured split-component allocation/conversions/stacking; current Burst
-   measurements. Pet/DoT/crit/stateful systems remain separate. These may precede
-   T0015 if more direct coverage is required; this PR does not implement Sparks.
-
-Documentation updated: Tickets, Repository Current State, Manual Verification,
-Damage and DPS Model, calculation README, Known Issues and the generated inventory.
+Documentation updated: this file, generated coverage report, Repository Current State, Known Issues,
+Manual Verification Guide, Tickets and the calculation README.

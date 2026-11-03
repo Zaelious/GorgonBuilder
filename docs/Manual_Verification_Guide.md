@@ -293,11 +293,13 @@ Published item treasure profiles are generation pools, not a complete legality e
 
 ### T0013-F1 combat coverage and Burst estimates (review pending)
 
-Run `npm run coverage:treasure -- --check`; inspect the per-skill table and exact
-power/tier/effect records in [the report](treasure-coverage/README.md). Run the
-all-combat-skill tests and [verification procedure](T0013_F1_Verification.md).
-Compare a controlled flat/percent change in several unrelated skills, including
-one Core Attack keyword bonus, then remove the source. Compare working imported
+Run `npm run coverage:treasure -- --check`; in [the report](treasure-coverage/README.md)
+check that direct-damage coverage, other mechanics and validation confidence are separate,
+that Generic/AnySkill rows are separate from skill rows, and inspect exact power/tier records.
+Run the [verification procedure](T0013_F1_Verification.md). Plan a grammar-only bonus in
+several unrelated skills (Archery `power_10201`, Staff `power_5003`, Unarmed `power_3007`,
+AnySkill Core Attacks `power_153` on two skills): only named abilities change, the breakdown
+names the exact attribute, and removing the mod restores the base. Compare working imported
 versus planned sources and inspect excluded off-skill decisions.
 For Mock 11 +43% and the 20 m conversion, test 1/5/6/7/8/9 enemies: the ×0.5
 ability penalty is independent of falloff; only 6–8 show Estimated. Verify the

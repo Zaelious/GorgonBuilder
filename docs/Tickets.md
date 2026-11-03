@@ -983,7 +983,7 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 
 ## T0013-F1 — Combat Treasure Effect Coverage and Burst Estimate
 
-**Status:** T0013-F1 implementation prepared for review on `feature/t0013-f1-combat-treasure-coverage`; customer acceptance pending. See [coverage](treasure-coverage/README.md) and [verification](T0013_F1_Verification.md). No automatic merge.
+**Status:** T0013-F1 implementation prepared for review on `feature/t0013-f1-combat-treasure-coverage` (PR #36), including the final direct-damage coverage correction (reusable unconditional prose grammar; direct coverage reported separately from other mechanics and confidence). Customer acceptance pending. See [coverage](treasure-coverage/README.md) and [verification](T0013_F1_Verification.md). No automatic merge. Critical hits are the next separate ticket.
 
 **Complexity:** High; deliver one auditable effect-family coverage batch, not unrestricted game-mechanics work.
 

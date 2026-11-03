@@ -22,7 +22,7 @@ const assert = (value, message) => { if (!value) throw Error(message); };
 let browser;
 try {
   for (let n = 0; n < 100; n++) { try { if ((await fetch(url)).ok) break; } catch { /* server starting */ } await new Promise(r => setTimeout(r, 100)); }
-  browser = await chromium.launch({ executablePath: '/usr/bin/chromium', args: ['--no-sandbox', '--disable-dev-shm-usage'], ...(process.env.HTTPS_PROXY ? { proxy: { server: process.env.HTTPS_PROXY, bypass: '127.0.0.1,localhost' } } : {}) });
+  browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? '/usr/bin/chromium', args: ['--no-sandbox', '--disable-dev-shm-usage'], ...(process.env.HTTPS_PROXY ? { proxy: { server: process.env.HTTPS_PROXY, bypass: '127.0.0.1,localhost' } } : {}) });
   const results = [];
   for (const [width, height] of [[1440, 900], [375, 812], [320, 812]]) {
     const page = await browser.newPage({ viewport: { width, height } });

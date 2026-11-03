@@ -99,7 +99,7 @@ chance, target vulnerability (`VULN_*`, T0014), combat refresh, taunt, reset tim
 power cost, accuracy/evasion, `*_DIRECT`/`*_INDIRECT`/elite mitigation, pet and
 sender attributes, attributes outside supported direct or static keyword hooks,
 and skill-named families whose label names something else (e.g.
-`BOOST_SKILL_ANIMALHANDLING`). Prose effects are unsupported by default. T0013-F1 adds 38 exact power/template definitions to the two T0014 Mock examples; see `direct-treasure-rules.ts` and the [complete coverage report](../../../docs/treasure-coverage/README.md). Secondary clauses remain explicit unsupported records. This is *not* a general prose parser.
+`BOOST_SKILL_ANIMALHANDLING`). Prose effects are unsupported unless a reviewed rule covers them. T0013-F1 adds 38 exact power/template definitions to the two T0014 Mock examples (`direct-treasure-rules.ts`), then one reusable *unconditional* grammar (`prose-damage-grammar.ts`): a leading damage clause whose every name resolves to official ability display names of the power's skill, the skill, or an official group damage attribute named by label, mapped to exactly one official damage attribute in the ability's hook, followed only by recognized side clauses. Conditions, conversions, split components and unknown wording fail closed; curated rules take precedence; confidence is `assumed`. Secondary clauses remain explicit unsupported records. This is *not* a general prose parser. See the [complete coverage report](../../../docs/treasure-coverage/README.md).
 
 ### Adding a mapping
 
@@ -280,7 +280,8 @@ copied hooks on unrelated or unresolved abilities from receiving a curated bonus
 
 `npm run coverage:treasure` walks all 52,039 published treasure effects and probes
 mapped contributions through the actual aggregator/calculator. Its deterministic
-report separates inventory completeness, full/partial calculation support and game
-validation. The before profile disables keyword rules and retains only the two Mock
-rules, reproducing T0014. Audit prose screening never supplies runtime damage formulas.
+report separates inventory completeness, direct-damage coverage (direct hit components
+only), other mechanics (taunt, reuse, DoT, crit, pets...) and validation confidence,
+with three snapshots: T0014 (no keyword rules, two Mock rules), the first T0013-F1
+commit (no grammar) and final. Audit prose screening never supplies runtime damage formulas.
 See [verification](../../../docs/T0013_F1_Verification.md) for assumptions and limitations.
