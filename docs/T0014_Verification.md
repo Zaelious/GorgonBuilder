@@ -1,6 +1,6 @@
 # T0014 — Ability Results UI and Custom Target Dummy: Verification
 
-**Status:** Implemented in [PR #34](https://github.com/Zaelious/GorgonBuilder/pull/34), with customer acceptance corrections. Customer hands-on acceptance is pending. No in-game measurements were taken.
+**Status:** Customer-accepted and squash-merged 2026-11-03 in [PR #34](https://github.com/Zaelious/GorgonBuilder/pull/34), commit `19a26bf3f6d30ef63f9bd80fbeb4b5e89e90efcf`. Customer reported controlled naked Mock and direct Psychic modifier checks; broader in-game formula validation remains pending.
 
 **Base:** `main` at `3231809` (T0013 merged). **Branch:** `claude/friendly-ritchie-7rwkgu`.
 
@@ -120,4 +120,4 @@ Additional screenshots in `src/features/abilities/verification/`:
 - **Placement of "damage is halved" and the +X% stacking:** assumed (×0.5 after all contributions; +X% additive with other percentages). Both need in-game validation, together with T0015 Sparks.
 - **Still limitations:** the Vulnerable target state, criticals, special ability rules, and taunt/reuse effects (displayed, not simulated).
 
-**Central docs to update after acceptance:** `docs/Repo_Current_State.md`, `docs/Tickets.md` (T0014 status), and `docs/MVP_Technical_Design.md`. `docs/Manual_Verification_Guide.md` already has the T0014 entry.
+**Follow-up:** T0013-F1 audits the full combat treasure effect inventory and adds clearly estimated intermediate direct Burst (6–8 at 20 m) pending in-game measurements. Core documentation and roadmap were synchronized after acceptance.

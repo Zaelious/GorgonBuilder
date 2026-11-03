@@ -176,22 +176,26 @@ expected contribution +250
 
 ### T0013 accepted calculation foundation (2026-11-02)
 
-[PR #32](https://github.com/Zaelious/GorgonBuilder/pull/32) squash-merged as `86c2e34` with 810 automated tests and green GitHub CI. [Verification](T0013_Verification.md) and [four calculation reports](calculation-reports/T0013-psychology-mock.txt) demonstrate exact ability IDs, skill/ability/damage-type filtering, original-base Skill Base rule and per-modifier ordered breakdowns. Confirm `500 × 0.50 = +250` regardless of other flats; missing/unknown powers and crits remain explicitly unmodeled. The preview formula is provisional; no damage result UI or Spark integration exists yet. Hands-on game-math acceptance is deferred until T0014/T0015 allow comparing working gear and Sparks with actual in-game results. At T0014 verify visible values and drill-down follow each edit, distinguish omitted interactions, and preserve exact source and UI accessibility.
+[PR #32](https://github.com/Zaelious/GorgonBuilder/pull/32) squash-merged as `86c2e34` with 810 automated tests and green GitHub CI. [Verification](T0013_Verification.md) and [four calculation reports](calculation-reports/T0013-psychology-mock.txt) demonstrate exact ability IDs, skill/ability/damage-type filtering, original-base Skill Base rule and per-modifier ordered breakdowns. Confirm `500 × 0.50 = +250` regardless of other flats; missing/unknown powers and crits remain explicitly unmodeled. The preview formula remains provisional. T0014's opt-in damage results UI is now merged; Spark integration remains pending in T0015. Use controlled game comparisons as formula evidence; T0013-F1 expands static direct-damage modifier support across combat skills before Spark work.
 
 ### T0014 ability results, target dummy and acceptance corrections
 
-[PR #34](https://github.com/Zaelious/GorgonBuilder/pull/34) and [T0014 verification](T0014_Verification.md) cover the full steps and screenshots. Check that:
+[PR #34](https://github.com/Zaelious/GorgonBuilder/pull/34) was customer-accepted and squash-merged 2026-11-03 as `19a26bf`; [T0014 verification](T0014_Verification.md) covers the full steps and screenshots. Check that:
 
 - **Damage analysis toggle:** off by default; when off, facts, Relevant Mods and bar controls are unchanged. It is remembered per browser session and never saved in the build.
 - **Psychology + Deer:** the naked Mock base matches the game.
 - **Mock +43% (OffHand `power_4066`):** raises Mock and Ridicule only.
 - **Hands `power_4032` conversion:** Burst 20 m, ×0.5 at every enemy count, taunt and reuse shown as not damage.
-- **Enemy counts 1 / 3 / 5 / 9:** full / full / full / 25% direct floor. 6–8 are unavailable (undocumented falloff).
+- **Enemy counts 1 / 3 / 5 / 9:** full / full / full / 25% direct floor for 20 m Mock Burst. T0014 leaves 6–8 unavailable; T0013-F1 will add explicitly estimated interim direct falloff, not claim observed game values.
 - **Long popovers:** scroll to Remove at 1440, 1920, 375 and 320 px without the position resetting.
 - **Respect Skill Level:** persists across picker reopenings within the session.
 - **OffHand / OffHandShield:** benign warnings stay hidden, while incompatible slots and double-offhand conflicts still warn.
 
 After building, run `node src/features/abilities/popover-scroll.smoke.mjs` for the real-browser scroll regression. Formula placement for the ×0.5 penalty and the +X% stacking is assumed and needs in-game comparison.
+
+### T0013-F1 prioritized combat treasure-effect coverage (next)
+
+After T0014 merge, implement the [T0013-F1 ticket](Tickets.md#t0013-f1--combat-treasure-effect-coverage-and-burst-estimate). Run a complete pinned-v490 treasure-power/tier effect inventory; review per-skill modeled vs unmodeled counts. For at least Psychology, Cow/Unarmed and three unrelated combat skills, equip one deterministic direct-damage power and verify that its delta is isolated, traceable and reverses when removed. Check imported working powers equal planned mods and that off-skill/conditional effects do not leak. The two Mock prose powers remain regression anchors. Compare documented 20 m Burst thresholds (5 full / 9 at 25% direct) against transparently **Estimated** linear interpolation at 6/7/8 = 81.25%/62.5%/43.75%; actual in-game measurements supersede the estimate. Keep Damage analysis opt-in and scroll regression green. Do not implement Sparks or rotations in this pass.
 
 ## Spark Tickets
 
