@@ -43,3 +43,19 @@ export function rankLabel(rank: Ability['rank']): string {
 export function highestTier(group: AbilityGroup): Ability {
   return [...group.abilities].sort((a, b) => b.level - a.level || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))[0]!;
 }
+
+export type QuickAddChoice =
+  | { readonly kind: 'tier'; readonly ability: Ability }
+  | { readonly kind: 'none'; readonly lowestLevel: number };
+
+/**
+ * Family quick-add target. Off (default): {@link highestTier}, unchanged. With Respect Skill Level: the highest
+ * published Level at or below `skillLevel`, canonical ID ascending on ties; `none` when no tier qualifies.
+ * Transient picker behavior only: never applied to already-equipped abilities.
+ */
+export function quickAddTier(group: AbilityGroup, respectSkillLevel: boolean, skillLevel: number): QuickAddChoice {
+  if (!respectSkillLevel) return { kind: 'tier', ability: highestTier(group) };
+  const eligible = group.abilities.filter(ability => ability.level <= skillLevel);
+  if (eligible.length === 0) return { kind: 'none', lowestLevel: Math.min(...group.abilities.map(ability => ability.level)) };
+  return { kind: 'tier', ability: highestTier({ ...group, abilities: eligible }) };
+}

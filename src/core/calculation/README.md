@@ -212,3 +212,58 @@ resistance/mitigation, Phrenology, AoE conversion/caps and criticals are not cal
 
 See [T0013 verification](../../../docs/T0013_Verification.md) for the assumption table,
 reproducible official-data reports, tests and controlled in-game comparison procedure.
+
+## Curated exact treasure-power rules (T0014 acceptance)
+
+Published treasure text without an `{ATTRIBUTE}{value}` token is a `prose-effect` and is
+never parsed generally. `treasure-effect-rules.ts` adds a small allow-list. Each rule names
+one official power ID **and** InternalName and one full-sentence template. A tier whose text
+does not match stays unsupported with a `template-mismatch` message. Every tier of both rules
+is tested against v490.
+
+| Power | Template | Modifiers (all `assumed`, `mappingRuleId` `treasure:<InternalName>`) |
+|---|---|---|
+| `power_4066` MockAndRidiculeBoost | "Mock and Ridicule deal +X% damage and taunt +Y" | `MOD_ABILITY_MOCK` and `MOD_ABILITY_RIDICULE` `ability-damage-percent` X/100 through the official `AttributesThatModDamage` hooks; `ABILITY_TAUNT_DELTA_MOCK/RIDICULE` `ability-taunt-flat` Y |
+| `power_4032` MockBoost | "Mock hits all enemies within R meters and taunts +Y, but damage is halved and reuse timer is +S seconds" | `ability-burst-conversion` R m, `ability-damage-multiplier` 0.5, `ABILITY_TAUNT_DELTA_MOCK` taunt Y, `ABILITY_RESETTIME_DELTA_MOCK` `ability-reset-time-flat` S; scope `ability-keyword` Psychology/`Mock` |
+
+The +X% uses the existing T0013 `ability-damage-percent` arithmetic unchanged, so it applies
+only to abilities whose official record hooks that attribute (every Mock or Ridicule tier).
+Taunt, reuse, conversion and multiplier categories are excluded by T0013 as
+`not-normal-damage`. The T0014 scenario stage below handles the conversion and multiplier.
+Working imported powers and planned candidates behave identically; historical
+`metadata.sourceItem` is still never read.
+
+## Target dummy and scenario stage (T0014)
+
+`applyTargetDummy(result, build.target, { targetCap? })` is a separate pure stage
+after `calculateAbilityDamage`. It never mutates or recomputes the T0013 result. Three
+concepts stay independent:
+
+1. **Ability-specific multiplier.** For example, Mock's "damage is halved" (`× 0.5`, assumed
+   to apply after all flat, percentage and Skill Base contributions). It applies at every
+   enemy count. Duplicate conversions or multipliers give no value (`multiple-ability-conversions`).
+2. **Burst target-count falloff.** Uses only the documented points of the
+   [2024-07-30 update](https://wiki.projectgorgon.com/wiki/Game_updates/2024-07-30):
+   - full damage up to 3 targets, plus 1 per full 10 m of Burst radius (20 m → 5);
+   - a radius remainder gives a probabilistic extra target (`probabilistic`, no value);
+   - at 9 or more enemies, direct damage is 25% and indirect damage 50%;
+   - counts in between are `undocumented` and get no value.
+
+   `burstTargetFalloff` keeps direct and indirect separate. DoTs are still not calculated,
+   so the indirect value is informational only.
+3. **Affected enemies.**
+   - Without a published AoE value or a conversion: 1 enemy.
+   - With a curated "hits all enemies within R" conversion, or an official `Burst` keyword plus
+     a published AoE value (treated as the radius, assumed): every configured enemy, under an
+     explicit in-range scenario assumption. No hidden cap is inferred from the radius. Every
+     damaging v490 player AoE ability is Burst.
+   - A non-Burst AoE record without a known cap leaves the total null (`target-cap-unknown`).
+
+Then the **damage-type modifier** applies. Only `target.damageTypes[<exact hit type>]` is read:
+`× (1 + (vulnerability − resistance) / 100)` (assumed). A net multiplier below zero gives no
+value. `steps` lists the applied stages in order; `abilityEffects` lists the applicable curated
+non-damage effects (taunt, reuse) for display.
+
+The published `ExtraDamageIfTargetVulnerable` / "Vulnerable" target state remains
+T0013's `target-bonus-not-applied` limitation; it is a stateful debuff, not the
+dummy's per-type percentages. Criticals remain unmodeled.

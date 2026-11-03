@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { sameImportedInstance } from '../../core/build/imported-identity';
+import { sameLoadoutPosition } from '../../core/build/slots';
 import { getUniqueActiveSkillIds } from '../../core/build/document';
 import { EquipmentMods } from '../mods/EquipmentMods';
 import { ItemStats } from '../mods/ItemStats';
@@ -68,7 +69,7 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
     return <article className="equipment-selection" key={index} data-selection-index={index}>
       {multiple && <p className="equipment-entry-label">Saved entry {index + 1}: {name(selection)}</p>}
       {!item && <p className="warning">This saved selection has no available official base definition. It is retained.</p>}
-      {item && item.slot !== selection.slot && <p className="warning">Published slot is {item.slot}; saved slot {selection.slot} is retained.</p>}
+      {item && !sameLoadoutPosition(item.slot, selection.slot) && <p className="warning">Published slot is {item.slot}; saved slot {selection.slot} is retained.</p>}
       {owned && <ImportedItemWarnings item={owned} data={data} historical />}
       <ItemStats selection={selection} item={item} data={data} skillA={build.skillSlotA.skillId} skillB={build.skillSlotB.skillId} />
       <EquipmentMods browser={modBrowser} selection={selection} equipmentIndex={index} item={item} skillIds={skillIds} skillA={build.skillSlotA.skillId} skillB={build.skillSlotB.skillId} data={data} onEdit={onEdit} readOnly={readOnly} expanded={expanded.has(isOffhandSlot(selection.slot) ? 'OffHand' : selection.slot)} />

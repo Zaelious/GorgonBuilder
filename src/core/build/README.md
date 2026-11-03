@@ -28,10 +28,15 @@ transient editor state, remote record, or ownership credentials.
   `actual` (manual outcome counts). Counts describe the five planned Skill Damage
   outcome categories; no RNG, probability, modifier values or damage is computed.
   T0015 owns eligibility, modeled limits, result/input consistency and simulation.
-- Targets default to one enemy and no damage-type overrides. Resistance and
-  vulnerability values are reserved finite numeric inputs with no assigned units
-  or formula. T0014 must define/validate their meaning before consuming them.
-  Extra future target properties can live in JSON metadata.
+- Targets default to one enemy and no damage-type overrides. T0014
+  (`target.ts`) defines the planner meaning without a schema change: the UI edits
+  `count` as a whole number 1–20 (schema validation still accepts any positive
+  integer), and `vulnerability`/`resistance` are percentage points (0–1000) for
+  an exact published damage-type key. Zero/cleared values remove the field, and
+  empty entries are removed; entry and target metadata are preserved. How those
+  percentages affect damage is the assumed T0014 rule in
+  `core/calculation/target-damage.ts`. Extra future target properties can live in
+  JSON metadata.
 
 ## Validation and serialization
 

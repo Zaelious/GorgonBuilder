@@ -3,6 +3,7 @@ import type { GameDataRepository } from '../../data/repository/repository';
 import { powerName } from '../../data/search/treasure';
 import { EffectDescriptions } from '../mods/EffectDescription';
 import { importedSlot, itemLocation } from './inventory';
+import { sameLoadoutPosition } from '../../core/build/slots';
 
 function Power({ entry, data }: { entry: ImportedTreasurePower; data: GameDataRepository }) {
   const power = entry.power?.id ? data.getTreasurePower(entry.power.id) : undefined;
@@ -21,7 +22,7 @@ export function ImportedItemWarnings({ item, data, historical = false }: { item:
   const base = data.getItem(item.baseItemId ?? '');
   const unresolved = item.treasurePowers.filter(entry => !entry.selection || !data.getTreasureTier(entry.selection.powerId, entry.selection.tierId)).length;
   return <>
-    {base && item.slot && item.slot !== base.slot && <p className="warning">Source slot {item.slot} differs from official base slot {base.slot}; source slot retained.</p>}
+    {base && item.slot && !sameLoadoutPosition(item.slot, base.slot) && <p className="warning">Source slot {item.slot} differs from official base slot {base.slot}; source slot retained.</p>}
     {unresolved > 0 && <p className="warning">{unresolved} original power/imbue entries are unresolved or unverified. Original evidence is retained in item details.{historical && ' Only effective working powers appear in Stats and Selected.'}</p>}
   </>;
 }

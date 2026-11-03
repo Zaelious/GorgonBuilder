@@ -168,3 +168,18 @@ it('validates an atomic skill-and-level transition and keeps reselecting the sam
   expect(next.skillSlotB).toBe(original.skillSlotB);
   expect(editBuild(next, { type: 'skill', slot: 'A', skillId: 'Deer', level: 100 }, data)).toBe(next);
 });
+
+it('T0014 target edits change only BuildDocument.target and return the same build for no-ops', () => {
+  const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
+  build.skillSlotA = { skillId: 'Psychology', level: 55 };
+  build.abilityBarA = [{ abilityId: 'ability_6555', rank: null }];
+  expect(editBuild(build, { type: 'target-count', count: 1 }, data)).toBe(build);
+  const counted = editBuild(build, { type: 'target-count', count: 25 }, data);
+  expect(counted.target).toEqual({ count: 20, damageTypes: {} });
+  const typed = editBuild(counted, { type: 'target-damage-type', damageType: 'Psychic', field: 'vulnerability', value: 25 }, data);
+  expect(typed.target).toEqual({ count: 20, damageTypes: { Psychic: { vulnerability: 25 } } });
+  expect({ ...typed, target: build.target }).toEqual(build);
+  expect(editBuild(typed, { type: 'target-damage-type', damageType: 'Psychic', field: 'vulnerability', value: -5 }, data)).toBe(typed);
+  // Skill-level edits never replace equipped abilities (Respect Skill Level is picker-only).
+  expect(editBuild(typed, { type: 'level', slot: 'A', level: 1 }, data).abilityBarA).toEqual(build.abilityBarA);
+});
