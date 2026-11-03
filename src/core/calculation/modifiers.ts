@@ -40,11 +40,19 @@ export type ModifierCategory =
   | 'critical-chance-percent'
   // Non-damage character stats
   | 'max-resource-flat'              // MAX_HEALTH, MAX_POWER, MAX_ARMOR
-  | 'damage-type-mitigation-flat';   // MITIGATION_<TYPE>
+  | 'damage-type-mitigation-flat'    // MITIGATION_<TYPE>
+  // Curated exact treasure-power rules (treasure-effect-rules.ts); never contribute to T0013 normal damage.
+  | 'ability-taunt-flat'             // e.g. ABILITY_TAUNT_DELTA_MOCK; taunt, not damage
+  | 'ability-reset-time-flat'        // e.g. ABILITY_RESETTIME_DELTA_MOCK; seconds added to the reuse timer
+  | 'ability-burst-conversion'       // "<Ability> hits all enemies within N meters": Burst AoE radius (meters)
+  | 'ability-damage-multiplier';     // "damage is halved": multiplier applied after build contributions (T0014 stage)
 
-/** flat: additive points; percent: published fractional delta (0.45 = +45%). */
-export type ModifierOperation = 'flat' | 'percent';
-export type ModifierUnit = 'points' | 'fraction';
+/**
+ * flat: additive points; percent: published fractional delta (0.45 = +45%); set: replaces an ability property (e.g. a
+ * Burst radius); multiply: scales a value (0.5 = halved).
+ */
+export type ModifierOperation = 'flat' | 'percent' | 'set' | 'multiply';
+export type ModifierUnit = 'points' | 'fraction' | 'meters' | 'seconds' | 'multiplier';
 
 export type DamageDelivery = 'direct' | 'indirect' | 'direct-and-indirect';
 
@@ -54,7 +62,9 @@ export type ModifierScope =
   /** Applies where an official ability lists this attribute in the named PvE hook. */
   | { readonly kind: 'ability-attribute-hook'; readonly attributeId: string; readonly hook: string }
   /** delivery null: the official label does not say whether direct and/or per-tick damage is covered. */
-  | { readonly kind: 'damage-type'; readonly damageType: string; readonly delivery: DamageDelivery | null };
+  | { readonly kind: 'damage-type'; readonly damageType: string; readonly delivery: DamageDelivery | null }
+  /** Applies to official abilities of this skill whose published Keywords include `keyword` (e.g. every Mock tier). */
+  | { readonly kind: 'ability-keyword'; readonly skillId: string; readonly keyword: string };
 
 export type ModifierCondition =
   /** Official third token argument: the player must have this skill active. */
@@ -112,7 +122,10 @@ export interface NormalizedModifier {
   readonly key: string;
   readonly category: ModifierCategory;
   readonly operation: ModifierOperation;
-  /** Official attribute ID (stat key). */
+  /**
+   * Official attribute ID (stat key). Curated treasure rules use an official attribute when one exists (MOD_ABILITY_MOCK,
+   * ABILITY_TAUNT_DELTA_MOCK, ABILITY_RESETTIME_DELTA_MOCK); otherwise a `TREASURE:<InternalName>/<part>` identifier.
+   */
   readonly attributeId: string;
   readonly attributeLabel: string | null;
   readonly scope: ModifierScope;

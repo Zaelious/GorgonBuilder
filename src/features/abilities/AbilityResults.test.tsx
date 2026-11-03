@@ -22,7 +22,7 @@ beforeAll(() => {
   });
 });
 beforeEach(() => {
-  vi.useFakeTimers(); localStorage.clear();
+  vi.useFakeTimers(); localStorage.clear(); sessionStorage.clear();
   vi.mocked(loadGameDataRepository).mockReset().mockResolvedValue(data);
   container = document.createElement('div'); document.body.append(container); root = createRoot(container);
 });
@@ -62,12 +62,47 @@ function seed(mutate: (build: BuildDocument) => void = () => {}) {
   return build;
 }
 
+describe('T0014 Damage analysis toggle', () => {
+  it('is off by default: facts, Relevant Mods and bar controls remain; no damage UI or target dummy', async () => {
+    seed(); await render();
+    const toggle = control<HTMLInputElement>('.damage-analysis-toggle input');
+    expect(toggle.checked).toBe(false);
+    expect(container.querySelector('.target-dummy')).toBeNull();
+    await inspect(1);
+    expect(container.querySelector('.ability-popover .ability-results')).toBeNull();
+    expect(control('.ability-popover .ability-stats').textContent).toContain('178 Psychic');
+    expect(container.querySelector('.ability-popover .relevant-mods')).not.toBeNull();
+    expect(container.querySelector('.ability-popover .bar-edit-actions')).not.toBeNull();
+    expect(container.querySelector('.ability-popover .remove-ability')).not.toBeNull();
+  });
+
+  it('turns on calculation UI, survives popover reopening and remount in the session, and never touches the build', async () => {
+    const saved = seed(); await render();
+    await click('.damage-analysis-toggle input');
+    expect(sessionStorage.getItem('gorgonbuilder.session.damage-analysis')).toBe('1');
+    expect(container.querySelector('.target-dummy')).not.toBeNull();
+    await inspect(1);
+    expect(container.querySelector('.ability-popover .ability-results')).not.toBeNull();
+    await inspect(2); await inspect(1);
+    expect(container.querySelector('.ability-popover .ability-results')).not.toBeNull();
+    await act(async () => root.unmount()); root = createRoot(container); await render();
+    expect(control<HTMLInputElement>('.damage-analysis-toggle input').checked).toBe(true);
+    await tick();
+    expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(JSON.stringify(saved));
+    await click('.damage-analysis-toggle input');
+    expect(sessionStorage.getItem('gorgonbuilder.session.damage-analysis')).toBeNull();
+    expect(container.querySelector('.target-dummy')).toBeNull();
+  });
+});
+
 describe('T0014 ability results in the popover', () => {
-  it('shows the provisional normal hit, confidence, critical limitation and a collapsed ordered breakdown', async () => {
+  beforeEach(() => { sessionStorage.setItem('gorgonbuilder.session.damage-analysis', '1'); });
+  it('shows the provisional normal hit, critical limitation and a collapsed ordered breakdown without a confidence badge', async () => {
     seed(); await render(); await inspect(1);
     const section = results();
-    expect(section.querySelector('h4')!.textContent).toBe('Damage Incomplete');
-    expect(section.querySelector('.confidence-badge')!.getAttribute('data-confidence')).toBe('unknown');
+    expect(section.querySelector('h4')!.textContent).toBe('Damage');
+    expect(section.querySelector('.confidence-badge')).toBeNull();
+    expect(section.dataset.confidence).toBe('unknown');
     expect(rowText('health-specific')).toEqual(['Health hit:526.7 Psychic']);
     expect(section.textContent).toContain('Critical hitNot modeled');
     expect(control('.result-limits').textContent).toBe('Not included: 11 unmodeled build effects · special ability rules');
@@ -109,16 +144,16 @@ describe('T0014 ability results in the popover', () => {
     await tick();
     expect(draft().target).toEqual({ count: 3, damageTypes: {} });
 
-    // AoE: per-target value, but no total without a published cap.
+    // Published Burst (AoE 30): all 3 scenario enemies within the 6 full-damage targets.
     await inspect(2);
+    expect(control('.ability-popover .result-scope').textContent).toBe(' · Burst 30 m');
     expect(rowText('damage')[0]).toBe('Normal hit · per target:645 Piercing'); // 412 + Ring 175 + Necklace 58
-    expect(rowText('damage')[1]).toBe('Total · 3 enemies:Target cap not published');
-    expect(results().textContent).toContain('An unlimited cap is never assumed.');
+    expect(rowText('damage')[1]).toBe('Total · 3 enemies:1,935');
 
     // Single target: only one of the configured enemies is counted.
     await inspect(1);
     expect(rowText('health-specific')).toEqual(['Health hit · per target:526.7 Psychic', 'Total · 1 enemy:526.7']);
-    expect(results().textContent).toContain('only 1 of 3 configured enemies is counted');
+    expect(results().textContent).toContain('Single-target ability: only 1 of 3 configured enemies is hit.');
 
     await click('.target-damage-types summary');
     const types = [...container.querySelectorAll('.target-damage-types tbody th')].map(th => th.textContent);
@@ -200,7 +235,7 @@ describe('T0014 Respect Skill Level picker toggle', () => {
     await click('.quick-add'); await tick();
     expect(draft().abilityBarA.map(a => a.abilityId)).toEqual(['ability_6555', 'ability_6555', 'ability_1248']);
     expect(draft().abilityBarA[2]).toEqual({ abilityId: 'ability_1248', rank: data.getAbility('ability_1248')!.rank });
-    // Toggle state is transient: never saved in the build.
+    // Toggle state is session UI only: never saved in the build.
     expect(JSON.stringify(draft())).not.toContain('respect');
   });
 
@@ -219,8 +254,56 @@ describe('T0014 Respect Skill Level picker toggle', () => {
     await change('#level-A', '30'); await tick();
     expect(draft().skillSlotA.level).toBe(30);
     expect(draft().abilityBarA.map(a => a.abilityId)).toEqual(['ability_6555', 'ability_6554']);
-    // Reopening resets the transient option to off.
+    // Session-remembered (not saved in the build): reopening keeps it on and uses the new level.
     await openMock();
-    expect(control<HTMLInputElement>('.respect-skill-level input').checked).toBe(false);
+    expect(control<HTMLInputElement>('.respect-skill-level input').checked).toBe(true);
+    expect(sessionStorage.getItem('gorgonbuilder.session.respect-skill-level')).toBe('1');
+    expect(control('.quick-add').getAttribute('aria-label')).toBe('Quick-add Mock, highest published level at or below 30: level 30');
+    expect(JSON.stringify(draft())).not.toContain('respect');
+    // The other bar's picker shares the session option.
+    await click('.picker-content .dialog-heading button');
+    await click('.skill-panel:nth-child(2) .open-picker');
+    expect(control<HTMLInputElement>('.respect-skill-level input').checked).toBe(true);
+    await click('.respect-skill-level input');
+    expect(sessionStorage.getItem('gorgonbuilder.session.respect-skill-level')).toBeNull();
+  });
+});
+
+describe('T0014 Mock modifiers in the popover (Psychology + Deer)', () => {
+  beforeEach(() => { sessionStorage.setItem('gorgonbuilder.session.damage-analysis', '1'); });
+  function item(slot: string) { return data.items.find(entry => entry.slot === slot && (entry.level ?? 0) >= 100)!.id; }
+  function mockBuild() {
+    return seed(b => {
+      b.skillSlotB = { skillId: 'Deer', level: 100 };
+      b.abilityBarB = [];
+      b.equipment = [
+        { slot: 'OffHand', item: { kind: 'database', itemId: item('OffHand') }, candidateMods: [{ powerId: 'power_4066', tierId: 'id_20' }], sparks: { mode: 'none' } },
+        { slot: 'Hands', item: { kind: 'database', itemId: item('Hands') }, candidateMods: [{ powerId: 'power_4032', tierId: 'id_18' }], sparks: { mode: 'none' } },
+      ];
+    });
+  }
+
+  it.each([[1, '127.27', '127.27'], [3, '127.27', '381.81'], [5, '127.27', '636.35'], [9, '31.82', '286.36']])(
+    'shows +43%%, the Burst conversion and the 50%% penalty at %i enemies', async (count, perTarget, total) => {
+      mockBuild(); await render();
+      await change('#target-count', String(count)); await tick();
+      await inspect(1);
+      expect(control('.ability-popover .result-scope').textContent).toBe(' · Burst 20 m (mod)');
+      const rows = rowText('health-specific');
+      expect(rows[0]).toBe(`Health hit${count > 1 ? ' · per target' : ''}:${perTarget} Psychic`);
+      if (count > 1) expect(rows[1]).toBe(`Total · ${count} enemies:${total}`);
+      expect(control('.result-side-effects').textContent).toBe('Not damage: taunt +200 · taunt +1,080 · reuse timer +1.5 s');
+      await click('.calc-breakdown summary');
+      const categories = [...container.querySelectorAll<HTMLElement>('.ability-popover .calc-step')].map(s => s.dataset.category);
+      expect(categories).toEqual(['original-base', 'ability-damage-percent', 'ability-multiplier', ...(count > 1 ? ['burst-falloff', 'affected-targets'] : [])]);
+      expect(control('.calc-step[data-category="ability-damage-percent"]').textContent).toContain('Mock Damage %OffHand planned mod · +43% of 178');
+    });
+
+  it('marks 6 enemies as undocumented falloff instead of inventing a value', async () => {
+    mockBuild(); await render();
+    await change('#target-count', '6'); await tick();
+    await inspect(1);
+    expect(rowText('health-specific')).toEqual(['Health hit · per target:Unavailable', 'Total · 6 enemies:Unavailable']);
+    expect(control('[data-warning="burst-falloff-undocumented"]').textContent).toContain('publish no intermediate percentage');
   });
 });

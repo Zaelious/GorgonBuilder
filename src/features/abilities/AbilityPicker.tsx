@@ -6,6 +6,7 @@ import './picker.css';
 import { groupAbilities, highestTier, quickAddTier, rankLabel, type Ability } from './groups';
 import { AbilityIcon } from './AbilityIcon';
 import { AbilityFacts } from './AbilityFacts';
+import { useSessionFlag } from '../../app/useSessionFlag';
 
 interface Props {
   slot: Slot;
@@ -34,8 +35,9 @@ export function AbilityPicker({ slot, skill, data, bar, full, replaceIndex, retu
   }
   const [query, setQuery] = useState('');
   const [expandedTier, setExpandedTier] = useState<string | null>(null);
-  // Transient picker option (T0014); never saved and never applied to already-equipped abilities.
-  const [respectSkillLevel, setRespectSkillLevel] = useState(false);
+  // Session-only picker option (T0014): remembered across picker openings, never saved in the build and never
+  // applied to already-equipped abilities.
+  const [respectSkillLevel, setRespectSkillLevel] = useSessionFlag('respectSkillLevel');
   const groups = useMemo(() => groupAbilities(skill.skillId === null ? [] : data.getAbilitiesForSkill(skill.skillId)), [data, skill.skillId]);
   const search = query.trim().toLocaleLowerCase();
   const matches = groups.filter(g => g.abilities.some(a => `${a.displayName} ${a.description} ${a.id}`.toLocaleLowerCase().includes(search)));

@@ -95,13 +95,14 @@ function ComponentBreakdown({ component, target, modifiers }: { component: Compo
     <h5>{hitLabel(component.id)} <small>{component.sourcePath} · {component.damageType}</small></h5>
     {component.steps.length === 0 ? <p className="muted">No calculation: the published base is unresolved.</p> : <ol className="calc-steps">
       {component.steps.map((step, index) => <StepRow key={index} step={step} modifier={step.modifierKey ? modifiers.get(step.modifierKey) : undefined} />)}
-      {hit?.targetStep && <li className="calc-step" data-category="target-damage-type" data-confidence={hit.targetStep.confidence} title={hit.targetStep.explanation}>
-        <span className="calc-step-label">Target {hit.targetStep.damageType} modifier<small>vulnerability {hit.targetStep.vulnerability}% · resistance {hit.targetStep.resistance}%</small></span>
-        <span className="calc-step-value">× {formatDamage(hit.targetStep.multiplier)}</span>
-        <span className="calc-step-total">{Number.isFinite(hit.targetStep.after) && hit.targetStep.after >= 0 ? formatDamage(hit.targetStep.after) : '—'}</span>
-      </li>}
+      {hit?.steps.map(step => <li key={step.kind} className="calc-step" data-category={step.kind === 'damage-type' ? 'target-damage-type' : step.kind} data-confidence={step.confidence} title={step.explanation}>
+        <span className="calc-step-label">{step.label}<small>{step.detail}</small></span>
+        <span className="calc-step-value">{step.multiplier === null ? '—' : `× ${formatDamage(step.multiplier)}`}</span>
+        <span className="calc-step-total">{step.after !== null && Number.isFinite(step.after) && step.after >= 0 ? formatDamage(step.after) : '—'}</span>
+      </li>)}
       {hit && target.configuredTargets > 1 && <li className="calc-step" data-category="affected-targets">
-        <span className="calc-step-label">Affected enemies<small>{target.affectedTargets === null ? `${target.configuredTargets} configured · target cap unknown` : `${target.affectedTargets} of ${target.configuredTargets} configured`}</small></span>
+        <span className="calc-step-label">Affected enemies<small>{target.affectedTargets === null ? `${target.configuredTargets} configured · target cap unknown`
+          : target.burst ? `${target.affectedTargets} configured · all within ${target.burst.radius} m (scenario)` : `${target.affectedTargets} of ${target.configuredTargets} configured`}</small></span>
         <span className="calc-step-value">{target.affectedTargets === null ? '—' : `× ${target.affectedTargets}`}</span>
         <span className="calc-step-total">{hit.total === null ? '—' : formatDamage(hit.total)}</span>
       </li>}
@@ -125,16 +126,18 @@ export function AbilityResults({ ability, inputs, data, idPrefix }: { ability: A
   const hits = target.hits;
   // Buffs/utility abilities (no published hit, only zero-value DoT records) get no Damage section.
   if (hits.length === 0 && (isNonDamaging(ability.damage) || !ability.pve.dots?.some(dot => dot.damagePerTick > 0))) return null;
-  const confidence = CONFIDENCE_LABELS[target.confidence];
   const omitted = notIncluded(result, target);
   const count = target.configuredTargets;
   const breakdownComponents = result.components.filter(c => c.delivery === 'direct' && c.baseStatus !== 'absent');
-  const targetLimit = target.warnings.find(w => w.code === 'target-cap-unknown' || w.code === 'single-target-ability');
+  const targetLimits = target.warnings.filter(w => ['target-cap-unknown', 'single-target-ability', 'burst-falloff-undocumented',
+    'burst-falloff-probabilistic', 'multiple-ability-conversions'].includes(w.code));
+  const sideEffects = target.abilityEffects.filter(m => m.category === 'ability-taunt-flat' || m.category === 'ability-reset-time-flat');
+  const assumptions = [...new Set([...result.assumptions, ...target.assumptions])];
   const allWarnings = [...result.warnings, ...target.warnings];
   const unmodeled = result.aggregation.unsupported.filter(u => u.reason !== 'progression-rewards-not-modifiers');
   const uniqueWarnings = [...new Map(allWarnings.map(w => [`${w.code}|${w.message}`, w])).values()];
   return <section className="ability-results" aria-labelledby={`${idPrefix}-results-title`} data-confidence={target.confidence}>
-    <h4 id={`${idPrefix}-results-title`}>Damage <span className="confidence-badge" data-confidence={target.confidence} title={confidence.help}>{confidence.label}</span></h4>
+    <h4 id={`${idPrefix}-results-title`}>Damage{target.burst && <span className="result-scope"> · Burst {target.burst.radius} m{target.burst.source === 'treasure-conversion' ? ' (mod)' : ''}</span>}</h4>
     {hits.length === 0 ? <p className="muted">No direct hit is published{ability.pve.dots?.length ? '; DoT damage is not calculated yet.' : '.'}</p>
       : <dl className="result-rows">{hits.map(hit => <div key={hit.componentId} className="result-row" data-component={hit.componentId}>
         <dt>{hitLabel(hit.componentId)}{count > 1 ? ' · per target' : ''}</dt>
@@ -147,17 +150,24 @@ export function AbilityResults({ ability, inputs, data, idPrefix }: { ability: A
       </div>)}
       <div className="result-row"><dt>Critical hit</dt><dd><span className="muted" title="Critical chance and multipliers are not modeled yet.">Not modeled</span></dd></div>
     </dl>}
-    {targetLimit && count > 1 && <p className="result-note">{targetLimit.message}</p>}
+    {count > 1 && targetLimits.map(w => <p key={w.code} className="result-note" data-warning={w.code}>{w.message}</p>)}
+    {sideEffects.length > 0 && <p className="result-note result-side-effects">Not damage: {sideEffects.map(m => m.category === 'ability-taunt-flat'
+      ? `taunt +${formatDamage(m.value)}` : `reuse timer +${formatDamage(m.value)} s`).join(' · ')}</p>}
     {omitted.length > 0 && <p className="result-note result-limits">Not included: {omitted.join(' · ')}</p>}
     <details className="calc-breakdown"><summary>Calculation breakdown</summary>
-      <p className="calc-confidence">Confidence: <strong>{confidence.label}</strong>. {confidence.help} Values are calculations from published data, not in-game measurements. * marks an assumed rule.</p>
+      <p className="calc-confidence">{CONFIDENCE_LABELS[target.confidence].help} Values are calculations from published data, not in-game measurements. * marks an assumed rule.</p>
       {breakdownComponents.map(component => <ComponentBreakdown key={component.id} component={component} target={target} modifiers={modifiers} />)}
       {uniqueWarnings.length > 0 && <><p className="calc-subhead">Limitations</p><ul className="calc-notes">{uniqueWarnings.map(w =>
         <li key={`${w.code}|${w.message}`} data-warning={w.code}>{w.message}</li>)}</ul></>}
       {unmodeled.length > 0 && <><p className="calc-subhead">Unmodeled build effects ({unmodeled.length})</p><ul className="calc-notes">{unmodeled.map(u =>
         <li key={u.key} data-unsupported={u.key}>{u.message}</li>)}</ul></>}
-      {(result.assumptions.length > 0 || target.assumptions.length > 0) && <><p className="calc-subhead">Assumptions</p><ul className="calc-notes">
-        {[...result.assumptions, ...target.assumptions].map(a => <li key={a}>{a}</li>)}</ul></>}
+      {target.falloff && <><p className="calc-subhead">Burst target-count rules (2024-07-30 notes)</p><ul className="calc-notes">
+        <li data-falloff="direct">Direct: {target.falloff.direct.explanation}</li>
+        <li data-falloff="indirect">Indirect (DoTs, not calculated): {target.falloff.indirect.explanation}</li></ul></>}
+      {target.abilityEffects.length > 0 && <><p className="calc-subhead">Ability changes from mods</p><ul className="calc-notes">{target.abilityEffects.map(m =>
+        <li key={m.key} data-ability-effect={m.category}>{m.attributeLabel ?? m.attributeId}: {m.sourceValue}{m.unit === 'seconds' ? ' s' : m.unit === 'meters' ? ' m' : ''} ({sourceLabel(m.source)})</li>)}</ul></>}
+      {assumptions.length > 0 && <><p className="calc-subhead">Assumptions</p><ul className="calc-notes">
+        {assumptions.map(a => <li key={a}>{a}</li>)}</ul></>}
     </details>
   </section>;
 }

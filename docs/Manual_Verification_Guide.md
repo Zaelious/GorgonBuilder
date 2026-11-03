@@ -178,6 +178,21 @@ expected contribution +250
 
 [PR #32](https://github.com/Zaelious/GorgonBuilder/pull/32) squash-merged as `86c2e34` with 810 automated tests and green GitHub CI. [Verification](T0013_Verification.md) and [four calculation reports](calculation-reports/T0013-psychology-mock.txt) demonstrate exact ability IDs, skill/ability/damage-type filtering, original-base Skill Base rule and per-modifier ordered breakdowns. Confirm `500 × 0.50 = +250` regardless of other flats; missing/unknown powers and crits remain explicitly unmodeled. The preview formula is provisional; no damage result UI or Spark integration exists yet. Hands-on game-math acceptance is deferred until T0014/T0015 allow comparing working gear and Sparks with actual in-game results. At T0014 verify visible values and drill-down follow each edit, distinguish omitted interactions, and preserve exact source and UI accessibility.
 
+### T0014 ability results, target dummy and acceptance corrections
+
+[PR #34](https://github.com/Zaelious/GorgonBuilder/pull/34) and [T0014 verification](T0014_Verification.md) cover the full steps and screenshots. Check that:
+
+- **Damage analysis toggle:** off by default; when off, facts, Relevant Mods and bar controls are unchanged. It is remembered per browser session and never saved in the build.
+- **Psychology + Deer:** the naked Mock base matches the game.
+- **Mock +43% (OffHand `power_4066`):** raises Mock and Ridicule only.
+- **Hands `power_4032` conversion:** Burst 20 m, ×0.5 at every enemy count, taunt and reuse shown as not damage.
+- **Enemy counts 1 / 3 / 5 / 9:** full / full / full / 25% direct floor. 6–8 are unavailable (undocumented falloff).
+- **Long popovers:** scroll to Remove at 1440, 1920, 375 and 320 px without the position resetting.
+- **Respect Skill Level:** persists across picker reopenings within the session.
+- **OffHand / OffHandShield:** benign warnings stay hidden, while incompatible slots and double-offhand conflicts still warn.
+
+After building, run `node src/features/abilities/popover-scroll.smoke.mjs` for the real-browser scroll regression. Formula placement for the ×0.5 penalty and the +X% stacking is assumed and needs in-game comparison.
+
 ## Spark Tickets
 
 Verify:

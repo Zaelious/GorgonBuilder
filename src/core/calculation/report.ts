@@ -6,6 +6,7 @@ function scopeText(scope: ModifierScope): string {
     case 'skill': return `skill ${scope.skillId}`;
     case 'ability-attribute-hook': return `abilities hooking ${scope.attributeId} via ${scope.hook}`;
     case 'damage-type': return `${scope.damageType}${scope.delivery ? ` (${scope.delivery})` : ' (delivery unspecified)'}`;
+    case 'ability-keyword': return `${scope.skillId} abilities with keyword ${scope.keyword}`;
   }
 }
 

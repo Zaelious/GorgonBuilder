@@ -4,13 +4,13 @@ import type { BuildDocument, TargetConfiguration } from '../build/document';
 import { aggregateBuildModifiers } from './aggregate';
 import { calculateAbilityDamage } from './ability-damage';
 import { psychologyFixture } from './fixtures';
-import { applyTargetDummy, TARGET_DAMAGE_ASSUMPTIONS } from './target-damage';
+import { applyTargetDummy, burstTargetFalloff, TARGET_DAMAGE_ASSUMPTIONS } from './target-damage';
 
 let data: ReturnType<typeof loadPlannerFixture>;
 beforeAll(() => { data = loadPlannerFixture(); });
 
 const MOCK = 'ability_6553'; // Mock 11: single published HealthSpecificDamage 178 Psychic, no AoE
-const MULTISHOT = 'ability_2328'; // Multishot 8: Damage 412 Piercing, published AoE 30, no target cap field
+const MULTISHOT = 'ability_2328'; // Multishot 8: Damage 412 Piercing, published AoE 30 and Burst keyword, no target cap field
 const target = (count = 1, damageTypes: TargetConfiguration['damageTypes'] = {}): TargetConfiguration => ({ count, damageTypes });
 
 function calculate(abilityId: string, build: BuildDocument = psychologyFixture(data.gameDataVersion)) {
@@ -66,36 +66,53 @@ describe('T0014 target dummy stage', () => {
     expect(out.assumptions).toEqual([TARGET_DAMAGE_ASSUMPTIONS.singleTarget]);
   });
 
-  it('shows AoE per-target damage but never assumes an unlimited target cap', () => {
+  it('treats a published Burst ability as hitting every configured enemy and applies only documented falloff', () => {
     const result = calculate(MULTISHOT);
     expect(result.ability!.targeting.aoe).toBe(30);
+    expect(result.ability!.keywords).toContain('Burst');
     const perTarget = result.components.find(c => c.id === 'damage')!.provisionalDamage!;
 
     const one = applyTargetDummy(result, target(1));
-    expect(one.areaOfEffect).toBe(true);
+    expect(one.burst).toEqual({ source: 'published-aoe', radius: 30 });
     expect(one.affectedTargets).toBe(1);
+    expect(one.falloff).toBeNull();
     expect(one.hits[0]!.total).toBe(perTarget);
 
+    // 30 m: 3 + 3 = 6 full-damage targets.
+    const six = applyTargetDummy(result, target(6));
+    expect(six.affectedTargets).toBe(6);
+    expect(six.falloff!.direct).toMatchObject({ status: 'full', multiplier: 1, fullDamageTargets: 6 });
+    expect(six.hits[0]!.total).toBe(perTarget * 6);
+    expect(six.assumptions).toEqual(expect.arrayContaining([TARGET_DAMAGE_ASSUMPTIONS.burstInRange, TARGET_DAMAGE_ASSUMPTIONS.publishedAoeRadius]));
+
+    const seven = applyTargetDummy(result, target(7));
+    expect(seven.hits[0]!.perTarget).toBeNull();
+    expect(seven.hits[0]!.total).toBeNull();
+    expect(seven.warnings.map(w => w.code)).toEqual(['burst-falloff-undocumented']);
+
+    const nine = applyTargetDummy(result, target(9));
+    expect(nine.hits[0]!.perTarget).toBeCloseTo(perTarget * 0.25, 10);
+    expect(nine.hits[0]!.total).toBeCloseTo(perTarget * 0.25 * 9, 10);
+    expect(nine.falloff!.indirect).toMatchObject({ status: 'floor', multiplier: 0.5 });
+  });
+
+  it('never assumes an unlimited cap for a non-Burst AoE record; a supplied cap gives min(enemies, cap)', () => {
+    const GAS_BREATH = 'ability_14011'; // published AoE 8, no Burst keyword
+    const result = calculate(GAS_BREATH);
+    expect(result.ability!.keywords).not.toContain('Burst');
+    const perTarget = result.components.find(c => c.id === 'damage')!.provisionalDamage!;
     const three = applyTargetDummy(result, target(3));
-    expect(three.targetCap).toBeNull();
+    expect(three.burst).toBeNull();
     expect(three.affectedTargets).toBeNull();
     expect(three.hits[0]!.perTarget).toBe(perTarget);
     expect(three.hits[0]!.total).toBeNull();
     expect(three.warnings.map(w => w.code)).toEqual(['target-cap-unknown']);
-  });
-
-  it('multiplies per-target damage by min(enemies, cap) when a source-backed cap is supplied', () => {
-    const result = calculate(MULTISHOT);
-    const perTarget = result.components.find(c => c.id === 'damage')!.provisionalDamage!;
-    const capped = applyTargetDummy(result, target(20, { Piercing: { vulnerability: 10 } }), { targetCap: 5 });
+    expect(applyTargetDummy(result, target(1)).hits[0]!.total).toBe(perTarget);
+    const capped = applyTargetDummy(result, target(20, { Nature: { vulnerability: 10 } }), { targetCap: 5 });
     expect(capped.affectedTargets).toBe(5);
-    expect(capped.hits[0]!.perTarget).toBeCloseTo(perTarget * 1.1, 10);
     expect(capped.hits[0]!.total).toBeCloseTo(perTarget * 1.1 * 5, 10);
-    expect(capped.assumptions).toEqual(expect.arrayContaining([TARGET_DAMAGE_ASSUMPTIONS.aoeInRange, TARGET_DAMAGE_ASSUMPTIONS.damageType]));
-    expect(applyTargetDummy(result, target(3), { targetCap: 10 }).affectedTargets).toBe(3);
     const invalid = applyTargetDummy(result, target(3), { targetCap: 0 });
     expect(invalid.targetCap).toBeNull();
-    expect(invalid.affectedTargets).toBeNull();
     expect(invalid.warnings.map(w => w.code)).toEqual(['invalid-target-cap', 'target-cap-unknown']);
   });
 
@@ -114,5 +131,25 @@ describe('T0014 target dummy stage', () => {
     expect(out.hits).toEqual([]);
     expect(out.affectedTargets).toBeNull();
     expect(out.confidence).toBe('unknown');
+  });
+});
+
+describe('documented Burst target-count falloff (2024-07-30)', () => {
+  it('gives full damage up to 3 + 1 per 10 m, the 9+ floors, and no invented intermediate values', () => {
+    const at = (n: number, radius: number | null, delivery: 'direct' | 'indirect' = 'direct') => burstTargetFalloff(n, radius, delivery);
+    expect([1, 3, 5].map(n => at(n, 20).multiplier)).toEqual([1, 1, 1]);
+    expect(at(5, 20)).toMatchObject({ status: 'full', fullDamageTargets: 5, extraTargetChance: 0 });
+    expect([6, 7, 8].map(n => at(n, 20).status)).toEqual(['undocumented', 'undocumented', 'undocumented']);
+    expect([6, 7, 8].map(n => at(n, 20).multiplier)).toEqual([null, null, null]);
+    expect(at(9, 20)).toMatchObject({ status: 'floor', multiplier: 0.25 });
+    expect(at(20, 20, 'indirect')).toMatchObject({ status: 'floor', multiplier: 0.5 });
+    expect(at(4, 0)).toMatchObject({ status: 'undocumented', fullDamageTargets: 3 });
+    expect(at(3, null)).toMatchObject({ status: 'full', fullDamageTargets: null });
+    expect(at(4, null).status).toBe('undocumented');
+    // 7 m: 3 full targets plus a 70% chance of a 4th; no expected value is invented.
+    expect(at(4, 7)).toMatchObject({ status: 'probabilistic', multiplier: null, extraTargetChance: 0.7 });
+    expect(at(3, 7).status).toBe('full');
+    // A radius that already covers 9 targets leaves larger counts undocumented rather than jumping to the floor.
+    expect(at(10, 60)).toMatchObject({ status: 'undocumented', fullDamageTargets: 9 });
   });
 });

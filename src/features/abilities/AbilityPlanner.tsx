@@ -59,6 +59,9 @@ function DetailPopover({ id, selection, anchor, warnings, data, equipment, damag
     const element = popup.current!;
     function position() {
       if (!anchor) return;
+      // Measuring below sets max-height to none, which would clamp an internally scrolled card back to the top;
+      // keep the reader's place across every re-placement (page scroll, resize, disclosure toggles).
+      const scrollTop = element.scrollTop;
       // One narrow column at a fixed width: measure its natural height before paint, then place it next to the slot.
       const viewport = { width: window.innerWidth, height: window.innerHeight };
       element.style.width = `${tooltipWidth(viewport)}px`;
@@ -70,6 +73,12 @@ function DetailPopover({ id, selection, anchor, warnings, data, equipment, damag
       element.style.maxHeight = `${placement.maxHeight}px`;
       element.style.left = `${placement.left}px`;
       element.style.top = `${placement.top}px`;
+      element.scrollTop = scrollTop;
+    }
+    // Only page/ancestor scrolling moves the slot. The card's own internal scrolling must never re-place it.
+    function onScroll(event: Event) {
+      if (event.target instanceof Node && element.contains(event.target)) return;
+      position();
     }
     // Associate the invoker so native Tab order enters the interactive panel.
     element.showPopover?.({ source: anchor });
@@ -85,13 +94,13 @@ function DetailPopover({ id, selection, anchor, warnings, data, equipment, damag
       }
     }
     window.addEventListener('resize', position);
-    window.addEventListener('scroll', position, true);
+    window.addEventListener('scroll', onScroll, true);
     document.addEventListener('pointerdown', onOutsidePointer, true);
     document.addEventListener('keydown', onEscape);
     element.addEventListener('toggle', position, true);
     return () => {
       window.removeEventListener('resize', position);
-      window.removeEventListener('scroll', position, true);
+      window.removeEventListener('scroll', onScroll, true);
       document.removeEventListener('pointerdown', onOutsidePointer, true);
       document.removeEventListener('keydown', onEscape);
       element.removeEventListener('toggle', position, true);

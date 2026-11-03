@@ -1,91 +1,123 @@
 # T0014 — Ability Results UI and Custom Target Dummy: Verification
 
-**Status:** Implemented for review. Customer hands-on verification is pending. No in-game measurements were taken.
+**Status:** Implemented in [PR #34](https://github.com/Zaelious/GorgonBuilder/pull/34), with customer acceptance corrections. Customer hands-on acceptance is pending. No in-game measurements were taken.
 
-**Base:** `main` at `3231809` (T0013 merged). No earlier T0014 branch, commit or PR existed, so this work starts from `main`.
+**Base:** `main` at `3231809` (T0013 merged). **Branch:** `claude/friendly-ritchie-7rwkgu`.
 
-**Branch:** `claude/friendly-ritchie-7rwkgu`
-
-## What changed
+## Behavior
 
 | Area | Behavior |
 |---|---|
-| Ability popover | Shows a compact **Damage** section with a confidence badge. Each published hit (normal, health or armor) is shown separately, never summed. With several enemies it shows per-target and total rows. **Critical hit: Not modeled.** A one-line **Not included** list names the omitted interactions. |
-| Calculation breakdown | Collapsed by default. It lists the ordered T0013 steps (label, source, operand, contribution and running total), the target-modifier step, affected enemies, uncertain mods that were not added, the count of excluded mods, limitations, unmodeled build effects and assumptions. `*` marks an assumed rule. |
-| Target dummy | One row under the skill bars: **Enemies** (1–20) and an expandable **Vulnerability & resistance** table. The table lists damage types of equipped abilities plus any saved keys. Values are saved in the existing `BuildDocument.target` (schema v1 unchanged). |
-| Target stage | `applyTargetDummy` (`src/core/calculation/target-damage.ts`) is pure, has no React dependency, and runs after T0013. See the [calculation README](../src/core/calculation/README.md#target-dummy-stage-t0014). |
-| Respect Skill Level | An ability-picker checkbox, off by default and never saved. When on, family **+** picks the highest published Level at or below the skill's configured level. Ties go to canonical ID in ascending order. If no tier qualifies, **+** is disabled with an explanation, and expanded tiers remain freely selectable. Skill-level edits never change equipped bars. |
+| **Damage analysis toggle** | A compact checkbox in the Skills & Abilities heading. **Off by default.** It is remembered for the browser session (`sessionStorage`) and never saved in BuildDocument v1. When off, ability facts, Relevant Mods, Technical details and all bar controls are unchanged, and the target dummy and damage results are hidden. |
+| **Ability popover results** (toggle on) | Each published hit is shown separately and never summed. With several enemies, per-target and total rows appear. A Burst label appears when relevant (e.g. "Burst 20 m (mod)"), and **Critical hit: Not modeled**. A "Not damage" line shows taunt and reuse effects; "Not included" lists specific omitted interactions. There are no per-ability confidence badges; confidence stays in the data (`data-confidence`) and in the breakdown text. |
+| **Calculation breakdown** | Collapsed by default. It lists, in order: T0013 steps with source, operand and running total; the ability multiplier; Burst falloff; the target damage-type modifier; and affected enemies. It also shows the documented direct/indirect Burst rules, ability changes from mods, uncertain mods, limitations, unmodeled build effects and assumptions. `*` marks an assumed rule. |
+| **Target dummy** | One row: **Enemies** (1–20) and **Vulnerability & resistance** per damage type, saved in the existing `BuildDocument.target`. |
+| **Respect Skill Level** | A picker checkbox, off by default and remembered for the browser session across picker openings and both bars. When on, **+** picks the highest published Level at or below the skill level, with canonical ID ascending as the tie-break. If no tier qualifies, it says so; manual tiers stay unrestricted. Equipped abilities never change. |
+| **Popover scrolling** | Placement re-runs only for page/ancestor scrolling, resize and disclosure toggles, never for the card's own scrolling, and it preserves `scrollTop`. Previously the capturing `scroll` listener re-measured the card on every internal scroll; setting `max-height: none` reset `scrollTop` to 0, which looked like locked scrolling. `overscroll-behavior: contain` only stops chaining while the card itself is scrollable; non-overflowing cards and the page scroll normally. |
+| **OffHand / OffHandShield** | "Published slot is X; saved slot Y is retained" and "Source slot X differs from official base slot Y" are hidden when the only difference is OffHand vs OffHandShield (`core/build/slots.ts`). Exact slots are unchanged in data, imports and persistence. Genuinely different slots and the legacy multiple-offhand conflict still warn. |
 
-### Files
+## Psychology modifier trace (customer report)
 
-- `src/core/calculation/target-damage.ts` (+ tests) and `index.ts`: the target stage.
-- `src/core/build/target.ts` (+ tests): count clamping and per-type percentage editing.
-- `src/app/editor/build-editor.ts` (+ test): `target-count` and `target-damage-type` edits.
-- `src/features/abilities/AbilityResults.tsx` and `results.css`: the popover results and breakdown.
-- `src/features/abilities/TargetDummy.tsx` and `target-dummy.css`: the target controls.
-- `src/features/abilities/groups.ts` (`quickAddTier`) and `AbilityPicker.tsx` / `picker.css`: the toggle.
-- `src/features/abilities/AbilityPlanner.tsx`, `src/features/skills/SkillPlanner.tsx` and `src/app/App.tsx`: these pass one per-build aggregation down to the popovers.
-- `src/features/abilities/AbilityResults.test.tsx`: UI tests. `RelevantMods.test.tsx` now expects Damage between the published stats and Relevant Mods.
-- READMEs: `src/core/build`, `src/core/calculation`.
+| Customer mod | Official source | Before | Now |
+|---|---|---|---|
+| OffHand "Mock and Ridicule deal +43% damage and taunt +200" | `power_4066` MockAndRidiculeBoost, tier `id_20`; prose only, no attribute token | T0012 `prose-effect` unsupported, so it was shown in Relevant Mods (icon/name match) but not calculated | Curated exact rule → `MOD_ABILITY_MOCK` / `MOD_ABILITY_RIDICULE` +0.43 through the official `AttributesThatModDamage` hooks. Mock 11 naked: 178 → **254.54**; Ridicule 18 → 25.74; other Psychology abilities unaffected. Taunt +200 kept separately. |
+| Hands "Mock hits all enemies within 20 meters and taunts +1080, but damage is halved and reuse timer is +1.5 seconds" | `power_4032` MockBoost, tier `id_18`; prose only | `prose-effect` unsupported | Curated exact rule → Burst conversion (20 m), damage ×0.5 at every enemy count, taunt +1080 (`ABILITY_TAUNT_DELTA_MOCK`), reuse +1.5 s (`ABILITY_RESETTIME_DELTA_MOCK`). Taunt and reuse never add damage. Mock only; Ridicule is not converted. |
 
-## Assumptions (all visible in the breakdown)
+Direct Psychic damage from MainHand already worked (`damage-type-direct-*`) and is unchanged.
 
-1. Target vulnerability and resistance are percentage points for the hit's exact damage type. They net additively into one multiplier applied after all build contributions. (Assumed.)
-2. An ability without a published `AoE` value hits only its selected target.
-3. With a known cap, every configured enemy up to the cap is inside the AoE area. v490 publishes **no** target-cap field, so the total for more than one AoE enemy is shown as "Target cap not published" and is never assumed to be unlimited.
-4. All T0013 assumptions are unchanged. The T0013 formula was not modified.
+## AoE research and rules implemented
+
+Official source: [Game update 2024-07-30](https://wiki.projectgorgon.com/wiki/Game_updates/2024-07-30).
+- Burst direct and indirect damage are reduced above 3 targets.
+- Direct damage falls to **25%** and indirect to **50%** at **9 or more** targets.
+- Each 10 m of Burst radius adds one full-damage target (20 m → 5).
+- A radius remainder gives a random extra target (7 m → 70%).
+
+The current wiki [Combat page](https://wiki.projectgorgon.com/wiki/Combat) (edited 2026-10-05) is consistent: full damage to three, reduced beyond, and counted as ten past ten. No newer official change was found (official `news.txt` through 2026-10-27; 2025 updates only made some pet abilities Burst).
+
+| Enemies (Mock + conversion, 20 m) | Per-target | Total | Status |
+|---|---|---|---|
+| 1 / 3 / 5 | ×0.5 only | per-target × enemies | documented full damage (≤ 5) |
+| 6–8 | unavailable | unavailable | intermediate falloff not published |
+| 9+ | ×0.5 × 0.25 | per-target × enemies | documented direct floor |
+
+The three concepts stay separate:
+- The ability multiplier (×0.5 from the mod).
+- Target-count falloff (`burstTargetFalloff`, with direct and indirect kept apart).
+- Affected enemies (a scenario assumption that the selected enemies are in range).
+
+No cap is inferred from the radius. Abilities with the official `Burst` keyword and a published AoE value use that value as the assumed radius (Multishot 8: 30 m → 6 full targets). Non-Burst AoE records with no cap still give no total.
+
+## Files
+
+- **Core:**
+  - `src/core/calculation/treasure-effect-rules.ts` (+ test): the curated rules.
+  - `aggregate.ts`: prose branch only.
+  - `modifiers.ts`: non-damage categories, `set`/`multiply` operations and the `ability-keyword` scope.
+  - `report.ts`.
+  - `target-damage.ts` (+ test): the scenario stage and Burst falloff.
+  - `src/core/build/slots.ts`.
+- **UI:**
+  - `AbilityResults.tsx` and `results.css`.
+  - `AbilityPlanner.tsx`: the scroll fix.
+  - `AbilityPicker.tsx`: session Respect Skill Level.
+  - `src/app/App.tsx`, `useSessionFlag.ts` and `planner.css`: the toggle.
+  - `src/persistence/local/session-flags.ts`.
+  - `ImportedItemDetails.tsx` and `EquipmentPlanner.tsx`: the slot warnings.
+- **Tests:**
+  - `AbilityResults.test.tsx`
+  - `src/features/equipment/OffhandWarnings.test.tsx`
+  - the core tests above
+  - `src/features/abilities/popover-scroll.smoke.mjs` (real Chromium)
+- `RelevantMods.test.tsx` is unchanged from `main`: with analysis off, popover order is again stats → Relevant Mods.
 
 ## Automated checks
 
 ```sh
-npx vitest run src/core/calculation/target-damage.test.ts src/core/build/target.test.ts src/features/abilities src/app/editor/build-editor.test.ts
+npm run data:update -- --check
 npm run lint
 npm run typecheck
-npm test        # 831 tests, 41 files
+npm test                # 851 tests, 43 files
 npm run build
 git diff --check
+node src/features/abilities/popover-scroll.smoke.mjs --output /tmp/gorgonbuilder-popover-scroll
 ```
 
-The tests cover:
+**Real-browser scroll regression.** It runs at 1440×900, 1920×1080, 375×812 and 320×812. It expands the long breakdown, five Relevant Mods, Technical details and Edit bar, then wheel-scrolls the card. It checks that:
+- the scroll position only moves forward;
+- the bottom is reached, and Remove is visible and hit-testable;
+- the position survives a pause and a page scroll;
+- Escape closes the card.
 
-- an identity dummy, with the T0013 result left unmodified
-- only the matching damage type changing anything
-- the ×1.2 math
-- net resistance above 100%
-- single-target counting
-- AoE with an unknown cap, a known cap and an invalid cap
-- a missing ability
-- a 175-point delta when the Ring is removed, at both the core and UI level
-- breakdown step order and running totals
-- target edits saved to the draft
-- out-of-range count input
-- the Respect Skill Level rule: off/on, equal-level ties, no match, manual override, unchanged equipped bars and transient state
+The test fails on the previous code: `scrollTop` stayed at 0 at all four sizes. Results and screenshots (compact, expanded top and expanded bottom per size) are in `src/features/abilities/verification/popover-scroll/`.
 
 ## Manual verification
 
-Synthetic Psychology fixture (`psychologyFixture`): Skill A Psychology 100 with Mock 11 (`ability_6553`), and Skill B Archery 90 with Multishot 8 (`ability_2328`).
+1. **Toggle:** after a fresh load, Damage analysis is off. The popover shows facts, Relevant Mods, Technical details and Edit bar/Remove, with no damage UI or target row. Turn it on and reopen popovers; reload the tab and it stays on. A new browser session starts off. The saved build is unchanged.
+2. **Psychology + Deer** at imported effective levels, naked: Mock reproduces the published base (Mock 11 = 178).
+3. **Mock +43%:** OffHand `power_4066` tier 20. Mock 11 = 254.54 (breakdown: "Mock Damage % · OffHand … +43% of 178"). Ridicule rises too; Strike a Nerve does not.
+4. **AoE conversion:** add Hands `power_4032` tier 18. Expect "Burst 20 m (mod)", a ×0.5 step, and "Not damage: taunt +200 · taunt +1,080 · reuse timer +1.5 s".
+   - Enemies 1 / 3 / 5 → 127.27 per target (totals 127.27 / 381.81 / 636.35).
+   - 6 → unavailable, with an undocumented-falloff note.
+   - 9 → 31.82 per target, 286.36 total.
+5. **Combination:** with the Psychology fixture gear (+175/+58 flats, Skill Base +20%/+45%), each source appears once in the breakdown, and halving applies last (703.43 → 351.72).
+6. **Scrolling:** open a long popover (many mods, breakdown, Technical details) at desktop and phone sizes. Scroll to Remove; the position never jumps back. Page scrolling works when the card is not scrollable.
+7. **Respect Skill Level:** turn it on, close and reopen the picker (including the other bar). It stays on until turned off, and equipped abilities never change.
+8. **Offhand:** import or refresh a shield reported as `OffHand` (base `OffHandShield`). There is no slot-differs warning in the equipment row, original item details or My Items. A shield saved in Head or MainHand still warns.
+9. **Quality suite:** run the checks above.
 
-1. Open Mock 11. Expect **Health hit: 526.7 Psychic** and the **Incomplete** badge. Expand **Calculation breakdown**: 178 → 353 → 411 → 446.6 → 526.7. Skill Base uses "of base 178".
-2. Clear the Ring and reopen Mock 11. Expect 351.7; the breakdown no longer has the +175 step.
-3. Set **Enemies** to 3. Multishot shows a per-target 645 Piercing and "Total · 3 enemies: Target cap not published". Mock shows "Total · 1 enemy" and explains that only 1 of 3 is counted.
-4. Set Psychic vulnerability 25 and resistance 5. Mock becomes 632.04, with a "Target Psychic modifier × 1.2" step. Multishot (Piercing) is unchanged.
-5. Set Skill A level 55, open the picker and check **Respect Skill Level**. Mock **+** adds Mock 6 (Lv 50); with the box unchecked it adds Mock 13. At level 0, **+** is disabled with "No tier at or below Lv 0…", and expanded tiers still add. Equipped abilities do not change when levels change.
-6. Run the quality suite.
+Additional screenshots in `src/features/abilities/verification/`:
+- `damage-analysis-off-1440.png`
+- `damage-analysis-off-320.png`
+- `mock-burst-5-enemies-breakdown-1440.png`
+- `respect-skill-level-375.png`
 
-Screenshots (synthetic data, local Vite dev server, Chromium) are in `src/features/abilities/verification/`:
+## Remaining unmodeled effects and follow-ups
 
-- `t14-1440-mock-breakdown.png`
-- `t14-1440-multishot-3-enemies.png`
-- `t14-1440-target-dummy.png`
-- `t14-1440-picker-respect-level0.png`
-- `t14-375-mock.png`
+- **Burst falloff between full-damage targets and 9 enemies:** not published; no value is shown. Probabilistic extra targets are not expected-valued.
+- **DoT/indirect damage:** not calculated. The indirect 50% floor is shown as a rule only.
+- **Other prose treasure effects:** stay unsupported unless an exact curated rule is added. A proposed narrowly scoped follow-up would add more audited Psychology/Cow/Unarmed rules from customer gear.
+- **Placement of "damage is halved" and the +X% stacking:** assumed (×0.5 after all contributions; +X% additive with other percentages). Both need in-game validation, together with T0015 Sparks.
+- **Still limitations:** the Vulnerable target state, criticals, special ability rules, and taunt/reuse effects (displayed, not simulated).
 
-## Risks and follow-ups
-
-- **No AoE target cap in official data.** Totals for more than one AoE enemy remain unavailable until a source-backed cap exists. Some abilities say "Hits all targets within range" in prose; prose is not interpreted.
-- **Vulnerable target state** (`ExtraDamageIfTargetVulnerable`, `AttributesThatDeltaDamageIfTargetIsVulnerable`) is still a listed limitation. It is a stateful debuff (non-goal).
-- The target percentage formula needs in-game validation alongside T0015 Sparks.
-- Respect Skill Level resets each time the picker opens (transient by design).
-- DoT-only abilities show "DoT damage is not calculated yet".
-
-**Central docs to update after merge:** `docs/Repo_Current_State.md`, `docs/Tickets.md` (T0014 status), `docs/Manual_Verification_Guide.md` (calculation tickets), and `docs/MVP_Technical_Design.md` (target semantics).
+**Central docs to update after acceptance:** `docs/Repo_Current_State.md`, `docs/Tickets.md` (T0014 status), and `docs/MVP_Technical_Design.md`. `docs/Manual_Verification_Guide.md` already has the T0014 entry.

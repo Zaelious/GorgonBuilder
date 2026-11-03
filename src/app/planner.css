@@ -288,3 +288,8 @@
   .planner-main .ability-popover button, .planner-main .ability-popover .detail-heading > button { min-height: 2.75rem; min-width: 2.75rem; }
   .ability-popover .technical-details > summary, .ability-popover .bar-edit-actions > summary { min-height: 2.75rem; }
 }
+/* T0014: session-only calculation UI switch in the Skills & Abilities heading. */
+.planner-main .damage-analysis-toggle { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0 0 0 auto; color: var(--color-secondary); font-size: 0.8125rem; cursor: pointer; white-space: nowrap; }
+.damage-analysis-toggle:hover { color: var(--color-text); }
+.planner-main .damage-analysis-toggle input { width: 1rem; height: 1rem; margin: 0; padding: 0; min-height: 0; flex: none; }
+.section-heading .damage-analysis-toggle + .planner-help { margin-left: 0; }

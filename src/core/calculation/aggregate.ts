@@ -7,6 +7,7 @@ import {
   type SkillSlotName, type UnsupportedEffect, type UnsupportedReason, type UnsupportedSkillSource,
 } from './modifiers';
 import { defaultModifierRegistry, parseEffectDescription, type ModifierDataContext, type ModifierRegistry } from './registry';
+import { interpretTreasureEffect } from './treasure-effect-rules';
 
 export interface AggregateOptions {
   /** Defaults to the documented initial mapping subset. */
@@ -76,7 +77,24 @@ export function aggregateBuildModifiers(build: BuildDocument, data: ModifierData
   function interpretEffect(input: EffectInput) {
     const parsed = parseEffectDescription(input.description);
     if (parsed.kind === 'prose') {
-      emitUnsupported(input.key, 'prose-effect', `Published text effect is not interpreted: "${input.description}"`, input.source);
+      // Only curated exact power ID + InternalName + sentence-template rules interpret prose; no general parsing.
+      const curated = input.source.kind === 'existing-power' || input.source.kind === 'candidate-mod'
+        ? interpretTreasureEffect(input.source.powerId, input.description, data) : null;
+      if (curated?.kind === 'drafts') {
+        for (const draft of curated.drafts) {
+          out.modifiers.push({
+            key: `${input.key}/rule:${draft.part}`, category: draft.category, operation: draft.operation,
+            attributeId: draft.attributeId, attributeLabel: draft.attributeLabel, scope: draft.scope,
+            value: draft.value, sourceValue: draft.sourceValue, unit: draft.unit,
+            conditions: [], applicability: 'unconditional', mappingRuleId: curated.rule.id,
+            confidence: curated.rule.confidence, assumptions: [...draft.assumptions], source: input.source,
+          });
+        }
+        return;
+      }
+      emitUnsupported(input.key, 'prose-effect', curated?.kind === 'template-mismatch'
+        ? `Published text does not match curated rule ${curated.rule.id}; not interpreted: "${input.description}"`
+        : `Published text effect is not interpreted: "${input.description}"`, input.source);
       return;
     }
     if (parsed.kind === 'malformed') {

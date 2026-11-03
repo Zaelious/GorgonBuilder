@@ -9,6 +9,11 @@ export { calculateAbilityDamage, ABILITY_DAMAGE_ASSUMPTIONS } from './ability-da
 export * from './ability-damage-types';
 export { formatAbilityDamageReport } from './ability-damage-report';
 export {
-  applyTargetDummy, TARGET_DAMAGE_ASSUMPTIONS,
-  type TargetDamageOptions, type TargetDamageResult, type TargetDamageTypeStep, type TargetHitResult,
+  applyTargetDummy, burstTargetFalloff, BURST_FALLOFF_RULES, TARGET_DAMAGE_ASSUMPTIONS,
+  type BurstCoverage, type BurstFalloff, type TargetDamageOptions, type TargetDamageResult, type TargetDamageTypeStep,
+  type TargetHitResult, type TargetStep, type TargetStepKind,
 } from './target-damage';
+export {
+  TREASURE_EFFECT_RULES, TREASURE_RULE_ASSUMPTIONS, interpretTreasureEffect,
+  type TreasureEffectDraft, type TreasureEffectInterpretation, type TreasureEffectRule,
+} from './treasure-effect-rules';

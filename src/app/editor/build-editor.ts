@@ -1,4 +1,5 @@
 import { sameImportedInstance } from '../../core/build/imported-identity';
+import { isOffhandSlot } from '../../core/build/slots';
 import { editCandidateMods, pruneCandidateModsForSkill, type CandidateModEdit } from '../../core/build/candidate-mods';
 import { editExistingMods, type ExistingModEdit } from '../../core/build/existing-mods';
 import { setTargetCount, setTargetDamageTypePercent, type TargetPercentField } from '../../core/build/target';
@@ -25,10 +26,8 @@ export type BuildEdit =
   | { type: 'remove'; slot: Slot; index: number }
   | { type: 'move'; slot: Slot; index: number; direction: -1 | 1 };
 
-/** Two canonical item types share one player loadout position. */
-export function isOffhandSlot(slot: string): boolean {
-  return slot === 'OffHand' || slot === 'OffHandShield';
-}
+/** Two canonical item types share one player loadout position (see core/build/slots). */
+export { isOffhandSlot };
 
 /** Each committed edit preserves unrelated fields. A skill switch clears its own bar and, atomically, staged
  * candidates resolved to the departed skill once neither slot still uses it. */
