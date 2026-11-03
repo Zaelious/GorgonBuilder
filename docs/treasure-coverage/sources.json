@@ -1,0 +1,104 @@
+{
+  "gameDataVersion": "v490",
+  "snapshotSha256": "4371c91d1e98da72a3d7385c1b71cc6f3b7c83b58947caba5a676641c57d14d1",
+  "sources": {
+    "abilities": {
+      "dataset": "abilities",
+      "gameDataVersion": "v490",
+      "sha256": "c6062577fe8d0eeed6c6e9917e7101df3d420fb11ac4ebdb3ddf7c6f3fc60ead",
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/abilities.json"
+    },
+    "abilitydynamicdots": {
+      "dataset": "abilitydynamicdots",
+      "gameDataVersion": "v490",
+      "sha256": "5c527e3e03ae203ea17480679288330b6911c9d64a381f38661bd2e22f747f1a",
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/abilitydynamicdots.json"
+    },
+    "abilitydynamicspecialvalues": {
+      "dataset": "abilitydynamicspecialvalues",
+      "gameDataVersion": "v490",
+      "sha256": "df7cb1fa5bfaf4da733f38554f74a554e322bda9d06c66da5f29b46d89a7d2d8",
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/abilitydynamicspecialvalues.json"
+    },
+    "abilitykeywords": {
+      "dataset": "abilitykeywords",
+      "gameDataVersion": "v490",
+      "sha256": "0bd489fe8d22e0d6f5b59fefeb8db009a3eba7aab0dca8394927749f4d2fbb75",
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/abilitykeywords.json"
+    },
+    "advancementtables": {
+      "dataset": "advancementtables",
+      "gameDataVersion": "v490",
+      "sha256": "831f6543297b19d56293b6977973d4f6742c3852904d2a738c0f9333b5f2acb9",
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/advancementtables.json"
+    },
+    "attributes": {
+      "dataset": "attributes",
+      "gameDataVersion": "v490",
+      "sha256": "cae0640db74087c6b7afc56924d9356ff19c4a1f183983f536451716f55e998f",
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/attributes.json"
+    },
+    "effects": {
+      "dataset": "effects",
+      "gameDataVersion": "v490",
+      "sha256": "c5116991c19bea5bd97f74bd3354ea198376509e7cd9c8d15bd245de873edb75",
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/effects.json"
+    },
+    "items": {
+      "dataset": "items",
+      "gameDataVersion": "v490",
+      "sha256": "5e777b89a6e4d68f793cda637935bd7acdf968c8419bede9d582b630cac1d4ce",
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/items.json"
+    },
+    "skills": {
+      "dataset": "skills",
+      "gameDataVersion": "v490",
+      "sha256": "b9c6629e8510c50228d5c1aababe24e2a52310a9cd64903dfeb8a0e348c42fa9",
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/skills.json"
+    },
+    "sources_abilities": {
+      "dataset": "sources_abilities",
+      "gameDataVersion": "v490",
+      "sha256": "b66c6e01e0696f174da11fda8512466c3d741872ecac2ab0b74b91295f20ba09",
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/sources_abilities.json"
+    },
+    "sources_items": {
+      "dataset": "sources_items",
+      "gameDataVersion": "v490",
+      "sha256": "6bdf5783371a5035a42b67f479b9dac748999e5af7b512922fedf1d00bbeba3e",
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/sources_items.json"
+    },
+    "tsysclientinfo": {
+      "dataset": "tsysclientinfo",
+      "gameDataVersion": "v490",
+      "sha256": "1e7296dab244ada727c2d2d8450a3afc3276c5b18c3142ab3d57786aa91337ad",
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/tsysclientinfo.json"
+    },
+    "tsysprofiles": {
+      "dataset": "tsysprofiles",
+      "gameDataVersion": "v490",
+      "sha256": "d4292e1f57bdff0ae2d876a85f102c7caa57e14b230261cc9f114417ad771a23",
+      "sourceUrl": "https://cdn.projectgorgon.com/v490/data/tsysprofiles.json"
+    }
+  },
+  "artifacts": {
+    "abilities": {
+      "bytes": 566143,
+      "file": "abilities.json.gz",
+      "jsonBytes": 16214378,
+      "sha256": "0606099fad944d22c9330bf9c310e78e2feaeda9db02a208d808b63a4e9e41c7"
+    },
+    "itemsTreasure": {
+      "bytes": 1824985,
+      "file": "itemsTreasure.json.gz",
+      "jsonBytes": 31653251,
+      "sha256": "90ea272a7804075fc8474e1150119512b3dddb9b2806626ee350aac789411487"
+    },
+    "progression": {
+      "bytes": 912081,
+      "file": "progression.json.gz",
+      "jsonBytes": 24512764,
+      "sha256": "3e9c01e629d18bac727a8e82138011951def5f067454e4f121036147d41bb915"
+    }
+  }
+}

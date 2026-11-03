@@ -1,0 +1,247 @@
+[
+  {
+    "skillId": "Angling",
+    "abilityId": null,
+    "powerId": null,
+    "tierId": null,
+    "note": "No positive single direct-hit record published; no damage invented."
+  },
+  {
+    "skillId": "AnimalHandling",
+    "abilityId": "ability_4201",
+    "powerId": "power_12010",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Archery",
+    "abilityId": "ability_2326",
+    "powerId": "power_10001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Axe",
+    "abilityId": null,
+    "powerId": null,
+    "tierId": null,
+    "note": "No positive single direct-hit record published; no damage invented."
+  },
+  {
+    "skillId": "Bard",
+    "abilityId": "ability_8536",
+    "powerId": "power_17001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "BattleChemistry",
+    "abilityId": "ability_1701",
+    "powerId": "power_7001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Cow",
+    "abilityId": "ability_1651",
+    "powerId": "power_20001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Deer",
+    "abilityId": "ability_1551",
+    "powerId": "power_21001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Druid",
+    "abilityId": "ability_5211",
+    "powerId": "power_14001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "FireMagic",
+    "abilityId": "ability_3264",
+    "powerId": "power_2001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "GiantBat",
+    "abilityId": "ability_4411",
+    "powerId": "power_24001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Hammer",
+    "abilityId": "ability_5001",
+    "powerId": "power_13001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "IceMagic",
+    "abilityId": "ability_5601",
+    "powerId": "power_15001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Knife",
+    "abilityId": "ability_6601",
+    "powerId": "power_16001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Mentalism",
+    "abilityId": "ability_2321",
+    "powerId": "power_9001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Necromancy",
+    "abilityId": "ability_2268",
+    "powerId": "power_8041",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Performance_Dance",
+    "abilityId": null,
+    "powerId": null,
+    "tierId": null,
+    "note": "No positive single direct-hit record published; no damage invented."
+  },
+  {
+    "skillId": "Performance_Percussion",
+    "abilityId": null,
+    "powerId": null,
+    "tierId": null,
+    "note": "No positive single direct-hit record published; no damage invented."
+  },
+  {
+    "skillId": "Performance_Strings",
+    "abilityId": null,
+    "powerId": null,
+    "tierId": null,
+    "note": "No positive single direct-hit record published; no damage invented."
+  },
+  {
+    "skillId": "Performance_Wind",
+    "abilityId": null,
+    "powerId": null,
+    "tierId": null,
+    "note": "No positive single direct-hit record published; no damage invented."
+  },
+  {
+    "skillId": "Pig",
+    "abilityId": "ability_1501",
+    "powerId": "power_22001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Priest",
+    "abilityId": "ability_8901",
+    "powerId": "power_26001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Psychology",
+    "abilityId": "ability_1201",
+    "powerId": "power_4001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Rabbit",
+    "abilityId": "ability_8701",
+    "powerId": "power_25001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Riding",
+    "abilityId": null,
+    "powerId": null,
+    "tierId": null,
+    "note": "No positive single direct-hit record published; no damage invented."
+  },
+  {
+    "skillId": "Shield",
+    "abilityId": "ability_4001",
+    "powerId": "power_11001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Spider",
+    "abilityId": "ability_2770",
+    "powerId": "power_23001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "SpiritFox",
+    "abilityId": "ability_7401",
+    "powerId": "power_28001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Staff",
+    "abilityId": "ability_2101",
+    "powerId": "power_5001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Sword",
+    "abilityId": "ability_1151",
+    "powerId": "power_1001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Unarmed",
+    "abilityId": "ability_1001",
+    "powerId": "power_3001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Vampirism",
+    "abilityId": "ability_4801",
+    "powerId": "power_18001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Warden",
+    "abilityId": "ability_7201",
+    "powerId": "power_27001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "WeatherWitching",
+    "abilityId": "ability_4601",
+    "powerId": "power_28601",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  },
+  {
+    "skillId": "Werewolf",
+    "abilityId": "ability_1353",
+    "powerId": "power_6001",
+    "tierId": "id_1",
+    "note": "Synthetic fixture uses exact published IDs; no claim of live-game validation."
+  }
+]

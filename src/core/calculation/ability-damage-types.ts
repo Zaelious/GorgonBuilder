@@ -1,7 +1,8 @@
 import type { GameDataRepository } from '../../data/repository/repository';
 import type { ModifierAggregationResult, ModifierCategory, ModifierConfidence, NormalizedModifier } from './modifiers';
+import type { KeywordDamageData } from './keyword-damage';
 
-export type AbilityDamageData = Pick<GameDataRepository, 'gameDataVersion' | 'getAbility' | 'getSourceMetadata'>;
+export type AbilityDamageData = Pick<GameDataRepository, 'gameDataVersion' | 'getAbility' | 'getSourceMetadata'> & KeywordDamageData;
 export type DamageAbility = NonNullable<ReturnType<AbilityDamageData['getAbility']>>;
 export type DamageComponentId = 'damage' | 'health-specific' | 'armor-specific' | `dot:${number}`;
 

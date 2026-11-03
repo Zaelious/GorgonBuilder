@@ -1,4 +1,5 @@
 import type { GameDataRepository } from '../../data/repository/repository';
+import { staticDamageKeywordRules, type KeywordDamageData } from './keyword-damage';
 import type {
   DamageDelivery, ModifierCategory, ModifierConfidence, ModifierOperation, ModifierScope, ModifierUnit, UnsupportedReason,
 } from './modifiers';
@@ -6,7 +7,7 @@ import type {
 /** The official lookups aggregation needs. Accepts the T0006 runtime repository. */
 export type ModifierDataContext = Pick<GameDataRepository,
   'gameDataVersion' | 'skills' | 'abilities' | 'getSkill' | 'getAdvancementTable' | 'getAttribute' |
-  'getItem' | 'getTreasurePower' | 'getTreasureTier'>;
+  'getItem' | 'getTreasurePower' | 'getTreasureTier'> & KeywordDamageData;
 
 type Attribute = NonNullable<ReturnType<ModifierDataContext['getAttribute']>>;
 
@@ -56,6 +57,14 @@ export function getMappingIndex(data: ModifierDataContext): MappingIndex {
     for (const dot of ability.pve.dots ?? []) damageTypesBySuffix.set(dot.damageType.toUpperCase(), dot.damageType);
     for (const [hook, attributes] of Object.entries(ability.pve.attributeHooks)) {
       for (const attributeId of attributes) {
+        const hooks = hooksByAttribute.get(attributeId) ?? new Set<string>();
+        hooks.add(hook); hooksByAttribute.set(attributeId, hooks);
+      }
+    }
+  }
+  for (const rule of staticDamageKeywordRules(data)) {
+    for (const hook of ['AttributesThatDeltaDamage', 'AttributesThatModDamage']) {
+      for (const attributeId of rule.attributeHooks[hook] ?? []) {
         const hooks = hooksByAttribute.get(attributeId) ?? new Set<string>();
         hooks.add(hook); hooksByAttribute.set(attributeId, hooks);
       }

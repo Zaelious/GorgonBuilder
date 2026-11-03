@@ -105,7 +105,8 @@ describe('T0014 ability results in the popover', () => {
     expect(section.dataset.confidence).toBe('unknown');
     expect(rowText('health-specific')).toEqual(['Health hit:526.7 Psychic']);
     expect(section.textContent).toContain('Critical hitNot modeled');
-    expect(control('.result-limits').textContent).toBe('Not included: 11 unmodeled build effects · special ability rules');
+    expect(control('.result-limits').textContent).toBe('Not included: special ability rules');
+    expect(control('.result-build-limits').textContent).toBe('Across build: 11 unmodeled effects; relevance to this ability is unknown.');
     // Simple by default: math is on demand, after the visible values and before Relevant Mods.
     const breakdown = control<HTMLDetailsElement>('.calc-breakdown');
     expect(breakdown.open).toBe(false);
@@ -299,11 +300,13 @@ describe('T0014 Mock modifiers in the popover (Psychology + Deer)', () => {
       expect(control('.calc-step[data-category="ability-damage-percent"]').textContent).toContain('Mock Damage %OffHand planned mod · +43% of 178');
     });
 
-  it('marks 6 enemies as undocumented falloff instead of inventing a value', async () => {
+  it('labels 6 enemies as Estimated and explains interpolation', async () => {
     mockBuild(); await render();
     await change('#target-count', '6'); await tick();
     await inspect(1);
-    expect(rowText('health-specific')).toEqual(['Health hit · per target:Unavailable', 'Total · 6 enemies:Unavailable']);
-    expect(control('[data-warning="burst-falloff-undocumented"]').textContent).toContain('publish no intermediate percentage');
+    expect(rowText('health-specific')).toEqual(['Health hit · per target:103.41 PsychicEstimated', 'Total · 6 enemies:620.44Estimated']);
+    expect(results().querySelectorAll('.result-estimate')).toHaveLength(2);
+    await click('.calc-breakdown summary');
+    expect(control('[data-falloff="direct"]').textContent).toContain('100% − (6 − 5) × (75% / (9 − 5)) = 81.25%');
   });
 });

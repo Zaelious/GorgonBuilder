@@ -208,7 +208,7 @@ describe('T0012 equipment and treasure aggregation', () => {
     ]);
     const reasons = new Set(result.unsupported.map(u => u.reason));
     expect(reasons).toEqual(new Set(['progression-rewards-not-modifiers', 'unmapped-attribute', 'prose-effect']));
-    expect(result.unsupported.find(u => u.attributeId === 'BOOST_ABILITY_COREATTACK')?.source).toMatchObject({ kind: 'item-fixed-effect', slot: 'MainHand' });
+    expect(result.modifiers.find(u => u.attributeId === 'BOOST_ABILITY_COREATTACK')?.source).toMatchObject({ kind: 'item-fixed-effect', slot: 'MainHand' });
     const unknownItem = createDefaultBuildDocument({ gameDataVersion: 'v1' });
     unknownItem.equipment = [{ slot: 'Ring', item: { kind: 'database', itemId: 'item_0' }, candidateMods: [], sparks: { mode: 'none' } }];
     expect(aggregate(unknownItem).warnings.map(w => w.code)).toEqual(['game-data-version-mismatch', 'unknown-item']);

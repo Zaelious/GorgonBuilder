@@ -107,7 +107,8 @@ describe('customer Psychology + Deer scenario', () => {
     const nine = at(9);
     expect(nine.hits[0]!.perTarget).toBeCloseTo(perTarget * 0.25, 10);
     expect(nine.hits[0]!.total).toBeCloseTo(perTarget * 0.25 * 9, 10);
-    expect(at(6).hits[0]!.total).toBeNull();
+    expect(at(6).hits[0]!.total).toBeCloseTo(perTarget * 0.8125 * 6, 10);
+    expect(at(6).hits[0]!.estimated).toBe(true);
     expect(one.abilityEffects.map(m => [m.category, m.value])).toEqual([
       ['ability-taunt-flat', 200], ['ability-burst-conversion', 20], ['ability-damage-multiplier', 0.5],
       ['ability-taunt-flat', 1080], ['ability-reset-time-flat', 1.5],

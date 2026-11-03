@@ -141,3 +141,24 @@ The published attribute token syntax is parsed separately in `src/features/mods/
 - public searchable build gallery
 - optional accounts/claim anonymous builds
 - game-data diff/update automation
+
+## T0013-F1 follow-ups discovered (2026-11-03, implementation review pending)
+
+- **T0013-F2 candidate: remaining stateless treasure prose.** Continue from the
+  [complete inventory](treasure-coverage/README.md), prioritizing direct clauses
+  with authoritative attributes. Add exact allow-list batches; preserve secondary
+  mechanics. This is recommended before claiming complete direct-modifier coverage,
+  and can be scheduled before T0015 if broader direct coverage is required.
+- **T0013-F3 candidate: damage allocation and conversion measurements.** Establish
+  flat allocation among ordinary/health/armor hit components, indirect delivery,
+  stacking/order, stateless damage-type conversions and duplicate-conversion rules.
+- **Burst measurements:** replace the explicit interpolation policy with current
+  observations only when evidence supports it; resolve random radius remainders
+  and full thresholds >=9. No indirect totals follow from the known 50% floor alone.
+- **Later mechanics work:** stateful buffs/debuffs, triggered extra attacks, pets,
+  reactive shields, DoTs and criticals require separate contracts/research. They are
+  counted and explained in the inventory, not silently implemented in T0015 Sparks.
+
+- **Existing 320 px layout:** planner help extends the document to 322 px on both
+  main `160b073` and T0013-F1. The damage popover is bounded. Preserve this separate
+  minor layout follow-up; [comparison](verification/t0013-f1/baseline-overflow.json).

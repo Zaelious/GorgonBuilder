@@ -221,3 +221,15 @@ Report multiple metrics:
 - buff/debuff uptime
 
 Never reduce a setup-heavy build to one unexplained DPS number.
+
+## T0013-F1 direct Burst estimate policy
+
+The documented full-damage threshold is `3 + floor(radius / 10)`. For an exact
+multiple-of-ten radius with threshold below nine, intermediate direct retention is
+**estimated** as `1 - (enemies - threshold) * (0.75 / (9 - threshold))`.
+At 20 m, 6/7/8 enemies retain 81.25%/62.5%/43.75%; 5 is full and 9 reaches 25%.
+This is the requested interpolation, not measured current game behavior.
+Radius remainders preserve the probability of an extra full-damage target without
+inventing a roll or expected value. Thresholds at/above nine retain full damage
+through their allowance and leave further falloff unsupported. The existing Mock
+×0.5 ability penalty remains separate. No indirect/DoT totals are added.

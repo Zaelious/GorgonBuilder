@@ -1,0 +1,38 @@
+{
+  "gameDataVersion": "v490",
+  "skills": 35,
+  "combatAbilities": 4089,
+  "totalPowers": 1947,
+  "totalTiers": 45634,
+  "totalEffects": 52039,
+  "combatPowers": 1613,
+  "combatTiers": 34276,
+  "combatEffects": 35330,
+  "before": {
+    "relevant": 21808,
+    "full": 4914,
+    "partial": 176,
+    "unmodeled": 16718,
+    "coverage": "22.53",
+    "withPartial": "23.34"
+  },
+  "after": {
+    "relevant": 21808,
+    "full": 4979,
+    "partial": 1029,
+    "unmodeled": 15800,
+    "coverage": "22.83",
+    "withPartial": "27.55"
+  },
+  "newlySupported": 918,
+  "newlySupportedPowers": 40,
+  "outsideCombat": {
+    "relevant": 5068,
+    "full": 2182,
+    "partial": 225,
+    "unmodeled": 2661,
+    "coverage": "43.05",
+    "withPartial": "47.49"
+  },
+  "unresolved": 0
+}

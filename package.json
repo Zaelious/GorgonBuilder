@@ -16,7 +16,8 @@
     "data:update": "node --use-env-proxy scripts/data-update.ts",
     "deploy": "npm run build && wrangler deploy",
     "preview:cloudflare": "npm run build && wrangler preview",
-    "data:generate": "node --experimental-transform-types --import ./scripts/typescript-imports.ts scripts/data-generate.ts"
+    "data:generate": "node --experimental-transform-types --import ./scripts/typescript-imports.ts scripts/data-generate.ts",
+    "coverage:treasure": "node --import ./scripts/typescript-imports.ts scripts/treasure-coverage.ts"
   },
   "dependencies": {
     "react": "^19.3.1",

@@ -2,6 +2,7 @@ import type {
   ModifierCategory, ModifierConfidence, ModifierOperation, ModifierScope, ModifierUnit,
 } from './modifiers';
 import type { ModifierDataContext } from './registry';
+import { DIRECT_TREASURE_RULES } from './direct-treasure-rules';
 
 /**
  * Curated, exact treasure-power rules for published *prose* effects (T0014 acceptance correction).
@@ -32,6 +33,7 @@ export interface TreasureEffectRule {
   /** Full-string template; the optional leading `<icon=N>` tags are display-only. */
   readonly pattern: RegExp;
   readonly confidence: ModifierConfidence;
+  readonly unmodeled?: string | undefined;
   readonly interpret: (match: RegExpExecArray, data: ModifierDataContext) => readonly TreasureEffectDraft[] | null;
 }
 
@@ -65,6 +67,7 @@ function all<T>(values: readonly (T | null)[]): T[] | null {
 }
 
 export const TREASURE_EFFECT_RULES: readonly TreasureEffectRule[] = Object.freeze([
+  ...DIRECT_TREASURE_RULES,
   {
     id: 'treasure:MockAndRidiculeBoost', powerId: 'power_4066', internalName: 'MockAndRidiculeBoost',
     description: '"Mock and Ridicule deal +X% damage and taunt +Y" → MOD_ABILITY_MOCK/MOD_ABILITY_RIDICULE % and taunt',

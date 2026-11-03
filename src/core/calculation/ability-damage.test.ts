@@ -219,8 +219,10 @@ describe('T0013 formula traceability and T0012 compatibility', () => {
     edited.equipment[0] = editExistingMods(build.equipment[0]!, { type: 'existing-mod-tier', equipmentIndex: 0, index: 0, tierId: 'id_8' }, data);
     const before = calculateAbilityDamage('ability_6124', aggregateBuildModifiers(build, data), data);
     const after = calculateAbilityDamage('ability_6124', aggregateBuildModifiers(edited, data), data);
-    expect(before.provisionalDamage).toBeCloseTo(1282.4);
-    expect(after.provisionalDamage).toBeCloseTo(1270.4);
+    // Official CoreAttack keyword adds the item’s previously omitted +244 flat.
+    expect(before.provisionalDamage).toBeCloseTo(1526.4);
+    expect(component(before).decisions.find(d => d.modifier.attributeId === 'BOOST_ABILITY_COREATTACK')).toMatchObject({ status: 'applied', modifier: { value: 244 } });
+    expect(after.provisionalDamage).toBeCloseTo(1514.4);
     const expected = contributions(before);
     delete expected['equipment:MainHand#0/existing:power_20006:id_9#0/effect:0'];
     const actual = contributions(after);

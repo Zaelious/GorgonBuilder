@@ -66,7 +66,7 @@ describe('T0014 target dummy stage', () => {
     expect(out.assumptions).toEqual([TARGET_DAMAGE_ASSUMPTIONS.singleTarget]);
   });
 
-  it('treats a published Burst ability as hitting every configured enemy and applies only documented falloff', () => {
+  it('treats a published Burst ability as hitting every configured enemy and applies documented endpoints and labeled estimates', () => {
     const result = calculate(MULTISHOT);
     expect(result.ability!.targeting.aoe).toBe(30);
     expect(result.ability!.keywords).toContain('Burst');
@@ -86,9 +86,10 @@ describe('T0014 target dummy stage', () => {
     expect(six.assumptions).toEqual(expect.arrayContaining([TARGET_DAMAGE_ASSUMPTIONS.burstInRange, TARGET_DAMAGE_ASSUMPTIONS.publishedAoeRadius]));
 
     const seven = applyTargetDummy(result, target(7));
-    expect(seven.hits[0]!.perTarget).toBeNull();
-    expect(seven.hits[0]!.total).toBeNull();
-    expect(seven.warnings.map(w => w.code)).toEqual(['burst-falloff-undocumented']);
+    expect(seven.hits[0]!.perTarget).toBeCloseTo(perTarget * 0.75, 10);
+    expect(seven.hits[0]!.total).toBeCloseTo(perTarget * 0.75 * 7, 10);
+    expect(seven.hits[0]!.estimated).toBe(true);
+    expect(seven.warnings).toEqual([]);
 
     const nine = applyTargetDummy(result, target(9));
     expect(nine.hits[0]!.perTarget).toBeCloseTo(perTarget * 0.25, 10);
@@ -135,15 +136,15 @@ describe('T0014 target dummy stage', () => {
 });
 
 describe('documented Burst target-count falloff (2024-07-30)', () => {
-  it('gives full damage up to 3 + 1 per 10 m, the 9+ floors, and no invented intermediate values', () => {
+  it('gives full damage up to 3 + 1 per 10 m, the 9+ floors, and labeled linear direct estimates', () => {
     const at = (n: number, radius: number | null, delivery: 'direct' | 'indirect' = 'direct') => burstTargetFalloff(n, radius, delivery);
     expect([1, 3, 5].map(n => at(n, 20).multiplier)).toEqual([1, 1, 1]);
     expect(at(5, 20)).toMatchObject({ status: 'full', fullDamageTargets: 5, extraTargetChance: 0 });
-    expect([6, 7, 8].map(n => at(n, 20).status)).toEqual(['undocumented', 'undocumented', 'undocumented']);
-    expect([6, 7, 8].map(n => at(n, 20).multiplier)).toEqual([null, null, null]);
+    expect([6, 7, 8].map(n => at(n, 20).status)).toEqual(['estimated', 'estimated', 'estimated']);
+    expect([6, 7, 8].map(n => at(n, 20).multiplier)).toEqual([0.8125, 0.625, 0.4375]);
     expect(at(9, 20)).toMatchObject({ status: 'floor', multiplier: 0.25 });
     expect(at(20, 20, 'indirect')).toMatchObject({ status: 'floor', multiplier: 0.5 });
-    expect(at(4, 0)).toMatchObject({ status: 'undocumented', fullDamageTargets: 3 });
+    expect(at(4, 0)).toMatchObject({ status: 'estimated', fullDamageTargets: 3, multiplier: 0.875 });
     expect(at(3, null)).toMatchObject({ status: 'full', fullDamageTargets: null });
     expect(at(4, null).status).toBe('undocumented');
     // 7 m: 3 full targets plus a 70% chance of a 4th; no expected value is invented.

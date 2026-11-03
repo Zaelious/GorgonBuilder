@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { TargetConfiguration } from '../../core/build/document';
 import {
-  applyTargetDummy, calculateAbilityDamage,
+  applyTargetDummy, BURST_FALLOFF_RULES, calculateAbilityDamage,
   type AbilityDamageResult, type AbilityDamageStep, type ComponentDamageResult, type DamageComponentId,
   type ModifierAggregationResult, type ModifierConfidence, type ModifierSource, type NormalizedModifier, type TargetDamageResult,
 } from '../../core/calculation';
@@ -64,9 +64,6 @@ export function notIncluded(result: AbilityDamageResult, target: TargetDamageRes
   if (codes.has('missing-ability')) out.push('official ability record');
   if (codes.has('game-data-version-mismatch')) out.push('matching game-data version');
   if (codes.has('indirect-not-calculated')) out.push('DoT damage');
-  const unmodeled = result.aggregation.unsupported.filter(u => u.reason !== 'progression-rewards-not-modifiers').length;
-  if (codes.has('unsupported-build-effects')) out.push(`${unmodeled} unmodeled build ${unmodeled === 1 ? 'effect' : 'effects'}`);
-  if (codes.has('aggregation-incomplete')) out.push('unresolved build sources');
   const uncertain = new Set(result.components.flatMap(c => c.decisions.filter(d => d.status === 'uncertain').map(d => d.modifier.key))).size;
   if (uncertain > 0) out.push(`${uncertain} uncertain ${uncertain === 1 ? 'mod' : 'mods'}`);
   if (codes.has('ability-mechanics-unresolved')) out.push('special ability rules');
@@ -142,11 +139,12 @@ export function AbilityResults({ ability, inputs, data, idPrefix }: { ability: A
       : <dl className="result-rows">{hits.map(hit => <div key={hit.componentId} className="result-row" data-component={hit.componentId}>
         <dt>{hitLabel(hit.componentId)}{count > 1 ? ' · per target' : ''}</dt>
         <dd>{hit.perTarget === null ? <span className="muted">Unavailable</span>
-          : <span className={`damage-value ${damageTypeClass(hit.damageType)}`}>{formatDamage(hit.perTarget)} {hit.damageType}</span>}</dd>
+          : <><span className={`damage-value ${damageTypeClass(hit.damageType)}`}>{formatDamage(hit.perTarget)} {hit.damageType}</span>{hit.estimated && <small className="result-estimate">Estimated</small>}</>}</dd>
       </div>)}
       {count > 1 && hits.map(hit => <div key={`total-${hit.componentId}`} className="result-row result-total" data-component={hit.componentId}>
         <dt>{hits.length > 1 ? `${hitLabel(hit.componentId)} total` : 'Total'} · {target.affectedTargets ?? count} {(target.affectedTargets ?? count) === 1 ? 'enemy' : 'enemies'}</dt>
-        <dd>{hit.total === null ? <span className="muted">{target.affectedTargets === null ? 'Target cap not published' : 'Unavailable'}</span> : formatDamage(hit.total)}</dd>
+        <dd>{hit.total === null ? <span className="muted">{target.affectedTargets === null ? 'Target cap not published' : 'Unavailable'}</span>
+          : <>{formatDamage(hit.total)}{hit.estimated && <small className="result-estimate">Estimated</small>}</>}</dd>
       </div>)}
       <div className="result-row"><dt>Critical hit</dt><dd><span className="muted" title="Critical chance and multipliers are not modeled yet.">Not modeled</span></dd></div>
     </dl>}
@@ -154,6 +152,8 @@ export function AbilityResults({ ability, inputs, data, idPrefix }: { ability: A
     {sideEffects.length > 0 && <p className="result-note result-side-effects">Not damage: {sideEffects.map(m => m.category === 'ability-taunt-flat'
       ? `taunt +${formatDamage(m.value)}` : `reuse timer +${formatDamage(m.value)} s`).join(' · ')}</p>}
     {omitted.length > 0 && <p className="result-note result-limits">Not included: {omitted.join(' · ')}</p>}
+    {unmodeled.length > 0 && <p className="result-note result-build-limits">Across build: {unmodeled.length} unmodeled {unmodeled.length === 1 ? 'effect' : 'effects'}; relevance to this ability is unknown.</p>}
+    {result.warnings.some(w => w.code === 'aggregation-incomplete') && <p className="result-note result-build-limits">Across build: some sources could not be resolved.</p>}
     <details className="calc-breakdown"><summary>Calculation breakdown</summary>
       <p className="calc-confidence">{CONFIDENCE_LABELS[target.confidence].help} Values are calculations from published data, not in-game measurements. * marks an assumed rule.</p>
       {breakdownComponents.map(component => <ComponentBreakdown key={component.id} component={component} target={target} modifiers={modifiers} />)}
@@ -161,7 +161,7 @@ export function AbilityResults({ ability, inputs, data, idPrefix }: { ability: A
         <li key={`${w.code}|${w.message}`} data-warning={w.code}>{w.message}</li>)}</ul></>}
       {unmodeled.length > 0 && <><p className="calc-subhead">Unmodeled build effects ({unmodeled.length})</p><ul className="calc-notes">{unmodeled.map(u =>
         <li key={u.key} data-unsupported={u.key}>{u.message}</li>)}</ul></>}
-      {target.falloff && <><p className="calc-subhead">Burst target-count rules (2024-07-30 notes)</p><ul className="calc-notes">
+      {target.falloff && <><p className="calc-subhead">Burst target-count rules (<a href={BURST_FALLOFF_RULES.sourceUrl} target="_blank" rel="noreferrer">2024-07-30 notes</a>)</p><ul className="calc-notes">
         <li data-falloff="direct">Direct: {target.falloff.direct.explanation}</li>
         <li data-falloff="indirect">Indirect (DoTs, not calculated): {target.falloff.indirect.explanation}</li></ul></>}
       {target.abilityEffects.length > 0 && <><p className="calc-subhead">Ability changes from mods</p><ul className="calc-notes">{target.abilityEffects.map(m =>

@@ -983,7 +983,7 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 
 ## T0013-F1 — Combat Treasure Effect Coverage and Burst Estimate
 
-**Status:** Next priority, approved for implementation handoff 2026-11-03 after customer-accepted T0014. No implementation branch or PR yet.
+**Status:** T0013-F1 implementation prepared for review on `feature/t0013-f1-combat-treasure-coverage`; customer acceptance pending. See [coverage](treasure-coverage/README.md) and [verification](T0013_F1_Verification.md). No automatic merge.
 
 **Complexity:** High; deliver one auditable effect-family coverage batch, not unrestricted game-mechanics work.
 
