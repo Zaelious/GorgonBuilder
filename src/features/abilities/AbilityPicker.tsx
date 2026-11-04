@@ -6,6 +6,7 @@ import './picker.css';
 import { groupAbilities, highestTier, quickAddTier, rankLabel, type Ability } from './groups';
 import { AbilityIcon } from './AbilityIcon';
 import { AbilityFacts } from './AbilityFacts';
+import { abilityRoles } from './roles';
 import { useSessionFlag } from '../../app/useSessionFlag';
 
 interface Props {
@@ -98,6 +99,7 @@ export function AbilityPicker({ slot, skill, data, bar, full, replaceIndex, retu
               <div className="family-tiers">{group.abilities.map(ability => <article className="tier" key={ability.id}>
                 <div className="tier-row"><div className="tier-identity"><h3>{ability.displayName}</h3>
                   {selectedCount(ability) > 0 && <small className="selected-ability">{selectedLabel(selectedCount(ability))}</small>}
+                  {abilityRoles(ability).length > 0 && <div className="ability-role-labels" aria-label="Official ability roles">{abilityRoles(ability).map(role => <span className="ability-role" key={role.keyword}>{role.label}{role.conditional ? ' (conditional)' : ''}</span>)}</div>}
                   <p className="tier-stats">{ability.rank !== null && `Rank ${ability.rank} · `}Lv {ability.level} · {ability.pve.powerCost} power{ability.damage.damage !== null && ` · Base ${ability.damage.damage} ${ability.damage.damageType}`}</p>
                 </div><div className="tier-controls">
                   <button type="button" className="tier-add" disabled={blocked} onClick={() => choose(ability)} aria-label={`Select ${ability.displayName}, ${rankLabel(ability.rank)}, level ${ability.level}, ${ability.id}`}>
