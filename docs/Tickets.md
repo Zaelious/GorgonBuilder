@@ -832,6 +832,60 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 5. Check Apply imported level on an existing saved build and quick × removal by pointer/touch/keyboard; confirm unaffected equipment/mods and autosave after refresh.
 6. Run lint, typecheck, tests and build. [Implementation and browser evidence](../src/features/skills/verification/T0008-F1.md).
 
+
+## T0008-F2 — Ability Role Labels, Relevant Mods, and Variant Picker Consolidation
+
+**Status:** Planned; product-owner approved 2026-11-04. Not implemented.
+
+**Complexity:** High
+
+**Recommended Codex reasoning effort:** High
+
+**Verification:** Customer hands-on
+
+**Goal:** Make official ability roles immediately recognizable; verify that category-based equipment damage bonuses apply to the right abilities; compact only the specific overlong variant lists reported by the customer.
+
+**Dependencies:** T0008,T0008-F1,T0010,T0013-F1,T0014.
+
+**Allowed areas:**
+- `src/features/abilities` and related styles/tests
+- `src/data/search/ability-mods.ts` for Relevant Mods coverage
+- narrowly scoped `src/core/calculation/keyword-damage.ts` and calculation tests, only where an actual category-applicability defect is demonstrated
+- `src/core/calculation/treasure-coverage.ts` and `scripts/treasure-coverage.ts` for the existing unconditional/required-active-skill audit correction
+- ticket verification and related documentation
+
+**Do not touch:**
+- Critical hit math (T0013-F2), Sparks (T0015), DoTs, pets, rotation/DPS or defensive/threat systems
+- imported-report parsing, item/mod editors or equipment search (T0010-F2)
+- BuildDocument v1, saved ability IDs, rank semantics or current bars
+- unrelated UI redesign, invented official keywords or speculative treasure applicability
+
+**Requirements:**
+1. **Nine visible ability-role labels:** Show the published roles Basic Attack, Core Attack, Nice Attack, Epic Attack, Minor Healing Ability, Major Healing Ability, Signature Support Ability, Signature Debuff Ability and Survival Utility Ability. Derive membership from official ability keywords/metadata, not from ability names. Verify the exact v490 keyword tokens and whether any roles are conditional, effect-gated or absent. Display compact, readable role labels in the ability picker and equipped ability facts/popover; multiple roles may be shown. Do not display a conditional role as unconditionally active.
+2. **Modifier applicability:** Verify that applicable Basic/Core/Nice/Epic/Signature and other category-based treasure bonuses appear under Relevant Mods and reach the existing **direct damage** calculation where source-backed static hooks permit them. Reuse the shared `abilitykeywords` rules without duplicate contributions. Distinguish a mod that is merely source-relevant from one that actually contributes to calculated damage. Non-damage healing/utility category effects may be shown as relevant but do not require a healing calculator. Required-active-skill and effect/conditional keyword gates must remain guarded, not guessed.
+3. **Seven presentation-only variant groupings:** Consolidate the customer's specified cases, after verifying exact official IDs/InternalNames and semantics: Vampirism — Blood Mist; Animal Handling — Call Stabled Pet; Bard — internal SoD family; Mentalism — Mindworm; Necromancy — internal SZ family; Priest — Triage; Priest — Flamestrike. Preserve existing `UpgradeOf` rank groups as the canonical progression linkage. Add a second, compact presentation grouping for verified distinct variants; let the user explicitly choose a variant then its published tier/rank. Never silently quick-add an arbitrary variant when a display group has multiple different abilities. Preserve each individual official ability ID, rank, level, description, selected count, add/replace behavior, search, keyboard focus and bar persistence.
+4. **No unrelated grouping changes:** Every other skill/family continues using the present picker grouping. Same-name variants must not be merged based only on a prefix, icon or fuzzy text. Do not conflate the Bard SoD and Necromancy SZ internals without source verification.
+5. **Audit predicate correction:** Recheck the T0013-F1 'unconditional' coverage subset. Separate entries with `requiredSkillId`/active-skill requirements from truly unconditional entries, and ensure coverage probes do not make unmet conditions appear universally applicable. Document affected counts and regenerate deterministic reports; do not rewrite valid damage calculations merely to change percentages.
+
+**Non-goals:**
+- New critical, healing, cooldown or threat calculations.
+- Comprehensive new character-state simulation.
+- Changing the official data snapshot or saved schema.
+
+**Acceptance criteria:**
+- All nine officially supported roles are visible, with accurate source-backed membership, on desktop and mobile; unavailable/conditional roles are not asserted as active.
+- Representative category-based bonuses across multiple skills are visible under Relevant Mods and, when supported, change only eligible damage results once.
+- Exactly the seven approved variant families are compacted; existing selections survive refresh, every canonical variant remains reachable and selectable, and the rest of the ability picker is unchanged.
+- Unconditional versus required-active-skill audit counts are accurate, with tests and documented before/after totals.
+- Pinned-data check, lint, typecheck, full tests, build, focused browser interactions and `git diff --check` pass.
+
+**Manual verification:**
+1. Inspect roles and Relevant Mods on Core, Nice, Epic, Basic and at least one healing/support/utility ability; try a category bonus and confirm no off-skill or double application.
+2. Open the seven listed family groups, choose different variants and ranks, verify exact identities on the bar, replace/remove and refresh.
+3. Confirm ordinary families and Respect Skill Level behavior are unchanged; verify 1440/375/320 px, keyboard search/focus and long-picker scrolling.
+4. Review new unconditional vs required-active-skill coverage counts and synthetic applicability tests.
+
+
 ## T0010-F1 — Shared Equipment Mod Controls and Compact Item Metadata
 
 **Status:** Customer-accepted and squash-merged 2026-11-02 via [PR #28](https://github.com/Zaelious/GorgonBuilder/pull/28), commit `a1b2d6d73123d7aa1fd1bc7cf19dd4fa26497743`. Shared mod search/settings persist across equipment rows, STATS remain prominent, item source metadata is collapsed, and confirmed Clear build preserves imported inventory/preferences and protected drafts. Repeated item-level help was removed in the final correction; one compact **How mod filtering works** help lives in shared settings. 727 tests, GitHub CI and Cloudflare PR-preview build passed. [Verification report](../src/features/equipment/verification/T0010-F1.md). Customer approved merging; the final correction's Chromium smoke was blocked by its execution environment, so narrow-screen interactive guidance remains a normal regression check.
@@ -888,6 +942,52 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 4. Edit/remove/restore an imported treasure power and stage a candidate mod to verify nothing is lost or double-counted visually.
 5. Build a populated draft (two skills/bars, equipment, imported working mods/Sparks, custom title/notes/target); cancel Clear build and verify it is unchanged, then confirm and verify a clean default build after refresh. Confirm preferences and imported inventory remain usable and protected drafts cannot reset.
 6. Check narrow layouts, keyboard interaction, console, lint, typecheck, tests and build.
+
+
+## T0010-F2 — Equipment Mod Search Visibility and Damage Warning Relevance
+
+**Status:** Planned; product-owner approved 2026-11-04. Not implemented.
+
+**Complexity:** Standard
+
+**Recommended Codex reasoning effort:** Medium
+
+**Verification:** Customer hands-on
+
+**Goal:** Make equipment-wide mod searches actionable by hiding irrelevant equipment rows while searching, and remove misleading non-damage warnings from the ability damage panel without concealing genuine calculation gaps.
+
+**Dependencies:** T0010,T0010-F1,T0013-F1,T0014.
+
+**Allowed areas:**
+- `src/features/equipment`, `src/features/mods`, shared mod-search selectors and focused tests
+- `src/features/abilities/AbilityResults.tsx` and narrowly scoped pure warning classification/utilities under `src/core/calculation`, if needed
+- relevant CSS, verification and documentation
+
+**Do not touch:**
+- official item/power normalization, treasure legality assumptions or new damage formulas
+- ability picker/role grouping (T0008-F2), critical math (T0013-F2), Sparks or imported instance editing semantics
+- BuildDocument schema, existing equipped/selected mods, data transport or unrelated redesign
+
+**Requirements:**
+1. When the shared `Search mods` query is nonempty (e.g. `core`), temporarily hide equipment **display rows** whose **Available Mods** list has zero matches under the current exact shared query, active skill/category settings, slot/profile visibility, staged-power exclusions and target-preview behavior. Use a shared pure selector so row visibility/count and expanded `ModPlanner` results cannot disagree. Respect existing uncertainty about equipment eligibility; this is browsing, not a new legality filter.
+2. Show unobtrusive per-row counts of matching Available powers while searching; provide a compact `Show all equipment` override and a useful zero-results state. Clearing the query restores all nine primary rows and Other slots. Search changes never delete, unequip, clear, rewrite or auto-expand equipment; preserve existing open state, selection, imported powers, mod edits and focus as far as practicable. Hidden equipped slots must remain reachable through Show all.
+3. In the ability damage panel, distinguish explicitly classified **non-damage** unsupported remainders (taunt, reuse, Rage, resource/accuracy/control) from unresolved **damage-affecting** or unknown effects. Do not show non-damage-only clauses as if they make direct-hit damage incomplete. Do not suppress uncertain effects simply because the exact ability relevance cannot be established; retain a clear inspectable breakdown and appropriate build-wide wording.
+4. Keep warnings sparse and actionable; avoid a second redundant help disclosure or repeated per-item search toolbars.
+
+**Non-goals:** Global assignment of mods, automated eligibility decisions, new damage formulas, cooldown/threat/defensive simulation, changing the default always-visible equipment layout when no query is active.
+
+**Acceptance criteria:**
+- Searching `core` displays only rows with currently matching Available powers unless Show all is active; counts agree exactly with expanded Available lists for database and imported items.
+- Empty search restores all rows, including nine primary positions; no saved state or equipped/selected powers change.
+- Known taunt/reuse-only remainders do not produce a misleading direct-damage warning; unknown/unmodeled damage contributions remain visible and traceable.
+- Desktop and 375/320 px interaction, keyboard/focus, saved gear, All skills, Other slots & profiles and target-level previews regressions pass.
+- Data check, lint, typecheck, tests, build, focused browser smoke and `git diff --check` pass.
+
+**Manual verification:**
+1. With two combat skills selected, search `core`, compare per-slot counts and expanded Available powers, change categories/target and toggle Show all; clear query and confirm rows return.
+2. Test empty and imported gear, staged/selected powers and an item whose profile fit is uncertain; confirm no edits or equipment loss after refresh.
+3. Inspect a fully modeled +damage/+taunt or +reuse power in the damage panel. Check that its damage remains calculated without misleading non-damage warnings, while an actually unmodeled damage effect retains a warning.
+
 
 ## T0012 — Build Modifier Aggregation Engine
 
@@ -983,7 +1083,7 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 
 ## T0013-F1 — Combat Treasure Effect Coverage and Burst Estimate
 
-**Status:** T0013-F1 implementation prepared for review on `feature/t0013-f1-combat-treasure-coverage` (PR #36), including the final direct-damage coverage correction (reusable unconditional prose grammar; direct coverage reported separately from other mechanics and confidence). Customer acceptance pending. See [coverage](treasure-coverage/README.md) and [verification](T0013_F1_Verification.md). No automatic merge. Critical hits are the next separate ticket.
+**Status:** Customer-accepted and squash-merged 2026-11-04 via [PR #36](https://github.com/Zaelious/GorgonBuilder/pull/36), commit `acfdfcf58e22e7d1c2fcd7fef0e3379f6e27484a`. Product-owner manual tests passed; final-head GitHub CI and Cloudflare preview passed. Reproducible v490 coverage inventory, guarded shared damage mappings and estimated Burst falloff are complete for this scope. [Coverage](treasure-coverage/README.md) and [verification](T0013_F1_Verification.md). Real-game stacking/order remains provisional. Two nonblocking reporting/UI follow-ups are captured in T0008-F2 and T0010-F2.
 
 **Complexity:** High; deliver one auditable effect-family coverage batch, not unrestricted game-mechanics work.
 
@@ -1037,6 +1137,58 @@ These product-owner-approved follow-ups refine already-merged UI flows without c
 - [Official July 30, 2024 update](https://wiki.projectgorgon.com/wiki/Game_updates/2024-07-30): full-damage radius bonus, direct 25% floor, indirect 50% floor at nine targets; does *not* publish intermediate multipliers.
 - [2018 player AoE tests](https://forum.projectgorgon.com/archive/index.php/t-1516.html): an older, different non-linear direct curve; historical context only, not proof of the post-2024 values.
 - [T0014 verification](T0014_Verification.md): baseline code, Mock power IDs and known assumptions.
+
+
+## T0013-F2 — Imported Anatomy/Phrenology Critical Hits and Target Conditions
+
+**Status:** Planned; product-owner approved 2026-11-04. Not implemented.
+
+**Complexity:** High
+
+**Recommended Codex reasoning effort:** Extra High
+
+**Verification:** Customer hands-on with controlled in-game comparisons; provisional formulas must remain labeled.
+
+**Goal:** Implement a complete v1 critical-hit calculation flow for supported player abilities: imported/manual creature-specific critical skills, correct ability applicability, equipment critical modifiers, target type and transparent expected damage.
+
+**Dependencies:** T0011,T0011-F1,T0012,T0013,T0013-F1,T0014,T0008-F2.
+
+**Allowed areas:**
+- `src/core/calculation`, `src/core/import` and focused import skill-level utilities
+- official data source/lookup helpers necessary to establish critical-system applicability and provenance
+- `src/features/abilities`, target dummy UI and narrow relevant tests/styles
+- `src/core/build` only if a documented, backward-compatible schema addition is genuinely needed for persistent manual scenario inputs
+- ticket-specific documentation and validation fixtures
+
+**Do not touch:**
+- T0015 Spark simulation/integration; DoT, pet, threat, cooldown, rotations or DPS
+- broad equipment editor redesign, source version changes or unverified creature taxonomy
+- arbitrary English-to-game-formula inference, silent assumptions presented as validated facts
+
+**Requirements:**
+1. **Source-backed critical rules:** Investigate published v490 ability records, relevant official Project Gorgon documentation and existing imported skill records to identify which abilities use Anatomy, Phrenology or another/no known critical system; research skill-level thresholds, creature-type applicability, equipment crit-chance/damage bonuses, ability-specific critical properties, stacking, caps and exceptions. Record each rule's source and confidence; no invented universal crit rate or guessed multiplier.
+2. **Imported and manual skills:** Reuse retained CharacterSheet noncombat skill/subskill levels (the existing combat-only skill-level helper must not be misused). Do not double-count exported `BonusLevels` already included in `Level`. Provide an explicit manual fallback when no valid import is present and distinguish it from imported data. Preserve report privacy, resolved/unresolved identities and exact source names.
+3. **Target context:** Add a compact creature-type selector and any minimal necessary target-type flag (e.g. Elite only where established) to the existing target dummy. Do not invent monster records. Keep target selection separate from the character's abilities/equipped items, and default to unknown when the required target data is absent.
+4. **Critical contributions:** Resolve applicable equipment powers and ability-specific critical modifiers through source-backed typed categories and existing aggregation/provenance, avoiding double counts. Preserve original-base Skill Base and T0013-F1 damage order. Make critical damage a separate downstream stage, not a rewrite of normal-hit damage. Support straightforward creature-type direct bonuses when their applicability can be established without a stateful simulator; otherwise report a specific unresolved condition and leave it for a follow-up.
+5. **Results:** Display normal hit, crit chance, critical hit damage, and expected damage per successful hit with a concise formula and expandable contributions. Only compute a numeric result when required inputs and rule assumptions are sufficiently defined. Keep scenario assumptions, uncertain stack order and lack of live validation explicit. Do not imply hit chance, rotation or DPS from expected damage per successful hit.
+6. **Complete implementation, not a design-only ticket:** Add the working UI, pure calculation, data/import integration, automated tests, source-backed documentation, and usable manual verification instructions. If a specific critical mechanic remains unknowable, implement partial supported scope honestly, enumerate exact gaps and seek product-owner guidance rather than silently making up results.
+
+**Non-goals:** DoT critical simulation, triggered combat sequences, actual monster database, full conditional/stateful damage coverage, Sparks, DPS optimizer, defensive/threat systems.
+
+**Acceptance criteria:**
+- Supported Anatomy and Phrenology cases use correct imported/manual subskill levels and selected creature type; irrelevant creature skills do not affect crit chance.
+- Equipment and ability-specific critical effects contribute once, with explainable provenance and correct applicability. Normal damage is unchanged by crit-only modifiers.
+- Normal/critical/expected values agree with the documented formula for controlled fixtures; insufficient/unknown inputs remain visibly unknown rather than defaulting to arbitrary percentages.
+- Target changes recompute relevant bonuses without changing equipped gear or saved abilities, and import/reimport does not overwrite manual scenario choices without deliberate action.
+- All quality checks and desktop/mobile browser smokes pass. Report what has and has not been tested in Project Gorgon; no synthetic test is labeled live-game validation.
+
+**Manual verification:**
+1. Import a current CharacterSheet locally; select a Psychology/Phrenology ability and suitable Anatomy-based ability. Compare imported creature-specific levels and verify no double-counting.
+2. Change target type and manually entered critical skills; confirm only eligible abilities change chance.
+3. Add/remove crit-chance and crit-damage gear powers; inspect contributions and reversible normal/critical/expected numbers.
+4. Test a missing/unresolved skill, unsupported ability critical system, 0% critical chance and a high critical-damage scenario.
+5. Compare at least one controlled in-game critical chance/damage observation; document discrepancies and preserve unvalidated assumptions.
+
 
 ## T0014 — Ability Results UI and Custom Target Dummy
 
