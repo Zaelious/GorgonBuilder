@@ -7,11 +7,15 @@ import {
   type SkillSlotName, type UnsupportedEffect, type UnsupportedReason, type UnsupportedSkillSource,
 } from './modifiers';
 import { defaultModifierRegistry, parseEffectDescription, type ModifierDataContext, type ModifierRegistry } from './registry';
-import { interpretTreasureEffect } from './treasure-effect-rules';
+import { interpretTreasureEffect, type TreasureEffectRule } from './treasure-effect-rules';
 
 export interface AggregateOptions {
   /** Defaults to the documented initial mapping subset. */
   readonly registry?: ModifierRegistry;
+  /** Auditable alternative rule sets, e.g. the preserved T0014 coverage baseline. */
+  readonly treasureRules?: readonly TreasureEffectRule[];
+  /** Reusable unconditional named-damage prose grammar; on by default, off only for preserved coverage baselines. */
+  readonly proseGrammar?: boolean;
 }
 
 const ADVANCEMENT_SUM_ASSUMPTION = 'Advancement-table entries are treated as per-level increments and summed for levels 1..configured level; unvalidated.';
@@ -79,7 +83,8 @@ export function aggregateBuildModifiers(build: BuildDocument, data: ModifierData
     if (parsed.kind === 'prose') {
       // Only curated exact power ID + InternalName + sentence-template rules interpret prose; no general parsing.
       const curated = input.source.kind === 'existing-power' || input.source.kind === 'candidate-mod'
-        ? interpretTreasureEffect(input.source.powerId, input.description, data) : null;
+        ? interpretTreasureEffect(input.source.powerId, input.description, data, options.treasureRules,
+          { proseGrammar: options.proseGrammar !== false }) : null;
       if (curated?.kind === 'drafts') {
         for (const draft of curated.drafts) {
           out.modifiers.push({
@@ -90,6 +95,8 @@ export function aggregateBuildModifiers(build: BuildDocument, data: ModifierData
             confidence: curated.rule.confidence, assumptions: [...draft.assumptions], source: input.source,
           });
         }
+        if (curated.rule.unmodeled) emitUnsupported(`${input.key}/remainder`, 'prose-effect',
+          `${curated.rule.unmodeled} Source: "${input.description}"`, input.source);
         return;
       }
       emitUnsupported(input.key, 'prose-effect', curated?.kind === 'template-mismatch'

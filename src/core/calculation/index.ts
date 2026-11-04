@@ -9,7 +9,7 @@ export { calculateAbilityDamage, ABILITY_DAMAGE_ASSUMPTIONS } from './ability-da
 export * from './ability-damage-types';
 export { formatAbilityDamageReport } from './ability-damage-report';
 export {
-  applyTargetDummy, burstTargetFalloff, BURST_FALLOFF_RULES, TARGET_DAMAGE_ASSUMPTIONS,
+  applyTargetDummy, burstTargetFalloff, linearDirectBurstEstimate, BURST_FALLOFF_RULES, TARGET_DAMAGE_ASSUMPTIONS,
   type BurstCoverage, type BurstFalloff, type TargetDamageOptions, type TargetDamageResult, type TargetDamageTypeStep,
   type TargetHitResult, type TargetStep, type TargetStepKind,
 } from './target-damage';

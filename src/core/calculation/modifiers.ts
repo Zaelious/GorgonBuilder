@@ -60,7 +60,7 @@ export type ModifierScope =
   | { readonly kind: 'general'; readonly delivery: DamageDelivery | null }
   | { readonly kind: 'skill'; readonly skillId: string }
   /** Applies where an official ability lists this attribute in the named PvE hook. */
-  | { readonly kind: 'ability-attribute-hook'; readonly attributeId: string; readonly hook: string }
+  | { readonly kind: 'ability-attribute-hook'; readonly attributeId: string; readonly hook: string; readonly skillId?: string }
   /** delivery null: the official label does not say whether direct and/or per-tick damage is covered. */
   | { readonly kind: 'damage-type'; readonly damageType: string; readonly delivery: DamageDelivery | null }
   /** Applies to official abilities of this skill whose published Keywords include `keyword` (e.g. every Mock tier). */

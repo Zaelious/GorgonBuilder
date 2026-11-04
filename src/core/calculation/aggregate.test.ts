@@ -142,6 +142,8 @@ describe('T0012 equipment and treasure aggregation', () => {
       .toEqual([
         ['imported', 'power_20006', 'id_9', 'existing', tierValue('power_20006', 'id_9')],
         ['imported', 'power_3001', 'id_9', 'existing', tierValue('power_3001', 'id_9')],
+        // T0013-F1 grammar: "Unarmed attacks deal +5 damage and have +N Accuracy" → BOOST_SKILL_UNARMED; accuracy stays unsupported.
+        ['imported', 'power_3007', 'id_9', 'existing', 5],
         ['manual', 'power_3024', 'id_9', 'existing', tierValue('power_3024', 'id_9')],
       ]);
     expect(existing[0]).toMatchObject({ category: 'ability-damage-flat', scope: { kind: 'ability-attribute-hook', attributeId: 'BOOST_ABILITY_COWFRONTKICK' } });
@@ -182,7 +184,8 @@ describe('T0012 equipment and treasure aggregation', () => {
     expect(text).not.toContain('FixtureUnknownPower');
     expect(text).not.toContain('power_129');
     const mainHand = (r: ModifierAggregationResult) => [...r.modifiers, ...r.unsupported].filter(x => x.source.kind === 'existing-power' && x.source.equipmentKey === 'MainHand#0');
-    expect(mainHand(result)).toHaveLength(6); // one record per working existing power (2 mapped + 4 prose)
+    // One record per working existing power (2 mapped + 4 prose), plus power_3007's grammar modifier and its accuracy remainder.
+    expect(mainHand(result)).toHaveLength(7);
     const cleared = cowUnarmed();
     const item = cleared.equipment[0]!.item;
     if (item.kind !== 'imported') throw new Error('Expected imported fixture');
@@ -208,7 +211,7 @@ describe('T0012 equipment and treasure aggregation', () => {
     ]);
     const reasons = new Set(result.unsupported.map(u => u.reason));
     expect(reasons).toEqual(new Set(['progression-rewards-not-modifiers', 'unmapped-attribute', 'prose-effect']));
-    expect(result.unsupported.find(u => u.attributeId === 'BOOST_ABILITY_COREATTACK')?.source).toMatchObject({ kind: 'item-fixed-effect', slot: 'MainHand' });
+    expect(result.modifiers.find(u => u.attributeId === 'BOOST_ABILITY_COREATTACK')?.source).toMatchObject({ kind: 'item-fixed-effect', slot: 'MainHand' });
     const unknownItem = createDefaultBuildDocument({ gameDataVersion: 'v1' });
     unknownItem.equipment = [{ slot: 'Ring', item: { kind: 'database', itemId: 'item_0' }, candidateMods: [], sparks: { mode: 'none' } }];
     expect(aggregate(unknownItem).warnings.map(w => w.code)).toEqual(['game-data-version-mismatch', 'unknown-item']);

@@ -1,0 +1,46 @@
+[
+  {
+    "name": "main",
+    "width": 320,
+    "scroll": 322,
+    "overflow": [
+      {
+        "tag": "DETAILS",
+        "cls": "planner-help",
+        "right": 321.84375
+      },
+      {
+        "tag": "SUMMARY",
+        "cls": "",
+        "right": 321.84375
+      },
+      {
+        "tag": "DIV",
+        "cls": "planner-help-content",
+        "right": 321.84375
+      }
+    ]
+  },
+  {
+    "name": "feature",
+    "width": 320,
+    "scroll": 322,
+    "overflow": [
+      {
+        "tag": "DETAILS",
+        "cls": "planner-help",
+        "right": 321.84375
+      },
+      {
+        "tag": "SUMMARY",
+        "cls": "",
+        "right": 321.84375
+      },
+      {
+        "tag": "DIV",
+        "cls": "planner-help-content",
+        "right": 321.84375
+      }
+    ]
+  }
+]

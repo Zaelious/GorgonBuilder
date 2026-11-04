@@ -97,9 +97,9 @@ has its own `assumptions`.
 **Intentionally unsupported for now** (kept as `unmapped-attribute`): crit damage and
 chance, target vulnerability (`VULN_*`, T0014), combat refresh, taunt, reset time,
 power cost, accuracy/evasion, `*_DIRECT`/`*_INDIRECT`/elite mitigation, pet and
-sender attributes, attributes outside ability hooks (e.g. `BOOST_ABILITY_COREATTACK`),
+sender attributes, attributes outside supported direct or static keyword hooks,
 and skill-named families whose label names something else (e.g.
-`BOOST_SKILL_ANIMALHANDLING`). All prose effects are unsupported by default, except two exact curated Mock powers (`power_4066` and `power_4032`) added in T0014; see `treasure-effect-rules.ts`. T0013-F1 is prioritized to audit all combat treasure-effect tiers and expand shared direct-damage coverage across skills. This is *not* a general prose parser.
+`BOOST_SKILL_ANIMALHANDLING`). Prose effects are unsupported unless a reviewed rule covers them. T0013-F1 adds 38 exact power/template definitions to the two T0014 Mock examples (`direct-treasure-rules.ts`), then one reusable *unconditional* grammar (`prose-damage-grammar.ts`): a leading damage clause whose every name resolves to official ability display names of the power's skill, the skill, or an official group damage attribute named by label, mapped to exactly one official damage attribute in the ability's hook, followed only by recognized side clauses. Conditions, conversions, split components and unknown wording fail closed; curated rules take precedence; confidence is `assumed`. Secondary clauses remain explicit unsupported records. This is *not* a general prose parser. See the [complete coverage report](../../../docs/treasure-coverage/README.md).
 
 ### Adding a mapping
 
@@ -247,7 +247,7 @@ concepts stay independent:
    - full damage up to 3 targets, plus 1 per full 10 m of Burst radius (20 m → 5);
    - a radius remainder gives a probabilistic extra target (`probabilistic`, no value);
    - at 9 or more enemies, direct damage is 25% and indirect damage 50%;
-   - counts in between are `undocumented` and get no value.
+   - intermediate direct counts use `linearDirectBurstEstimate`, explicitly `estimated`; indirect counts remain `undocumented`. At 20 m, 6/7/8 targets retain 81.25%/62.5%/43.75%. Radius remainders leave affected intermediate counts unresolved; a full threshold >=9 takes precedence and larger counts remain unsupported.
 
    `burstTargetFalloff` keeps direct and indirect separate. DoTs are still not calculated,
    so the indirect value is informational only.
@@ -267,3 +267,21 @@ non-damage effects (taunt, reuse) for display.
 The published `ExtraDamageIfTargetVulnerable` / "Vulnerable" target state remains
 T0013's `target-bonus-not-applied` limitation; it is a stateful debuff, not the
 dummy's per-type percentages. Criticals remain unmodeled.
+
+## T0013-F1 coverage and static keyword hooks
+
+`keyword-damage.ts` adds only unconditional official `abilitykeywords` direct damage
+hooks whose required/excluded keywords match static ability membership. Effect/active-skill
+gates and conditional keywords remain unsupported. Original and keyword hook membership
+is unioned, so the same attribute contributes once. Dot hooks are never inherited.
+The existing flat, percent and original-base Skill Base arithmetic is unchanged.
+`ability-attribute-hook` optionally carries the exact curated skill ID, preventing
+copied hooks on unrelated or unresolved abilities from receiving a curated bonus.
+
+`npm run coverage:treasure` walks all 52,039 published treasure effects and probes
+mapped contributions through the actual aggregator/calculator. Its deterministic
+report separates inventory completeness, direct-damage coverage (direct hit components
+only), other mechanics (taunt, reuse, DoT, crit, pets...) and validation confidence,
+with three snapshots: T0014 (no keyword rules, two Mock rules), the first T0013-F1
+commit (no grammar) and final. Audit prose screening never supplies runtime damage formulas.
+See [verification](../../../docs/T0013_F1_Verification.md) for assumptions and limitations.

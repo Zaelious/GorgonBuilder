@@ -1,4 +1,5 @@
 import { CONFIDENCE_ORDER, type ModifierAggregationResult, type ModifierCategory, type ModifierConfidence, type NormalizedModifier } from './modifiers';
+import { damageHooksForAbility } from './keyword-damage';
 import type {
   AbilityDamageData, AbilityDamageResult, AbilityDamageStep, AbilityDamageWarning, ComponentDamageResult,
   DamageAbility, DamageComponent, DamageComponentId, DamageDecisionReason, DamageModifierDecision,
@@ -26,7 +27,7 @@ function weakest(...values: readonly ModifierConfidence[]): ModifierConfidence {
   return values.reduce((a, b) => CONFIDENCE_ORDER.indexOf(a) >= CONFIDENCE_ORDER.indexOf(b) ? a : b, 'validated');
 }
 
-function extractComponents(ability: DamageAbility): DamageComponent[] {
+function extractComponents(ability: DamageAbility, data: AbilityDamageData): DamageComponent[] {
   const fields = [
     ['damage', 'Damage', ability.damage.damage],
     ['health-specific', 'HealthSpecificDamage', ability.damage.healthSpecificDamage],
@@ -38,7 +39,7 @@ function extractComponents(ability: DamageAbility): DamageComponent[] {
       baseStatus: value === null ? 'absent' : !Number.isFinite(value) || value < 0 ? 'unresolved' : value === 0 ? 'zero' : 'present' };
   }
   return [
-    ...fields.map(([id, field, value]) => component(id, `PvE.${field}`, value, ability.damage.damageType, 'direct', ability.pve.attributeHooks)),
+    ...fields.map(([id, field, value]) => component(id, `PvE.${field}`, value, ability.damage.damageType, 'direct', damageHooksForAbility(ability, data))),
     ...(ability.pve.dots ?? []).map(dot => component(`dot:${dot.sourceIndex}`, `PvE.DoTs[${dot.sourceIndex}].DamagePerTick`,
       dot.damagePerTick, dot.damageType, 'indirect', dot.attributeHooks)),
   ];
@@ -56,6 +57,9 @@ function decide(modifier: NormalizedModifier, component: DamageComponent, abilit
     return exclude('not-normal-damage', 'Resource, mitigation and critical modifiers do not contribute to outgoing normal damage.');
   }
   if (component.baseStatus === 'absent') return exclude('absent-component', 'This damage field is absent; modifiers cannot create it.');
+  if (scope.kind === 'ability-attribute-hook' && scope.skillId && scope.skillId !== ability.skill.skillId) {
+    return exclude('skill-mismatch', `Curated hook requires exact skill ${scope.skillId}; this ability does not resolve to that skill.`);
+  }
   if (scope.kind === 'skill' && ability.skill.status === 'resolved' && scope.skillId !== ability.skill.skillId) {
     return exclude('skill-mismatch', `Requires exact skill ${scope.skillId}; ability belongs to ${ability.skill.skillId}.`);
   }
@@ -101,7 +105,11 @@ function decide(modifier: NormalizedModifier, component: DamageComponent, abilit
     'Scope matches an embedded DoT, but activation, per-tick modification and stacking rules are not implemented.');
   if (hitCount > 1 && flat && modifier.value !== 0) return uncertain('multiple-component-allocation',
     'Several hit components are published; allocating or duplicating this flat across them is unvalidated.');
-  return result('applied', 'supported', 'Exact scope and evaluated conditions match; included in the supported-subset calculation.');
+  const keywordHook = scope.kind === 'ability-attribute-hook'
+    && !ability.pve.attributeHooks[scope.hook]?.includes(scope.attributeId);
+  return result('applied', 'supported', keywordHook
+    ? 'Official abilitykeywords damage hook matches static required/excluded keywords; included once in the assumed direct-hit formula. Conditional/effect-gated rules are omitted.'
+    : 'Exact scope and evaluated conditions match; included in the supported-subset calculation.');
 }
 
 function calculateComponent(component: DamageComponent, ability: DamageAbility, aggregation: ModifierAggregationResult,
@@ -192,7 +200,7 @@ export function calculateAbilityDamage(abilityId: string, aggregation: ModifierA
     message: `Published vulnerable-target extra damage ${ability.damage.extraDamageIfTargetVulnerable} is retained but not added to the normal baseline.` });
   warnings.push({ code: 'critical-unavailable', message: 'Critical chance, multipliers and target-dependent Phrenology rules are unsupported; criticalDamage is null.' });
 
-  const extracted = ability ? extractComponents(ability) : [];
+  const extracted = ability ? extractComponents(ability, data) : [];
   const hitCount = extracted.filter(c => c.delivery === 'direct' && c.baseStatus !== 'absent').length;
   if (ability && hitCount === 0) unresolved('no-hit-components', 'No ordinary, health-specific or armor-specific hit base is published; absence is not zero.');
   if (hitCount > 1) warnings.push({ code: 'components-not-combined', message: 'Published hit components are kept separate; no total or flat allocation is inferred.' });

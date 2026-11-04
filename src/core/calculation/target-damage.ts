@@ -8,7 +8,7 @@ import { abilityHasKeyword } from './treasure-effect-rules';
  * concepts stay separate:
  *
  * 1. Ability-specific multipliers from curated mods (e.g. Mock's "damage is halved"), independent of enemy count.
- * 2. Burst target-count falloff (official 2024-07-30 rules; only documented points are calculated).
+ * 2. Burst target-count falloff (official 2024-07-30 endpoints; direct intermediate values are labeled estimates).
  * 3. How many configured enemies are affected (single target, Burst "all enemies within radius", or unknown cap).
  *
  * Then the dummy's damage-type vulnerability/resistance multiplier is applied to the matching hit type.
@@ -20,11 +20,13 @@ export const TARGET_DAMAGE_ASSUMPTIONS = {
   burstInRange: 'Scenario assumption: every configured enemy is inside the Burst radius. Burst attacks hit all enemies in range; no hidden target cap is inferred from the radius.',
   publishedAoeRadius: 'Assumed: the published AoE value of a Burst-keyword ability is its Burst radius in meters.',
   floorPoint: 'Assumed: the radius bonus extends full-damage targets only; the documented minimum still applies at 9 or more enemies.',
+  burstInterpolation: 'Estimated: intermediate direct Burst retention uses linear interpolation between the documented full-damage threshold and 25% at nine enemies. This is not the measured game formula; replace it when current game measurements are available.',
 } as const;
 
 /** Official Project Gorgon update notes, 2024-07-30 ("Area-of-Effect and Burst Changes"). */
 export const BURST_FALLOFF_RULES = {
   source: 'Project Gorgon game update 2024-07-30',
+  sourceUrl: 'https://wiki.projectgorgon.com/wiki/Game_updates/2024-07-30',
   fullDamageTargets: 3,
   metersPerExtraFullTarget: 10,
   floorFromTargets: 9,
@@ -32,42 +34,70 @@ export const BURST_FALLOFF_RULES = {
 } as const;
 
 export interface BurstFalloff {
-  readonly delivery: 'direct' | 'indirect';
+  readonly delivery: 'direct' | 'indirect' | 'unknown';
   readonly enemies: number;
   readonly radius: number | null;
   /** 3 + one per full 10 m of radius; null if the radius is unknown. */
   readonly fullDamageTargets: number | null;
   /** Chance of one extra full-damage target from the radius remainder (7 m → 0.7). */
   readonly extraTargetChance: number;
-  readonly status: 'full' | 'floor' | 'probabilistic' | 'undocumented';
-  /** Per-target multiplier; null where the official rules publish no value. */
+  readonly status: 'full' | 'floor' | 'estimated' | 'probabilistic' | 'undocumented';
+  /** Per-target multiplier; an estimated value is never a documented game formula. */
   readonly multiplier: number | null;
   readonly explanation: string;
 }
 
-/** Documented Burst falloff only. Intermediate percentages are never invented. */
-export function burstTargetFalloff(enemies: number, radius: number | null, delivery: 'direct' | 'indirect'): BurstFalloff {
+/** Replaceable estimate policy; deliberately separate from the documented endpoint rules. */
+export function linearDirectBurstEstimate(enemies: number, fullDamageTargets: number): number | null {
+  const r = BURST_FALLOFF_RULES;
+  if (!Number.isSafeInteger(enemies) || !Number.isSafeInteger(fullDamageTargets)
+    || fullDamageTargets < r.fullDamageTargets || fullDamageTargets >= r.floorFromTargets
+    || enemies <= fullDamageTargets || enemies >= r.floorFromTargets) return null;
+  return 1 - (enemies - fullDamageTargets) * ((1 - r.floor.direct) / (r.floorFromTargets - fullDamageTargets));
+}
+
+/** Source-backed endpoints, with explicitly estimated intermediate direct retention when the threshold is known. */
+export function burstTargetFalloff(enemies: number, radius: number | null, delivery: BurstFalloff['delivery']): BurstFalloff {
   const r = BURST_FALLOFF_RULES;
   const validRadius = radius !== null && Number.isFinite(radius) && radius >= 0 ? radius : null;
   const full = r.fullDamageTargets + (validRadius === null ? 0 : Math.floor(validRadius / r.metersPerExtraFullTarget));
   const chance = validRadius === null ? 0 : (validRadius % r.metersPerExtraFullTarget) / r.metersPerExtraFullTarget;
-  const floor = r.floor[delivery];
   const base = { delivery, enemies, radius: validRadius, fullDamageTargets: validRadius === null ? null : full, extraTargetChance: chance };
   const fullAt = validRadius === null ? r.fullDamageTargets : full;
+  if (!Number.isSafeInteger(enemies) || enemies < 1) {
+    return { ...base, status: 'undocumented', multiplier: null, explanation: 'Unsupported: enemy count must be a positive whole number.' };
+  }
+  if (delivery !== 'direct' && delivery !== 'indirect') {
+    return { ...base, status: 'undocumented', multiplier: null, explanation: 'Unsupported: damage delivery is unknown; direct and indirect Burst rules cannot be selected.' };
+  }
   if (enemies <= fullAt) {
     return { ...base, status: 'full', multiplier: 1,
-      explanation: `${enemies} ${enemies === 1 ? 'enemy is' : 'enemies are'} within the ${fullAt} full-damage targets (3${validRadius ? ` + ${Math.floor(validRadius / 10)} for ${validRadius} m radius` : ''}).` };
+      explanation: `Documented: ${enemies} ${enemies === 1 ? 'enemy is' : 'enemies are'} within the ${fullAt} full-damage targets (3${validRadius ? ` + ${Math.floor(validRadius / 10)} for ${validRadius} m radius` : ''}).` };
   }
-  if (enemies === fullAt + 1 && chance > 0) {
+  if (validRadius === null) {
+    return { ...base, status: 'undocumented', multiplier: null,
+      explanation: 'Unsupported: the Burst radius is missing or invalid, so its full-damage allowance and falloff cannot be established.' };
+  }
+  const largestFullThreshold = fullAt + (chance > 0 ? 1 : 0);
+  if (enemies >= r.floorFromTargets && largestFullThreshold < r.floorFromTargets) {
+    return { ...base, status: 'floor', multiplier: r.floor[delivery],
+      explanation: `Documented: ${enemies} enemies reach the ${delivery} minimum of ${r.floor[delivery] * 100}% (9 or more enemies); the radius allowance remains below nine.` };
+  }
+  if (chance > 0) {
     return { ...base, status: 'probabilistic', multiplier: null,
-      explanation: `${Math.round(chance * 100)}% chance this enemy is also hit at full damage (radius remainder); otherwise falloff applies. No single value is calculated.` };
+      explanation: `Unresolved: ${Number((chance * 100).toFixed(4))}% chance of ${fullAt + 1} rather than ${fullAt} full-damage targets from the radius remainder. No random roll or expected falloff is assumed.` };
   }
-  if (enemies >= r.floorFromTargets && fullAt < r.floorFromTargets) {
-    return { ...base, status: 'floor', multiplier: floor,
-      explanation: `${enemies} enemies reach the documented ${delivery} minimum of ${floor * 100}% (9 or more enemies).` };
+  if (fullAt >= r.floorFromTargets) {
+    return { ...base, status: 'undocumented', multiplier: null,
+      explanation: `Unsupported: the radius already allows ${fullAt} full-damage targets, at or beyond the nine-enemy floor point. Falloff beyond this allowance is undocumented; the 25%/50% floors cannot be applied consistently.` };
+  }
+  const estimate = delivery === 'direct' ? linearDirectBurstEstimate(enemies, fullAt) : null;
+  if (estimate !== null) {
+    return { ...base, status: 'estimated', multiplier: estimate,
+      explanation: `Estimated direct retention: 100% − (${enemies} − ${fullAt}) × (75% / (9 − ${fullAt})) = ${Number((estimate * 100).toFixed(4))}%. Linear interpolation between documented endpoints; not a measured game formula.` };
   }
   return { ...base, status: 'undocumented', multiplier: null,
-    explanation: `${enemies} enemies is between ${fullAt} full-damage targets and the 9-enemy minimum; the official notes publish no intermediate percentage.` };
+    explanation: `Unsupported: ${enemies} enemies is between ${fullAt} full-damage targets and the nine-enemy minimum; intermediate ${delivery} falloff is not published or estimated.` };
 }
 
 export type TargetStepKind = 'ability-multiplier' | 'burst-falloff' | 'damage-type';
@@ -112,6 +142,8 @@ export interface TargetHitResult {
   readonly total: number | null;
   /** True only when T0013 validated the hit and no assumed scenario step applies. */
   readonly validated: boolean;
+  /** True only when a numeric hit actually includes estimated direct Burst falloff. */
+  readonly estimated: boolean;
   readonly confidence: ModifierConfidence;
 }
 
@@ -128,7 +160,7 @@ export interface TargetDamageResult {
   readonly areaOfEffect: boolean;
   /** Burst coverage that hits all enemies within a radius; null otherwise. */
   readonly burst: BurstCoverage | null;
-  /** Documented Burst falloff for the configured enemies (direct and indirect kept separate); null if not Burst or 1 enemy. */
+  /** Documented/estimated Burst falloff (direct and indirect kept separate); null if not Burst or 1 enemy. */
   readonly falloff: { readonly direct: BurstFalloff; readonly indirect: BurstFalloff } | null;
   /** Source-backed cap only; v490 abilities publish none. */
   readonly targetCap: number | null;
@@ -232,6 +264,7 @@ export function applyTargetDummy(result: AbilityDamageResult, target: TargetConf
   if (falloff?.direct.status === 'floor' && (falloff.direct.fullDamageTargets ?? 3) > BURST_FALLOFF_RULES.fullDamageTargets) {
     assumptions.add(TARGET_DAMAGE_ASSUMPTIONS.floorPoint);
   }
+  if (falloff?.direct.status === 'estimated') assumptions.add(TARGET_DAMAGE_ASSUMPTIONS.burstInterpolation);
 
   const hits = result.components.filter(c => c.delivery === 'direct' && c.baseStatus !== 'absent').map((component): TargetHitResult => {
     const beforeTarget = component.provisionalDamage;
@@ -252,7 +285,7 @@ export function applyTargetDummy(result: AbilityDamageResult, target: TargetConf
     if (falloff) {
       const f = falloff.direct;
       push({ kind: 'burst-falloff', label: `Burst falloff · ${f.enemies} enemies`,
-        detail: f.fullDamageTargets === null ? 'radius unknown' : `${f.fullDamageTargets} full-damage targets (${f.radius} m)`,
+        detail: f.status === 'estimated' ? f.explanation : f.fullDamageTargets === null ? 'radius unknown' : `${f.fullDamageTargets} full-damage targets (${f.radius} m)`,
         multiplier: f.multiplier, confidence: f.status === 'full' ? 'partially_validated' : 'assumed', explanation: f.explanation });
     }
     const settings = target.damageTypes[component.damageType];
@@ -277,7 +310,8 @@ export function applyTargetDummy(result: AbilityDamageResult, target: TargetConf
     const total = perTarget !== null && affectedTargets !== null ? perTarget * affectedTargets : null;
     const confidence = weakest(component.confidence, ...steps.map(s => s.confidence));
     return { componentId: component.id, sourcePath: component.sourcePath, damageType: component.damageType, beforeTarget, steps, targetStep,
-      perTarget, total, validated: component.normalDamage !== null && steps.length === 0, confidence };
+      perTarget, total, validated: component.normalDamage !== null && steps.length === 0,
+      estimated: perTarget !== null && falloff?.direct.status === 'estimated' && steps.some(step => step.kind === 'burst-falloff'), confidence };
   });
   let confidence = weakest(result.confidence, ...hits.map(h => h.confidence));
   if (assumptions.size > 0) confidence = weakest(confidence, 'assumed');

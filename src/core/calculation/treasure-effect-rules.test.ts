@@ -68,7 +68,13 @@ describe('curated exact treasure-power rules', () => {
     expect(interpretTreasureEffect('power_4002', text, data)).toBeNull();
     expect(interpretTreasureEffect(MOCK_AND_RIDICULE, text.replace('+43%', 'about 43%'), data)?.kind).toBe('template-mismatch');
     const renamed = { ...data, getTreasurePower: (id: string) => id === MOCK_AND_RIDICULE ? { ...data.getTreasurePower(id)!, internalName: 'Other' } : data.getTreasurePower(id) };
-    expect(interpretTreasureEffect(MOCK_AND_RIDICULE, text, renamed)).toBeNull();
+    // The exact curated rule (with taunt) is bound to the InternalName; it is not applied to a renamed power.
+    expect(interpretTreasureEffect(MOCK_AND_RIDICULE, text, renamed, undefined, { proseGrammar: false })).toBeNull();
+    // The reusable grammar may still read the unconditional damage clause; taunt then stays an unsupported remainder.
+    const grammar = interpretTreasureEffect(MOCK_AND_RIDICULE, text, renamed);
+    expect(grammar?.kind === 'drafts' && [grammar.rule.id, grammar.drafts.map(d => d.attributeId), grammar.rule.unmodeled]).toEqual([
+      'prose-grammar:names-deal', ['MOD_ABILITY_MOCK', 'MOD_ABILITY_RIDICULE'],
+      'Only the unconditional damage clause is modeled; accompanying taunt clauses are preserved in the source sentence and are not simulated.']);
     // Other prose (e.g. Psychoanalyze extra damage) is still an unsupported record.
     const fixture = aggregateBuildModifiers(psychologyFixture(data.gameDataVersion), data);
     expect(fixture.unsupported.some(u => u.reason === 'prose-effect' && u.key.includes('power_4002'))).toBe(true);
@@ -107,7 +113,8 @@ describe('customer Psychology + Deer scenario', () => {
     const nine = at(9);
     expect(nine.hits[0]!.perTarget).toBeCloseTo(perTarget * 0.25, 10);
     expect(nine.hits[0]!.total).toBeCloseTo(perTarget * 0.25 * 9, 10);
-    expect(at(6).hits[0]!.total).toBeNull();
+    expect(at(6).hits[0]!.total).toBeCloseTo(perTarget * 0.8125 * 6, 10);
+    expect(at(6).hits[0]!.estimated).toBe(true);
     expect(one.abilityEffects.map(m => [m.category, m.value])).toEqual([
       ['ability-taunt-flat', 200], ['ability-burst-conversion', 20], ['ability-damage-multiplier', 0.5],
       ['ability-taunt-flat', 1080], ['ability-reset-time-flat', 1.5],

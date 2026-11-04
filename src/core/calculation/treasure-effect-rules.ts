@@ -2,6 +2,8 @@ import type {
   ModifierCategory, ModifierConfidence, ModifierOperation, ModifierScope, ModifierUnit,
 } from './modifiers';
 import type { ModifierDataContext } from './registry';
+import { DIRECT_TREASURE_RULES } from './direct-treasure-rules';
+import { resolveProseDamage, type ProseDamageResolution } from './prose-damage-grammar';
 
 /**
  * Curated, exact treasure-power rules for published *prose* effects (T0014 acceptance correction).
@@ -32,6 +34,7 @@ export interface TreasureEffectRule {
   /** Full-string template; the optional leading `<icon=N>` tags are display-only. */
   readonly pattern: RegExp;
   readonly confidence: ModifierConfidence;
+  readonly unmodeled?: string | undefined;
   readonly interpret: (match: RegExpExecArray, data: ModifierDataContext) => readonly TreasureEffectDraft[] | null;
 }
 
@@ -65,6 +68,7 @@ function all<T>(values: readonly (T | null)[]): T[] | null {
 }
 
 export const TREASURE_EFFECT_RULES: readonly TreasureEffectRule[] = Object.freeze([
+  ...DIRECT_TREASURE_RULES,
   {
     id: 'treasure:MockAndRidiculeBoost', powerId: 'power_4066', internalName: 'MockAndRidiculeBoost',
     description: '"Mock and Ridicule deal +X% damage and taunt +Y" → MOD_ABILITY_MOCK/MOD_ABILITY_RIDICULE % and taunt',
@@ -110,15 +114,51 @@ export const TREASURE_EFFECT_RULES: readonly TreasureEffectRule[] = Object.freez
 ]);
 
 export type TreasureEffectInterpretation =
-  | { readonly kind: 'drafts'; readonly rule: TreasureEffectRule; readonly drafts: readonly TreasureEffectDraft[] }
+  | { readonly kind: 'drafts'; readonly rule: TreasureEffectRule; readonly drafts: readonly TreasureEffectDraft[]; readonly grammar?: ProseDamageResolution }
   | { readonly kind: 'template-mismatch'; readonly rule: TreasureEffectRule };
 
-/** Exact power ID + InternalName lookup; null when no curated rule covers the power. */
+export interface TreasureInterpretationOptions {
+  /** Reusable unconditional named-damage grammar (prose-damage-grammar.ts); disabled only for preserved coverage baselines. */
+  readonly proseGrammar?: boolean;
+}
+
+const OTHER_LABELS: Record<string, string> = {
+  taunt: 'taunt', 'reuse-time': 'reuse/reset timer', 'power-cost': 'Power cost', rage: 'Rage', control: 'stun/knockback/slow',
+  'range-accuracy': 'range/accuracy', 'call-for-help': 'call-for-help', 'restore-resource': 'healing/resource restoration',
+  defense: 'defensive effect', 'self-buff': 'non-damage self buff', critical: 'critical-hit rule', reactive: 'damage reflection',
+  pet: 'summoned ally', 'self-damage': 'damage to yourself', dot: 'damage over time', 'keyword-grant': 'keyword change', 'target-debuff': 'target debuff',
+  'timed-damage-buff': 'timed or next-attack damage buff', 'damage-type-conversion': 'damage-type conversion',
+  'aoe-conversion': 'area-of-effect change', 'random-bonus': 'chance-based extra damage',
+};
+
+/** Synthetic rule record for one grammar resolution; it carries the same provenance fields as a curated rule. */
+function grammarRule(powerId: string, internalName: string, resolution: ProseDamageResolution): TreasureEffectRule {
+  const { other, direct } = resolution.remainder;
+  const clauses = [...direct, ...other].map(kind => OTHER_LABELS[kind] ?? kind);
+  return {
+    id: `prose-grammar:${resolution.clause.form}`, powerId, internalName,
+    description: 'Reusable unconditional named-damage grammar (official names, hooks and attributes).',
+    pattern: /^$/u, confidence: 'assumed',
+    unmodeled: clauses.length ? `Only the unconditional damage clause is modeled; accompanying ${clauses.join(', ')} clauses are preserved in the source sentence and are not simulated.` : undefined,
+    interpret: () => resolution.drafts,
+  };
+}
+
+/**
+ * Exact power ID + InternalName curated rules take precedence. Otherwise the reusable grammar may interpret a fully
+ * recognized unconditional damage sentence for the power's own official skill. Null when nothing covers the sentence.
+ */
 export function interpretTreasureEffect(powerId: string, description: string, data: ModifierDataContext,
-  rules: readonly TreasureEffectRule[] = TREASURE_EFFECT_RULES): TreasureEffectInterpretation | null {
+  rules: readonly TreasureEffectRule[] = TREASURE_EFFECT_RULES, options: TreasureInterpretationOptions = {}): TreasureEffectInterpretation | null {
   const power = data.getTreasurePower(powerId);
   const rule = rules.find(entry => entry.powerId === powerId && entry.internalName === power?.internalName);
-  if (!rule) return null;
+  if (!rule) {
+    // Only a sentence this exact power publishes; text from elsewhere is never interpreted for it.
+    if (!power || options.proseGrammar === false || !power.tiers.some(tier => tier.effectDescriptions.includes(description))) return null;
+    const resolution = resolveProseDamage(description, power.skill.status === 'resolved' ? power.skill.skillId : null, data);
+    if (!resolution.ok || !resolution.drafts.every(draft => Number.isFinite(draft.value))) return null;
+    return { kind: 'drafts', rule: grammarRule(power.id, power.internalName, resolution), drafts: resolution.drafts, grammar: resolution };
+  }
   const match = rule.pattern.exec(description);
   const drafts = match ? rule.interpret(match, data) : null;
   return drafts && drafts.every(draft => Number.isFinite(draft.value)) ? { kind: 'drafts', rule, drafts } : { kind: 'template-mismatch', rule };

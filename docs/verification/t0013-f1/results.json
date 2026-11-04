@@ -1,0 +1,146 @@
+[
+  {
+    "width": 1440,
+    "height": 900,
+    "count": 1,
+    "retained": 1,
+    "displayed": "127.27 Psychic",
+    "estimated": false
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "count": 5,
+    "retained": 1,
+    "displayed": "127.27 Psychic",
+    "estimated": false
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "count": 6,
+    "retained": 0.8125,
+    "displayed": "103.41 PsychicEstimated",
+    "estimated": true
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "count": 7,
+    "retained": 0.625,
+    "displayed": "79.54 PsychicEstimated",
+    "estimated": true
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "count": 8,
+    "retained": 0.4375,
+    "displayed": "55.68 PsychicEstimated",
+    "estimated": true
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "count": 9,
+    "retained": 0.25,
+    "displayed": "31.82 Psychic",
+    "estimated": false
+  },
+  {
+    "width": 375,
+    "height": 812,
+    "count": 1,
+    "retained": 1,
+    "displayed": "127.27 Psychic",
+    "estimated": false
+  },
+  {
+    "width": 375,
+    "height": 812,
+    "count": 5,
+    "retained": 1,
+    "displayed": "127.27 Psychic",
+    "estimated": false
+  },
+  {
+    "width": 375,
+    "height": 812,
+    "count": 6,
+    "retained": 0.8125,
+    "displayed": "103.41 PsychicEstimated",
+    "estimated": true
+  },
+  {
+    "width": 375,
+    "height": 812,
+    "count": 7,
+    "retained": 0.625,
+    "displayed": "79.54 PsychicEstimated",
+    "estimated": true
+  },
+  {
+    "width": 375,
+    "height": 812,
+    "count": 8,
+    "retained": 0.4375,
+    "displayed": "55.68 PsychicEstimated",
+    "estimated": true
+  },
+  {
+    "width": 375,
+    "height": 812,
+    "count": 9,
+    "retained": 0.25,
+    "displayed": "31.82 Psychic",
+    "estimated": false
+  },
+  {
+    "width": 320,
+    "height": 812,
+    "count": 1,
+    "retained": 1,
+    "displayed": "127.27 Psychic",
+    "estimated": false
+  },
+  {
+    "width": 320,
+    "height": 812,
+    "count": 5,
+    "retained": 1,
+    "displayed": "127.27 Psychic",
+    "estimated": false
+  },
+  {
+    "width": 320,
+    "height": 812,
+    "count": 6,
+    "retained": 0.8125,
+    "displayed": "103.41 PsychicEstimated",
+    "estimated": true
+  },
+  {
+    "width": 320,
+    "height": 812,
+    "count": 7,
+    "retained": 0.625,
+    "displayed": "79.54 PsychicEstimated",
+    "estimated": true
+  },
+  {
+    "width": 320,
+    "height": 812,
+    "count": 8,
+    "retained": 0.4375,
+    "displayed": "55.68 PsychicEstimated",
+    "estimated": true
+  },
+  {
+    "width": 320,
+    "height": 812,
+    "count": 9,
+    "retained": 0.25,
+    "displayed": "31.82 Psychic",
+    "estimated": false
+  }
+]

@@ -40,7 +40,6 @@ it.each([
 
 it.each([
   ['BOOST_SKILL_ANIMALHANDLING', 'unmapped-attribute'],   // label names specific abilities, not the skill
-  ['BOOST_ABILITY_COREATTACK', 'unmapped-attribute'],     // no official ability hook references it
   ['MOD_CRITICAL_HIT_DAMAGE', 'unmapped-attribute'],      // crit is outside the initial subset
   ['VULN_PSYCHIC', 'unmapped-attribute'],                 // target debuff semantics belong to T0014
   ['MITIGATION_CRUSHING_DIRECT', 'unmapped-attribute'],

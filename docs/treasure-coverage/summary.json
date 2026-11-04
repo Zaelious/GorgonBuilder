@@ -1,0 +1,299 @@
+{
+  "gameDataVersion": "v490",
+  "combatSkills": 35,
+  "combatAbilities": 4089,
+  "inventory": {
+    "powers": 1947,
+    "tiers": 45634,
+    "entries": 52039,
+    "emptyTiers": 25,
+    "combatSkill": {
+      "powers": 1613,
+      "entries": 35330
+    },
+    "generic": {
+      "powers": 333,
+      "entries": 16709,
+      "associations": [
+        "AnySkill",
+        "ArmorPatching",
+        "Carpentry",
+        "Endurance",
+        "FairyMagic",
+        "Fishing",
+        "Foraging",
+        "Gourmand",
+        "NatureAppreciation",
+        "ShamanicInfusion",
+        "Unknown"
+      ]
+    }
+  },
+  "directDamage": {
+    "combatSkill": {
+      "t0014": {
+        "entries": {
+          "total": 16565,
+          "full": 5036,
+          "partial": 54,
+          "unmodeled": 11475,
+          "coverage": "30.40",
+          "withPartial": "30.73"
+        },
+        "powers": {
+          "total": 745,
+          "full": 215,
+          "partial": 7,
+          "unmodeled": 523
+        }
+      },
+      "initial": {
+        "entries": {
+          "total": 16565,
+          "full": 5954,
+          "partial": 54,
+          "unmodeled": 10557,
+          "coverage": "35.94",
+          "withPartial": "36.27"
+        },
+        "powers": {
+          "total": 745,
+          "full": 255,
+          "partial": 7,
+          "unmodeled": 483
+        }
+      },
+      "final": {
+        "entries": {
+          "total": 16565,
+          "full": 9879,
+          "partial": 1035,
+          "unmodeled": 5651,
+          "coverage": "59.64",
+          "withPartial": "65.89"
+        },
+        "powers": {
+          "total": 745,
+          "full": 428,
+          "partial": 49,
+          "unmodeled": 268
+        }
+      }
+    },
+    "generic": {
+      "t0014": {
+        "entries": {
+          "total": 4755,
+          "full": 2254,
+          "partial": 150,
+          "unmodeled": 2351,
+          "coverage": "47.40",
+          "withPartial": "50.56"
+        },
+        "powers": {
+          "total": 124,
+          "full": 58,
+          "partial": 4,
+          "unmodeled": 62
+        }
+      },
+      "initial": {
+        "entries": {
+          "total": 4755,
+          "full": 2257,
+          "partial": 150,
+          "unmodeled": 2348,
+          "coverage": "47.47",
+          "withPartial": "50.62"
+        },
+        "powers": {
+          "total": 124,
+          "full": 59,
+          "partial": 4,
+          "unmodeled": 61
+        }
+      },
+      "final": {
+        "entries": {
+          "total": 4755,
+          "full": 2320,
+          "partial": 200,
+          "unmodeled": 2235,
+          "coverage": "48.79",
+          "withPartial": "53.00"
+        },
+        "powers": {
+          "total": 124,
+          "full": 62,
+          "partial": 6,
+          "unmodeled": 56
+        }
+      }
+    },
+    "all": {
+      "t0014": {
+        "entries": {
+          "total": 21320,
+          "full": 7290,
+          "partial": 204,
+          "unmodeled": 13826,
+          "coverage": "34.19",
+          "withPartial": "35.15"
+        },
+        "powers": {
+          "total": 869,
+          "full": 273,
+          "partial": 11,
+          "unmodeled": 585
+        }
+      },
+      "initial": {
+        "entries": {
+          "total": 21320,
+          "full": 8211,
+          "partial": 204,
+          "unmodeled": 12905,
+          "coverage": "38.51",
+          "withPartial": "39.47"
+        },
+        "powers": {
+          "total": 869,
+          "full": 314,
+          "partial": 11,
+          "unmodeled": 544
+        }
+      },
+      "final": {
+        "entries": {
+          "total": 21320,
+          "full": 12199,
+          "partial": 1235,
+          "unmodeled": 7886,
+          "coverage": "57.22",
+          "withPartial": "63.01"
+        },
+        "powers": {
+          "total": 869,
+          "full": 490,
+          "partial": 55,
+          "unmodeled": 324
+        }
+      }
+    }
+  },
+  "unconditionalFinal": {
+    "combatSkill": {
+      "entries": {
+        "total": 11012,
+        "full": 9854,
+        "partial": 1035,
+        "unmodeled": 123,
+        "coverage": "89.48",
+        "withPartial": "98.88"
+      },
+      "powers": {
+        "total": 483,
+        "full": 427,
+        "partial": 49,
+        "unmodeled": 7
+      }
+    },
+    "generic": {
+      "entries": {
+        "total": 3070,
+        "full": 2320,
+        "partial": 200,
+        "unmodeled": 550,
+        "coverage": "75.57",
+        "withPartial": "82.08"
+      },
+      "powers": {
+        "total": 86,
+        "full": 62,
+        "partial": 6,
+        "unmodeled": 18
+      }
+    },
+    "all": {
+      "entries": {
+        "total": 14082,
+        "full": 12174,
+        "partial": 1235,
+        "unmodeled": 673,
+        "coverage": "86.45",
+        "withPartial": "95.22"
+      },
+      "powers": {
+        "total": 569,
+        "full": 489,
+        "partial": 55,
+        "unmodeled": 25
+      }
+    }
+  },
+  "newlyCalculated": {
+    "sinceT0014": 5940,
+    "sinceInitial": 5019,
+    "powersSinceInitial": 220
+  },
+  "mechanics": {
+    "unconditional-flat-percent": 12294,
+    "skill-base": 1788,
+    "conditional-direct": 2563,
+    "damage-type-conversion": 210,
+    "aoe-targeting": 532,
+    "multi-hit-or-split": 1000,
+    "stateful-combat": 2933,
+    "critical": 382,
+    "dot-indirect": 3074,
+    "pet-summon": 1451,
+    "reactive": 398,
+    "defense-incoming": 1060,
+    "ally-support": 225,
+    "non-damage": 17677,
+    "non-damage-stat": 6452,
+    "unresolved-attribute": 0
+  },
+  "reasons": {
+    "fully-calculated:burst-conversion": 25,
+    "fully-calculated:calculated": 12174,
+    "partially-calculated:side-clause:aoe-conversion": 100,
+    "partially-calculated:side-clause:damage-type-conversion": 244,
+    "partially-calculated:side-clause:keyword-grant": 25,
+    "partially-calculated:side-clause:random-bonus": 100,
+    "partially-calculated:side-clause:target-debuff": 276,
+    "partially-calculated:side-clause:timed-damage-buff": 112,
+    "partially-calculated:side-clause:triggered-damage": 50,
+    "partially-calculated:split-component-allocation": 328,
+    "unmodeled:aoe-targeting-change": 507,
+    "unmodeled:conditional-target-or-state": 2563,
+    "unmodeled:damage-type-conversion": 210,
+    "unmodeled:multi-hit-split-or-variable": 1000,
+    "unmodeled:no-applicable-published-hit": 550,
+    "unmodeled:no-official-damage-attribute": 25,
+    "unmodeled:split-component-allocation": 62,
+    "unmodeled:stateful-combat-context": 2933,
+    "unmodeled:unclassified-prose": 1,
+    "unmodeled:unresolved-ability-name": 35
+  },
+  "legacyReport": {
+    "previousFullCoverage": "22.83",
+    "previousDenominator": 21808,
+    "previousDirectRelatedUnmodeled": 5044,
+    "previousDirectRelatedUnmodeledPowers": 225,
+    "reclassified": {
+      "ally-support:outside-direct": 50,
+      "aoe-targeting:unmodeled": 49,
+      "conditional-direct:unmodeled": 183,
+      "damage-type-conversion:unmodeled": 115,
+      "defense-incoming:outside-direct": 97,
+      "multi-hit-or-split:unmodeled": 437,
+      "pet-summon:outside-direct": 298,
+      "reactive:outside-direct": 199,
+      "stateful-combat:unmodeled": 333,
+      "unconditional-flat-percent:fully-calculated": 3021,
+      "unconditional-flat-percent:partially-calculated": 176,
+      "unconditional-flat-percent:unmodeled": 86
+    }
+  }
+}

@@ -1,0 +1,148 @@
+[
+  {
+    "mode": "dev",
+    "responses": [
+      {
+        "url": "http://127.0.0.1:5174/src/generated/game-data/progression.json.gz",
+        "status": 200,
+        "headers": {
+          "cache-control": "no-cache",
+          "connection": "keep-alive",
+          "content-length": "912081",
+          "content-type": "application/gzip",
+          "date": "Tue, 03 Nov 2026 19:51:21 GMT",
+          "keep-alive": "timeout=5",
+          "vary": "Origin"
+        },
+        "receivedBytes": 912081,
+        "sha256": "3e9c01e629d18bac727a8e82138011951def5f067454e4f121036147d41bb915"
+      },
+      {
+        "url": "http://127.0.0.1:5174/src/generated/game-data/abilities.json.gz",
+        "status": 200,
+        "headers": {
+          "cache-control": "no-cache",
+          "connection": "keep-alive",
+          "content-length": "566143",
+          "content-type": "application/gzip",
+          "date": "Tue, 03 Nov 2026 19:51:21 GMT",
+          "keep-alive": "timeout=5",
+          "vary": "Origin"
+        },
+        "receivedBytes": 566143,
+        "sha256": "0606099fad944d22c9330bf9c310e78e2feaeda9db02a208d808b63a4e9e41c7"
+      },
+      {
+        "url": "http://127.0.0.1:5174/src/generated/game-data/itemsTreasure.json.gz",
+        "status": 200,
+        "headers": {
+          "cache-control": "no-cache",
+          "connection": "keep-alive",
+          "content-length": "1824985",
+          "content-type": "application/gzip",
+          "date": "Tue, 03 Nov 2026 19:51:21 GMT",
+          "keep-alive": "timeout=5",
+          "vary": "Origin"
+        },
+        "receivedBytes": 1824985,
+        "sha256": "90ea272a7804075fc8474e1150119512b3dddb9b2806626ee350aac789411487"
+      }
+    ],
+    "expected": {
+      "abilities": {
+        "bytes": 566143,
+        "file": "abilities.json.gz",
+        "jsonBytes": 16214378,
+        "sha256": "0606099fad944d22c9330bf9c310e78e2feaeda9db02a208d808b63a4e9e41c7"
+      },
+      "itemsTreasure": {
+        "bytes": 1824985,
+        "file": "itemsTreasure.json.gz",
+        "jsonBytes": 31653251,
+        "sha256": "90ea272a7804075fc8474e1150119512b3dddb9b2806626ee350aac789411487"
+      },
+      "progression": {
+        "bytes": 912081,
+        "file": "progression.json.gz",
+        "jsonBytes": 24512764,
+        "sha256": "3e9c01e629d18bac727a8e82138011951def5f067454e4f121036147d41bb915"
+      }
+    },
+    "planner": "Psychology/Deer, Cow/Unarmed, same skill, A-only, add/remove, levels and reload passed",
+    "corruption": "all three same-size corrupt responses rejected; retry recovered",
+    "browserErrors": []
+  },
+  {
+    "mode": "preview",
+    "responses": [
+      {
+        "url": "http://127.0.0.1:4174/assets/progression.json-BY5ErUaF.gz",
+        "status": 200,
+        "headers": {
+          "cache-control": "no-cache",
+          "connection": "keep-alive",
+          "content-length": "912081",
+          "content-type": "application/gzip",
+          "date": "Tue, 03 Nov 2026 19:51:50 GMT",
+          "keep-alive": "timeout=5",
+          "vary": "Origin"
+        },
+        "receivedBytes": 912081,
+        "sha256": "3e9c01e629d18bac727a8e82138011951def5f067454e4f121036147d41bb915"
+      },
+      {
+        "url": "http://127.0.0.1:4174/assets/abilities.json-DntOx9Di.gz",
+        "status": 200,
+        "headers": {
+          "cache-control": "no-cache",
+          "connection": "keep-alive",
+          "content-length": "566143",
+          "content-type": "application/gzip",
+          "date": "Tue, 03 Nov 2026 19:51:50 GMT",
+          "keep-alive": "timeout=5",
+          "vary": "Origin"
+        },
+        "receivedBytes": 566143,
+        "sha256": "0606099fad944d22c9330bf9c310e78e2feaeda9db02a208d808b63a4e9e41c7"
+      },
+      {
+        "url": "http://127.0.0.1:4174/assets/itemsTreasure.json-CAd_DjyP.gz",
+        "status": 200,
+        "headers": {
+          "cache-control": "no-cache",
+          "connection": "keep-alive",
+          "content-length": "1824985",
+          "content-type": "application/gzip",
+          "date": "Tue, 03 Nov 2026 19:51:50 GMT",
+          "keep-alive": "timeout=5",
+          "vary": "Origin"
+        },
+        "receivedBytes": 1824985,
+        "sha256": "90ea272a7804075fc8474e1150119512b3dddb9b2806626ee350aac789411487"
+      }
+    ],
+    "expected": {
+      "abilities": {
+        "bytes": 566143,
+        "file": "abilities.json.gz",
+        "jsonBytes": 16214378,
+        "sha256": "0606099fad944d22c9330bf9c310e78e2feaeda9db02a208d808b63a4e9e41c7"
+      },
+      "itemsTreasure": {
+        "bytes": 1824985,
+        "file": "itemsTreasure.json.gz",
+        "jsonBytes": 31653251,
+        "sha256": "90ea272a7804075fc8474e1150119512b3dddb9b2806626ee350aac789411487"
+      },
+      "progression": {
+        "bytes": 912081,
+        "file": "progression.json.gz",
+        "jsonBytes": 24512764,
+        "sha256": "3e9c01e629d18bac727a8e82138011951def5f067454e4f121036147d41bb915"
+      }
+    },
+    "planner": "Psychology/Deer, Cow/Unarmed, same skill, A-only, add/remove, levels and reload passed",
+    "corruption": "all three same-size corrupt responses rejected; retry recovered",
+    "browserErrors": []
+  }
+]

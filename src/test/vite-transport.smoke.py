@@ -96,6 +96,8 @@ def main():
                     for slot in ['A', 'B']:
                         page.get_by_label(f'Open ability picker for bar {slot}', exact=True).click()
                         page.locator('.quick-add').first.click()
+                        # T0008-F1 deliberately keeps the general picker open for repeated additions.
+                        page.get_by_label('Close ability picker', exact=True).click()
                     expect(page.get_by_role('status')).to_have_text('Saved in this browser')
                     saved = page.evaluate("JSON.parse(localStorage.getItem('gorgonbuilder.current-draft'))")
                     assert saved['skillSlotA'] == {'skillId': a, 'level': 90}, saved

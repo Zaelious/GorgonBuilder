@@ -138,7 +138,7 @@ async function run(browser, url, [width, height]) {
 
 (async () => {
   const server = await startServer();
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}), args: ['--no-sandbox', '--disable-dev-shm-usage'] });
   const results = [];
   let failed = false;
   try {

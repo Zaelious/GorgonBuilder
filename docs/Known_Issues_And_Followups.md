@@ -141,3 +141,31 @@ The published attribute token syntax is parsed separately in `src/features/mods/
 - public searchable build gallery
 - optional accounts/claim anonymous builds
 - game-data diff/update automation
+
+## T0013-F1 follow-ups discovered (2026-11-03, updated by the direct-damage correction; review pending)
+
+- **Stateless prose (done in the T0013-F1 correction).** The reusable grammar covers
+  unconditional named-ability, skill and group damage clauses; 123 unconditional combat
+  entries remain (typos, missing attributes, split components). See the
+  [report](treasure-coverage/README.md).
+- **Next: critical hits** (Anatomy/Phrenology, creature-type target, ability crit rules,
+  equipment crit). The creature-type selector also unlocks 1,460 conditional
+  creature-type entries and 250 Elite entries.
+- **Target/state condition and buff toggles** for 2,563 conditional and 2,933 stateful
+  direct entries (sub-families listed in the report).
+- **Runtime label for non-damage remainders.** Taunt/reuse/Rage side clauses are still
+  listed as "Across build" unmodeled effects in the damage card; they do not change
+  the direct number. Consider a separate non-damage label in a UI ticket.
+- **T0013-F3 candidate: damage allocation and conversion measurements.** Establish
+  flat allocation among ordinary/health/armor hit components, indirect delivery,
+  stacking/order, stateless damage-type conversions and duplicate-conversion rules.
+- **Burst measurements:** replace the explicit interpolation policy with current
+  observations only when evidence supports it; resolve random radius remainders
+  and full thresholds >=9. No indirect totals follow from the known 50% floor alone.
+- **Later mechanics work:** stateful buffs/debuffs, triggered extra attacks, pets,
+  reactive shields, DoTs and criticals require separate contracts/research. They are
+  counted and explained in the inventory, not silently implemented in T0015 Sparks.
+
+- **Existing 320 px layout:** planner help extends the document to 322 px on both
+  main `160b073` and T0013-F1. The damage popover is bounded. Preserve this separate
+  minor layout follow-up; [comparison](verification/t0013-f1/baseline-overflow.json).
