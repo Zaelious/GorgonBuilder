@@ -57,9 +57,12 @@ it('matches Acid Arrow Damage +110% (MOD_ABILITY_ACIDARROW) for every Acid Arrow
   const ids = matching(acid13.id);
   // Acid-Arrow-specific powers, the multi-arrow mods, and the Poison-Arrow-icon "Acid Arrow deals … Poison" DoT.
   for (const id of ['power_10302', 'power_10304', 'power_10307', 'power_10310', 'power_10312', 'power_10314']) expect(ids).toContain(id);
-  // Not general Archery, Poison-and-Acid elemental, or Fire/Poison-arrow-only mods.
-  for (const id of ['power_10001', 'power_10007', 'power_10315', 'power_10008']) expect(ids).not.toContain(id);
-  expect(ids.every(id => !['MOD_SKILL_ARCHERY', 'MOD_ABILITY_PROJECTILE'].some(attr => data.getTreasurePower(id)!.tiers.some(t => t.effectDescriptions.some(d => d.startsWith(`{${attr}}`)))))).toBe(true);
+  // T0008-F2: Acid Arrow publishes Projectile. The category-wide Projectile power now is correctly relevant,
+  // even though it is not Acid-Arrow-specific. General skill damage still must not be presented as family evidence.
+  expect(ids).toContain('power_10001');
+  expect(matchAbilityEffect(acid13, '{MOD_ABILITY_PROJECTILE}{0.1}', index)).toBe('keyword');
+  expect(matchAbilityEffect(acid13, '{MOD_SKILL_ARCHERY}{0.1}{Archery}', index)).toBeNull();
+  expect(matchAbilityEffect(acid13, '{MOD_ABILITY_FIREARROW}{0.1}', index)).toBeNull();
   // Skill-named labels (First Aid) are not label-scoped.
   expect(index.labelledFamilies('FIRSTAID_COST_MOD').size).toBe(0);
 }, 30000);
