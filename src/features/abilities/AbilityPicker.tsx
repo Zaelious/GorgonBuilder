@@ -42,7 +42,8 @@ export function AbilityPicker({ slot, skill, data, bar, full, replaceIndex, retu
   const [respectSkillLevel, setRespectSkillLevel] = useSessionFlag('respectSkillLevel');
   const groups = useMemo(() => groupPickerAbilities(skill.skillId === null ? [] : data.getAbilitiesForSkill(skill.skillId)), [data, skill.skillId]);
   const search = query.trim().toLocaleLowerCase();
-  const matches = groups.filter(g => g.abilities.some(a => `${a.displayName} ${a.internalName} ${a.description} ${a.id}`.toLocaleLowerCase().includes(search)));
+  const matches = groups.filter(g => `${g.name} ${g.variants.map(v => v.name).join(' ')}`.toLocaleLowerCase().includes(search)
+    || g.abilities.some(a => `${a.displayName} ${a.internalName} ${a.description} ${a.id}`.toLocaleLowerCase().includes(search)));
   const selectedCount = (ability: Ability) => bar.filter(selection => selection.abilityId === ability.id && selection.rank === ability.rank).length;
   const selectedLabel = (count: number) => count === 1 ? 'On this bar' : `On this bar ×${count}`;
   const blocked = full && replaceIndex === null;
@@ -111,11 +112,11 @@ export function AbilityPicker({ slot, skill, data, bar, full, replaceIndex, retu
               </article>;
           return <div className="family" key={group.id}>
             <details>
-              <summary><AbilityIcon ability={highest} version={data.gameDataVersion} /><span className="family-title">{group.name}<small>{group.isVariantFamily ? `${group.variants.length} distinct variants · choose one` : `${group.abilities.length} published ${group.abilities.length === 1 ? 'tier' : 'tiers'}`}{group.abilities.some(ability => selectedCount(ability) > 0) && ' · On this bar'}</small>
+              <summary><AbilityIcon ability={highest} version={data.gameDataVersion} /><span className="family-title">{group.name}<small>{group.isVariantFamily ? `${group.variants.length} verified ${group.variants.length === 1 ? 'variant series' : 'variant series'} · choose a series then the exact ability` : `${group.abilities.length} published ${group.abilities.length === 1 ? 'tier' : 'tiers'}`}{group.abilities.some(ability => selectedCount(ability) > 0) && ' · On this bar'}</small>
                 {quick?.kind === 'none' && <small className="quick-add-none">No tier at or below Lv {skill.level} (lowest is Lv {quick.lowestLevel}). Expand to choose any tier.</small>}</span></summary>
               <div className="family-tiers">{group.isVariantFamily
                 ? group.variants.map(variant => <details className="ability-variant" key={variant.id}>
-                    <summary><span>{variant.name} <small className="variant-internal">· {variant.abilities[0]!.internalName}</small></span><small>{variant.abilities.length} published {variant.abilities.length === 1 ? 'ability' : 'tiers'}{variant.abilities.some(ability => selectedCount(ability) > 0) ? ' · On this bar' : ''}</small></summary>
+                    <summary><span>{variant.name}</span><small>{variant.abilities.length} published {variant.abilities.length === 1 ? 'ability' : 'abilities'}{variant.canonicalGroups.length > 1 ? ' · separate official IDs' : ' · UpgradeOf group'}{variant.abilities.some(ability => selectedCount(ability) > 0) ? ' · On this bar' : ''}</small></summary>
                     {variant.abilities.map(tier)}
                   </details>)
                 : group.abilities.map(tier)}</div>
