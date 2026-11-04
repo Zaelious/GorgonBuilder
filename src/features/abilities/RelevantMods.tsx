@@ -1,3 +1,4 @@
+import { damageDebugEnabled } from './damage-debug';
 import { useMemo } from 'react';
 import type { EquipmentSelection } from '../../core/build/document';
 import type { GameDataRepository } from '../../data/repository/repository';
@@ -30,6 +31,7 @@ function provenance(row: Row, selection: EquipmentSelection, data: GameDataRepos
  * Provenance stays on each row's data attributes and in {@link RelevantModSources} (Technical details).
  */
 export function RelevantMods({ rows, equipment, data, idPrefix }: { rows: readonly Row[]; equipment: readonly EquipmentSelection[]; data: GameDataRepository; idPrefix: string }) {
+  const debug = damageDebugEnabled();
   return <section className="relevant-mods" aria-label="Relevant Mods">
     <h4>Relevant Mods</h4>
     {rows.length === 0 ? <p className="muted">No ability-specific equipped mods identified.</p>
@@ -37,7 +39,7 @@ export function RelevantMods({ rows, equipment, data, idPrefix }: { rows: readon
         const selection = equipment[row.equipmentIndex]!;
         const power = data.getTreasurePower(row.mod.powerId);
         return <li key={rowKey(row)} data-relevant-mod={rowKey(row)} data-power-id={row.mod.powerId} data-tier-id={row.mod.tierId ?? ''}
-          data-source-slot={selection.slot} data-source-kind={row.source} aria-describedby={`${idPrefix}-source-${position + 1}`} title={provenance(row, selection, data)}>
+          data-source-slot={selection.slot} data-source-kind={row.source} aria-describedby={debug ? `${idPrefix}-source-${position + 1}` : undefined} title={debug ? provenance(row, selection, data) : undefined}>
           <span className="relevant-effect"><EffectDescriptions descriptions={row.tier.effectDescriptions} data={data} fallback={power ? powerName(power) : row.mod.powerId} /></span>
         </li>;
       })}</ul>}

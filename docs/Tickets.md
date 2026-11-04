@@ -946,7 +946,7 @@ T0008-F1 and T0010-F1 below are historical accepted UI follow-ups. T0008-F2 and 
 
 ## T0010-F2 — Equipment Mod Search Visibility and Damage Warning Relevance
 
-**Status:** Planned; product-owner approved 2026-11-04. Not implemented.
+**Status:** Implementation prepared on `feature/t0010-f2-mod-search-warnings` (2026-11-04); architect review and customer acceptance pending. [Verification and acceptance checklist](T0010_F2_Verification.md).
 
 **Complexity:** Standard
 
@@ -954,13 +954,13 @@ T0008-F1 and T0010-F1 below are historical accepted UI follow-ups. T0008-F2 and 
 
 **Verification:** Customer hands-on
 
-**Goal:** Make equipment-wide mod searches actionable by hiding irrelevant equipment rows while searching, and remove misleading non-damage warnings from the ability damage panel without concealing genuine calculation gaps.
+**Goal:** Make equipment-wide searches responsive across Available and Selected working mods, preserve complete internal damage diagnostics, and present concise, truthful public damage results.
 
 **Dependencies:** T0010,T0010-F1,T0013-F1,T0014.
 
 **Allowed areas:**
 - `src/features/equipment`, `src/features/mods`, shared mod-search selectors and focused tests
-- `src/features/abilities/AbilityResults.tsx` and narrowly scoped pure warning classification/utilities under `src/core/calculation`, if needed
+- Focused ability results/facts/provenance and target-control presentation under `src/features/abilities`, minimal Damage analysis help text, and narrowly scoped pure warning classification/utilities under `src/core/calculation`, if needed
 - relevant CSS, verification and documentation
 
 **Do not touch:**
@@ -969,24 +969,24 @@ T0008-F1 and T0010-F1 below are historical accepted UI follow-ups. T0008-F2 and 
 - BuildDocument schema, existing equipped/selected mods, data transport or unrelated redesign
 
 **Requirements:**
-1. When the shared `Search mods` query is nonempty (e.g. `core`), temporarily hide equipment **display rows** whose **Available Mods** list has zero matches under the current exact shared query, active skill/category settings, slot/profile visibility, staged-power exclusions and target-preview behavior. Use a shared pure selector so row visibility/count and expanded `ModPlanner` results cannot disagree. Respect existing uncertainty about equipment eligibility; this is browsing, not a new legality filter.
-2. Show unobtrusive per-row counts of matching Available powers while searching; provide a compact `Show all equipment` override and a useful zero-results state. Clearing the query restores all nine primary rows and Other slots. Search changes never delete, unequip, clear, rewrite or auto-expand equipment; preserve existing open state, selection, imported powers, mod edits and focus as far as practicable. Hidden equipped slots must remain reachable through Show all.
-3. In the ability damage panel, distinguish explicitly classified **non-damage** unsupported remainders (taunt, reuse, Rage, resource/accuracy/control) from unresolved **damage-affecting** or unknown effects. Do not show non-damage-only clauses as if they make direct-hit damage incomplete. Do not suppress uncertain effects simply because the exact ability relevance cannot be established; retain a clear inspectable breakdown and appropriate build-wide wording.
+1. When the shared `Search mods` query is nonempty (e.g. `core`), temporarily hide equipment **display rows** whose **Available Mods** and **Selected working mods** lists both have zero matches under the current exact shared query, active skill/category settings, slot/profile visibility, staged-power exclusions and target-preview behavior. Use a shared pure selector so row visibility/count and expanded `ModPlanner` results cannot disagree. Respect existing uncertainty about equipment eligibility; this is browsing, not a new legality filter.
+2. Keep typed text immediately responsive, debounce expensive updates by 190 ms, and use one effective query for row visibility and both lists. Match Selected independently of Available filters, preserving imported working pairs and original edit indices. Show unobtrusive separate Available/Selected match counts while searching; provide a compact `Show all equipment` override and a useful zero-results state. Clearing the query restores all nine primary rows and Other slots. Search changes never delete, unequip, clear, rewrite or auto-expand equipment; preserve existing open state, selection, imported powers, mod edits and focus as far as practicable. Hidden equipped slots must remain reachable through Show all.
+3. In the ability damage panel, distinguish explicitly classified **non-damage** unsupported remainders (taunt, reuse, Rage, resource/accuracy/control) from unresolved **damage-affecting** or unknown effects. Do not show non-damage-only clauses as if they make direct-hit damage incomplete. Do not suppress uncertain effects simply because the exact ability relevance cannot be established; retain complete diagnostic data internally. Per the final product-owner acceptance correction, show supported values and concise Estimated/Unavailable status publicly; expose detailed breakdowns, inventories, source/debug IDs, implementation assumptions and technical warning lists only through explicit development/debug mode. Production must ignore the debug flag.
 4. Keep warnings sparse and actionable; avoid a second redundant help disclosure or repeated per-item search toolbars.
 
 **Non-goals:** Global assignment of mods, automated eligibility decisions, new damage formulas, cooldown/threat/defensive simulation, changing the default always-visible equipment layout when no query is active.
 
 **Acceptance criteria:**
-- Searching `core` displays only rows with currently matching Available powers unless Show all is active; counts agree exactly with expanded Available lists for database and imported items.
+- Searching `core` displays only rows with currently matching Available or Selected working mods unless Show all is active; counts agree exactly with expanded Available lists for database and imported items.
 - Empty search restores all rows, including nine primary positions; no saved state or equipped/selected powers change.
-- Known taunt/reuse-only remainders do not produce a misleading direct-damage warning; unknown/unmodeled damage contributions remain visible and traceable.
+- Known taunt/reuse-only remainders do not produce a misleading direct-damage warning; unknown/unmodeled damage contributions retain a truthful public status and remain traceable in development/debug mode.
 - Desktop and 375/320 px interaction, keyboard/focus, saved gear, All skills, Other slots & profiles and target-level previews regressions pass.
 - Data check, lint, typecheck, tests, build, focused browser smoke and `git diff --check` pass.
 
 **Manual verification:**
-1. With two combat skills selected, search `core`, compare per-slot counts and expanded Available powers, change categories/target and toggle Show all; clear query and confirm rows return.
+1. With two combat skills selected, search `core`, compare separate per-slot counts and expanded Available/Selected powers, including rapid typing/paste/clear, change categories/target and toggle Show all; clear query and confirm rows return.
 2. Test empty and imported gear, staged/selected powers and an item whose profile fit is uncertain; confirm no edits or equipment loss after refresh.
-3. Inspect a fully modeled +damage/+taunt or +reuse power in the damage panel. Check that its damage remains calculated without misleading non-damage warnings, while an actually unmodeled damage effect retains a warning.
+3. Inspect a fully modeled +damage/+taunt or +reuse power in the damage panel. Check that its damage remains calculated without misleading non-damage warnings, while an actually unmodeled damage effect retains a Partial/Unavailable status. Check internal diagnostics with `?debugDamage=1` in development and verify production ignores the flag.
 
 
 ## T0012 — Build Modifier Aggregation Engine
@@ -1663,3 +1663,6 @@ T0008-F1 and T0010-F1 below are historical accepted UI follow-ups. T0008-F2 and 
 5. Expand both Technical details and Edit bar; test Replace, Move, Remove, Escape, focus restoration, mouse-out handoff and 375/320px mobile access.
 6. Include before/after screenshots at 1920×1080 and 1366×768, document exact popup width/font/scrollHeight/clientHeight, run quality checks and request product-owner approval. **Do not merge PR #31 automatically.**
 
+
+
+T0010-F2 final clarification: the public view includes a default-collapsed **Damage breakdown** showing actual engine steps, individual named equipment/skill contributions, flat/percentage/Skill Base contributions, target multipliers and final hit/total. It contains numerical presentation only: no raw IDs, source paths, uncertainty/exclusion inventories, implementation assumptions or long explanations. Those diagnostics remain available only through the development `?debugDamage=1` view. Public `Partial` labels are replaced with `Estimated`; unavailable numbers remain `Unavailable`. No engine results or accepted mod-search/Selected-heading behavior change.

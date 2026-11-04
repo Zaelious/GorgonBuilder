@@ -52,7 +52,7 @@ Also review any specialized document named by the ticket.
 - Desktop-first editing is acceptable.
 - Shared/read-only builds should remain reasonably usable on smaller screens.
 - Item/mod search must be fast and understandable.
-- Math should be inspectable through expandable breakdowns rather than hidden behind one final number.
+- Retain complete calculation breakdowns, provenance, assumptions and confidence internally. Per the T0010-F2 customer decision, public damage results show supported values and concise Estimated/Unavailable status; calculation diagnostics and technical source details are exposed only through explicit development/debug mode.
 
 ## Character Import Rules
 
@@ -93,3 +93,6 @@ Every Codex run must report:
 - Documentation that should be updated
 
 Do not silently continue into another ticket after completing the assigned one.
+
+
+T0010-F2 final clarification: the public view includes a default-collapsed **Damage breakdown** showing actual engine steps, individual named equipment/skill contributions, flat/percentage/Skill Base contributions, target multipliers and final hit/total. It contains numerical presentation only: no raw IDs, source paths, uncertainty/exclusion inventories, implementation assumptions or long explanations. Those diagnostics remain available only through the development `?debugDamage=1` view. Public `Partial` labels are replaced with `Estimated`; unavailable numbers remain `Unavailable`. No engine results or accepted mod-search/Selected-heading behavior change.

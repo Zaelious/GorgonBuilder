@@ -6,6 +6,7 @@ import {
 import type { GameDataRepository } from '../../data/repository/repository';
 import type { BuildEdit } from '../../app/editor/build-editor';
 import { NON_DAMAGING_TYPE, damageTypeClass } from './AbilityFacts';
+import { damageDebugEnabled } from './damage-debug';
 import './target-dummy.css';
 
 /** Published damage types of equipped abilities (hits and DoTs), then any other saved target keys. */
@@ -70,8 +71,8 @@ export function TargetDummy({ build, data, onEdit, readOnly }: { build: BuildDoc
       <details className="target-damage-types">
         <summary>Vulnerability &amp; resistance{configured > 0 && <span className="target-set-count"> · {configured} set</span>}</summary>
         <div className="target-damage-types-content">
-          <p id="target-percent-help" className="muted">Percent for each damage type. Each applies only to hits of that exact type,
-            netted (vulnerability − resistance) after build contributions. This rule is assumed until validated in game.</p>
+          <p id="target-percent-help" className="muted">Set vulnerability and resistance percentages for each damage type.</p>
+          {damageDebugEnabled() && <p className="muted">Each applies only to hits of that exact type, netted (vulnerability − resistance) after build contributions. This rule is assumed until validated in game.</p>}
           {types.length === 0 ? <p className="muted">Equip damaging abilities to set damage-type modifiers.</p>
             : <table><thead><tr><th scope="col">Damage type</th><th scope="col">Vulnerability %</th><th scope="col">Resistance %</th></tr></thead>
               <tbody>{types.map(type => <tr key={type}><th scope="row"><span className={`damage-value ${damageTypeClass(type)}`}>{type}</span></th>

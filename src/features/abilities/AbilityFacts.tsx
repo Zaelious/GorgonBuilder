@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { damageDebugEnabled } from './damage-debug';
 import type { Ability } from './groups';
 
 type Dot = NonNullable<Ability['pve']['dots']>[number];
@@ -72,7 +73,7 @@ export function AbilityFacts({ ability, afterStats, technical: technicalExtra }:
       <ul>{effects.map((text, index) => <li key={index} className="special-text">{text}</li>)}</ul>
     </section>}
     {afterStats}
-    <details className="supplementary-facts technical-details"><summary>Technical details</summary>
+    {damageDebugEnabled() && <details className="supplementary-facts technical-details"><summary>Technical details</summary>
       {technicalExtra}
       <p className="official-id">Official ID: <code>{ability.id}</code> · Internal name: <code>{ability.internalName}</code></p>
       {nonDamaging && <p className="non-damaging-note">Damage: not published (damage type {damage.damageType}, used for non-damaging abilities).</p>}
@@ -82,6 +83,6 @@ export function AbilityFacts({ ability, afterStats, technical: technicalExtra }:
         <ul className="technical-records">{technical.map((text, index) => <li key={index}><code>{text}</code></li>)}</ul></>}
       {ability.keywords?.length ? <p>Keywords: {ability.keywords.join(', ')}</p> : null}
       <p className="facts-provenance">Published source values without damage calculation. Min level is the official Level field; “Not published” values are absent in the source. Zero-value or conditional DoT records are listed here exactly, not as damage.</p>
-    </details>
+    </details>}
   </div>;
 }

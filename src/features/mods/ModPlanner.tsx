@@ -1,10 +1,11 @@
 import { useId, useMemo, useState } from 'react';
 import type { EquipmentSelection } from '../../core/build/document';
 import type { CandidateModEdit } from '../../core/build/candidate-mods';
-import { isResolvedExistingPower, restoredExistingPowers, sameExistingPowers, type ExistingModEdit } from '../../core/build/existing-mods';
+import { restoredExistingPowers, sameExistingPowers, type ExistingModEdit } from '../../core/build/existing-mods';
 import type { GameDataRepository } from '../../data/repository/repository';
-import { browseTreasurePowers, indexTreasurePowers, powerName, treasureRelevance, type TreasureContext, type TreasurePower, type TreasureRelevance } from '../../data/search/treasure';
-import { availableTreasurePowers, groupEffectiveMods, groupTreasurePowers, itemFit, type ItemFit, orderTreasureTiers, previewTreasureTiers, type ModTargetLevel, type TreasureTier } from '../../data/search/treasure-planning';
+import { indexTreasurePowers, powerName, type TreasureContext, type TreasurePower, type TreasureRelevance } from '../../data/search/treasure';
+import { itemFit, type ItemFit, orderTreasureTiers, previewTreasureTiers, type ModTargetLevel, type TreasureTier } from '../../data/search/treasure-planning';
+import { prepareModSearch, selectAvailableMods, type AvailableMods, type PreparedModSearch } from '../../data/search/available-mods';
 import { EffectDescriptions } from './EffectDescription';
 import { CandidateList } from './CandidateList';
 import { PowerFacts, TierFacts } from './PowerFacts';
@@ -16,11 +17,10 @@ const FIT_FLAGS: Record<Exclude<ItemFit, 'listed'>, { text: string; title: (prof
   'other-slot': { text: 'other slot', title: (_, slot) => `Published slots do not include ${slot}. Shown only while exploring.` },
 };
 
-function AvailablePower({ power, relevance, context, target, data, onAdd, readOnly }: {
+function AvailablePower({ power, relevance, context, target, data, onAdd, readOnly, open, onOpenChange }: {
   power: TreasurePower; relevance: TreasureRelevance; context: TreasureContext; target: ModTargetLevel; data: GameDataRepository;
-  onAdd: (tierId: string | null) => void; readOnly: boolean;
+  onAdd: (tierId: string | null) => void; readOnly: boolean; open: boolean; onOpenChange: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const previews = previewTreasureTiers(power, target);
   const tier = previews[0];
   const fit = itemFit(power, relevance, data);
@@ -30,7 +30,7 @@ function AvailablePower({ power, relevance, context, target, data, onAdd, readOn
     {tier ? <button type="button" className="available-effect" disabled={readOnly} onClick={() => onAdd(tier.id)} title={`Add ${powerName(power)} · ${tier.id}`}>
       <span className="available-effect-text">{effects(tier)}{flag && <> <small className={`mod-fit-flag fit-${fit}`} title={flag.title(context.item?.treasureProfile?.profileId ?? 'unknown', context.item?.slot ?? 'this slot')}>{flag.text}</small></>}</span><span aria-hidden="true" className="mod-add-mark">＋</span>
     </button> : <p className="muted">{powerName(power)} · No published tier range at this target.</p>}
-    <details className="mod-more available-details" onToggle={event => { if (event.target === event.currentTarget) setOpen(event.currentTarget.open); }}>
+    <details className="mod-more available-details" open={open} onToggle={event => { if (event.target === event.currentTarget) onOpenChange(event.currentTarget.open); }}>
       <summary aria-label={`Details and tiers for ${power.id}`} title={`${previews.length} preview tier options · Details and other tiers`}><span aria-hidden="true">⋯</span></summary>
       {open && <>
         <p>{previews.length} preview tier options</p>
@@ -48,23 +48,20 @@ function AvailablePower({ power, relevance, context, target, data, onAdd, readOn
 }
 
 /** Inline UI state is transient; candidate edits still use the existing schema/autosave. */
-export function ModPlanner({ selection, equipmentIndex, context, skillA, skillB, data, onEdit, readOnly, browser }: {
+export function ModPlanner({ selection, equipmentIndex, context, skillA, skillB, data, onEdit, readOnly, browser, available, searchIndex, preparedSearch }: {
   selection: EquipmentSelection; equipmentIndex: number; context: TreasureContext; data: GameDataRepository;
   skillA: string | null; skillB: string | null; browser: ModBrowserState;
-  onEdit: (edit: CandidateModEdit | ExistingModEdit) => void; readOnly: boolean;
+  onEdit: (edit: CandidateModEdit | ExistingModEdit) => void; readOnly: boolean; available?: AvailableMods; searchIndex?: ReturnType<typeof indexTreasurePowers>; preparedSearch?: PreparedModSearch;
 }) {
   const id = useId();
-  const { query, target, allSkills, allSlots, categories } = browser;
-  const index = useMemo(() => indexTreasurePowers(data.treasurePowers), [data]);
-  const relevance = useMemo(() => new Map(data.treasurePowers.map(power => [power.id, treasureRelevance(power, context, data)])), [data, context]);
-  const effective = groupEffectiveMods(selection, skillA, skillB, data);
-  const selected = effective.filter(row => row.origin === 'planned' || (selection.item.kind === 'imported' && row.mod.tierId !== null && isResolvedExistingPower({ powerId: row.mod.powerId, tierId: row.mod.tierId }, data)));
-  const staged = new Set(effective.map(row => row.mod.powerId));
+  const [openPowers, setOpenPowers] = useState<ReadonlySet<string>>(() => new Set());
+  const { target } = browser;
+  const index = useMemo(() => searchIndex ?? indexTreasurePowers(data.treasurePowers), [data, searchIndex]);
+  const prepared = useMemo(() => preparedSearch ?? prepareModSearch(context, data, index), [context, data, index, preparedSearch]);
+  const { relevance, effective, groups, selected, selectedKeys } = useMemo(() => available ?? selectAvailableMods(selection, context, skillA, skillB, browser, data, index, prepared),
+    [available, selection, context, skillA, skillB, browser, data, index, prepared]);
   const restore = useMemo(() => selection.item.kind === 'imported' ? restoredExistingPowers(selection.item.instance, data) : null, [selection.item, data]);
   const canRestore = restore !== null && selection.item.kind === 'imported' && !sameExistingPowers(restore, selection.item.instance.existingPowers);
-  const matches = useMemo(() => availableTreasurePowers(browseTreasurePowers(index, query, relevance, 'relevant'), relevance, staged, allSlots, data, context.skillIds),
-    [index, query, relevance, staged, allSlots, data, context.skillIds]);
-  const groups = useMemo(() => groupTreasurePowers(matches, context.skillIds, categories, allSkills, data), [matches, context.skillIds, categories, allSkills, data]);
   const active = context.skillIds.some(skill => data.getSkill(skill)?.combat);
   return <section className="mod-planner" aria-label={`Mods for equipment ${equipmentIndex + 1}`}>
     <div className="mod-columns">
@@ -77,20 +74,23 @@ export function ModPlanner({ selection, equipmentIndex, context, skillA, skillB,
               const outside = group.powers.filter(power => itemFit(power, relevance.get(power.id)!, data) === 'outside-profile').length;
               return outside > 0 && <small className="mod-fit-note" title="Not listed in this item's published treasure profile; equipment eligibility unconfirmed."> · {outside} outside item profile</small>;
             })()}</h4>
-            <ul>{group.powers.map(power => <AvailablePower key={power.id} power={power} relevance={relevance.get(power.id)!} context={context} target={target} data={data} readOnly={readOnly}
+            <ul>{group.powers.map(power => <AvailablePower open={openPowers.has(power.id)} onOpenChange={open => setOpenPowers(previous => {
+              if (previous.has(power.id) === open) return previous;
+              const next = new Set(previous); if (open) next.add(power.id); else next.delete(power.id); return next;
+            })} key={power.id} power={power} relevance={relevance.get(power.id)!} context={context} target={target} data={data} readOnly={readOnly}
               onAdd={tierId => { if (!readOnly) onEdit({ type: 'mod-add', equipmentIndex, powerId: power.id, tierId, unique: true }); }} />)}</ul>
           </section>)}
         </div>}
       </section>
       <section className="mod-selected" aria-labelledby={`${id}-selected`}><h3 id={`${id}-selected`} aria-live="polite">Selected ({selected.length})</h3>
-        <CandidateList rows={selected} candidateCount={selection.candidateMods.length} skillA={skillA} skillB={skillB} data={data} equipmentIndex={equipmentIndex} onEdit={onEdit} readOnly={readOnly} target={target} />
+        <CandidateList rows={effective} matchingKeys={selectedKeys} searching={browser.query.trim().length > 0} editableExisting={selection.item.kind === 'imported'} candidateCount={selection.candidateMods.length} skillA={skillA} skillB={skillB} data={data} equipmentIndex={equipmentIndex} onEdit={onEdit} readOnly={readOnly} target={target} />
         {selection.item.kind === 'imported' && <button className="restore-imported-mods" type="button" disabled={readOnly || !canRestore} onClick={() => {
           if (!restore) return;
           const collision = restore.some(mod => selection.candidateMods.some(candidate => candidate.powerId === mod.powerId));
           if (collision && !window.confirm('Some original imported powers are also staged as planned mods. Restore the original imported powers and keep those planned copies too?')) return;
           onEdit({ type: 'existing-mod-restore', equipmentIndex });
         }}>Restore Imported Mods</button>}
-        {selection.item.kind === 'imported' && effective.some(row => row.origin === 'imported' && !selected.includes(row)) && <p className="warning">Unresolved working pairs are retained read-only in Stats. Original unresolved entries and imbues remain under Original imported item.</p>}
+
       </section>
     </div>
     {readOnly && <p className="warning">This draft is read-only. Mod changes are disabled.</p>}

@@ -154,6 +154,8 @@ This is a separate narrow preflight PR, not part of T0009's equipment UI.
 
 ## Calculation Tickets
 
+**Public UI correction (T0010-F2, 2026-11-04):** calculation breakdowns and technical source records referenced in historical acceptance steps below are now available only on the Vite development server with `?debugDamage=1`. Normal public damage views show calculated values and concise Estimated/Unavailable status. Production preview ignores the flag. Engine diagnostics remain complete and automated tests still inspect them.
+
 ### T0012 accepted modifier aggregation (2026-11-02)
 
 [PR #29](https://github.com/Zaelious/GorgonBuilder/pull/29) passed final-head GitHub CI, Cloudflare preview and product-owner optional browser regressions, and was squash-merged as `c611f72`. [T0012 evidence](T0012_Verification.md): 773 tests (46 new) and deterministic synthetic Psychology/Cow-Unarmed aggregation reports. Run `npx vitest run src/core/calculation` for 46 focused tests. Confirm skill deduplication; fixed-item and effective imported existing power sources; independently staged candidates; original imported metadata not counted; unknown mappings preserved; and removing/editing one source alters only its contributions. No visible calculation UI is expected yet. Advancement sums are assumed. The product owner confirmed duplicated selections of a skill cannot have different actual levels; T0012 warns and omits progression on legacy conflict, pending UI correction. Validate real-gear damage in T0013 and imported CurrentStats in T0016, with temporary buffs and passive effects accounted for.
@@ -305,12 +307,15 @@ For Mock 11 +43% and the 20 m conversion, test 1/5/6/7/8/9 enemies: the ×0.5
 ability penalty is independent of falloff; only 6–8 show Estimated. Verify the
 source link/equation in the collapsed breakdown and reachable Remove at mobile sizes.
 
-### T0010-F2 — Shared mod search visibility and damage-warning relevance (planned)
+### T0010-F2 — Shared mod search and public damage results (customer corrections pending acceptance)
 
-1. Select two combat skills and equip database and imported items in several positions. Search `core`; equipment rows with zero matching **Available Mods** should temporarily disappear while matching rows show counts equal to their expanded Available lists. Check selected/staged exclusions and category/target settings.
-2. Toggle **Show all equipment** while searching and confirm hidden equipped slots remain reachable. Clear search to restore all nine primary rows and Other slots without losing equipment, mod selections, expansion state or focus.
-3. In Damage analysis inspect a modeled +damage/+taunt or +reuse power: the normal-hit number remains and there is no misleading direct-damage warning for only the taunt/reuse remainder. Inspect an actual unsupported damage effect to confirm that warning still appears.
-4. Repeat at 1440/375/320 px, keyboard, read-only and after refresh. Run quality suite and browser smoke.
+[Verification, current screenshots and acceptance checklist](T0010_F2_Verification.md).
+
+1. Equip database and imported items. Type rapidly and paste into Search mods: text responds immediately, with results settling after 190 ms. Clear during pending typing; stale results must not return. Check shared settings during a pending query.
+2. Compare each row's **Available · Selected** counts with both visible lists. Search a staged or editable imported power that Available skill/category/profile filters exclude. Search unresolved saved IDs and tiers; their data must remain intact and unresolved imported working pairs read-only. Remove a visible filtered row and verify the original saved index is edited.
+3. Toggle Show all, clear and refresh. Confirm equipment, working tiers, imported metadata and modifications survive. Verify nine primary rows and Other slots return, disclosure states survive filtering, and hidden/focused controls have usable focus recovery. Repeat in read-only builds and at 1440/375/320 px.
+4. Inspect supported, partial and unavailable damage cases. Public views show truthful values/status, target controls and no internal breakdowns, inventories, source IDs, implementation assumptions or technical warning lists. Damage numbers must match the engine.
+5. In development only, open `/?debugDamage=1`: inspect retained damage/secondary/unknown classification, source provenance, assumptions and full breakdowns. Production preview with the same flag must still show the simplified public view. Run the complete quality suite and six Chromium dev/preview viewport checks.
 
 ### T0008-F2 — Official ability roles, Relevant Mods and scoped variant grouping (planned)
 
@@ -326,3 +331,6 @@ source link/equation in the collapsed breakdown and reachable Remove at mobile s
 3. Add/remove an applicable gear crit chance/crit damage bonus. Verify normal hit, critical damage, chance and expected successful-hit average, plus full provenance and formula confidence.
 4. Repeat with no resolved import, unsupported ability, zero chance and high critical multipliers. Compare at least one controlled Project Gorgon test, explicitly recording any remaining assumptions.
 5. Run pinned data checks, lint, typecheck, all tests, build and browser smoke.
+
+
+T0010-F2 final clarification: the public view includes a default-collapsed **Damage breakdown** showing actual engine steps, individual named equipment/skill contributions, flat/percentage/Skill Base contributions, target multipliers and final hit/total. It contains numerical presentation only: no raw IDs, source paths, uncertainty/exclusion inventories, implementation assumptions or long explanations. Those diagnostics remain available only through the development `?debugDamage=1` view. Public `Partial` labels are replaced with `Estimated`; unavailable numbers remain `Unavailable`. No engine results or accepted mod-search/Selected-heading behavior change.

@@ -51,12 +51,15 @@ export function EquipmentPicker({ mode, equipment, onUnequipImported, slot, data
   useEffect(() => {
     const element = dialog.current!;
     const opener = returnFocus ?? document.activeElement;
+    const modSearch = opener instanceof HTMLElement
+      ? opener.closest('.equipment-section')?.querySelector<HTMLInputElement>('[aria-label="Search treasure powers"]') : null;
     element.showModal();
     element.querySelector<HTMLInputElement>('input[type=search]')?.focus();
     return () => {
       if (element.open) element.close();
-      if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
-      else if (fallbackFocus?.isConnected) fallbackFocus.focus();
+      if (opener instanceof HTMLElement && opener.isConnected && !opener.closest('[hidden]')) opener.focus();
+      else if (fallbackFocus?.isConnected && !fallbackFocus.closest('[hidden]')) fallbackFocus.focus();
+      else if (modSearch?.isConnected) modSearch.focus();
     };
   }, [returnFocus, fallbackFocus]);
 

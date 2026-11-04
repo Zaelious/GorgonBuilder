@@ -143,12 +143,12 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
     {versionMismatch && <p className="notice warning" role="alert">This draft uses game data {build.gameDataVersion}; loaded data is {data.gameDataVersion}. The saved version and selections are preserved. Editing is disabled because the original snapshot is unavailable.</p>}
     {saveResult && !saveResult.ok && <div className="notice warning" role="alert"><p>{saveError(saveResult)}</p><button type="button" onClick={() => autosave.flush()}>Retry saving</button></div>}
     <section className="skills-section" aria-labelledby="skills-abilities-title"><div className="section-heading"><h2 id="skills-abilities-title"><svg className="section-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"><path d="M12 2.5c.6 4.6 2.9 6.9 7.5 7.5-4.6.6-6.9 2.9-7.5 7.5-.6-4.6-2.9-6.9-7.5-7.5 4.6-.6 6.9-2.9 7.5-7.5Z" /></svg>Skills &amp; Abilities</h2>
-      <label className="damage-analysis-toggle" title="Show calculated damage, target dummy and breakdowns. Remembered for this browser session; not saved in the build.">
+      <label className="damage-analysis-toggle" title="Show calculated damage, target dummy and scenario controls. Remembered for this browser session; not saved in the build.">
         <input type="checkbox" role="switch" checked={damageAnalysis} onChange={e => setDamageAnalysis(e.target.checked)} />Damage analysis</label>
       <details className="planner-help" onKeyDown={e => {
         if (e.key === 'Escape') { e.preventDefault(); e.currentTarget.open = false; e.currentTarget.querySelector<HTMLElement>('summary')?.focus(); }
       }}><summary aria-label="Planner help">?</summary><div className="planner-help-content">
-        <p>Select skills and levels, then use + to browse abilities. Open an equipped icon for details and bar controls. Turn on Damage analysis (remembered for this browser session) to add calculated damage, the target dummy and breakdowns. Changing a skill clears its bar and staged mods for a skill no longer in either slot (with Undo). Both slots can use the same skill.</p>
+        <p>Select skills and levels, then use + to browse abilities. Open an equipped icon for details and bar controls. Turn on Damage analysis (remembered for this browser session) to add calculated damage, the target dummy and scenario controls. Changing a skill clears its bar and staged mods for a skill no longer in either slot (with Undo). Both slots can use the same skill.</p>
       </div></details>
     </div><div className="planner-grid">
       <SkillPlanner slot="A" skill={build.skillSlotA} bar={build.abilityBarA} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} equipment={build.equipment} imported={imported?.character} damageInputs={damageInputs} />

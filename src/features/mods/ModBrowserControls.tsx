@@ -1,6 +1,9 @@
-import { useId } from 'react';
+import { startTransition, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import type { ModCategories, ModTargetLevel } from '../../data/search/treasure-planning';
+import { normalizeTreasureSearch } from '../../data/search/treasure';
 import './mods.css';
+
+export const MOD_SEARCH_DELAY = 190;
 
 /** Equipment-session browsing intent only; never part of the saved build. */
 export interface ModBrowserState {
@@ -26,10 +29,22 @@ function parseTarget(text: string): ModTargetLevel | null {
 
 export function ModBrowserControls({ browser, onChange }: { browser: ModBrowserState; onChange: (value: ModBrowserState) => void }) {
   const id = useId();
+  const [query, setQuery] = useState(browser.query);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const commitQuery = useRef((value: string) => onChange({ ...browser, query: value }));
+  useLayoutEffect(() => { commitQuery.current = value => onChange({ ...browser, query: value }); }, [browser, onChange]);
+  useEffect(() => () => { if (timer.current !== null) clearTimeout(timer.current); }, []);
+  function changeQuery(value: string) {
+    setQuery(value);
+    if (timer.current !== null) clearTimeout(timer.current);
+    const commit = () => startTransition(() => commitQuery.current(normalizeTreasureSearch(value) ? value : ''));
+    if (!normalizeTreasureSearch(value)) commit();
+    else timer.current = setTimeout(commit, MOD_SEARCH_DELAY);
+  }
   const validTarget = parseTarget(browser.targetText) !== null;
   return <div className="mod-browser-controls">
     <label className="mod-search-label" htmlFor={`${id}-search`}>Search mods
-      <input id={`${id}-search`} type="search" aria-label="Search treasure powers" value={browser.query} onChange={event => onChange({ ...browser, query: event.target.value })} placeholder="Effect, name, or ID…" />
+      <input id={`${id}-search`} type="search" aria-label="Search treasure powers" aria-busy={normalizeTreasureSearch(query) !== normalizeTreasureSearch(browser.query)} value={query} onChange={event => changeQuery(event.target.value)} aria-description="Search Available and Selected working mods" placeholder="Effect, name, or ID…" />
     </label>
     <details className="mod-browser-settings mod-more">
       <summary>Mod Browser Settings</summary>
