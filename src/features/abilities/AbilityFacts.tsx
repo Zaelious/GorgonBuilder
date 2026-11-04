@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { damageDebugEnabled } from './damage-debug';
 import type { Ability } from './groups';
+import { abilityRoles } from './roles';
+import { variantSeriesTag } from './presentation-groups';
 
 type Dot = NonNullable<Ability['pve']['dots']>[number];
 type SpecialValue = NonNullable<Ability['pve']['specialValues']>[number];
@@ -66,7 +68,13 @@ export function AbilityFacts({ ability, afterStats, technical: technicalExtra }:
   if (damage.extraDamageIfTargetVulnerable !== null) stats.push(['If vulnerable', `+${damage.extraDamageIfTargetVulnerable}`]);
   stats.push(['Power cost', pve.powerCost], ['Reuse time', `${timing.resetTime}s`],
     ['Range', `${targeting.range}${targeting.aoe !== null ? ` · AoE ${targeting.aoe}` : ''}`], ['Min level', ability.level]);
+  const roles = abilityRoles(ability);
+  const series = variantSeriesTag(ability.id);
   return <div className="ability-facts">
+    {(roles.length > 0 || series) && <div className="ability-role-labels" aria-label="Official ability roles">
+      {series && <span className="ability-series" data-ability-series={series}>{series}</span>}
+      {roles.map(role => <span key={role.keyword} className="ability-role" title={role.conditional ? 'Conditional published keyword; activation is not verified' : 'Published ability keyword'}>{role.label}{role.conditional ? ' (conditional)' : ''}</span>)}
+    </div>}
     <p className="ability-description">{ability.description || 'No description published.'}</p>
     <dl className="ability-stats">{stats.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
     {effects.length > 0 && <section className="ability-effects" aria-label="Ability effects"><h4>Ability effects</h4>

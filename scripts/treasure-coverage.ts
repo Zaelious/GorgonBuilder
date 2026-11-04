@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import type { GameDataManifest } from '../src/data/repository/contracts.ts';
 import { loadPlannerFixture } from '../src/test/planner-fixture.ts';
 import {
-  COVERAGE_REASONS, DIRECT_MECHANICS, OUTSIDE_MECHANICS, inventoryTreasureEffects, type TreasureCoverageRow,
+  COVERAGE_REASONS, DIRECT_MECHANICS, OUTSIDE_MECHANICS, inventoryTreasureEffects, requiresActiveSkillForCoverage, type TreasureCoverageRow,
 } from '../src/core/calculation/treasure-coverage.ts';
 
 const data = loadPlannerFixture();
@@ -22,12 +22,14 @@ function count(subset: TreasureCoverageRow[], when: Snap) {
   const direct = subset.filter(r => r.direct);
   const full = direct.filter(r => r[when].status === 'fully-calculated').length;
   const partial = direct.filter(r => r[when].status === 'partially-calculated').length;
+  // Calculated entries that rely on an official required active skill (counted in full/partial, reported separately).
+  const conditional = direct.filter(r => r[when].status !== 'unmodeled' && requiresActiveSkillForCoverage(r)).length;
   const byPower = new Map<string, Set<string>>();
   for (const r of direct) byPower.set(r.powerId, (byPower.get(r.powerId) ?? new Set()).add(r[when].status));
   const powerStatus = [...byPower.values()].map(set => set.size === 1 && set.has('fully-calculated') ? 'full'
     : set.has('fully-calculated') || set.has('partially-calculated') ? 'partial' : 'unmodeled');
   return {
-    entries: { total: direct.length, full, partial, unmodeled: direct.length - full - partial,
+    entries: { total: direct.length, full, partial, unmodeled: direct.length - full - partial, conditional,
       coverage: pct(full, direct.length), withPartial: pct(full + partial, direct.length) },
     powers: { total: byPower.size, full: powerStatus.filter(s => s === 'full').length,
       partial: powerStatus.filter(s => s === 'partial').length, unmodeled: powerStatus.filter(s => s === 'unmodeled').length },
@@ -40,13 +42,34 @@ const direct = Object.fromEntries(Object.entries(scopes).map(([name, subset]) =>
   [name, Object.fromEntries(SNAPS.map(snap => [snap, count(subset, snap)]))])) as Record<keyof typeof scopes, Record<Snap, ReturnType<typeof count>>>;
 
 const UNCONDITIONAL = ['unconditional-flat-percent', 'skill-base'];
-const unconditional = Object.fromEntries(Object.entries(scopes).map(([name, subset]) =>
+const requireActive = (subset: TreasureCoverageRow[]) => subset.filter(r =>
+  UNCONDITIONAL.includes(r.mechanic) && requiresActiveSkillForCoverage(r));
+const requiredSkill = Object.fromEntries(Object.entries(scopes).map(([name, subset]) =>
+  [name, count(requireActive(subset), 'final')])) as Record<keyof typeof scopes, ReturnType<typeof count>>;
+const priorUnconditional = Object.fromEntries(Object.entries(scopes).map(([name, subset]) =>
   [name, count(subset.filter(r => UNCONDITIONAL.includes(r.mechanic)), 'final')])) as Record<keyof typeof scopes, ReturnType<typeof count>>;
+const unconditional = Object.fromEntries(Object.entries(scopes).map(([name, subset]) =>
+  [name, count(subset.filter(r => UNCONDITIONAL.includes(r.mechanic) && !requiresActiveSkillForCoverage(r)), 'final')])) as Record<keyof typeof scopes, ReturnType<typeof count>>;
 const unconditionalTable = ['| Scope | Unconditional entries | Fully | Partially | Unmodeled | Full % | Full + partial % | Powers full / partial / unmodeled |', '|---|---:|---:|---:|---:|---:|---:|---:|',
   ...([['combatSkill', 'Combat skills'], ['generic', 'Generic/AnySkill'], ['all', 'All associations']] as const).map(([k, label]) => {
     const u = unconditional[k];
     return `| ${label} | ${u.entries.total} | ${u.entries.full} | ${u.entries.partial} | ${u.entries.unmodeled} | **${u.entries.coverage}** | ${u.entries.withPartial} | ${u.powers.full} / ${u.powers.partial} / ${u.powers.unmodeled} of ${u.powers.total} |`;
   })].join('\n');
+
+/** Figures exactly as published by the T0013-F1 report, before required-skill entries were separated. */
+const PUBLISHED_T0013_F1_UNCONDITIONAL = {
+  combatSkill: { entries: 11012, fullCoverage: '89.48' },
+  generic: { entries: 3070, fullCoverage: '75.57' },
+  all: { entries: 14082, fullCoverage: '86.45' },
+} as const;
+const conditionalTable = [
+  '| Scope | Published T0013-F1 entries | Published full % | Truly unconditional entries | Full % | Required-active-skill entries | Calculated when the skill is active |',
+  '|---|---:|---:|---:|---:|---:|---:|',
+  ...([['combatSkill', 'Combat skills'], ['generic', 'Generic/AnySkill'], ['all', 'All associations']] as const).map(([key, label]) => {
+    const published = PUBLISHED_T0013_F1_UNCONDITIONAL[key], req = requiredSkill[key].entries;
+    return `| ${label} | ${published.entries} | ${published.fullCoverage} | ${unconditional[key].entries.total} | ${unconditional[key].entries.coverage} | ${req.total} | ${req.full + req.partial} |`;
+  }),
+].join('\n');
 
 const tally = <K extends string>(subset: TreasureCoverageRow[], key: (r: TreasureCoverageRow) => K | K[]) => {
   const map = new Map<K, TreasureCoverageRow[]>();
@@ -62,11 +85,11 @@ const generics = [...new Set(genericRows.map(r => r.skill))].sort((a, b) => a ==
 const skillRow = (label: string, subset: TreasureCoverageRow[], bold = false) => {
   const [t, i, f] = SNAPS.map(s => count(subset, s));
   const b = (v: string | number) => bold ? `**${v}**` : `${v}`;
-  return `| ${b(label)} | ${b(f!.powers.total)} | ${b(f!.entries.total)} | ${b(f!.entries.full)} | ${b(f!.entries.partial)} | ${b(f!.entries.unmodeled)} | ${b(f!.entries.coverage)} | ${b(i!.entries.coverage)} | ${b(t!.entries.coverage)} |`;
+  return `| ${b(label)} | ${b(f!.powers.total)} | ${b(f!.entries.total)} | ${b(f!.entries.full)} | ${b(f!.entries.partial)} | ${b(f!.entries.unmodeled)} | ${b(f!.entries.conditional)} | ${b(f!.entries.coverage)} | ${b(i!.entries.coverage)} | ${b(t!.entries.coverage)} |`;
 };
 const skillTable = [
-  '| Association | Direct powers | Direct entries | Fully calculated | Partially | Unmodeled | Coverage % | F1 initial % | T0014 % |',
-  '|---|---:|---:|---:|---:|---:|---:|---:|---:|',
+  '| Association | Direct powers | Direct entries | Fully calculated | Partially | Unmodeled | Conditional (required skill) | Coverage % | F1 initial % | T0014 % |',
+  '|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
   ...skills.map(skill => skillRow(skill.name ?? skill.id, combatRows.filter(r => r.skill === skill.id))),
   skillRow('Combat skills total', combatRows, true),
   ...generics.map(g => skillRow(`Generic: ${g}`, genericRows.filter(r => r.skill === g))),
@@ -76,7 +99,7 @@ const skillTable = [
 
 const headline = (name: keyof typeof scopes, label: string) => {
   const d = direct[name];
-  return SNAPS.map(s => `| ${label} — ${{ t0014: 'T0014 baseline', initial: 'T0013-F1 first commit', final: 'T0013-F1 final' }[s]} | ${d[s].entries.total} | ${d[s].entries.full} | ${d[s].entries.partial} | ${d[s].entries.unmodeled} | **${d[s].entries.coverage}** | ${d[s].entries.withPartial} | ${d[s].powers.full} / ${d[s].powers.partial} / ${d[s].powers.unmodeled} of ${d[s].powers.total} |`).join('\n');
+  return SNAPS.map(s => `| ${label} — ${{ t0014: 'T0014 baseline', initial: 'T0013-F1 first commit', final: 'T0013-F1 final' }[s]} | ${d[s].entries.total} | ${d[s].entries.full} | ${d[s].entries.partial} | ${d[s].entries.unmodeled} | ${d[s].entries.conditional} | **${d[s].entries.coverage}** | ${d[s].entries.withPartial} | ${d[s].powers.full} / ${d[s].powers.partial} / ${d[s].powers.unmodeled} of ${d[s].powers.total} |`).join('\n');
 };
 
 const mechanicTable = ['| Mechanic family | Counted in direct coverage | Powers | Entries | Fully | Partially | Unmodeled |', '|---|---|---:|---:|---:|---:|---:|',
@@ -149,6 +172,8 @@ const summary = {
     powersSinceInitial: powersOf(transitions('initial', 'final')) },
   mechanics: Object.fromEntries([...DIRECT_MECHANICS, ...OUTSIDE_MECHANICS].map(m => [m, rows.filter(r => r.mechanic === m).length])),
   reasons: Object.fromEntries([...tally(rows.filter(r => r.direct), r => `${r.final.status}:${r.final.reason}`)].sort().map(([k, list]) => [k, list.length])),
+  requiredActiveSkillAudit: { publishedT0013F1: PUBLISHED_T0013_F1_UNCONDITIONAL, recomputedMixed: priorUnconditional,
+    trulyUnconditional: unconditional, requiredActiveSkill: requiredSkill },
   legacyReport: { previousFullCoverage: '22.83', previousDenominator: 21808, previousDirectRelatedUnmodeled: legacyUnmodeled.length,
     previousDirectRelatedUnmodeledPowers: powersOf(legacyUnmodeled),
     reclassified: Object.fromEntries([...tally(legacyUnmodeled, r => `${r.mechanic}:${r.final.status}`)].sort().map(([k, list]) => [k, list.length])) },
@@ -171,10 +196,10 @@ Generated by \`npm run coverage:treasure\` from pinned official v490 data. Four 
 
 ## 2. Direct-damage coverage
 
-One entry = one power ID + tier ID + effect index. **Fully calculated**: the entry's direct-hit contribution reaches every applicable published combat hit. **Partially calculated**: the direct contribution is calculated, but a damage-affecting part (split hit components, a damage-type conversion, target debuff, timed buff...) is not. Accompanying non-damage clauses (taunt, reuse, Power, Rage, control, healing) and separate-stage mechanics (DoT, critical) are listed under *other mechanics* and do **not** make an entry partial.
+One entry = one power ID + tier ID + effect index. **Conditional (required skill)** counts calculated entries (already included in Fully/Partially) whose official third token requires an active skill: they are probed with that skill as the build's second active skill and are never assumed active otherwise. **Fully calculated**: the entry's direct-hit contribution reaches every applicable published combat hit. **Partially calculated**: the direct contribution is calculated, but a damage-affecting part (split hit components, a damage-type conversion, target debuff, timed buff...) is not. Accompanying non-damage clauses (taunt, reuse, Power, Rage, control, healing) and separate-stage mechanics (DoT, critical) are listed under *other mechanics* and do **not** make an entry partial.
 
-| Scope — snapshot | Direct entries | Fully | Partially | Unmodeled | Full coverage % | Full + partial % | Powers full / partial / unmodeled |
-|---|---:|---:|---:|---:|---:|---:|---:|
+| Scope — snapshot | Direct entries | Fully | Partially | Unmodeled | Conditional (required skill) | Full coverage % | Full + partial % | Powers full / partial / unmodeled |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
 ${headline('combatSkill', 'Combat skills')}
 ${headline('generic', 'Generic/AnySkill')}
 ${headline('all', 'All associations')}
@@ -185,9 +210,15 @@ Headline: combat-skill direct coverage **${c.entries.coverage}%** fully calculat
 
 ### Unconditional flat / percentage / Skill Base subset
 
-The straightforward modifiers — skill, ability, group/keyword, All Direct, damage-type direct, and Skill Base — with no condition:
+These modifiers have no official required-active-skill condition. The published T0013-F1 report mixed conditional third-token effects into this denominator; they are now counted separately below:
 
 ${unconditionalTable}
+
+#### Required-active-skill audit correction
+
+${conditionalTable}
+
+Published figures are the T0013-F1 report's own values. Required-active-skill entries (e.g. \`{MOD_PIERCING_DIRECT}{0.01}{AnimalHandling}\`) are probed explicitly with the required skill as the build's second active skill, reason \`calculated-when-required-skill-active\`; each probe records \`requiredSkillsActivated\` in [effects.json.gz](effects.json.gz). \`requiredActiveSkillAudit\` in [summary.json](summary.json) keeps the published, recomputed mixed and separated denominators.
 
 Remaining unconditional gaps are listed by reason below (no published combat hit, split hit components, unresolved names).
 

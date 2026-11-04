@@ -3,9 +3,12 @@ import type { AbilitySelection, SkillSlot } from '../../core/build/document';
 import type { GameDataRepository } from '../../data/repository/repository';
 import { COMBAT_BAR_SIZE, type Slot } from '../../app/editor/build-editor';
 import './picker.css';
-import { groupAbilities, highestTier, quickAddTier, rankLabel, type Ability } from './groups';
+import { highestTier, quickAddTier, rankLabel, type Ability } from './groups';
+import { groupPickerAbilities } from './presentation-groups';
 import { AbilityIcon } from './AbilityIcon';
 import { AbilityFacts } from './AbilityFacts';
+import { abilityRoles } from './roles';
+import { damageDebugEnabled } from './damage-debug';
 import { useSessionFlag } from '../../app/useSessionFlag';
 
 interface Props {
@@ -38,12 +41,15 @@ export function AbilityPicker({ slot, skill, data, bar, full, replaceIndex, retu
   // Session-only picker option (T0014): remembered across picker openings, never saved in the build and never
   // applied to already-equipped abilities.
   const [respectSkillLevel, setRespectSkillLevel] = useSessionFlag('respectSkillLevel');
-  const groups = useMemo(() => groupAbilities(skill.skillId === null ? [] : data.getAbilitiesForSkill(skill.skillId)), [data, skill.skillId]);
+  const groups = useMemo(() => groupPickerAbilities(skill.skillId === null ? [] : data.getAbilitiesForSkill(skill.skillId)), [data, skill.skillId]);
   const search = query.trim().toLocaleLowerCase();
-  const matches = groups.filter(g => g.abilities.some(a => `${a.displayName} ${a.description} ${a.id}`.toLocaleLowerCase().includes(search)));
+  const matches = groups.filter(g => `${g.name} ${g.variants.map(v => v.name).join(' ')}`.toLocaleLowerCase().includes(search)
+    || g.abilities.some(a => `${a.displayName} ${a.internalName} ${a.description} ${a.id}`.toLocaleLowerCase().includes(search)));
   const selectedCount = (ability: Ability) => bar.filter(selection => selection.abilityId === ability.id && selection.rank === ability.rank).length;
   const selectedLabel = (count: number) => count === 1 ? 'On this bar' : `On this bar ×${count}`;
   const blocked = full && replaceIndex === null;
+  const debug = damageDebugEnabled();
+  const abilityCount = (count: number) => `${count} ${count === 1 ? 'ability' : 'abilities'}`;
 
   useEffect(() => {
     const element = dialog.current!;
@@ -89,15 +95,12 @@ export function AbilityPicker({ slot, skill, data, bar, full, replaceIndex, retu
       {matches.length === 0 && <p className="empty-state">No official abilities match. Try another search or skill.</p>}
       <div className="picker-results">
         {matches.map(group => {
-          const quick = quickAddTier(group, respectSkillLevel, skill.level);
+          const quick = group.isVariantFamily ? null : quickAddTier(group, respectSkillLevel, skill.level);
           const highest = highestTier(group);
-          return <div className="family" key={group.id}>
-            <details>
-              <summary><AbilityIcon ability={highest} version={data.gameDataVersion} /><span className="family-title">{group.name}<small>{group.abilities.length} published {group.abilities.length === 1 ? 'tier' : 'tiers'}{group.abilities.some(ability => selectedCount(ability) > 0) && ' · On this bar'}</small>
-                {quick.kind === 'none' && <small className="quick-add-none">No tier at or below Lv {skill.level} (lowest is Lv {quick.lowestLevel}). Expand to choose any tier.</small>}</span></summary>
-              <div className="family-tiers">{group.abilities.map(ability => <article className="tier" key={ability.id}>
+          const tier = (ability: Ability) => <article className="tier" key={ability.id}>
                 <div className="tier-row"><div className="tier-identity"><h3>{ability.displayName}</h3>
                   {selectedCount(ability) > 0 && <small className="selected-ability">{selectedLabel(selectedCount(ability))}</small>}
+                  {abilityRoles(ability).length > 0 && <div className="ability-role-labels" aria-label="Official ability roles">{abilityRoles(ability).map(role => <span className="ability-role" key={role.keyword}>{role.label}{role.conditional ? ' (conditional)' : ''}</span>)}</div>}
                   <p className="tier-stats">{ability.rank !== null && `Rank ${ability.rank} · `}Lv {ability.level} · {ability.pve.powerCost} power{ability.damage.damage !== null && ` · Base ${ability.damage.damage} ${ability.damage.damageType}`}</p>
                 </div><div className="tier-controls">
                   <button type="button" className="tier-add" disabled={blocked} onClick={() => choose(ability)} aria-label={`Select ${ability.displayName}, ${rankLabel(ability.rank)}, level ${ability.level}, ${ability.id}`}>
@@ -109,12 +112,24 @@ export function AbilityPicker({ slot, skill, data, bar, full, replaceIndex, retu
                 <div id={`tier-detail-${slot}-${ability.id}`} hidden={expandedTier !== ability.id}>
                   {expandedTier === ability.id && <AbilityFacts ability={ability} />}
                 </div>
-              </article>)}</div>
+              </article>;
+          return <div className="family" key={group.id}>
+            <details>
+              <summary><AbilityIcon ability={highest} version={data.gameDataVersion} /><span className="family-title">{group.name}<small>{!group.isVariantFamily ? `${group.abilities.length} published ${group.abilities.length === 1 ? 'tier' : 'tiers'}`
+                : group.variants.length > 1 ? `${group.variants.length} versions` : abilityCount(group.abilities.length)}{group.abilities.some(ability => selectedCount(ability) > 0) && ' · On this bar'}</small>
+                {quick?.kind === 'none' && <small className="quick-add-none">No tier at or below Lv {skill.level} (lowest is Lv {quick.lowestLevel}). Expand to choose any tier.</small>}</span></summary>
+              <div className="family-tiers">{group.isVariantFamily && group.variants.length > 1
+                ? group.variants.map(variant => <details className="ability-variant" key={variant.id}>
+                    <summary><span>{variant.name}</span><small>{abilityCount(variant.abilities.length)}{variant.abilities.some(ability => selectedCount(ability) > 0) ? ' · On this bar' : ''}
+                      {debug && <span className="variant-internal"> · {variant.internal}</span>}</small></summary>
+                    {variant.abilities.map(tier)}
+                  </details>)
+                : group.abilities.map(tier)}</div>
             </details>
-            <button type="button" className="quick-add" disabled={blocked || quick.kind === 'none'} onClick={() => { if (quick.kind === 'tier') choose(quick.ability); }}
+            {quick && <button type="button" className="quick-add" disabled={blocked || quick.kind === 'none'} onClick={() => { if (quick.kind === 'tier') choose(quick.ability); }}
               aria-label={quick.kind === 'none' ? `Quick-add ${group.name} unavailable: no published level at or below skill level ${skill.level}`
                 : respectSkillLevel ? `Quick-add ${group.name}, highest published level at or below ${skill.level}: level ${quick.ability.level}`
-                  : `Quick-add ${group.name}, highest published level ${quick.ability.level}`}>+</button>
+                  : `Quick-add ${group.name}, highest published level ${quick.ability.level}`}>+</button>}
           </div>;
         })}
       </div>

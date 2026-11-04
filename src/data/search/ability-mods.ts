@@ -1,5 +1,6 @@
 import type { CandidateMod, EquipmentSelection } from '../../core/build/document';
 import type { GameDataRepository } from '../repository/repository';
+import { applicableStaticKeywordRules } from '../../core/calculation/keyword-damage';
 
 type Ability = GameDataRepository['abilities'][number];
 type Tier = NonNullable<ReturnType<GameDataRepository['getTreasureTier']>>;
@@ -21,10 +22,12 @@ type Tier = NonNullable<ReturnType<GameDataRepository['getTreasureTier']>>;
  */
 export const MAX_FAMILIES_PER_ATTRIBUTE = 3;
 
-export type AbilityModMatch = 'attribute' | 'prose';
+export type AbilityModMatch = 'attribute' | 'prose' | 'keyword';
 
 export interface AbilityModIndex {
   familyOf(ability: Ability): string;
+  /** Matching static, fully guarded official abilitykeywords attribute hooks (including nondamage cost/heal categories). */
+  keywordHooks(ability: Ability): ReadonlySet<string>;
   familyName(family: string): string;
   familyIcons(family: string): ReadonlySet<number>;
   familyHooks(family: string): ReadonlySet<string>;
@@ -98,6 +101,18 @@ export function buildAbilityModIndex(data: GameDataRepository): AbilityModIndex 
     return result;
   }
 
+  const keywords = new Map<string, ReadonlySet<string>>();
+  function keywordHooks(ability: Ability): ReadonlySet<string> {
+    const existing = keywords.get(ability.id);
+    if (existing) return existing;
+    const attributes = new Set<string>();
+    for (const rule of applicableStaticKeywordRules(ability, data)) {
+      for (const ids of Object.values(rule.attributeHooks)) ids.forEach(id => attributes.add(id));
+    }
+    keywords.set(ability.id, attributes);
+    return attributes;
+  }
+
   const prose = new Map<string, ReadonlySet<string>>();
   function proseFamilies(description: string): ReadonlySet<string> {
     const cached = prose.get(description);
@@ -128,6 +143,7 @@ export function buildAbilityModIndex(data: GameDataRepository): AbilityModIndex 
 
   return {
     familyOf,
+    keywordHooks,
     familyName,
     familyIcons: family => icons.get(family) ?? EMPTY,
     familyHooks: family => hooks.get(family) ?? EMPTY,
@@ -142,9 +158,13 @@ export function matchAbilityEffect(ability: Ability, description: string, index:
   const template = /^\{([A-Z_0-9]+)\}\{[^{}]*\}(?:\{[^{}]*\})?$/u.exec(description);
   if (template) {
     const attribute = template[1]!;
-    if (!index.familyHooks(family).has(attribute)) return null;
-    const families = index.attributeFamilies(attribute);
-    return (families > 0 && families <= MAX_FAMILIES_PER_ATTRIBUTE) || index.labelledFamilies(attribute).has(family) ? 'attribute' : null;
+    if (index.familyHooks(family).has(attribute)) {
+      const families = index.attributeFamilies(attribute);
+      if ((families > 0 && families <= MAX_FAMILIES_PER_ATTRIBUTE) || index.labelledFamilies(attribute).has(family)) return 'attribute';
+    }
+    // Broad official category hooks are shared across many families; family-count heuristics cannot identify them.
+    // Match only if the shared source predicate proves static required/excluded keyword membership.
+    return index.keywordHooks(ability).has(attribute) ? 'keyword' : null;
   }
   return index.proseFamilies(description).has(family) ? 'prose' : null;
 }

@@ -34,6 +34,9 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Verify committed treasure-coverage reports are current
+        run: npm run coverage:treasure -- --check
+
       - name: Build
         run: npm run build
 

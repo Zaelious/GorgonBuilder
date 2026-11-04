@@ -159,11 +159,13 @@ function UnsupportedDetails({ records, label }: { records: readonly ClassifiedUn
  * Damage results for one equipped ability: per-target normal hit, AoE total where a target cap is known, critical
  * limitation and an expandable ordered breakdown. All math comes from the pure T0013/T0014 core functions.
  */
-export function AbilityResults({ ability, inputs, data, idPrefix }: { ability: Ability; inputs: AbilityDamageInputs; data: GameDataRepository; idPrefix: string }) {
+export function AbilityResults({ ability, inputs, data, idPrefix, result: precomputed }: { ability: Ability; inputs: AbilityDamageInputs; data: GameDataRepository; idPrefix: string;
+  /** Optional result already calculated by the caller for the same ability and inputs. */
+  result?: AbilityDamageResult }) {
   const { result, target } = useMemo(() => {
-    const result = calculateAbilityDamage(ability.id, inputs.aggregation, data);
+    const result = precomputed ?? calculateAbilityDamage(ability.id, inputs.aggregation, data);
     return { result, target: applyTargetDummy(result, inputs.target) };
-  }, [ability.id, inputs, data]);
+  }, [precomputed, ability.id, inputs, data]);
   const modifiers = useMemo(() => new Map(result.aggregation.modifiers.map(m => [m.key, m])), [result]);
   const debug = damageDebugEnabled();
   const hits = target.hits;

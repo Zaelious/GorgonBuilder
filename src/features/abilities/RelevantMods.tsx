@@ -5,6 +5,7 @@ import type { GameDataRepository } from '../../data/repository/repository';
 import { abilityModIndexFor, relevantEquippedMods } from '../../data/search/ability-mods';
 import { powerName } from '../../data/search/treasure';
 import { EffectDescriptions } from '../mods/EffectDescription';
+import type { AbilityDamageResult } from '../../core/calculation/ability-damage-types';
 
 type Ability = GameDataRepository['abilities'][number];
 type Row = ReturnType<typeof relevantEquippedMods>[number];
@@ -12,6 +13,27 @@ type Row = ReturnType<typeof relevantEquippedMods>[number];
 /** Source-backed equipped treasure effects for this ability family, in display order (one per source instance). */
 export function useRelevantModRows(ability: Ability, equipment: readonly EquipmentSelection[], data: GameDataRepository): readonly Row[] {
   return useMemo(() => relevantEquippedMods(ability, equipment, data, abilityModIndexFor(data)), [ability, equipment, data]);
+}
+
+const matchEvidence = (match: Row['match']) => match === 'attribute' ? 'published ability attribute'
+  : match === 'keyword' ? 'static official ability category/keyword' : 'official ability icon and name';
+
+/** A source-linked mod is not necessarily part of computed direct damage. */
+export function relevantModDamageStatus(row: Row, result: AbilityDamageResult | null): 'included' | 'uncertain' | 'not-included' | 'relevant' {
+  if (!result) return 'relevant';
+  const decisions = result.components.filter(component => component.delivery === 'direct').flatMap(component =>
+    component.decisions.filter(decision => {
+      const source = decision.modifier.source;
+      return (source.kind === 'candidate-mod' || source.kind === 'existing-power')
+        && source.equipmentIndex === row.equipmentIndex
+        && source.modIndex === row.index
+        && source.powerId === row.mod.powerId
+        && source.tierId === row.mod.tierId
+        && (source.kind === 'existing-power' ? row.source === 'imported' : row.source === 'planned');
+    }));
+  if (decisions.some(decision => decision.status === 'applied')) return 'included';
+  if (decisions.some(decision => decision.status === 'uncertain')) return 'uncertain';
+  return 'not-included';
 }
 
 const rowKey = (row: Row) => `${row.equipmentIndex}:${row.source}:${row.index}`;
@@ -23,14 +45,14 @@ function itemName(selection: EquipmentSelection, data: GameDataRepository) {
 }
 
 function provenance(row: Row, selection: EquipmentSelection, data: GameDataRepository) {
-  return `${slotLabel(selection)} · ${itemName(selection, data)} · ${row.source === 'planned' ? 'Planned mod' : 'Imported existing power'} · ${row.mod.powerId} / ${row.mod.tierId} · matched by ${row.match === 'attribute' ? 'published ability attribute' : 'official ability icon and name'}`;
+  return `${slotLabel(selection)} · ${itemName(selection, data)} · ${row.source === 'planned' ? 'Planned mod' : 'Imported existing power'} · ${row.mod.powerId} / ${row.mod.tierId} · matched by ${matchEvidence(row.match)}`;
 }
 
 /**
  * Compact Relevant Mods: each effect's full original wording, once per source instance, without per-row source tags.
  * Provenance stays on each row's data attributes and in {@link RelevantModSources} (Technical details).
  */
-export function RelevantMods({ rows, equipment, data, idPrefix }: { rows: readonly Row[]; equipment: readonly EquipmentSelection[]; data: GameDataRepository; idPrefix: string }) {
+export function RelevantMods({ rows, equipment, data, idPrefix, damageResult = null }: { rows: readonly Row[]; equipment: readonly EquipmentSelection[]; data: GameDataRepository; idPrefix: string; damageResult?: AbilityDamageResult | null }) {
   const debug = damageDebugEnabled();
   return <section className="relevant-mods" aria-label="Relevant Mods">
     <h4>Relevant Mods</h4>
@@ -41,6 +63,7 @@ export function RelevantMods({ rows, equipment, data, idPrefix }: { rows: readon
         return <li key={rowKey(row)} data-relevant-mod={rowKey(row)} data-power-id={row.mod.powerId} data-tier-id={row.mod.tierId ?? ''}
           data-source-slot={selection.slot} data-source-kind={row.source} aria-describedby={debug ? `${idPrefix}-source-${position + 1}` : undefined} title={debug ? provenance(row, selection, data) : undefined}>
           <span className="relevant-effect"><EffectDescriptions descriptions={row.tier.effectDescriptions} data={data} fallback={power ? powerName(power) : row.mod.powerId} /></span>
+          {damageResult && <small className="relevant-mod-status">{({ included: 'Included in direct damage', uncertain: 'Direct damage uncertain', 'not-included': 'Relevant only · not added to direct damage', relevant: 'Source-relevant' } as const)[relevantModDamageStatus(row, damageResult)]}</small>}
         </li>;
       })}</ul>}
   </section>;
@@ -56,7 +79,7 @@ export function RelevantModSources({ rows, equipment, data, idPrefix }: { rows: 
       return <li key={rowKey(row)} id={`${idPrefix}-source-${position + 1}`} data-relevant-source={rowKey(row)}>
         <span className="relevant-source">{slotLabel(selection)}{row.source === 'imported' ? ' · ◇ imported' : ''}</span>
         {' · '}{itemName(selection, data)} · {row.source === 'planned' ? 'Planned mod' : 'Imported existing power'} · <code>{row.mod.powerId} / {row.mod.tierId}</code>
-        {' · '}matched by {row.match === 'attribute' ? 'published ability attribute' : 'official ability icon and name'}
+        {' · '}matched by {matchEvidence(row.match)}
       </li>;
     })}</ol>
   </section>;
