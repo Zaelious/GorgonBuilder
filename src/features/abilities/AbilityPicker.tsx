@@ -112,7 +112,7 @@ export function AbilityPicker({ slot, skill, data, bar, full, replaceIndex, retu
               </article>;
           return <div className="family" key={group.id}>
             <details>
-              <summary><AbilityIcon ability={highest} version={data.gameDataVersion} /><span className="family-title">{group.name}<small>{group.isVariantFamily ? `${group.variants.length} verified ${group.variants.length === 1 ? 'variant series' : 'variant series'} · choose a series then the exact ability` : `${group.abilities.length} published ${group.abilities.length === 1 ? 'tier' : 'tiers'}`}{group.abilities.some(ability => selectedCount(ability) > 0) && ' · On this bar'}</small>
+              <summary><AbilityIcon ability={highest} version={data.gameDataVersion} /><span className="family-title">{group.name}<small>{group.isVariantFamily ? `${group.variants.length} verified variant series · select series then exact ability` : `${group.abilities.length} published ${group.abilities.length === 1 ? 'tier' : 'tiers'}`}{group.abilities.some(ability => selectedCount(ability) > 0) && ' · On this bar'}</small>
                 {quick?.kind === 'none' && <small className="quick-add-none">No tier at or below Lv {skill.level} (lowest is Lv {quick.lowestLevel}). Expand to choose any tier.</small>}</span></summary>
               <div className="family-tiers">{group.isVariantFamily
                 ? group.variants.map(variant => <details className="ability-variant" key={variant.id}>
