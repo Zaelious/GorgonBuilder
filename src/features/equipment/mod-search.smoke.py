@@ -38,7 +38,7 @@ def main():
     default['equipment'][5]['item'] = {'kind': 'imported', 'instance': {'baseItemId': 'item_49070',
         'displayName': 'Synthetic imported ring', 'existingPowers': [{'powerId': 'power_14005', 'tierId': 'id_9'}],
         'metadata': {'sourceItem': {'TSysPowers': [{'Power': 'power_14005', 'Tier': 9}]}}}}
-    default['equipment'][0]['candidateMods'] = [{'powerId': 'power_10001', 'tierId': 'id_9'}]
+    default['equipment'][0]['candidateMods'] = [{'powerId': 'power_153', 'tierId': 'id_1'}]
     default['equipment'].append({'slot': 'Racial', 'item': {'kind': 'manual', 'instance': {
         'baseItemId': None, 'displayName': 'Unknown base retained', 'existingPowers': []}}, 'candidateMods': [], 'sparks': {'mode': 'none'}})
     results = []
@@ -95,7 +95,9 @@ def main():
                                 open_row(slot)
                                 count = int(element.locator('.equipment-mod-count').inner_text().split()[0])
                                 assert count == element.locator('.mod-available-power').count(), slot
-                                counts[slot] = count
+                                selected = int(element.get_attribute('data-selected-count'))
+                                assert selected == element.locator('.candidate-list > [data-mod-origin]:not([hidden])').count(), slot
+                                counts[slot] = {'Available': count, 'Selected': selected}
                             return counts
 
                         def geometry():
@@ -106,31 +108,53 @@ def main():
                         seed(default)
                         search = page.get_by_role('searchbox', name='Search treasure powers')
                         show_all = page.get_by_label('Show all equipment', exact=True)
+                        def search_for(value):
+                            search.fill(value)
+                            expect(page.locator('.equipment-section')).to_have_attribute('data-effective-query', value)
+
                         expect(page.locator('.equipment-primary > .equipment-row:visible')).to_have_count(9)
                         open_row('Ring')
-                        search.fill('core')
+                        search.focus()
+                        page.evaluate('''() => {
+                            window.inputFrames = [];
+                            document.querySelector('[aria-label="Search treasure powers"]').addEventListener('input', () => {
+                                const start = performance.now(); requestAnimationFrame(() => window.inputFrames.push(performance.now() - start));
+                            });
+                        }''')
+                        search.press_sequentially('core', delay=25)
+                        expect(search).to_have_value('core')
+                        expect(page.locator('.equipment-section')).to_have_attribute('data-effective-query', 'core')
+                        input_frames = page.evaluate('window.inputFrames')
+                        assert input_frames and max(input_frames) < 150, input_frames
+                        search.fill('paste then cancel before debounce')
+                        search_for('')
+                        page.wait_for_timeout(250)
+                        expect(page.locator('.equipment-section')).to_have_attribute('data-effective-query', '')
+                        search_for('core')
                         expect(search).to_be_focused()
                         counts = parity()
-                        assert counts and all(n > 0 for n in counts.values())
+                        assert counts and all(n['Available'] + n['Selected'] > 0 for n in counts.values())
                         assert len(counts) < 10
                         for element in page.locator('.equipment-row[hidden]').all():
                             expect(element).not_to_be_visible()
-                        search.fill('power_14005')
-                        expect(row('Ring')).not_to_be_visible()  # working imported exclusion
-                        search.fill('no matching official power')
+                        search_for('power_14005')
+                        expect(row('Ring')).to_be_visible()  # working import matches Selected despite Available exclusion
+                        expect(row('Ring')).to_have_attribute('data-available-count', '0')
+                        expect(row('Ring')).to_have_attribute('data-selected-count', '1')
+                        search_for('no matching official power')
                         expect(page.locator('.equipment-row:visible')).to_have_count(0)
-                        expect(page.locator('.equipment-search-status [role="status"]')).to_contain_text('No equipment has matching Available mods')
+                        expect(page.locator('.equipment-search-status [role="status"]')).to_contain_text('No equipment has matching Available or Selected mods')
                         show_all.check()
                         expect(row('Ring')).to_be_visible()
                         assert row('Ring').evaluate('(e) => e.open')
                         expect(row('Ring').locator('.mod-available-power')).to_have_count(0)
                         show_all.uncheck()
-                        search.fill('')
+                        search_for('')
                         expect(page.locator('.equipment-primary > .equipment-row:visible')).to_have_count(9)
                         assert row('Ring').evaluate('(e) => e.open')
                         assert saved() == default
                         # Shared settings and exact count/list parity, including outside-profile and no-range previews.
-                        search.fill('core')
+                        search_for('core')
                         page.locator('.mod-browser-settings > summary').click()
                         for label in ['Generic', 'Endurance', 'Shamanic Infusions', 'All skills', 'Other slots & profiles']:
                             page.get_by_label(label, exact=True).check() if label in ['All skills', 'Other slots & profiles'] else page.get_by_label(label, exact=True).uncheck()
@@ -140,10 +164,10 @@ def main():
                             parity()
                         expect(page.locator('.equipment-section')).to_contain_text('No published tier range at this target')
                         page.get_by_label('Mod target level', exact=True).fill('100')
-                        search.fill('power_14005')
+                        search_for('power_14005')
                         parity()
                         expect(row('MainHand').locator('[data-fit="other-slot"]')).to_have_count(1)
-                        search.fill('core')
+                        search_for('core')
                         for label in ['Generic', 'Endurance', 'Shamanic Infusions']:
                             page.get_by_label(label, exact=True).check()
                         page.get_by_label('All skills', exact=True).uncheck()
@@ -164,12 +188,14 @@ def main():
                         page.keyboard.press('Tab')
                         assert page.evaluate('document.activeElement.closest("[hidden]") === null')
                         # Last-result stage hides an expanded row and returns focus to the shared search.
-                        search.fill('power_14005')
+                        search_for('power_14005')
                         open_row('Chest')
                         add = row('Chest').locator('.available-effect')
                         add.focus()
                         page.keyboard.press('Enter')
-                        expect(row('Chest')).not_to_be_visible()
+                        expect(row('Chest')).to_be_visible()
+                        expect(row('Chest')).to_have_attribute('data-available-count', '0')
+                        expect(row('Chest')).to_have_attribute('data-selected-count', '1')
                         expect(search).to_be_focused()
                         show_all.check()
                         expect(row('Chest')).to_be_visible()
@@ -183,11 +209,25 @@ def main():
                         expect(page.locator('.equipment-primary > .equipment-row:visible')).to_have_count(9)
                         assert saved() == edited
                         print(f'{mode} {width}: stage/focus/refresh passed', flush=True)
+                        # Removing a Selected-only match uses its saved index and can hide the row.
+                        search_for('power_153')
+                        page.locator('.mod-browser-settings > summary').click()
+                        page.get_by_label('Generic', exact=True).uncheck()
+                        open_row('Head')
+                        expect(row('Head')).to_have_attribute('data-available-count', '0')
+                        expect(row('Head')).to_have_attribute('data-selected-count', '1')
+                        row('Head').get_by_role('button', name='Remove candidate 1', exact=True).focus()
+                        page.keyboard.press('Enter')
+                        expect(row('Head')).not_to_be_visible()
+                        expect(search).to_be_focused()
+                        page.wait_for_timeout(650)
+                        assert saved()['equipment'][0]['candidateMods'] == []
+                        assert saved()['equipment'][5] == default['equipment'][5]
                         # A profile-changing replacement can hide the picker opener; focus still has a visible home.
                         replaced = copy.deepcopy(default)
                         replaced['equipment'][7]['item']['itemId'] = 'item_45511'
                         seed(replaced)
-                        search.fill('HealthFromCombatRefreshBoost')
+                        search_for('HealthFromCombatRefreshBoost')
                         open_row('MainHand')
                         row('MainHand').get_by_role('button', name='Replace MainHand', exact=True).click()
                         page.locator('#minimum-target-level').fill('')
@@ -200,19 +240,19 @@ def main():
                         protected = copy.deepcopy(default)
                         protected['gameDataVersion'] = 'other'
                         seed(protected)
-                        search.fill('core')
+                        search_for('core')
                         parity()
-                        for button in page.locator('.mod-available-power .available-effect').all():
+                        for button in page.locator('.mod-available-power .available-effect, .candidate-remove').all():
                             expect(button).to_be_disabled()
                         assert saved() == protected
                         # Empty gear and no skills have a useful search empty state; clearing restores all primary rows.
                         empty = copy.deepcopy(default)
                         empty.update(equipment=[], skillSlotA={'skillId': None, 'level': 0}, skillSlotB={'skillId': None, 'level': 0})
                         seed(empty)
-                        search.fill('core')
+                        search_for('core')
                         expect(page.locator('.equipment-row:visible')).to_have_count(0)
                         show_all.check()
-                        search.fill('')
+                        search_for('')
                         expect(page.locator('.equipment-primary > .equipment-row:visible')).to_have_count(9)
                         print(f'{mode} {width}: read-only/empty passed', flush=True)
                         # Damage+taunt/reuse: no misleading warning; every remainder is inspectable.
@@ -229,20 +269,40 @@ def main():
                         expect(analysis.locator('.damage-value')).to_be_visible()
                         hit = analysis.locator('.damage-value').inner_text()
                         expect(analysis.locator('.result-build-limits')).to_have_count(0)
-                        analysis.locator('.calc-breakdown > summary').click()
-                        expect(analysis.locator('[data-relevance="non-damage"]')).to_have_count(2)
-                        expect(analysis.locator('[data-warning="unsupported-build-effects"]')).to_have_count(0)
+                        expect(analysis.locator('.result-status')).to_have_text('Partial')
+                        expect(page.locator('.calc-breakdown, .technical-details, [data-unsupported], .result-limits')).to_have_count(0)
                         page.screenshot(path=str(output / f'{mode}-{width}-damage.png'), full_page=True)
                         page.keyboard.press('Escape')
                         damage_build['equipment'][0]['candidateMods'].append({'powerId': 'power_4002', 'tierId': 'id_9'})
                         seed(damage_build)
                         page.locator('.skill-panel').first.locator('.slot-button').first.click()
-                        expect(analysis.locator('.result-build-limits')).to_contain_text('unknown damage relevance')
+                        expect(analysis.locator('.result-status')).to_have_text('Partial')
+                        expect(analysis.locator('.result-build-limits, .calc-breakdown')).to_have_count(0)
                         expect(analysis.locator('.damage-value')).to_have_text(hit)
+                        page.keyboard.press('Escape')
+                        # Explicit debug flag exposes preserved inventories in dev; production ignores it.
+                        page.goto(origin + '/?debugDamage=1')
+                        expect(page.locator('#skill-A')).to_have_value('Archery')
+                        page.locator('.skill-panel').first.locator('.slot-button').first.click()
+                        if mode == 'dev':
+                            analysis.locator('.calc-breakdown > summary').click()
+                            expect(analysis.locator('[data-relevance="non-damage"]')).to_have_count(2)
+                            expect(analysis.locator('.result-build-limits')).to_contain_text('unknown damage relevance')
+                            expect(page.locator('.technical-details')).to_have_count(1)
+                            page.screenshot(path=str(output / f'{mode}-{width}-debug.png'), full_page=True)
+                        else:
+                            expect(page.locator('.calc-breakdown, .technical-details')).to_have_count(0)
+                        page.keyboard.press('Escape')
+                        # Invalid net resistance is an unresolved scenario, never a numeric/validated result.
+                        damage_build['target']['damageTypes'] = {'Fire': {'resistance': 200}}
+                        seed(damage_build)
+                        page.locator('.skill-panel').first.locator('.slot-button').first.click()
+                        expect(analysis.locator('.result-status')).to_have_text('Unavailable')
+                        expect(analysis.locator('.result-row[data-component="damage"] dd')).to_have_text('Unavailable')
                         print(f'{mode} {width}: damage passed', flush=True)
                         assert not errors, errors
                         results.append({'mode': mode, 'width': width, 'coreCounts': screenshot_counts, 'geometry': dimensions,
-                            'damage': hit, 'consoleErrors': errors, 'checks': 'count parity, settings, target previews, other slots, imported/staged exclusions, focus, state/refresh, read-only, zero results, mixed damage warnings'})
+                            'damage': hit, 'inputFrameMs': input_frames, 'debugMode': 'dev opt-in only', 'consoleErrors': errors, 'checks': '190ms debounce, rapid input/paste/clear, Available/Selected parity, settings, target previews, imported working pairs, staging, focus, refresh, read-only, public Partial/Unavailable, dev-only diagnostics'})
                         context.close()
                 finally:
                     os.killpg(process.pid, signal.SIGTERM)

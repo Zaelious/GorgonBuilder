@@ -3,9 +3,22 @@
     "mode": "dev",
     "width": 1440,
     "coreCounts": {
-      "Hands": 1,
-      "MainHand": 1,
-      "Racial": 5
+      "Head": {
+        "Available": 0,
+        "Selected": 1
+      },
+      "Hands": {
+        "Available": 1,
+        "Selected": 0
+      },
+      "MainHand": {
+        "Available": 1,
+        "Selected": 0
+      },
+      "Racial": {
+        "Available": 5,
+        "Selected": 0
+      }
     },
     "geometry": {
       "left": 28.796875,
@@ -15,16 +28,36 @@
       "viewport": 1440
     },
     "damage": "96 Fire",
+    "inputFrameMs": [
+      40.40000000037253,
+      4.2999999998137355,
+      2.099999999627471,
+      2.1000000005587935
+    ],
+    "debugMode": "dev opt-in only",
     "consoleErrors": [],
-    "checks": "count parity, settings, target previews, other slots, imported/staged exclusions, focus, state/refresh, read-only, zero results, mixed damage warnings"
+    "checks": "190ms debounce, rapid input/paste/clear, Available/Selected parity, settings, target previews, imported working pairs, staging, focus, refresh, read-only, public Partial/Unavailable, dev-only diagnostics"
   },
   {
     "mode": "dev",
     "width": 375,
     "coreCounts": {
-      "Hands": 1,
-      "MainHand": 1,
-      "Racial": 5
+      "Head": {
+        "Available": 0,
+        "Selected": 1
+      },
+      "Hands": {
+        "Available": 1,
+        "Selected": 0
+      },
+      "MainHand": {
+        "Available": 1,
+        "Selected": 0
+      },
+      "Racial": {
+        "Available": 5,
+        "Selected": 0
+      }
     },
     "geometry": {
       "left": 16,
@@ -34,16 +67,36 @@
       "viewport": 375
     },
     "damage": "96 Fire",
+    "inputFrameMs": [
+      10.400000000372529,
+      2.1000000005587935,
+      12.900000000372529,
+      15.400000000372529
+    ],
+    "debugMode": "dev opt-in only",
     "consoleErrors": [],
-    "checks": "count parity, settings, target previews, other slots, imported/staged exclusions, focus, state/refresh, read-only, zero results, mixed damage warnings"
+    "checks": "190ms debounce, rapid input/paste/clear, Available/Selected parity, settings, target previews, imported working pairs, staging, focus, refresh, read-only, public Partial/Unavailable, dev-only diagnostics"
   },
   {
     "mode": "dev",
     "width": 320,
     "coreCounts": {
-      "Hands": 1,
-      "MainHand": 1,
-      "Racial": 5
+      "Head": {
+        "Available": 0,
+        "Selected": 1
+      },
+      "Hands": {
+        "Available": 1,
+        "Selected": 0
+      },
+      "MainHand": {
+        "Available": 1,
+        "Selected": 0
+      },
+      "Racial": {
+        "Available": 5,
+        "Selected": 0
+      }
     },
     "geometry": {
       "left": 16,
@@ -53,16 +106,36 @@
       "viewport": 320
     },
     "damage": "96 Fire",
+    "inputFrameMs": [
+      11.399999999441206,
+      13.5,
+      2.2999999998137355,
+      2.400000000372529
+    ],
+    "debugMode": "dev opt-in only",
     "consoleErrors": [],
-    "checks": "count parity, settings, target previews, other slots, imported/staged exclusions, focus, state/refresh, read-only, zero results, mixed damage warnings"
+    "checks": "190ms debounce, rapid input/paste/clear, Available/Selected parity, settings, target previews, imported working pairs, staging, focus, refresh, read-only, public Partial/Unavailable, dev-only diagnostics"
   },
   {
     "mode": "preview",
     "width": 1440,
     "coreCounts": {
-      "Hands": 1,
-      "MainHand": 1,
-      "Racial": 5
+      "Head": {
+        "Available": 0,
+        "Selected": 1
+      },
+      "Hands": {
+        "Available": 1,
+        "Selected": 0
+      },
+      "MainHand": {
+        "Available": 1,
+        "Selected": 0
+      },
+      "Racial": {
+        "Available": 5,
+        "Selected": 0
+      }
     },
     "geometry": {
       "left": 28.796875,
@@ -72,16 +145,36 @@
       "viewport": 1440
     },
     "damage": "96 Fire",
+    "inputFrameMs": [
+      3.199999999254942,
+      13.799999999813735,
+      7.1000000005587935,
+      1.3999999994412065
+    ],
+    "debugMode": "dev opt-in only",
     "consoleErrors": [],
-    "checks": "count parity, settings, target previews, other slots, imported/staged exclusions, focus, state/refresh, read-only, zero results, mixed damage warnings"
+    "checks": "190ms debounce, rapid input/paste/clear, Available/Selected parity, settings, target previews, imported working pairs, staging, focus, refresh, read-only, public Partial/Unavailable, dev-only diagnostics"
   },
   {
     "mode": "preview",
     "width": 375,
     "coreCounts": {
-      "Hands": 1,
-      "MainHand": 1,
-      "Racial": 5
+      "Head": {
+        "Available": 0,
+        "Selected": 1
+      },
+      "Hands": {
+        "Available": 1,
+        "Selected": 0
+      },
+      "MainHand": {
+        "Available": 1,
+        "Selected": 0
+      },
+      "Racial": {
+        "Available": 5,
+        "Selected": 0
+      }
     },
     "geometry": {
       "left": 16,
@@ -91,16 +184,36 @@
       "viewport": 375
     },
     "damage": "96 Fire",
+    "inputFrameMs": [
+      2,
+      5.2999999998137355,
+      10,
+      0.900000000372529
+    ],
+    "debugMode": "dev opt-in only",
     "consoleErrors": [],
-    "checks": "count parity, settings, target previews, other slots, imported/staged exclusions, focus, state/refresh, read-only, zero results, mixed damage warnings"
+    "checks": "190ms debounce, rapid input/paste/clear, Available/Selected parity, settings, target previews, imported working pairs, staging, focus, refresh, read-only, public Partial/Unavailable, dev-only diagnostics"
   },
   {
     "mode": "preview",
     "width": 320,
     "coreCounts": {
-      "Hands": 1,
-      "MainHand": 1,
-      "Racial": 5
+      "Head": {
+        "Available": 0,
+        "Selected": 1
+      },
+      "Hands": {
+        "Available": 1,
+        "Selected": 0
+      },
+      "MainHand": {
+        "Available": 1,
+        "Selected": 0
+      },
+      "Racial": {
+        "Available": 5,
+        "Selected": 0
+      }
     },
     "geometry": {
       "left": 16,
@@ -110,7 +223,14 @@
       "viewport": 320
     },
     "damage": "96 Fire",
+    "inputFrameMs": [
+      8.099999999627471,
+      13.400000000372529,
+      2.900000000372529,
+      9.699999999254942
+    ],
+    "debugMode": "dev opt-in only",
     "consoleErrors": [],
-    "checks": "count parity, settings, target previews, other slots, imported/staged exclusions, focus, state/refresh, read-only, zero results, mixed damage warnings"
+    "checks": "190ms debounce, rapid input/paste/clear, Available/Selected parity, settings, target previews, imported working pairs, staging, focus, refresh, read-only, public Partial/Unavailable, dev-only diagnostics"
   }
 ]

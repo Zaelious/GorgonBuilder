@@ -38,3 +38,5 @@
 .ability-popover .calc-breakdown[open] { padding-bottom: 0.5rem; }
 @media (pointer: coarse) { .ability-popover .calc-breakdown > summary { min-height: 2.75rem; } }
 .ability-results .result-side-effects { color: var(--color-secondary); }
+
+.ability-results .result-status { color: var(--color-warning); font-size: 0.6875rem; font-weight: 400; }

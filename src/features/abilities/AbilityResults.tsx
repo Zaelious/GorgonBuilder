@@ -7,6 +7,7 @@ import {
 } from '../../core/calculation';
 import type { GameDataRepository } from '../../data/repository/repository';
 import { classifyBuildWarnings, type ClassifiedUnsupportedEffect } from '../../core/calculation/warning-relevance';
+import { damageDebugEnabled } from './damage-debug';
 import { damageTypeClass, isNonDamaging } from './AbilityFacts';
 import type { Ability } from './groups';
 import './results.css';
@@ -131,6 +132,7 @@ export function AbilityResults({ ability, inputs, data, idPrefix }: { ability: A
     return { result, target: applyTargetDummy(result, inputs.target) };
   }, [ability.id, inputs, data]);
   const modifiers = useMemo(() => new Map(result.aggregation.modifiers.map(m => [m.key, m])), [result]);
+  const debug = damageDebugEnabled();
   const hits = target.hits;
   // Buffs/utility abilities (no published hit, only zero-value DoT records) get no Damage section.
   if (hits.length === 0 && (isNonDamaging(ability.damage) || !ability.pve.dots?.some(dot => dot.damagePerTick > 0))) return null;
@@ -149,8 +151,13 @@ export function AbilityResults({ ability, inputs, data, idPrefix }: { ability: A
   ].filter(Boolean);
   const buildWarning = warningParts.length > 0 ? `Across build: ${warningParts.join(', ')}; applicability to this ability is unconfirmed.` : null;
   const uniqueWarnings = [...new Map(allWarnings.map(w => [`${w.code}|${w.message}`, w])).values()];
+  const informationalCodes = new Set(['critical-unavailable', 'provisional-formula', 'components-not-combined', 'single-target-ability', 'unsupported-build-effects']);
+  const status = hits.length === 0 || hits.every(hit => hit.perTarget === null) ? 'Unavailable'
+    : hits.some(hit => hit.perTarget === null || (count > 1 && hit.total === null)) || classified.damage.length + classified.unknown.length > 0 ||
+      allWarnings.some(warning => !informationalCodes.has(warning.code)) ? 'Partial'
+      : target.confidence !== 'validated' || hits.some(hit => hit.estimated) ? 'Estimated' : null;
   return <section className="ability-results" aria-labelledby={`${idPrefix}-results-title`} data-confidence={target.confidence}>
-    <h4 id={`${idPrefix}-results-title`}>Damage{target.burst && <span className="result-scope"> · Burst {target.burst.radius} m{target.burst.source === 'treasure-conversion' ? ' (mod)' : ''}</span>}</h4>
+    <h4 id={`${idPrefix}-results-title`}>Damage{status && <small className="result-status" role="status" title={status === 'Partial' ? 'Only supported contributions are shown.' : status === 'Estimated' ? 'This value uses estimated or provisional rules.' : 'A supported value cannot be calculated.'}>{status}</small>}{target.burst && <span className="result-scope"> · Burst {target.burst.radius} m{target.burst.source === 'treasure-conversion' ? ' (mod)' : ''}</span>}</h4>
     {hits.length === 0 ? <p className="muted">No direct hit is published{ability.pve.dots?.length ? '; DoT damage is not calculated yet.' : '.'}</p>
       : <dl className="result-rows">{hits.map(hit => <div key={hit.componentId} className="result-row" data-component={hit.componentId}>
         <dt>{hitLabel(hit.componentId)}{count > 1 ? ' · per target' : ''}</dt>
@@ -159,11 +166,12 @@ export function AbilityResults({ ability, inputs, data, idPrefix }: { ability: A
       </div>)}
       {count > 1 && hits.map(hit => <div key={`total-${hit.componentId}`} className="result-row result-total" data-component={hit.componentId}>
         <dt>{hits.length > 1 ? `${hitLabel(hit.componentId)} total` : 'Total'} · {target.affectedTargets ?? count} {(target.affectedTargets ?? count) === 1 ? 'enemy' : 'enemies'}</dt>
-        <dd>{hit.total === null ? <span className="muted">{target.affectedTargets === null ? 'Target cap not published' : 'Unavailable'}</span>
+        <dd>{hit.total === null ? <span className="muted">Unavailable</span>
           : <>{formatDamage(hit.total)}{hit.estimated && <small className="result-estimate">Estimated</small>}</>}</dd>
       </div>)}
-      <div className="result-row"><dt>Critical hit</dt><dd><span className="muted" title="Critical chance and multipliers are not modeled yet.">Not modeled</span></dd></div>
+      <div className="result-row"><dt>Critical hit</dt><dd>{result.criticalDamage === null ? <span className="muted">Unavailable</span> : formatDamage(result.criticalDamage)}</dd></div>
     </dl>}
+    {debug && <>
     {count > 1 && targetLimits.map(w => <p key={w.code} className="result-note" data-warning={w.code}>{w.message}</p>)}
     {sideEffects.length > 0 && <p className="result-note result-side-effects">Not damage: {sideEffects.map(m => m.category === 'ability-taunt-flat'
       ? `taunt +${formatDamage(m.value)}` : `reuse timer +${formatDamage(m.value)} s`).join(' · ')}</p>}
@@ -186,5 +194,6 @@ export function AbilityResults({ ability, inputs, data, idPrefix }: { ability: A
       {assumptions.length > 0 && <><p className="calc-subhead">Assumptions</p><ul className="calc-notes">
         {assumptions.map(a => <li key={a}>{a}</li>)}</ul></>}
     </details>
+    </>}
   </section>;
 }

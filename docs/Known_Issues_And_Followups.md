@@ -153,10 +153,7 @@ The published attribute token syntax is parsed separately in `src/features/mods/
   creature-type entries and 250 Elite entries.
 - **Target/state condition and buff toggles** for 2,563 conditional and 2,933 stateful
   direct entries (sub-families listed in the report).
-- **T0010-F2: runtime damage-warning relevance.** Taunt/reuse/Rage side clauses are still
-  listed as "Across build" unmodeled effects in the damage card even when their damage clause
-  calculates correctly. Distinguish classified non-damage remainders from truly unresolved damage
-  mechanics without hiding genuine uncertainty.
+- **T0010-F2 (PR #38, customer corrections pending):** distinguish secondary-only remainders from unresolved damage internally. The final customer decision makes inventories, provenance and formula diagnostics explicit development/debug-only; public results retain truthful values and concise Estimated/Partial/Unavailable status. Search now includes both Available and Selected working mods with debounced effective queries. No new damage mechanics.
 - **T0013-F3 candidate: damage allocation and conversion measurements.** Establish
   flat allocation among ordinary/health/armor hit components, indirect delivery,
   stacking/order, stateless damage-type conversions and duplicate-conversion rules.

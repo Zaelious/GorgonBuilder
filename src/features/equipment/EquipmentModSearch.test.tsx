@@ -35,7 +35,7 @@ async function change(selector: string, value: string) {
   });
 }
 const searchInput = '[aria-label="Search treasure powers"]';
-const search = (query: string) => change(searchInput, query);
+const search = async (query: string) => { await change(searchInput, query); await act(async () => vi.advanceTimersByTime(190)); };
 const render = () => act(async () => root.render(<App />));
 const settle = () => act(async () => vi.advanceTimersByTime(600));
 const row = (slot: string) => `[data-equipment-row="${slot}"]`;
@@ -56,6 +56,7 @@ async function parity() {
     if (!element.open) await click(`${row(element.dataset.equipmentRow!)} > summary`);
     expect(Number(element.querySelector('.equipment-mod-count')!.textContent!.split(' ')[0]))
       .toBe(element.querySelectorAll('.mod-available-power').length);
+    expect(Number(element.dataset.selectedCount)).toBe(element.querySelectorAll('.candidate-list > [data-mod-origin]:not([hidden])').length);
   }
 }
 
@@ -72,7 +73,7 @@ it('filters core rows with exact expanded counts, Show all, query changes and cl
   expect(document.activeElement).toBe(el(searchInput));
   await parity();
   await search('no matching power'); expect(visible()).toHaveLength(0);
-  expect(el('.equipment-search-status [role="status"]').textContent).toContain('No equipment has matching Available mods');
+  expect(el('.equipment-search-status [role="status"]').textContent).toContain('No equipment has matching Available or Selected mods');
   expect(ring.open).toBe(true);
   await click('.equipment-search-status input');
   expect(visible()).toHaveLength(18);
@@ -107,13 +108,13 @@ it('matches lists across category/all-skills/other-slot settings, duplicate skil
   await settle(); expect(JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)!)).toEqual(build);
 });
 
-it('staging the last matching power hides its row, preserves the edit and returns focus to search', async () => {
+it('staging the last Available match keeps its row through Selected and returns focus to search', async () => {
   seed(); await render(); await search('power_14005');
   await click('.mod-browser-settings > summary'); await click('.mod-category-toggles label:nth-child(5) input');
   await click(`${row('Chest')} > summary`);
   const add = `${row('Chest')} .available-effect`;
   await act(async () => el<HTMLButtonElement>(add).focus()); await click(add);
-  expect(el<HTMLDetailsElement>(row('Chest')).hidden).toBe(true);
+  expect(el<HTMLDetailsElement>(row('Chest')).hidden).toBe(false);
   expect(document.activeElement).toBe(el(searchInput));
   await click('.equipment-search-status input');
   expect(el<HTMLDetailsElement>(row('Chest')).open).toBe(true);
@@ -152,4 +153,74 @@ it('returns picker focus to the shared search when a replacement has no matches'
   await settle();
   expect((JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)!) as BuildDocument).equipment[3]!.item)
     .toEqual({ kind: 'database', itemId: 'item_46026' });
+});
+
+it('debounces rapid input at 190ms, keeps one effective query, reuses relevance, and cancels pending text on clear', async () => {
+  seed(); await render(); await click(`${row('Chest')} > summary`);
+  const relevance = vi.spyOn(data, 'getTreasureProfile');
+  const calls = relevance.mock.calls.length;
+  await change(searchInput, 'c');
+  expect(el<HTMLInputElement>(searchInput).value).toBe('c');
+  expect(el('.equipment-section').dataset.effectiveQuery).toBe('');
+  await act(async () => vi.advanceTimersByTime(100));
+  await change(searchInput, 'co');
+  await act(async () => vi.advanceTimersByTime(100));
+  await change(searchInput, 'core');
+  await click('.mod-category-toggles label:first-child input'); // pending query uses latest settings
+  await act(async () => vi.advanceTimersByTime(189));
+  expect(el('.equipment-section').dataset.effectiveQuery).toBe('');
+  await act(async () => vi.advanceTimersByTime(1));
+  expect(el('.equipment-section').dataset.effectiveQuery).toBe('core');
+  expect(el<HTMLInputElement>('.mod-category-toggles label:first-child input').checked).toBe(false);
+  await change(searchInput, 'a pasted long query');
+  await act(async () => vi.advanceTimersByTime(190));
+  expect(el('.equipment-section').dataset.effectiveQuery).toBe('a pasted long query');
+  expect(relevance.mock.calls.length).toBe(calls);
+  await change(searchInput, 'pending'); await change(searchInput, '');
+  expect(el('.equipment-section').dataset.effectiveQuery).toBe('');
+  await act(async () => vi.advanceTimersByTime(500));
+  expect(el('.equipment-section').dataset.effectiveQuery).toBe('');
+  expect(container.querySelectorAll('.equipment-primary > .equipment-row:not([hidden])')).toHaveLength(9);
+});
+
+it('finds Selected outside Available filters, retains disclosures and original indices, and keeps unresolved working pairs read-only', async () => {
+  const build = seed();
+  build.equipment[1]!.candidateMods = [{ powerId: 'power_14005', tierId: 'id_9' }, { powerId: 'power_153', tierId: 'id_1' }, { powerId: 'MysterySavedPower', tierId: 'MysteryTier' }];
+  build.equipment[2]!.item = { kind: 'imported', instance: { baseItemId: 'item_49070', existingPowers: [
+    { powerId: 'power_14005', tierId: 'id_9' }, { powerId: 'power_153', tierId: 'id_1' }, { powerId: 'UnresolvedImported', tierId: 'unknownTier' }], metadata: { keep: true } } };
+  localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(build));
+  await render(); await click(`${row('Chest')} > summary`);
+  await click(`${row('Chest')} [aria-label="Details and tier for candidate 2"]`);
+  const details = el<HTMLDetailsElement>(`${row('Chest')} [data-mod-index="1"] details`);
+  await search('core');
+  expect(el(row('Chest')).dataset.selectedCount).toBe('1');
+  expect(el(row('Ring')).dataset.selectedCount).toBe('1');
+  await click(`${row('Ring')} > summary`);
+  await click('.mod-category-toggles label:first-child input');
+  expect(el(row('Chest')).dataset.selectedCount).toBe('1'); // Generic Selected independent of toggle
+  await search('nothing matches'); expect(details.open).toBe(true);
+  await search('core'); expect(details.open).toBe(true);
+  await click(`${row('Chest')} [aria-label="Remove candidate 2"]`);
+  await settle();
+  const saved = JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)!) as BuildDocument;
+  expect(saved.equipment[1]!.candidateMods).toEqual([build.equipment[1]!.candidateMods[0], build.equipment[1]!.candidateMods[2]]);
+  await search('MysteryTier');
+  expect(el(row('Chest')).dataset.selectedCount).toBe('1');
+  expect(el(`${row('Chest')} [data-mod-index="1"]`).hidden).toBe(false);
+  await search('UnresolvedImported');
+  expect(el(row('Ring')).dataset.selectedCount).toBe('1');
+  expect(el<HTMLButtonElement>(`${row('Ring')} [data-existing-mod-index="2"] .candidate-remove`).disabled).toBe(true);
+  await search('');
+  expect(el(`${row('Ring')} .mod-selected h3`).textContent).toBe('Selected (3)');
+  await settle();
+  expect((JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)!) as BuildDocument).equipment[2]).toEqual(build.equipment[2]);
+});
+
+it('restores Available power disclosure state after its query temporarily excludes it', async () => {
+  seed(); await render(); await search('power_14005'); await click(`${row('Chest')} > summary`);
+  await click(`${row('Chest')} [aria-label="Details and tiers for power_14005"]`);
+  await act(async () => vi.advanceTimersByTime(0));
+  expect(el<HTMLDetailsElement>(`${row('Chest')} .available-details`).open).toBe(true);
+  await search('no match'); await search('power_14005');
+  expect(el<HTMLDetailsElement>(`${row('Chest')} .available-details`).open).toBe(true);
 });

@@ -19,11 +19,12 @@ beforeAll(() => {
   });
 });
 beforeEach(() => {
+  history.replaceState(null, '', '/?debugDamage=1');
   vi.useFakeTimers(); localStorage.clear();
   vi.mocked(loadGameDataRepository).mockReset().mockResolvedValue(data);
   container = document.createElement('div'); document.body.append(container); root = createRoot(container);
 });
-afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks(); vi.useRealTimers(); });
+afterEach(async () => { await act(async () => root.unmount()); container.remove(); history.replaceState(null, '', '/'); vi.restoreAllMocks(); vi.useRealTimers(); });
 function control<T extends HTMLElement = HTMLElement>(selector: string): T {
   const value = container.querySelector<T>(selector); if (!value) throw new Error(`Missing ${selector}`); return value;
 }

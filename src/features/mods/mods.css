@@ -98,3 +98,5 @@
 .candidate-effect > .mod-effect-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .candidate-list > li:has(> .candidate-details[open]) .mod-effect-text { -webkit-line-clamp: unset; line-clamp: none; }
 .planner-main .restore-imported-mods { margin-top: 0.4rem; font-size: 0.8rem; }
+
+.candidate-list > [hidden] { display: none; }

@@ -51,7 +51,7 @@ function seed() {
 }
 const scope = '[data-selection-index="0"]';
 const editor = `${scope} .mod-planner`;
-const search = (text: string) => change(`.mod-browser-controls [aria-label="Search treasure powers"]`, text);
+const search = async (text: string) => { await change(`.mod-browser-controls [aria-label="Search treasure powers"]`, text); await act(async () => vi.advanceTimersByTime(190)); };
 const target = (text: string) => change(`.mod-browser-controls [aria-label="Mod target level"]`, text);
 const open = () => click('[data-equipment-row="OffHand"] > summary');
 const add = (id = 'power_10001') => click(`${editor} [data-power-id="${id}"] > .available-effect`);
@@ -111,7 +111,7 @@ it('moves mods between Available and Selected with immediate STATS rows, >6 diff
   await add();
   // Mutually exclusive: the staged power leaves Available immediately and appears in Selected and STATS.
   expect(container.querySelector(`${editor} [data-power-id="power_10001"]`)).toBeNull();
-  expect(control(`${editor} .mod-selected h3`).textContent).toBe('Selected (2)');
+  expect(control(`${editor} .mod-selected h3`).textContent).toBe('Selected (1)');
   const row = control(`${scope} .item-stats [data-candidate-effect="0"]`);
   expect(row.querySelector('.stat-chip')!.textContent).toBe('Archery');
   expect(row.textContent).toBe('ArcheryArchery Base Damage +60%, Anatomy-Based Critical Hit Chance +4%');
@@ -279,8 +279,8 @@ it('uses independent default-checked source-category toggles, supports broad sea
   }
   expect(control(`${chestEditor} [data-mod-group="AnySkill"] h4`).textContent).toContain('association unknown');
   await click(toggle(4));
-  for (const skill of ['Psychology', 'Cow', 'Unarmed']) { await change(`.mod-browser-controls [aria-label="Search treasure powers"]`, skill); expect(container.querySelectorAll(`${chestEditor} [data-power-id]`).length).toBeGreaterThan(0); }
-  await change(`.mod-browser-controls [aria-label="Search treasure powers"]`, 'no-such-power'); expect(control(`${chestEditor} .mod-available`).textContent).toContain('No matching powers');
+  for (const skill of ['Psychology', 'Cow', 'Unarmed']) { await search(skill); expect(container.querySelectorAll(`${chestEditor} [data-power-id]`).length).toBeGreaterThan(0); }
+  await search('no-such-power'); expect(control(`${chestEditor} .mod-available`).textContent).toContain('No matching powers');
   await change(`.mod-browser-controls [aria-label="Mod target level"]`, '90'); await tick(); expect(saved()).toEqual(build);
 });
 
@@ -292,8 +292,8 @@ it('makes overlapping tier options explicit and stages the exact alternative or 
   await click(`${editor} [data-tier-id="id_8"]`); await tick();
   expect(saved().equipment[0]!.candidateMods).toEqual([{ powerId: 'power_10001', tierId: 'id_8' }]);
   expect(container.querySelector(`${editor} [data-power-id="power_10001"]`)).toBeNull();
-  await click(`${editor} [aria-label="Remove candidate 1"]`);
-  await click(`${editor} [data-power-id="power_10001"] > details > summary`); await tick(0);
+  await click(`${editor} [aria-label="Remove candidate 1"]`); await tick(0);
+  expect(control<HTMLDetailsElement>(`${editor} [data-power-id="power_10001"] > details`).open).toBe(true);
   await click(`${editor} [data-power-id="power_10001"] > details > button`); await tick();
   expect(saved().equipment[0]!.candidateMods).toEqual([{ powerId: 'power_10001', tierId: null }]);
 });

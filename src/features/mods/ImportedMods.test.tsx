@@ -45,7 +45,7 @@ const saved = () => JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)!) as Buil
 const selected = () => [...container.querySelectorAll<HTMLElement>(`${editor} [data-selected-power-id]`)];
 const stats = () => [...container.querySelectorAll<HTMLElement>(`${scope} [data-stat-kind]:not([data-stat-kind="base"])`)];
 const powers = () => selected().map(row => row.dataset.selectedPowerId);
-const search = (value: string) => change(`.mod-browser-controls [aria-label="Search treasure powers"]`, value);
+const search = async (value: string) => { await change(`.mod-browser-controls [aria-label="Search treasure powers"]`, value); await act(async () => vi.advanceTimersByTime(190)); };
 async function remount() { await act(async () => root.unmount()); root = createRoot(container); await render(); }
 
 it('shows all six imported pairs in Selected immediately with matching skill grouping in Stats', () => {
@@ -65,7 +65,7 @@ it('shows all six imported pairs in Selected immediately with matching skill gro
 it('adds a new Cow candidate to both views with the same tone and excludes all effective power IDs from Available', async () => {
   await search('power_20006'); expect(container.querySelector(`${editor} .available-effect`)).toBeNull();
   await search('power_20204'); await click(`${editor} [data-power-id="power_20204"] > .available-effect`);
-  expect(control(`${editor} .mod-selected h3`).textContent).toBe('Selected (7)');
+  expect(control(`${editor} .mod-selected h3`).textContent).toBe('Selected (1)');
   expect(selected().filter(row => row.querySelector('.stat-chip')?.textContent === 'Cow')).toHaveLength(4);
   expect(selected().filter(row => row.querySelector('.stat-chip')?.textContent === 'Cow').every(row => row.querySelector<HTMLElement>('.stat-chip')!.dataset.tone === 'skill-a')).toBe(true);
   expect(stats().map(row => row.dataset.powerId)).toEqual(powers());
@@ -105,7 +105,7 @@ it('makes a removed imported power available again and confirms restore collisio
   await click(`${editor} .restore-imported-mods`); await tick(); expect(saved()).toEqual(before);
   confirm.mockReturnValue(true); await click(`${editor} .restore-imported-mods`); await tick();
   expect(saved().equipment[0]?.candidateMods).toEqual(before.equipment[0]?.candidateMods);
-  expect(control(`${editor} .mod-selected h3`).textContent).toBe('Selected (7)');
+  expect(control(`${editor} .mod-selected h3`).textContent).toBe('Selected (2)');
   expect(confirm).toHaveBeenCalledTimes(2);
 });
 

@@ -69,3 +69,17 @@ it('limits only presentation, including zero-match and empty equipment rows', ()
   expect(equipmentRowMatches(0, true, true)).toBe(true);
   expect(equipmentRowMatches(1, true, false)).toBe(true);
 });
+
+it('finds Selected with no active skill and disabled Available categories/profile exploration, retaining original indices', () => {
+  const entry = selection();
+  entry.candidateMods = [{ powerId: 'power_14005', tierId: 'id_9' }, { powerId: 'Unknown_Core_Power', tierId: 'UnknownTier' }];
+  const settings = { ...filters, query: 'power_14005', categories: { generic: false, endurance: false, shamanic: false } };
+  const result = selectAvailableMods(entry, { item: data.getItem('item_46107'), skillIds: [] }, null, null, settings, data, index);
+  expect(result.count).toBe(0);
+  expect(result.selectedCount).toBe(1);
+  expect(result.selected[0]!.index).toBe(0);
+  const unknown = selectAvailableMods(entry, { item: undefined, skillIds: [] }, null, null, { ...settings, query: 'UnknownTier' }, data, index);
+  expect(unknown.selectedCount).toBe(1);
+  expect(unknown.selected[0]!.index).toBe(1);
+  expect(unknown.selected[0]!.mod).toEqual(entry.candidateMods[1]);
+});

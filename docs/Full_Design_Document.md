@@ -38,9 +38,9 @@ Third-party tools/libraries may be used as implementation references or parsers,
 
 ### 2.2 Calculation transparency
 
-Every calculated value should be explainable.
+Every calculated value must remain explainable by the pure engine, with complete breakdowns, provenance, confidence, assumptions and unresolved effects retained for testing.
 
-A user should be able to expand an ability and see where its damage came from rather than receiving one opaque final number.
+**Product-owner correction, T0010-F2 (2026-11-04):** ordinary users see supported calculated values, useful target/scenario controls, and concise **Estimated**, **Partial** or **Unavailable** status where needed. Internal calculation breakdowns, unsupported-effect inventories, debug IDs/provenance, formula assumptions and technical warning lists are development/debug-only, rather than public expandable UI. The explicit developer opt-in is `?debugDamage=1` on the Vite development server; production ignores this flag. This presentation decision does not validate a provisional value or change any engine output.
 
 ### 2.3 Separate facts from interpretation
 
@@ -66,9 +66,9 @@ The planner should not over-police users while exploring combinations. Slot appl
 
 GorgonBuilder should prioritize compact, readable, and intuitive interfaces. Show users the information and controls most relevant to their immediate task, so common build-planning actions are quick and easy to scan.
 
-Advanced statistics, technical details, and secondary actions should remain available through tooltips, expandable sections, dialogs, or contextual controls rather than occupying the default view. Avoid visual clutter, redundant labels, excessive or non-actionable warnings, and unnecessarily large information panels. Preserve visible, actionable errors and important data-quality limitations.
+Game-facing advanced statistics and secondary actions should remain available through tooltips, expandable sections, dialogs, or contextual controls rather than occupying the default view. Calculation implementation diagnostics follow the explicit development/debug-only policy in §2.2. Avoid visual clutter, redundant labels, excessive or non-actionable warnings, and unnecessarily large information panels. Preserve visible, actionable errors and important data-quality limitations.
 
-Use GorgonExplorer as a functional interaction reference where helpful, without cloning its branding or visual identity. Apply this principle across skill selection, equipment, treasure mods, calculations, and build management. Calculation transparency and accessibility still apply: detailed breakdowns must be discoverable and usable by keyboard and on smaller screens.
+Use GorgonExplorer as a functional interaction reference where helpful, without cloning its branding or visual identity. Apply this principle across skill selection, equipment, treasure mods, calculations, and build management. Calculation transparency remains mandatory internally. Diagnostic breakdowns must be keyboard-accessible and usable on smaller screens in explicit development/debug mode; public damage views use concise status labels.
 
 ### 2.6 One calculation engine
 

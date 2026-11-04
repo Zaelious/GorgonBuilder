@@ -454,7 +454,8 @@ it('shows one equipped detail panel when switching between the independent bars'
 });
 
 
-it('shows full published facts and ability effects immediately, with only technical fields under Technical details', async () => {
+it('keeps full published facts and developer-only technical fields available in explicit debug mode', async () => {
+  history.replaceState(null, '', '/?debugDamage=1');
   const ability = data.abilities.find(a => a.description.length > 240 && data.getSkill(a.skill.skillId ?? '')?.combat)!;
   const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
   build.skillSlotA.skillId = ability.skill.skillId;

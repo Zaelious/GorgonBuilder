@@ -52,7 +52,7 @@ Also review any specialized document named by the ticket.
 - Desktop-first editing is acceptable.
 - Shared/read-only builds should remain reasonably usable on smaller screens.
 - Item/mod search must be fast and understandable.
-- Math should be inspectable through expandable breakdowns rather than hidden behind one final number.
+- Retain complete calculation breakdowns, provenance, assumptions and confidence internally. Per the T0010-F2 customer decision, public damage results show supported values and concise Estimated/Partial/Unavailable status; calculation diagnostics and technical source details are exposed only through explicit development/debug mode.
 
 ## Character Import Rules
 

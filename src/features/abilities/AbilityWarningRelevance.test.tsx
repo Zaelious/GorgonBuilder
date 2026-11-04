@@ -12,6 +12,7 @@ import { AbilityResults } from './AbilityResults';
 let data: ReturnType<typeof loadPlannerFixture>;
 beforeAll(() => { data = loadPlannerFixture(); });
 it('removes only confirmed secondary remainders from visible warnings and preserves all source details and result confidence', async () => {
+  history.replaceState(null, '', '/?debugDamage=1');
   const build = createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion });
   build.equipment = [{ slot: 'Feet', item: { kind: 'database', itemId: 'item_40350' }, candidateMods: [
     { powerId: 'power_10305', tierId: 'id_9' }, { powerId: 'power_10202', tierId: 'id_9' },
@@ -46,5 +47,5 @@ it('removes only confirmed secondary remainders from visible warnings and preser
     expect(container.querySelectorAll('[data-relevance="unknown"]')).toHaveLength(1);
     expect(container.querySelector('.damage-value')!.textContent).toBe(value);
     expect(calculateAbilityDamage(ability.id, aggregation, data)).toEqual(original);
-  } finally { await act(async () => root.unmount()); container.remove(); }
+  } finally { await act(async () => root.unmount()); container.remove(); history.replaceState(null, '', '/'); }
 });

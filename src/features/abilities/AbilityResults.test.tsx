@@ -22,11 +22,12 @@ beforeAll(() => {
   });
 });
 beforeEach(() => {
+  history.replaceState(null, '', '/?debugDamage=1');
   vi.useFakeTimers(); localStorage.clear(); sessionStorage.clear();
   vi.mocked(loadGameDataRepository).mockReset().mockResolvedValue(data);
   container = document.createElement('div'); document.body.append(container); root = createRoot(container);
 });
-afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks(); vi.useRealTimers(); });
+afterEach(async () => { await act(async () => root.unmount()); container.remove(); history.replaceState(null, '', '/'); vi.restoreAllMocks(); vi.useRealTimers(); });
 
 function control<T extends HTMLElement = HTMLElement>(selector: string): T {
   const value = container.querySelector<T>(selector); if (!value) throw new Error(`Missing ${selector}`); return value;
@@ -100,11 +101,11 @@ describe('T0014 ability results in the popover', () => {
   it('shows the provisional normal hit, critical limitation and a collapsed ordered breakdown without a confidence badge', async () => {
     seed(); await render(); await inspect(1);
     const section = results();
-    expect(section.querySelector('h4')!.textContent).toBe('Damage');
+    expect(section.querySelector('h4')!.textContent).toBe('DamagePartial');
     expect(section.querySelector('.confidence-badge')).toBeNull();
     expect(section.dataset.confidence).toBe('unknown');
     expect(rowText('health-specific')).toEqual(['Health hit:526.7 Psychic']);
-    expect(section.textContent).toContain('Critical hitNot modeled');
+    expect(section.textContent).toContain('Critical hitUnavailable');
     expect(control('.result-limits').textContent).toBe('Not included: special ability rules');
     expect(control('.result-build-limits').textContent).toBe('Across build: 11 effects with unknown damage relevance; applicability to this ability is unconfirmed.');
     // Simple by default: math is on demand, after the visible values and before Relevant Mods.
