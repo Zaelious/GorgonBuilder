@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { damageDebugEnabled } from './damage-debug';
 import type { Ability } from './groups';
+import { abilityRoles } from './roles';
 
 type Dot = NonNullable<Ability['pve']['dots']>[number];
 type SpecialValue = NonNullable<Ability['pve']['specialValues']>[number];
@@ -67,6 +68,9 @@ export function AbilityFacts({ ability, afterStats, technical: technicalExtra }:
   stats.push(['Power cost', pve.powerCost], ['Reuse time', `${timing.resetTime}s`],
     ['Range', `${targeting.range}${targeting.aoe !== null ? ` · AoE ${targeting.aoe}` : ''}`], ['Min level', ability.level]);
   return <div className="ability-facts">
+    {abilityRoles(ability).length > 0 && <div className="ability-role-labels" aria-label="Official ability roles">
+      {abilityRoles(ability).map(role => <span key={role.keyword} className="ability-role" title={role.conditional ? 'Conditional published keyword; activation is not verified' : 'Published ability keyword'}>{role.label}{role.conditional ? ' (conditional)' : ''}</span>)}
+    </div>}
     <p className="ability-description">{ability.description || 'No description published.'}</p>
     <dl className="ability-stats">{stats.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
     {effects.length > 0 && <section className="ability-effects" aria-label="Ability effects"><h4>Ability effects</h4>
