@@ -71,5 +71,5 @@ it('ordinary families still use canonical UpgradeOf groups and remain unchanged'
   const originals = groupAbilities(abilities);
   const picker = groupPickerAbilities(abilities);
   expect(picker.every(group => !group.isVariantFamily)).toBe(true);
-  expect(picker.map(({ variants: _variants, isVariantFamily: _flag, ...original }) => original)).toEqual(originals);
+  expect(picker.map(group => ({ id: group.id, name: group.name, abilities: group.abilities }))).toEqual(originals);
 });
