@@ -9,3 +9,9 @@
 
 .ability-role-labels { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-block: 0.3rem; }
 .ability-role { display: inline-block; font-size: 0.7rem; line-height: 1.35; padding: 0.12rem 0.38rem; border: 1px solid var(--color-border); border-radius: 0.35rem; color: var(--color-text); background: var(--color-surface); }
+
+.ability-picker .ability-variant { margin: 0.25rem 0; border: 1px solid var(--color-border); border-radius: 0.4rem; }
+.ability-picker .ability-variant > summary { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 0.5rem; cursor: pointer; gap: 0.25rem 0.75rem; }
+.ability-picker .ability-variant > summary small { font-size: 0.7rem; color: var(--color-muted); }
+.ability-picker .ability-variant .tier { margin-inline: 0.4rem; }
+.ability-picker .variant-internal { overflow-wrap: anywhere; }
