@@ -24,7 +24,7 @@ it('conditional keyword-only roles are identified as conditional, not unconditio
   const roles = abilityRoles({
     ...actual,
     keywords: ['BasicAttack'],
-    conditionalKeywords: [{ keyword: 'MajorHeal' }] as typeof actual.conditionalKeywords,
+    conditionalKeywords: [{ keyword: 'MajorHeal' }] as unknown as typeof actual.conditionalKeywords,
   });
   expect(roles).toEqual([
     { keyword: 'BasicAttack', label: 'Basic Attack', conditional: false },
