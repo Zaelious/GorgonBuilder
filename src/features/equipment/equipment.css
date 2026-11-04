@@ -67,3 +67,17 @@
 .owned-equipped { font-size: 0.75rem; color: var(--color-positive); }
 .equipment-section > .section-heading { flex-wrap: wrap; row-gap: 0.25rem; }
 .equipment-section > .section-heading > button, .equipment-section > .section-heading > .muted { white-space: nowrap; }
+
+.equipment-row[hidden], .equipment-other[hidden] { display: none; }
+.equipment-search-status { margin: 0.25rem 0.75rem 0.5rem; font-size: 0.8125rem; color: var(--color-secondary); }
+.planner-main .equipment-search-status label { display: flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; }
+.planner-main .equipment-search-status input { width: 1rem; height: 1rem; min-height: 1rem; margin: 0; padding: 0; flex: none; }
+.equipment-row > summary .equipment-mod-count { grid-column: 3; grid-row: 1; align-self: start; font-size: 0.75rem; color: var(--color-positive); white-space: nowrap; }
+@media (max-width: 30rem) {
+  .equipment-row > summary .equipment-mod-count { grid-column: 2; grid-row: 4; }
+}
+
+.equipment-row:has(.equipment-mod-count) > summary > small { grid-row: 2; }
+@media (max-width: 30rem) {
+  .equipment-row:has(.equipment-mod-count) > summary > small { grid-row: 3; }
+}

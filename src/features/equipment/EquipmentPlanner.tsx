@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { sameImportedInstance } from '../../core/build/imported-identity';
 import { sameLoadoutPosition } from '../../core/build/slots';
 import { getUniqueActiveSkillIds } from '../../core/build/document';
@@ -14,6 +14,8 @@ import { EquipmentIcon } from './EquipmentIcon';
 import { PublishedItemDetails } from './ItemFacts';
 import { ImportedItemDetails, ImportedItemWarnings } from '../import/ImportedItemDetails';
 import { importedSlot, restoredImportedItem, selectedImportedInstance, type ImportSession } from '../import/inventory';
+import { equipmentRowMatches, selectAvailableMods } from '../../data/search/available-mods';
+import { indexTreasurePowers, normalizeTreasureSearch } from '../../data/search/treasure';
 import './equipment.css';
 
 interface Props {
@@ -32,8 +34,26 @@ const PRIMARY_SLOTS = ['Head', 'Chest', 'Legs', 'Hands', 'Feet', 'Ring', 'Neckla
 
 export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, preferenceProtected, preferenceNotice, onMinimumChange, imported = null }: Props) {
   const skillIds = useMemo(() => getUniqueActiveSkillIds(build), [build.skillSlotA, build.skillSlotB]);
+  const section = useRef<HTMLElement>(null);
+  const lastFocused = useRef<HTMLElement | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const [modBrowser, setModBrowser] = useState(DEFAULT_MOD_BROWSER);
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
+  const searching = normalizeTreasureSearch(modBrowser.query).length > 0;
+  const searchIndex = useMemo(() => indexTreasurePowers(data.treasurePowers), [data]);
+  const available = useMemo(() => searching ? build.equipment.map(selection => {
+    const itemId = selection.item.kind === 'database' ? selection.item.itemId : selection.item.instance.baseItemId;
+    return selectAvailableMods(selection, { item: itemId === null ? undefined : data.getItem(itemId), skillIds },
+      build.skillSlotA.skillId, build.skillSlotB.skillId, modBrowser, data, searchIndex);
+  }) : [], [searching, build.equipment, build.skillSlotA.skillId, build.skillSlotB.skillId, skillIds, modBrowser, data, searchIndex]);
+  useLayoutEffect(() => {
+    const focused = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+      ? document.activeElement : lastFocused.current;
+    // Selecting the last match can hide its expanded row. Return to the shared search, never to a hidden control.
+    if (focused?.isConnected && section.current?.contains(focused) && focused.closest('[hidden]')) {
+      section.current.querySelector<HTMLInputElement>('[aria-label="Search treasure powers"]')?.focus({ preventScroll: true });
+    }
+  });
   const officialSlots = new Set(data.items.map(item => item.slot));
   // Offhand types share a position; saved selections retain canonical slot values.
   const otherSlots = [...new Set([...officialSlots, ...build.equipment.map(selection => selection.slot)])]
@@ -72,7 +92,7 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
       {item && !sameLoadoutPosition(item.slot, selection.slot) && <p className="warning">Published slot is {item.slot}; saved slot {selection.slot} is retained.</p>}
       {owned && <ImportedItemWarnings item={owned} data={data} historical />}
       <ItemStats selection={selection} item={item} data={data} skillA={build.skillSlotA.skillId} skillB={build.skillSlotB.skillId} />
-      <EquipmentMods browser={modBrowser} selection={selection} equipmentIndex={index} item={item} skillIds={skillIds} skillA={build.skillSlotA.skillId} skillB={build.skillSlotB.skillId} data={data} onEdit={onEdit} readOnly={readOnly} expanded={expanded.has(isOffhandSlot(selection.slot) ? 'OffHand' : selection.slot)} />
+      <EquipmentMods browser={modBrowser} selection={selection} equipmentIndex={index} item={item} skillIds={skillIds} skillA={build.skillSlotA.skillId} skillB={build.skillSlotB.skillId} data={data} onEdit={onEdit} readOnly={readOnly} available={available[index]} expanded={expanded.has(isOffhandSlot(selection.slot) ? 'OffHand' : selection.slot)} />
       <div className="equipment-actions"><button type="button" disabled={readOnly || conflict || !officialSlots.has(selection.slot)} onClick={event => openPicker(selection.slot, index, event.currentTarget)}>Replace {isOffhandSlot(selection.slot) ? 'OffHand' : selection.slot}</button>
         <button type="button" disabled={readOnly} onClick={event => {
           if (!clearSelection(index)) return;
@@ -97,12 +117,17 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
       </details>
     </article>;
   }
+  function rowCount(slot: string) {
+    return build.equipment.reduce((total, selection, index) => total +
+      (sameLoadoutPosition(selection.slot, slot) ? available[index]?.count ?? 0 : 0), 0);
+  }
+  const matchingRows = [...PRIMARY_SLOTS, ...otherSlots].filter(slot => rowCount(slot) > 0).length;
   function renderRow(slot: string) {
     const slots = slot === 'OffHand' ? ['OffHand', 'OffHandShield'] : [slot];
     const selections = build.equipment.map((selection, index) => ({ selection, index })).filter(entry => slots.includes(entry.selection.slot));
     const first = selections[0]?.selection;
     const item = first ? definition(first) : undefined;
-    return <details className={`equipment-row${first ? ' has-equipment' : ''}`} key={slot} data-equipment-row={slot} onToggle={event => {
+    return <details className={`equipment-row${first ? ' has-equipment' : ''}`} key={slot} hidden={!equipmentRowMatches(rowCount(slot), searching, showAll)} data-equipment-row={slot} onToggle={event => {
       if (event.target !== event.currentTarget) return;
       const open = event.currentTarget.open;
       setExpanded(previous => {
@@ -116,6 +141,7 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
       }}><EquipmentIcon slot={first?.slot ?? slot} iconId={item?.iconId} version={data.gameDataVersion} />
         <span className="equipment-slot-name">{slot}</span>
         <span className="equipment-row-name">{first ? `${name(first)}${selections.length > 1 ? ` + ${selections.length - 1} more` : ''}` : 'No gear selected'}</span>
+        {searching && <span className="equipment-mod-count">{rowCount(slot)} {rowCount(slot) === 1 ? 'match' : 'matches'}</span>}
         {first && <small className={slot === 'OffHand' && selections.length > 1 ? 'warning' : undefined}>{selections.length > 1 ? `${slot === 'OffHand' ? 'Conflict · ' : ''}${selections.length} saved` : `${first.slot === 'OffHandShield' ? 'Shield · ' : ''}${first.item.kind !== 'database' ? `${first.item.kind} instance` : item?.level == null ? 'Unknown target level' : `Target ${item.level}`}`}</small>}
       </summary>
       <div className="equipment-row-content">
@@ -128,12 +154,20 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
     </details>;
   }
 
-  return <section className="equipment-section" aria-labelledby="equipment-title">
+  return <section ref={section} onFocusCapture={event => { lastFocused.current = event.target.closest<HTMLElement>('.equipment-row') ?? event.target; }} className="equipment-section" aria-labelledby="equipment-title">
     <div className="section-heading"><h2 id="equipment-title"><svg className="section-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 16v-5a7 7 0 0 1 14 0v5M5 12h14M9 12v7m6-7v7M5 16l4 3h6l4-3" /></svg>Equipment</h2><button type="button" disabled={!imported} onClick={event => setPicker({ mode: 'general', slot: '', index: null, returnFocus: event.currentTarget, fallbackFocus: event.currentTarget, initialSource: 'owned' })}>My Items{imported ? ` (${imported.storage.items.filter(item => importedSlot(item, data)).length})` : ''}</button><span className="muted">{build.equipment.length} selected</span></div>
-    <ModBrowserControls browser={modBrowser} onChange={setModBrowser} />
+    <ModBrowserControls browser={modBrowser} onChange={next => {
+      if (!normalizeTreasureSearch(next.query)) setShowAll(false);
+      setModBrowser(next);
+    }} />
+    {searching && <div className="equipment-search-status">
+      <p role="status">{matchingRows === 0 ? 'No equipment has matching Available mods. Try a shorter search, different skills or Mod Browser Settings.'
+        : `${matchingRows} equipment ${matchingRows === 1 ? 'row has' : 'rows have'} matching Available mods.`}</p>
+      <label><input type="checkbox" checked={showAll} onChange={event => setShowAll(event.target.checked)} />Show all equipment</label>
+    </div>}
     {!picker && preferenceNotice}
     <div className="equipment-primary">{PRIMARY_SLOTS.map(renderRow)}</div>
-    <details className="equipment-other"><summary id="other-equipment-summary">Other slots{build.equipment.some(selection => otherSlots.includes(selection.slot)) && <span className="muted"> · {build.equipment.filter(selection => otherSlots.includes(selection.slot)).length} selected</span>}</summary>
+    <details className="equipment-other" hidden={searching && !showAll && !otherSlots.some(slot => rowCount(slot) > 0)}><summary id="other-equipment-summary">Other slots{build.equipment.some(selection => otherSlots.includes(selection.slot)) && <span className="muted"> · {build.equipment.filter(selection => otherSlots.includes(selection.slot)).length} selected</span>}</summary>
       {otherSlots.map(renderRow)}
     </details>
     {picker && <EquipmentPicker {...picker} equipment={build.equipment} data={data} imported={imported} offhandConflict={offhandCount > 1} minimum={minimum} preferenceProtected={preferenceProtected} preferenceNotice={preferenceNotice} onMinimumChange={onMinimumChange} readOnly={readOnly} replacing={picker.index !== null}

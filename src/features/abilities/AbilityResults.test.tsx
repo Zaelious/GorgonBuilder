@@ -106,7 +106,7 @@ describe('T0014 ability results in the popover', () => {
     expect(rowText('health-specific')).toEqual(['Health hit:526.7 Psychic']);
     expect(section.textContent).toContain('Critical hitNot modeled');
     expect(control('.result-limits').textContent).toBe('Not included: special ability rules');
-    expect(control('.result-build-limits').textContent).toBe('Across build: 11 unmodeled effects; relevance to this ability is unknown.');
+    expect(control('.result-build-limits').textContent).toBe('Across build: 11 effects with unknown damage relevance; applicability to this ability is unconfirmed.');
     // Simple by default: math is on demand, after the visible values and before Relevant Mods.
     const breakdown = control<HTMLDetailsElement>('.calc-breakdown');
     expect(breakdown.open).toBe(false);
@@ -120,7 +120,7 @@ describe('T0014 ability results in the popover', () => {
     expect(steps[4]!.textContent).toContain('Head planned mod · +45% of base 178');
     expect(steps[4]!.getAttribute('title')).toContain('basis is the original published base only');
     expect(breakdown.textContent).toContain('Assumptions');
-    expect(breakdown.textContent).toContain('Unmodeled build effects (11)');
+    expect(breakdown.textContent).toContain('Unknown damage relevance (11)');
     expect(breakdown.querySelectorAll('[data-warning="critical-unavailable"]')).toHaveLength(1);
   });
 

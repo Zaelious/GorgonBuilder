@@ -1,0 +1,116 @@
+[
+  {
+    "mode": "dev",
+    "width": 1440,
+    "coreCounts": {
+      "Hands": 1,
+      "MainHand": 1,
+      "Racial": 5
+    },
+    "geometry": {
+      "left": 28.796875,
+      "right": 1411.1875,
+      "width": 1382.390625,
+      "scrollWidth": 1440,
+      "viewport": 1440
+    },
+    "damage": "96 Fire",
+    "consoleErrors": [],
+    "checks": "count parity, settings, target previews, other slots, imported/staged exclusions, focus, state/refresh, read-only, zero results, mixed damage warnings"
+  },
+  {
+    "mode": "dev",
+    "width": 375,
+    "coreCounts": {
+      "Hands": 1,
+      "MainHand": 1,
+      "Racial": 5
+    },
+    "geometry": {
+      "left": 16,
+      "right": 359,
+      "width": 343,
+      "scrollWidth": 375,
+      "viewport": 375
+    },
+    "damage": "96 Fire",
+    "consoleErrors": [],
+    "checks": "count parity, settings, target previews, other slots, imported/staged exclusions, focus, state/refresh, read-only, zero results, mixed damage warnings"
+  },
+  {
+    "mode": "dev",
+    "width": 320,
+    "coreCounts": {
+      "Hands": 1,
+      "MainHand": 1,
+      "Racial": 5
+    },
+    "geometry": {
+      "left": 16,
+      "right": 304,
+      "width": 288,
+      "scrollWidth": 322,
+      "viewport": 320
+    },
+    "damage": "96 Fire",
+    "consoleErrors": [],
+    "checks": "count parity, settings, target previews, other slots, imported/staged exclusions, focus, state/refresh, read-only, zero results, mixed damage warnings"
+  },
+  {
+    "mode": "preview",
+    "width": 1440,
+    "coreCounts": {
+      "Hands": 1,
+      "MainHand": 1,
+      "Racial": 5
+    },
+    "geometry": {
+      "left": 28.796875,
+      "right": 1411.1875,
+      "width": 1382.390625,
+      "scrollWidth": 1440,
+      "viewport": 1440
+    },
+    "damage": "96 Fire",
+    "consoleErrors": [],
+    "checks": "count parity, settings, target previews, other slots, imported/staged exclusions, focus, state/refresh, read-only, zero results, mixed damage warnings"
+  },
+  {
+    "mode": "preview",
+    "width": 375,
+    "coreCounts": {
+      "Hands": 1,
+      "MainHand": 1,
+      "Racial": 5
+    },
+    "geometry": {
+      "left": 16,
+      "right": 359,
+      "width": 343,
+      "scrollWidth": 375,
+      "viewport": 375
+    },
+    "damage": "96 Fire",
+    "consoleErrors": [],
+    "checks": "count parity, settings, target previews, other slots, imported/staged exclusions, focus, state/refresh, read-only, zero results, mixed damage warnings"
+  },
+  {
+    "mode": "preview",
+    "width": 320,
+    "coreCounts": {
+      "Hands": 1,
+      "MainHand": 1,
+      "Racial": 5
+    },
+    "geometry": {
+      "left": 16,
+      "right": 304,
+      "width": 288,
+      "scrollWidth": 322,
+      "viewport": 320
+    },
+    "damage": "96 Fire",
+    "consoleErrors": [],
+    "checks": "count parity, settings, target previews, other slots, imported/staged exclusions, focus, state/refresh, read-only, zero results, mixed damage warnings"
+  }
+]

@@ -946,7 +946,7 @@ T0008-F1 and T0010-F1 below are historical accepted UI follow-ups. T0008-F2 and 
 
 ## T0010-F2 — Equipment Mod Search Visibility and Damage Warning Relevance
 
-**Status:** Planned; product-owner approved 2026-11-04. Not implemented.
+**Status:** Implementation prepared on `feature/t0010-f2-mod-search-warnings` (2026-11-04); architect review and customer acceptance pending. [Verification and acceptance checklist](T0010_F2_Verification.md).
 
 **Complexity:** Standard
 

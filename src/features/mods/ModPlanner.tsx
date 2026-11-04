@@ -3,8 +3,9 @@ import type { EquipmentSelection } from '../../core/build/document';
 import type { CandidateModEdit } from '../../core/build/candidate-mods';
 import { isResolvedExistingPower, restoredExistingPowers, sameExistingPowers, type ExistingModEdit } from '../../core/build/existing-mods';
 import type { GameDataRepository } from '../../data/repository/repository';
-import { browseTreasurePowers, indexTreasurePowers, powerName, treasureRelevance, type TreasureContext, type TreasurePower, type TreasureRelevance } from '../../data/search/treasure';
-import { availableTreasurePowers, groupEffectiveMods, groupTreasurePowers, itemFit, type ItemFit, orderTreasureTiers, previewTreasureTiers, type ModTargetLevel, type TreasureTier } from '../../data/search/treasure-planning';
+import { indexTreasurePowers, powerName, type TreasureContext, type TreasurePower, type TreasureRelevance } from '../../data/search/treasure';
+import { itemFit, type ItemFit, orderTreasureTiers, previewTreasureTiers, type ModTargetLevel, type TreasureTier } from '../../data/search/treasure-planning';
+import { selectAvailableMods, type AvailableMods } from '../../data/search/available-mods';
 import { EffectDescriptions } from './EffectDescription';
 import { CandidateList } from './CandidateList';
 import { PowerFacts, TierFacts } from './PowerFacts';
@@ -48,23 +49,19 @@ function AvailablePower({ power, relevance, context, target, data, onAdd, readOn
 }
 
 /** Inline UI state is transient; candidate edits still use the existing schema/autosave. */
-export function ModPlanner({ selection, equipmentIndex, context, skillA, skillB, data, onEdit, readOnly, browser }: {
+export function ModPlanner({ selection, equipmentIndex, context, skillA, skillB, data, onEdit, readOnly, browser, available }: {
   selection: EquipmentSelection; equipmentIndex: number; context: TreasureContext; data: GameDataRepository;
   skillA: string | null; skillB: string | null; browser: ModBrowserState;
-  onEdit: (edit: CandidateModEdit | ExistingModEdit) => void; readOnly: boolean;
+  onEdit: (edit: CandidateModEdit | ExistingModEdit) => void; readOnly: boolean; available?: AvailableMods;
 }) {
   const id = useId();
-  const { query, target, allSkills, allSlots, categories } = browser;
+  const { target } = browser;
   const index = useMemo(() => indexTreasurePowers(data.treasurePowers), [data]);
-  const relevance = useMemo(() => new Map(data.treasurePowers.map(power => [power.id, treasureRelevance(power, context, data)])), [data, context]);
-  const effective = groupEffectiveMods(selection, skillA, skillB, data);
+  const { relevance, effective, groups } = useMemo(() => available ?? selectAvailableMods(selection, context, skillA, skillB, browser, data, index),
+    [available, selection, context, skillA, skillB, browser, data, index]);
   const selected = effective.filter(row => row.origin === 'planned' || (selection.item.kind === 'imported' && row.mod.tierId !== null && isResolvedExistingPower({ powerId: row.mod.powerId, tierId: row.mod.tierId }, data)));
-  const staged = new Set(effective.map(row => row.mod.powerId));
   const restore = useMemo(() => selection.item.kind === 'imported' ? restoredExistingPowers(selection.item.instance, data) : null, [selection.item, data]);
   const canRestore = restore !== null && selection.item.kind === 'imported' && !sameExistingPowers(restore, selection.item.instance.existingPowers);
-  const matches = useMemo(() => availableTreasurePowers(browseTreasurePowers(index, query, relevance, 'relevant'), relevance, staged, allSlots, data, context.skillIds),
-    [index, query, relevance, staged, allSlots, data, context.skillIds]);
-  const groups = useMemo(() => groupTreasurePowers(matches, context.skillIds, categories, allSkills, data), [matches, context.skillIds, categories, allSkills, data]);
   const active = context.skillIds.some(skill => data.getSkill(skill)?.combat);
   return <section className="mod-planner" aria-label={`Mods for equipment ${equipmentIndex + 1}`}>
     <div className="mod-columns">

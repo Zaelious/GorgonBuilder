@@ -305,7 +305,9 @@ For Mock 11 +43% and the 20 m conversion, test 1/5/6/7/8/9 enemies: the ×0.5
 ability penalty is independent of falloff; only 6–8 show Estimated. Verify the
 source link/equation in the collapsed breakdown and reachable Remove at mobile sizes.
 
-### T0010-F2 — Shared mod search visibility and damage-warning relevance (planned)
+### T0010-F2 — Shared mod search visibility and damage-warning relevance (implementation pending review/acceptance)
+
+[Implementation verification, browser screenshots and customer checklist](T0010_F2_Verification.md).
 
 1. Select two combat skills and equip database and imported items in several positions. Search `core`; equipment rows with zero matching **Available Mods** should temporarily disappear while matching rows show counts equal to their expanded Available lists. Check selected/staged exclusions and category/target settings.
 2. Toggle **Show all equipment** while searching and confirm hidden equipped slots remain reachable. Clear search to restore all nine primary rows and Other slots without losing equipment, mod selections, expansion state or focus.
