@@ -37,6 +37,7 @@
           "full": 5036,
           "partial": 54,
           "unmodeled": 11475,
+          "conditional": 473,
           "coverage": "30.40",
           "withPartial": "30.73"
         },
@@ -53,6 +54,7 @@
           "full": 5954,
           "partial": 54,
           "unmodeled": 10557,
+          "conditional": 473,
           "coverage": "35.94",
           "withPartial": "36.27"
         },
@@ -69,6 +71,7 @@
           "full": 9879,
           "partial": 1035,
           "unmodeled": 5651,
+          "conditional": 473,
           "coverage": "59.64",
           "withPartial": "65.89"
         },
@@ -87,6 +90,7 @@
           "full": 2254,
           "partial": 150,
           "unmodeled": 2351,
+          "conditional": 0,
           "coverage": "47.40",
           "withPartial": "50.56"
         },
@@ -103,6 +107,7 @@
           "full": 2257,
           "partial": 150,
           "unmodeled": 2348,
+          "conditional": 0,
           "coverage": "47.47",
           "withPartial": "50.62"
         },
@@ -119,6 +124,7 @@
           "full": 2320,
           "partial": 200,
           "unmodeled": 2235,
+          "conditional": 0,
           "coverage": "48.79",
           "withPartial": "53.00"
         },
@@ -137,6 +143,7 @@
           "full": 7290,
           "partial": 204,
           "unmodeled": 13826,
+          "conditional": 473,
           "coverage": "34.19",
           "withPartial": "35.15"
         },
@@ -153,6 +160,7 @@
           "full": 8211,
           "partial": 204,
           "unmodeled": 12905,
+          "conditional": 473,
           "coverage": "38.51",
           "withPartial": "39.47"
         },
@@ -169,6 +177,7 @@
           "full": 12199,
           "partial": 1235,
           "unmodeled": 7886,
+          "conditional": 473,
           "coverage": "57.22",
           "withPartial": "63.01"
         },
@@ -184,16 +193,17 @@
   "unconditionalFinal": {
     "combatSkill": {
       "entries": {
-        "total": 11012,
-        "full": 9854,
+        "total": 10539,
+        "full": 9381,
         "partial": 1035,
         "unmodeled": 123,
-        "coverage": "89.48",
-        "withPartial": "98.88"
+        "conditional": 0,
+        "coverage": "89.01",
+        "withPartial": "98.83"
       },
       "powers": {
-        "total": 483,
-        "full": 427,
+        "total": 469,
+        "full": 413,
         "partial": 49,
         "unmodeled": 7
       }
@@ -204,6 +214,7 @@
         "full": 2320,
         "partial": 200,
         "unmodeled": 550,
+        "conditional": 0,
         "coverage": "75.57",
         "withPartial": "82.08"
       },
@@ -216,16 +227,17 @@
     },
     "all": {
       "entries": {
-        "total": 14082,
-        "full": 12174,
+        "total": 13609,
+        "full": 11701,
         "partial": 1235,
         "unmodeled": 673,
-        "coverage": "86.45",
-        "withPartial": "95.22"
+        "conditional": 0,
+        "coverage": "85.98",
+        "withPartial": "95.05"
       },
       "powers": {
-        "total": 569,
-        "full": 489,
+        "total": 555,
+        "full": 475,
         "partial": 55,
         "unmodeled": 25
       }
@@ -256,7 +268,8 @@
   },
   "reasons": {
     "fully-calculated:burst-conversion": 25,
-    "fully-calculated:calculated": 12174,
+    "fully-calculated:calculated": 11701,
+    "fully-calculated:calculated-when-required-skill-active": 473,
     "partially-calculated:side-clause:aoe-conversion": 100,
     "partially-calculated:side-clause:damage-type-conversion": 244,
     "partially-calculated:side-clause:keyword-grant": 25,
@@ -275,6 +288,181 @@
     "unmodeled:stateful-combat-context": 2933,
     "unmodeled:unclassified-prose": 1,
     "unmodeled:unresolved-ability-name": 35
+  },
+  "requiredActiveSkillAudit": {
+    "publishedT0013F1": {
+      "combatSkill": {
+        "entries": 11012,
+        "fullCoverage": "89.48"
+      },
+      "generic": {
+        "entries": 3070,
+        "fullCoverage": "75.57"
+      },
+      "all": {
+        "entries": 14082,
+        "fullCoverage": "86.45"
+      }
+    },
+    "recomputedMixed": {
+      "combatSkill": {
+        "entries": {
+          "total": 11012,
+          "full": 9854,
+          "partial": 1035,
+          "unmodeled": 123,
+          "conditional": 473,
+          "coverage": "89.48",
+          "withPartial": "98.88"
+        },
+        "powers": {
+          "total": 483,
+          "full": 427,
+          "partial": 49,
+          "unmodeled": 7
+        }
+      },
+      "generic": {
+        "entries": {
+          "total": 3070,
+          "full": 2320,
+          "partial": 200,
+          "unmodeled": 550,
+          "conditional": 0,
+          "coverage": "75.57",
+          "withPartial": "82.08"
+        },
+        "powers": {
+          "total": 86,
+          "full": 62,
+          "partial": 6,
+          "unmodeled": 18
+        }
+      },
+      "all": {
+        "entries": {
+          "total": 14082,
+          "full": 12174,
+          "partial": 1235,
+          "unmodeled": 673,
+          "conditional": 473,
+          "coverage": "86.45",
+          "withPartial": "95.22"
+        },
+        "powers": {
+          "total": 569,
+          "full": 489,
+          "partial": 55,
+          "unmodeled": 25
+        }
+      }
+    },
+    "trulyUnconditional": {
+      "combatSkill": {
+        "entries": {
+          "total": 10539,
+          "full": 9381,
+          "partial": 1035,
+          "unmodeled": 123,
+          "conditional": 0,
+          "coverage": "89.01",
+          "withPartial": "98.83"
+        },
+        "powers": {
+          "total": 469,
+          "full": 413,
+          "partial": 49,
+          "unmodeled": 7
+        }
+      },
+      "generic": {
+        "entries": {
+          "total": 3070,
+          "full": 2320,
+          "partial": 200,
+          "unmodeled": 550,
+          "conditional": 0,
+          "coverage": "75.57",
+          "withPartial": "82.08"
+        },
+        "powers": {
+          "total": 86,
+          "full": 62,
+          "partial": 6,
+          "unmodeled": 18
+        }
+      },
+      "all": {
+        "entries": {
+          "total": 13609,
+          "full": 11701,
+          "partial": 1235,
+          "unmodeled": 673,
+          "conditional": 0,
+          "coverage": "85.98",
+          "withPartial": "95.05"
+        },
+        "powers": {
+          "total": 555,
+          "full": 475,
+          "partial": 55,
+          "unmodeled": 25
+        }
+      }
+    },
+    "requiredActiveSkill": {
+      "combatSkill": {
+        "entries": {
+          "total": 473,
+          "full": 473,
+          "partial": 0,
+          "unmodeled": 0,
+          "conditional": 473,
+          "coverage": "100.00",
+          "withPartial": "100.00"
+        },
+        "powers": {
+          "total": 16,
+          "full": 16,
+          "partial": 0,
+          "unmodeled": 0
+        }
+      },
+      "generic": {
+        "entries": {
+          "total": 0,
+          "full": 0,
+          "partial": 0,
+          "unmodeled": 0,
+          "conditional": 0,
+          "coverage": "—",
+          "withPartial": "—"
+        },
+        "powers": {
+          "total": 0,
+          "full": 0,
+          "partial": 0,
+          "unmodeled": 0
+        }
+      },
+      "all": {
+        "entries": {
+          "total": 473,
+          "full": 473,
+          "partial": 0,
+          "unmodeled": 0,
+          "conditional": 473,
+          "coverage": "100.00",
+          "withPartial": "100.00"
+        },
+        "powers": {
+          "total": 16,
+          "full": 16,
+          "partial": 0,
+          "unmodeled": 0
+        }
+      }
+    }
   },
   "legacyReport": {
     "previousFullCoverage": "22.83",

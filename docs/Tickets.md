@@ -886,6 +886,34 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 4. Review new unconditional vs required-active-skill coverage counts and synthetic applicability tests.
 
 
+## T0008-F2-R1 — Review Corrections: Conditional Coverage Audit, Mark Weakness Grouping, Public Variant Labels
+
+**Status:** Implemented on the T0008-F2 branch and [draft PR #39](https://github.com/Zaelious/GorgonBuilder/pull/39) (2026-11-04); awaiting customer hands-on with T0008-F2. [Verification](T0008_F2_Verification.md).
+
+**Complexity:** Standard
+
+**Verification:** Customer hands-on
+
+**Goal:** Correct the PR #39 review findings without changing damage calculations.
+
+**Dependencies:** T0008-F2 (unmerged).
+
+**Allowed areas:** the T0008-F2 areas, the generated `docs/treasure-coverage` artifacts, and one CI step running `coverage:treasure -- --check`.
+
+**Do not touch:** damage engine behavior, keyword rules, role derivation, category Relevant Mods matching, BuildDocument v1, saved IDs, rank semantics, bar persistence, non-combat skill grouping.
+
+**Requirements:**
+1. Report required-active-skill treasure entries as conditional calculations. Use an explicit probe with the required skill as the second active skill, reason `calculated-when-required-skill-active` and recorded `requiredSkillsActivated`. Never label them `no-applicable-published-hit` or unmodeled when that probe applies them. Count them as calculated, in a separate Conditional column, and exclude them from the unconditional subset.
+2. Published snapshot figures and the legacy 5,044 test must reproduce unchanged.
+3. The comparison table cites the published T0013-F1 unconditional figures (11,012 / 3,070 / 14,082 entries; 89.48 / 75.57 / 86.45%).
+4. Regenerate and commit the reports. CI runs `npm run coverage:treasure -- --check`.
+5. Eighth family, customer-approved 2026-11-04: Animal Handling Mark Weakness, `ability_4231..4240` + `ability_4241..4250`.
+6. Public variant labels contain no InternalNames or data-model jargon. InternalName ranges are debug-only.
+7. Equipped non-standard-series abilities show their series tag.
+8. Calculate the popover damage result once.
+
+**Acceptance criteria:** coverage `--check` passes locally and in CI. 473 required-skill entries are conditional, and none are reported missing. Published figures reproduce. Exactly eight families / 16 series are grouped, and Mark Weakness is one row. No internal names appear in public picker text. Lint, typecheck, tests, build and `git diff --check` pass.
+
 ## T0010-F1 — Shared Equipment Mod Controls and Compact Item Metadata
 
 **Status:** Customer-accepted and squash-merged 2026-11-02 via [PR #28](https://github.com/Zaelious/GorgonBuilder/pull/28), commit `a1b2d6d73123d7aa1fd1bc7cf19dd4fa26497743`. Shared mod search/settings persist across equipment rows, STATS remain prominent, item source metadata is collapsed, and confirmed Clear build preserves imported inventory/preferences and protected drafts. Repeated item-level help was removed in the final correction; one compact **How mod filtering works** help lives in shared settings. 727 tests, GitHub CI and Cloudflare PR-preview build passed. [Verification report](../src/features/equipment/verification/T0010-F1.md). Customer approved merging; the final correction's Chromium smoke was blocked by its execution environment, so narrow-screen interactive guidance remains a normal regression check.

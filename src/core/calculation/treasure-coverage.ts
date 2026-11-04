@@ -44,6 +44,11 @@ export interface CoverageEvidence {
   appliedAbilityIds: string[];
   uncertainAbilityIds: string[];
   confidence: ValidationConfidence | null;
+  /**
+   * Official third-token required skills activated, alongside the tested ability's own skill, by the explicit
+   * required-skill probe (a two-skill build that satisfies the condition). Absent for unconditional entries.
+   */
+  requiredSkillsActivated?: string[];
 }
 
 export interface TreasureCoverageRow {
@@ -75,6 +80,7 @@ export function requiresActiveSkillForCoverage(row: Pick<TreasureCoverageRow, 'r
 
 export const COVERAGE_REASONS: Record<string, string> = {
   calculated: 'Direct contribution reaches every applicable published combat hit through the existing additive stages.',
+  'calculated-when-required-skill-active': 'Conditional: the effect requires an official active skill. Calculated for every applicable published combat hit when that skill is also one of the build\'s two active skills; never assumed active otherwise.',
   'burst-conversion': 'Exact Mock Burst conversion and independent ×0.5 multiplier; Burst falloff intermediate counts are estimated.',
   'split-component-allocation': 'Applied to single-component hits; abilities with several published hit components keep the flat uncertain (allocation unvalidated).',
   'some-targets-without-hits': 'At least one named target ability/attribute has no computable combat hit; the others are calculated.',
@@ -232,12 +238,15 @@ export function inventoryTreasureEffects(data: GameDataRepository): TreasureCove
   ];
   const combat = new Set(data.skills.filter(s => s.combat).map(s => s.id));
   const abilities = data.abilities.filter(a => combat.has(a.skill.skillId ?? ''));
-  const supportCache = new Map<string, { applied: string[]; uncertain: string[] }>();
+  const supportCache = new Map<string, { applied: string[]; uncertain: string[]; requiredSkills: string[] }>();
   function support(m: NormalizedModifier, aggregation: ModifierAggregationResult, snapshot: Snapshot) {
     const key = JSON.stringify([snapshot.context === data, m.attributeId, m.category, m.scope, m.value === 0, m.conditions]);
     const cached = supportCache.get(key);
     if (cached) return cached;
     const applied: string[] = [], uncertain: string[] = [];
+    // Explicit required-skill probe: an official third-token requirement is satisfied only by a two-skill build that
+    // also has that skill active. The evidence records these skills, so the result is reported as conditional.
+    const requiredSkills = [...new Set(m.conditions.flatMap(c => c.kind === 'requires-active-skill' ? [c.skillId] : []))].sort();
     for (const ability of abilities) {
       const scope = m.scope;
       const hooks = damageHooksForAbility(ability, snapshot.context);
@@ -245,16 +254,14 @@ export function inventoryTreasureEffects(data: GameDataRepository): TreasureCove
       if (scope.kind === 'damage-type' && scope.damageType !== ability.damage.damageType && !ability.pve.dots?.some(d => d.damageType === scope.damageType)) continue;
       if (scope.kind === 'ability-attribute-hook' && !hooks[scope.hook]?.includes(scope.attributeId)
         && !ability.pve.dots?.some(d => d.attributeHooks[scope.hook]?.includes(scope.attributeId))) continue;
-      // Probe only the tested ability's active skill. The old audit silently activated the
-      // modifier's required skill too, reporting unmet cross-skill conditions as universal.
       const input = { ...aggregation, modifiers: [m], unsupported: [], warnings: [],
-        activeSkillIds: [ability.skill.skillId!] };
+        activeSkillIds: [...new Set([ability.skill.skillId!, ...requiredSkills])] };
       // Direct hit components only: DoT uncertainty is an other-mechanic (DoT stage), not a direct-damage gap.
       const decisions = calculateAbilityDamage(ability.id, input, snapshot.context).components.filter(c => c.delivery === 'direct').flatMap(c => c.decisions);
       if (decisions.some(d => d.status === 'applied')) applied.push(ability.id);
       if (decisions.some(d => d.status === 'uncertain')) uncertain.push(ability.id);
     }
-    const value = { applied, uncertain };
+    const value = { applied, uncertain, requiredSkills };
     supportCache.set(key, value);
     return value;
   }
@@ -277,6 +284,8 @@ export function inventoryTreasureEffects(data: GameDataRepository): TreasureCove
     const probes = damage.map(m => support(m, aggregation, snapshot));
     const appliedAbilityIds = [...new Set(probes.flatMap(p => p.applied))];
     const uncertainAbilityIds = [...new Set(probes.flatMap(p => p.uncertain))];
+    const requiredSkills = [...new Set(probes.flatMap(p => p.requiredSkills))].sort();
+    const conditional = requiredSkills.length ? { requiredSkillsActivated: requiredSkills } : {};
     // Outside mechanics keep their probe results for audit but never enter the direct denominator.
     if (!row.direct) return { ...empty('outside-direct', 'outside-direct'), rules, mappings, appliedAbilityIds, uncertainAbilityIds };
     if (!appliedAbilityIds.length) {
@@ -288,13 +297,14 @@ export function inventoryTreasureEffects(data: GameDataRepository): TreasureCove
         reason = grammar.reason === 'unresolved-name' ? 'unresolved-ability-name' : grammar.reason === 'no-damage-attribute' ? 'no-official-damage-attribute'
           : grammar.reason === 'ambiguous-damage-attribute' ? 'ambiguous-damage-attribute' : 'unclassified-prose';
       }
-      return { ...empty('unmodeled', reason), rules, mappings, uncertainAbilityIds };
+      return { ...empty('unmodeled', reason), rules, mappings, uncertainAbilityIds, ...conditional };
     }
     // A sentence interpreted by a curated rule or the grammar reports its recognized damage-affecting side clauses.
     const side = curated?.kind === 'drafts' && grammar?.ok ? grammar.remainder.direct : [];
     const reason = uncertainAbilityIds.length ? 'split-component-allocation' : probes.some(p => !p.applied.length) ? 'some-targets-without-hits'
-      : side.length ? `side-clause:${side[0]}` : 'calculated';
-    return { status: reason === 'calculated' ? 'fully-calculated' : 'partially-calculated', reason, rules, mappings, appliedAbilityIds, uncertainAbilityIds, confidence };
+      : side.length ? `side-clause:${side[0]}` : requiredSkills.length ? 'calculated-when-required-skill-active' : 'calculated';
+    const full = reason === 'calculated' || reason === 'calculated-when-required-skill-active';
+    return { status: full ? 'fully-calculated' : 'partially-calculated', reason, rules, mappings, appliedAbilityIds, uncertainAbilityIds, confidence, ...conditional };
   }
 
   const rows: TreasureCoverageRow[] = [];

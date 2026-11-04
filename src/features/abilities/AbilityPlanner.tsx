@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { AbilitySelection, EquipmentSelection, SkillSlot } from '../../core/build/document';
 import type { GameDataRepository } from '../../data/repository/repository';
 import { COMBAT_BAR_SIZE, selectionWarnings, type BuildEdit, type Slot } from '../../app/editor/build-editor';
@@ -32,9 +32,11 @@ const NO_EQUIPMENT: readonly EquipmentSelection[] = [];
 /** Ability facts with Relevant Mods; each mod's provenance is listed on demand in Technical details. */
 function PopoverFacts({ id, ability, equipment, data, damageInputs }: { id: string; ability: NonNullable<ReturnType<GameDataRepository['getAbility']>>; equipment: readonly EquipmentSelection[]; data: GameDataRepository; damageInputs: AbilityDamageInputs | undefined }) {
   const rows = useRelevantModRows(ability, equipment, data);
-  const damageResult = damageInputs ? calculateAbilityDamage(ability.id, damageInputs.aggregation, data) : null;
+  // One calculation per popover, shared by the damage results and the Relevant Mods inclusion status.
+  const damageResult = useMemo(() => damageInputs ? calculateAbilityDamage(ability.id, damageInputs.aggregation, data) : null,
+    [ability.id, damageInputs, data]);
   return <AbilityFacts ability={ability} afterStats={<>
-    {damageInputs && <AbilityResults ability={ability} inputs={damageInputs} data={data} idPrefix={id} />}
+    {damageInputs && <AbilityResults ability={ability} inputs={damageInputs} data={data} idPrefix={id} result={damageResult ?? undefined} />}
     <RelevantMods rows={rows} equipment={equipment} data={data} idPrefix={id} damageResult={damageResult} />
   </>}
     technical={<RelevantModSources rows={rows} equipment={equipment} data={data} idPrefix={id} />} />;

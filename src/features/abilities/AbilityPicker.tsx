@@ -8,6 +8,7 @@ import { groupPickerAbilities } from './presentation-groups';
 import { AbilityIcon } from './AbilityIcon';
 import { AbilityFacts } from './AbilityFacts';
 import { abilityRoles } from './roles';
+import { damageDebugEnabled } from './damage-debug';
 import { useSessionFlag } from '../../app/useSessionFlag';
 
 interface Props {
@@ -47,6 +48,8 @@ export function AbilityPicker({ slot, skill, data, bar, full, replaceIndex, retu
   const selectedCount = (ability: Ability) => bar.filter(selection => selection.abilityId === ability.id && selection.rank === ability.rank).length;
   const selectedLabel = (count: number) => count === 1 ? 'On this bar' : `On this bar ×${count}`;
   const blocked = full && replaceIndex === null;
+  const debug = damageDebugEnabled();
+  const abilityCount = (count: number) => `${count} ${count === 1 ? 'ability' : 'abilities'}`;
 
   useEffect(() => {
     const element = dialog.current!;
@@ -112,11 +115,13 @@ export function AbilityPicker({ slot, skill, data, bar, full, replaceIndex, retu
               </article>;
           return <div className="family" key={group.id}>
             <details>
-              <summary><AbilityIcon ability={highest} version={data.gameDataVersion} /><span className="family-title">{group.name}<small>{group.isVariantFamily ? `${group.variants.length} verified variant series · select series then exact ability` : `${group.abilities.length} published ${group.abilities.length === 1 ? 'tier' : 'tiers'}`}{group.abilities.some(ability => selectedCount(ability) > 0) && ' · On this bar'}</small>
+              <summary><AbilityIcon ability={highest} version={data.gameDataVersion} /><span className="family-title">{group.name}<small>{!group.isVariantFamily ? `${group.abilities.length} published ${group.abilities.length === 1 ? 'tier' : 'tiers'}`
+                : group.variants.length > 1 ? `${group.variants.length} versions` : abilityCount(group.abilities.length)}{group.abilities.some(ability => selectedCount(ability) > 0) && ' · On this bar'}</small>
                 {quick?.kind === 'none' && <small className="quick-add-none">No tier at or below Lv {skill.level} (lowest is Lv {quick.lowestLevel}). Expand to choose any tier.</small>}</span></summary>
-              <div className="family-tiers">{group.isVariantFamily
+              <div className="family-tiers">{group.isVariantFamily && group.variants.length > 1
                 ? group.variants.map(variant => <details className="ability-variant" key={variant.id}>
-                    <summary><span>{variant.name}</span><small>{variant.abilities.length} published {variant.abilities.length === 1 ? 'ability' : 'abilities'}{variant.canonicalGroups.length > 1 ? ' · separate official IDs' : ' · UpgradeOf group'}{variant.abilities.some(ability => selectedCount(ability) > 0) ? ' · On this bar' : ''}</small></summary>
+                    <summary><span>{variant.name}</span><small>{abilityCount(variant.abilities.length)}{variant.abilities.some(ability => selectedCount(ability) > 0) ? ' · On this bar' : ''}
+                      {debug && <span className="variant-internal"> · {variant.internal}</span>}</small></summary>
                     {variant.abilities.map(tier)}
                   </details>)
                 : group.abilities.map(tier)}</div>

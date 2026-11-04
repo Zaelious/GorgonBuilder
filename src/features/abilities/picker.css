@@ -8,6 +8,7 @@
 .ability-picker .quick-add-none { display: block; color: var(--color-warning); }
 
 .ability-role-labels { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-block: 0.3rem; }
+.ability-series { display: inline-block; font-size: 0.7rem; line-height: 1.35; padding: 0.12rem 0.38rem; border: 1px solid var(--color-warning); border-radius: 0.35rem; color: var(--color-text); background: var(--color-surface); }
 .ability-role { display: inline-block; font-size: 0.7rem; line-height: 1.35; padding: 0.12rem 0.38rem; border: 1px solid var(--color-border); border-radius: 0.35rem; color: var(--color-text); background: var(--color-surface); }
 
 .ability-picker .ability-variant { margin: 0.25rem 0; border: 1px solid var(--color-border); border-radius: 0.4rem; }

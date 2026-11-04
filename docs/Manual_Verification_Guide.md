@@ -321,8 +321,8 @@ source link/equation in the collapsed breakdown and reachable Remove at mobile s
 
 1. Inspect Basic/Core/Nice/Epic and all five other supported ability-role labels in the picker and equipped ability details. Cross-check official keyword data; do not display conditional membership as unconditional.
 2. Equip a Core/Nice/Epic/category bonus, verify it appears as relevant for the correct ability and contributes direct damage only when the existing engine has a supported hook. Excluded abilities remain unaffected. Healing/utility mods can be source-relevant without a fabricated damage/healing calculation.
-3. For Vampirism Blood Mist, Animal Handling Call Stabled Pet, Bard SoD, Mentalism Mindworm, Necromancy SZ, Priest Triage and Priest Flamestrike, choose two different published variants/ranks. Confirm exact IDs, search, rank restrictions, selected markers, add/replace/removal and autosave. Other families remain unchanged.
-4. Inspect regenerated T0013-F1 audit and tests separating truly unconditional from required-active-skill damage entries. Check 1440/375/320 px, keyboard and long-scroll behavior.
+3. For Vampirism Blood Mist, Animal Handling Call Stabled Pet and Mark Weakness, Bard SoD, Mentalism Mindworm, Necromancy SZ, Priest Triage and Priest Flamestrike, choose two different published variants/ranks. Confirm exact identities, readable series labels without InternalNames, search, selected markers, add/replace/removal and autosave. A non-standard series (e.g. Flamestrike "Alternate version A") shows its tag in the equipped ability popover. Other families remain unchanged.
+4. Inspect the regenerated T0013-F1 audit. Required-active-skill entries are in the Conditional column, not unmodeled, and published figures reproduce. Spot-check `power_12191`: Sword + Animal Handling includes it, Sword + Archery does not. Check 1440/375/320 px, keyboard and long-scroll behavior.
 
 ### T0013-F2 — Anatomy/Phrenology critical calculations (planned)
 
