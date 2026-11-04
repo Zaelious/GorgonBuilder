@@ -67,6 +67,12 @@ export interface TreasureCoverageRow {
   t0014: CoverageEvidence; initial: CoverageEvidence; final: CoverageEvidence;
 }
 
+/** Distinguish a conditional third-token required skill from a truly unconditional bonus. */
+export function requiresActiveSkillForCoverage(row: Pick<TreasureCoverageRow, 'requiredSkillId' | 'final'>): boolean {
+  return row.requiredSkillId !== null || row.final.mappings.some(mapping =>
+    mapping.conditions.some(condition => condition.kind === 'requires-active-skill'));
+}
+
 export const COVERAGE_REASONS: Record<string, string> = {
   calculated: 'Direct contribution reaches every applicable published combat hit through the existing additive stages.',
   'burst-conversion': 'Exact Mock Burst conversion and independent ×0.5 multiplier; Burst falloff intermediate counts are estimated.',
@@ -239,8 +245,10 @@ export function inventoryTreasureEffects(data: GameDataRepository): TreasureCove
       if (scope.kind === 'damage-type' && scope.damageType !== ability.damage.damageType && !ability.pve.dots?.some(d => d.damageType === scope.damageType)) continue;
       if (scope.kind === 'ability-attribute-hook' && !hooks[scope.hook]?.includes(scope.attributeId)
         && !ability.pve.dots?.some(d => d.attributeHooks[scope.hook]?.includes(scope.attributeId))) continue;
+      // Probe only the tested ability's active skill. The old audit silently activated the
+      // modifier's required skill too, reporting unmet cross-skill conditions as universal.
       const input = { ...aggregation, modifiers: [m], unsupported: [], warnings: [],
-        activeSkillIds: [ability.skill.skillId!, ...m.conditions.flatMap(c => c.kind === 'requires-active-skill' ? [c.skillId] : [])] };
+        activeSkillIds: [ability.skill.skillId!] };
       // Direct hit components only: DoT uncertainty is an other-mechanic (DoT stage), not a direct-damage gap.
       const decisions = calculateAbilityDamage(ability.id, input, snapshot.context).components.filter(c => c.delivery === 'direct').flatMap(c => c.decisions);
       if (decisions.some(d => d.status === 'applied')) applied.push(ability.id);
