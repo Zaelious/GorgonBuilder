@@ -26,7 +26,7 @@ it('Core, Nice, Epic and Basic Attack damage attributes match only their publish
     expect(matchAbilityEffect(other!, `{${attribute}}{0.25}`, index)).toBeNull();
     const hooks = damageHooksForAbility(ability!, data);
     const kind = attribute.startsWith('BOOST_') ? 'AttributesThatDeltaDamage' : 'AttributesThatModDamage';
-    expect(hooks[kind].filter(id => id === attribute)).toHaveLength(1); // no double contribution when direct and category hooks coincide
+    expect((hooks[kind] ?? []).filter(id => id === attribute)).toHaveLength(1); // no double contribution when direct and category hooks coincide
   }
 });
 
