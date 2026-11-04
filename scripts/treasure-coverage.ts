@@ -207,7 +207,7 @@ ${unconditionalTable}
 
 ${conditionalTable}
 
-`requiredActiveSkillAudit` in [summary.json](summary.json) retains both the earlier mixed subset and the corrected denominators. A required skill can match the tested ability's skill, but is never assumed active merely because the treasure effect requires it.
+\`requiredActiveSkillAudit\` in [summary.json](summary.json) retains both the earlier mixed subset and the corrected denominators. A required skill can match the tested ability's skill, but is never assumed active merely because the treasure effect requires it.
 
 Remaining unconditional gaps are listed by reason below (no published combat hit, split hit components, unresolved names).
 
