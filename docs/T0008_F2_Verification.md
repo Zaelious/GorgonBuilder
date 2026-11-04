@@ -14,7 +14,7 @@
   5. Necromancy internal SZ: `ability_3273..3279`, `ability_3292`, `ability_2234`, `ability_2278..2279` (11 IDs; `SuperZombie1..11`).
   6. Priest Triage: `ability_9081..9091`, `ability_9101..9111` (22 IDs).
   7. Priest Flamestrike: `ability_9061..9071`, `ability_9211..9234` (35 IDs).
-- These are **presentation families** only. The existing `UpgradeOf` components remain the sole rank/tier grouping, and internal triggered variants are never assumed to be progressions. Each official ID remains individually selectable with its exact description, level and rank. The multi-variant rows have no ambiguous default quick-add.
+- These are **presentation families** only. The existing `UpgradeOf` components remain the sole rank/tier grouping, and internal triggered variants are never assumed to be progressions. Each official ID remains individually selectable with its exact description, level and rank. The compact presentation exposes 14 verified internal/regular sub-series across seven families. Separate source IDs do not acquire invented upgrade links. The multi-variant rows have no ambiguous default quick-add.
 - Category-based Relevant Mods now use the same guarded static `abilitykeywords` rule predicate as direct-hit hooks; source-relevant and actually-calculated status are distinct. Required-active-skill or effect-gated keyword rules still fail closed. The shared damage hook set prevents duplicate attribute contributions.
 - T0013-F1 audit probes no longer force required-active-skill modifiers active. The generated summary will report `requiredActiveSkillAudit.priorMixed`, `trulyUnconditional` and `requiredActiveSkill` separately.
 
@@ -23,7 +23,7 @@
 - `src/features/abilities/presentation-groups.test.ts`: all nine labels, static versus conditional, exactly seven verified groups, exact ID conservation, partial-group fail-closed behavior, ordinary grouping.
 - `src/data/search/ability-category-mods.test.ts`: category matching by official keywords and exclusions, non-damage source relevance, active-skill/effect gating, real `AnySkill` Core treasure contribution.
 - `src/core/calculation/treasure-coverage.test.ts`: audit predicate for source and mapped conditions.
-- `src/data/search/ability-mods.test.ts`: updated legitimate Projectile-wide matching while preserving no generic skill/incorrect ability-attribute inference.
+- `src/data/search/ability-mods.test.ts`: updated legitimate Ranged category matching while preserving no generic skill/incorrect ability-attribute inference.
 
 ## Verification status and remaining gates
 
