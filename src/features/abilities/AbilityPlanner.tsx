@@ -10,6 +10,7 @@ import './bar.css';
 import { RelevantMods, RelevantModSources, useRelevantModRows } from './RelevantMods';
 import { choosePopoverPlacement, tooltipWidth } from './popover-placement';
 import { AbilityResults, type AbilityDamageInputs } from './AbilityResults';
+import { calculateAbilityDamage } from '../../core/calculation/ability-damage';
 
 interface Props {
   slot: Slot;
@@ -31,9 +32,10 @@ const NO_EQUIPMENT: readonly EquipmentSelection[] = [];
 /** Ability facts with Relevant Mods; each mod's provenance is listed on demand in Technical details. */
 function PopoverFacts({ id, ability, equipment, data, damageInputs }: { id: string; ability: NonNullable<ReturnType<GameDataRepository['getAbility']>>; equipment: readonly EquipmentSelection[]; data: GameDataRepository; damageInputs: AbilityDamageInputs | undefined }) {
   const rows = useRelevantModRows(ability, equipment, data);
+  const damageResult = damageInputs ? calculateAbilityDamage(ability.id, damageInputs.aggregation, data) : null;
   return <AbilityFacts ability={ability} afterStats={<>
     {damageInputs && <AbilityResults ability={ability} inputs={damageInputs} data={data} idPrefix={id} />}
-    <RelevantMods rows={rows} equipment={equipment} data={data} idPrefix={id} />
+    <RelevantMods rows={rows} equipment={equipment} data={data} idPrefix={id} damageResult={damageResult} />
   </>}
     technical={<RelevantModSources rows={rows} equipment={equipment} data={data} idPrefix={id} />} />;
 }
