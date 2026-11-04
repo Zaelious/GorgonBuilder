@@ -1,6 +1,6 @@
 # T0010-F2 — Final customer acceptance corrections
 
-Existing PR: [#38](https://github.com/Zaelious/GorgonBuilder/pull/38). Branch: `feature/t0010-f2-mod-search-warnings`, based on main `f3e9372`. Customer acceptance remains pending. Do not merge automatically.
+**Accepted and squash-merged 2026-11-04:** [PR #38](https://github.com/Zaelious/GorgonBuilder/pull/38), merge commit [`34d7cd73f948903ba602ad26bd21410efb1dbeab`](https://github.com/Zaelious/GorgonBuilder/commit/34d7cd73f948903ba602ad26bd21410efb1dbeab). Product owner approved the final responsive search and compact numerical public breakdown after manual retesting. Final reviewed PR head: `45ceb2a8b5e15524f604798fbbe81d72def23a15`.
 
 ## Search diagnosis and correction
 
@@ -53,6 +53,8 @@ The Chromium script runs dev and production preview at **1440×900, 375×900 and
 Public damage: [desktop](verification/t0010-f2/preview-1440-damage.png), [320 px](verification/t0010-f2/preview-320-damage.png). Developer-only diagnostics: [dev](verification/t0010-f2/dev-1440-debug.png).
 
 ## Customer acceptance checklist
+
+**Customer result:** Passed and approved for merge on 2026-11-04; review and final-head GitHub/Cloudflare checks passed. The below checks are retained as reproducible regression steps.
 
 - [ ] Type rapidly, paste and clear during a pending query. Input remains responsive and stale text never changes results later.
 - [ ] Search Available and Selected, including off-skill/outside-profile/category-disabled powers, imported working pairs, unresolved IDs/tiers and duplicate working occurrences. Compare separate counts with visible entries.

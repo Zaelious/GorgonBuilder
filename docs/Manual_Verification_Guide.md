@@ -154,7 +154,7 @@ This is a separate narrow preflight PR, not part of T0009's equipment UI.
 
 ## Calculation Tickets
 
-**Public UI correction (T0010-F2, 2026-11-04):** calculation breakdowns and technical source records referenced in historical acceptance steps below are now available only on the Vite development server with `?debugDamage=1`. Normal public damage views show calculated values and concise Estimated/Unavailable status. Production preview ignores the flag. Engine diagnostics remain complete and automated tests still inspect them.
+**Public UI correction (T0010-F2, accepted and merged 2026-11-04):** ordinary users can expand a default-collapsed, named, numerical **Damage breakdown** with applicable source contributions, target multipliers and final hits. Long technical diagnostic inventories, provenance IDs and implementation assumptions are available only on the Vite development server with `?debugDamage=1`; production preview ignores the flag. Public status is Estimated or Unavailable where applicable. Engine diagnostics remain complete and tested.
 
 ### T0012 accepted modifier aggregation (2026-11-02)
 
@@ -307,14 +307,14 @@ For Mock 11 +43% and the 20 m conversion, test 1/5/6/7/8/9 enemies: the ×0.5
 ability penalty is independent of falloff; only 6–8 show Estimated. Verify the
 source link/equation in the collapsed breakdown and reachable Remove at mobile sizes.
 
-### T0010-F2 — Shared mod search and public damage results (customer corrections pending acceptance)
+### T0010-F2 — Shared mod search and public damage results (customer-accepted; PR #38 merged 2026-11-04)
 
 [Verification, current screenshots and acceptance checklist](T0010_F2_Verification.md).
 
 1. Equip database and imported items. Type rapidly and paste into Search mods: text responds immediately, with results settling after 190 ms. Clear during pending typing; stale results must not return. Check shared settings during a pending query.
 2. Compare each row's **Available · Selected** counts with both visible lists. Search a staged or editable imported power that Available skill/category/profile filters exclude. Search unresolved saved IDs and tiers; their data must remain intact and unresolved imported working pairs read-only. Remove a visible filtered row and verify the original saved index is edited.
 3. Toggle Show all, clear and refresh. Confirm equipment, working tiers, imported metadata and modifications survive. Verify nine primary rows and Other slots return, disclosure states survive filtering, and hidden/focused controls have usable focus recovery. Repeat in read-only builds and at 1440/375/320 px.
-4. Inspect supported, partial and unavailable damage cases. Public views show truthful values/status, target controls and no internal breakdowns, inventories, source IDs, implementation assumptions or technical warning lists. Damage numbers must match the engine.
+4. Inspect supported, estimated and unavailable damage cases. Public views show truthful values/status, target controls and an expandable **numerical Damage breakdown** with named contributions but no diagnostic inventories, source IDs, implementation assumptions or technical warning lists. Damage numbers must match the engine.
 5. In development only, open `/?debugDamage=1`: inspect retained damage/secondary/unknown classification, source provenance, assumptions and full breakdowns. Production preview with the same flag must still show the simplified public view. Run the complete quality suite and six Chromium dev/preview viewport checks.
 
 ### T0008-F2 — Official ability roles, Relevant Mods and scoped variant grouping (planned)

@@ -773,7 +773,7 @@ Guidelines:
 
 ## Approved UI Follow-ups — Historical and Post-T0013-F1
 
-T0008-F1 and T0010-F1 below are historical accepted UI follow-ups. T0008-F2 and T0010-F2 are new product-owner-approved work planned for **after** merged T0013-F1. Implement each ticket on its own feature branch; documenting a ticket does not start or complete its implementation. Neither ticket should change unrelated critical/Spark systems.
+T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. T0008-F2 is the next approved unimplemented ticket, followed by T0013-F2 and T0015 Sparks. Implement each ticket on its own feature branch; documenting a ticket does not start or complete its implementation. Follow-up tickets must respect their stated scope.
 
 ## T0008-F1 — Imported Effective Skill Levels and Ability Picker UX
 
@@ -946,7 +946,7 @@ T0008-F1 and T0010-F1 below are historical accepted UI follow-ups. T0008-F2 and 
 
 ## T0010-F2 — Equipment Mod Search Visibility and Damage Warning Relevance
 
-**Status:** Implementation prepared on `feature/t0010-f2-mod-search-warnings` (2026-11-04); architect review and customer acceptance pending. [Verification and acceptance checklist](T0010_F2_Verification.md).
+**Status:** Customer-accepted and squash-merged 2026-11-04 via [PR #38](https://github.com/Zaelious/GorgonBuilder/pull/38), commit `34d7cd73f948903ba602ad26bd21410efb1dbeab`. Final customer check accepted the responsive Available/Selected search and compact public numerical Damage breakdown; GitHub CI and Cloudflare passed at the reviewed final head, with 1,042 tests and Chromium dev/preview checks at 1440/375/320 px. [Verification](T0010_F2_Verification.md).
 
 **Complexity:** Standard
 

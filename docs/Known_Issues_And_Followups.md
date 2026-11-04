@@ -153,7 +153,7 @@ The published attribute token syntax is parsed separately in `src/features/mods/
   creature-type entries and 250 Elite entries.
 - **Target/state condition and buff toggles** for 2,563 conditional and 2,933 stateful
   direct entries (sub-families listed in the report).
-- **T0010-F2 (PR #38, customer corrections pending):** distinguish secondary-only remainders from unresolved damage internally. The final customer decision makes inventories, provenance and formula diagnostics explicit development/debug-only; public results retain truthful values and concise Estimated/Unavailable status. Search now includes both Available and Selected working mods with debounced effective queries. No new damage mechanics.
+- **T0010-F2 (accepted/merged PR #38 on 2026-11-04, `34d7cd7`):** secondary-only remainders are distinguished from unresolved damage internally. Public results show a concise, expandable named/numerical Damage breakdown with Estimated/Unavailable status where needed; long diagnostics remain developer-only. Available and Selected search uses debounced effective queries. No new damage mechanics.
 - **T0013-F3 candidate: damage allocation and conversion measurements.** Establish
   flat allocation among ordinary/health/armor hit components, indirect delivery,
   stacking/order, stateless damage-type conversions and duplicate-conversion rules.
@@ -170,10 +170,10 @@ The published attribute token syntax is parsed separately in `src/features/mods/
 
 ## Approved post-T0013-F1 product-owner follow-ups (2026-11-04)
 
-- **T0010-F2 — Equipment Mod Search Visibility and Damage Warning Relevance (Codex Medium).** With nonempty shared search such as `core`, hide equipment display rows with no matching Available mods, show truthful counts and provide Show all; restore all rows on clearing. Preserve equipment, imported/selected mods and uncertainty flags. Separate non-damage-only taunt/reuse/Rage warnings from genuine damage uncertainties. No new damage formula.
+- **T0010-F2 — Accepted and merged** via [PR #38](https://github.com/Zaelious/GorgonBuilder/pull/38), `34d7cd7`, 2026-11-04. Responsive Available/Selected search and a public numerical Damage breakdown are complete; diagnostic-only text is hidden from ordinary users. No damage formula changed.
 - **T0008-F2 — Ability Role Labels, Relevant Mods and Variant Picker Consolidation (Codex High).** Show source-backed Basic/Core/Nice/Epic/Minor Healing/Major Healing/Signature Support/Signature Debuff/Survival Utility roles; verify category-related gear effects actually reach eligible abilities without duplication or conditional keyword leaks. Compact only Vampirism Blood Mist, Animal Handling Call Stabled Pet, Bard SoD, Mentalism Mindworm, Necromancy SZ, Priest Triage and Priest Flamestrike. Preserve exact canonical IDs/ranks. Correct 'unconditional' audit counts for required-active-skill source conditions; report affected totals.
 - **T0013-F2 — Imported Anatomy/Phrenology Critical Hits and Target Conditions (Codex Extra High).** Full working critical chance/critical hit/expected hit calculator using imported/manual creature subskills, target creature selector and source-backed equipped crit modifiers. Keep unknown rules marked provisional; no full rotation/DPS, Spark, pet or DoT work.
-- **Sequence:** T0010-F2 → T0008-F2 → T0013-F2 → existing T0015 Mastery Sparks. All remain unimplemented until separately assigned.
+- **Sequence:** T0010-F2 (merged) → **T0008-F2 next** → T0013-F2 → existing T0015 Mastery Sparks. Only T0008-F2 and later tickets remain unimplemented; do not start them without a separate handoff.
 
 
 T0010-F2 final clarification: the public view includes a default-collapsed **Damage breakdown** showing actual engine steps, individual named equipment/skill contributions, flat/percentage/Skill Base contributions, target multipliers and final hit/total. It contains numerical presentation only: no raw IDs, source paths, uncertainty/exclusion inventories, implementation assumptions or long explanations. Those diagnostics remain available only through the development `?debugDamage=1` view. Public `Partial` labels are replaced with `Estimated`; unavailable numbers remain `Unavailable`. No engine results or accepted mod-search/Selected-heading behavior change.
