@@ -291,7 +291,7 @@ Published item treasure profiles are generation pools, not a complete legality e
 4. Verify Max/90/100/custom previews do not alter selected candidate tiers, and do not change the independent minimum equipment level. Recheck edit/remove/restore of imported working powers against unchanged historical evidence.
 5. Cancel **Clear build**: no draft or autosave change. Confirm: skills, both bars, gear, mods/Sparks, title/notes and target reset and persist after refresh. Browser preferences and in-page My Items inventory remain; protected/read-only drafts cannot reset.
 
-### T0013-F1 combat coverage and Burst estimates (review pending)
+### T0013-F1 combat coverage and Burst estimates (customer accepted and merged 2026-11-04)
 
 Run `npm run coverage:treasure -- --check`; in [the report](treasure-coverage/README.md)
 check that direct-damage coverage, other mechanics and validation confidence are separate,
@@ -304,3 +304,25 @@ versus planned sources and inspect excluded off-skill decisions.
 For Mock 11 +43% and the 20 m conversion, test 1/5/6/7/8/9 enemies: the ×0.5
 ability penalty is independent of falloff; only 6–8 show Estimated. Verify the
 source link/equation in the collapsed breakdown and reachable Remove at mobile sizes.
+
+### T0010-F2 — Shared mod search visibility and damage-warning relevance (planned)
+
+1. Select two combat skills and equip database and imported items in several positions. Search `core`; equipment rows with zero matching **Available Mods** should temporarily disappear while matching rows show counts equal to their expanded Available lists. Check selected/staged exclusions and category/target settings.
+2. Toggle **Show all equipment** while searching and confirm hidden equipped slots remain reachable. Clear search to restore all nine primary rows and Other slots without losing equipment, mod selections, expansion state or focus.
+3. In Damage analysis inspect a modeled +damage/+taunt or +reuse power: the normal-hit number remains and there is no misleading direct-damage warning for only the taunt/reuse remainder. Inspect an actual unsupported damage effect to confirm that warning still appears.
+4. Repeat at 1440/375/320 px, keyboard, read-only and after refresh. Run quality suite and browser smoke.
+
+### T0008-F2 — Official ability roles, Relevant Mods and scoped variant grouping (planned)
+
+1. Inspect Basic/Core/Nice/Epic and all five other supported ability-role labels in the picker and equipped ability details. Cross-check official keyword data; do not display conditional membership as unconditional.
+2. Equip a Core/Nice/Epic/category bonus, verify it appears as relevant for the correct ability and contributes direct damage only when the existing engine has a supported hook. Excluded abilities remain unaffected. Healing/utility mods can be source-relevant without a fabricated damage/healing calculation.
+3. For Vampirism Blood Mist, Animal Handling Call Stabled Pet, Bard SoD, Mentalism Mindworm, Necromancy SZ, Priest Triage and Priest Flamestrike, choose two different published variants/ranks. Confirm exact IDs, search, rank restrictions, selected markers, add/replace/removal and autosave. Other families remain unchanged.
+4. Inspect regenerated T0013-F1 audit and tests separating truly unconditional from required-active-skill damage entries. Check 1440/375/320 px, keyboard and long-scroll behavior.
+
+### T0013-F2 — Anatomy/Phrenology critical calculations (planned)
+
+1. Import current CharacterSheet locally and inspect Anatomy/Phrenology creature subskills; ensure exported effective Level is not increased again by BonusLevels. Without import, enter manual values and verify the source distinction.
+2. Compare at least two abilities using different supported critical systems and switch target creature types. Confirm inappropriate creature subskills do not affect chance and unknown systems remain unresolved.
+3. Add/remove an applicable gear crit chance/crit damage bonus. Verify normal hit, critical damage, chance and expected successful-hit average, plus full provenance and formula confidence.
+4. Repeat with no resolved import, unsupported ability, zero chance and high critical multipliers. Compare at least one controlled Project Gorgon test, explicitly recording any remaining assumptions.
+5. Run pinned data checks, lint, typecheck, all tests, build and browser smoke.
