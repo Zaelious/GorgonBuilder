@@ -70,7 +70,22 @@ export type ModifierCondition =
   /** Official third token argument: the player must have this skill active. */
   | { readonly kind: 'requires-active-skill'; readonly skillId: string; readonly status: 'met' | 'not-met' }
   /** Official race/realm-style qualifier on a progression level key; never evaluated here. */
-  | { readonly kind: 'source-qualifier'; readonly qualifier: string; readonly status: 'unevaluated' };
+  | { readonly kind: 'source-qualifier'; readonly qualifier: string; readonly status: 'unevaluated' }
+  /**
+   * T0013-F2 target dummy creature category (official Anatomy sub-skill IDs). Unknown target → unevaluated. A category
+   * in `ambiguousCreatureTypeIds` is neither met nor excluded because the published wording does not settle it.
+   */
+  | { readonly kind: 'target-creature-type'; readonly creatureTypeIds: readonly string[]; readonly ambiguousCreatureTypeIds: readonly string[];
+    readonly status: 'met' | 'not-met' | 'unevaluated' }
+  /** T0013-F2 target dummy Elite flag: `elite` true requires an Elite target, false a non-Elite target. */
+  | { readonly kind: 'target-elite'; readonly elite: boolean; readonly status: 'met' | 'not-met' | 'unevaluated' };
+
+/** T0013-F2 scenario inputs for target conditions. Null means unknown; nothing is assumed. */
+export interface TargetConditionContext {
+  /** Official Anatomy sub-skill ID of the selected creature type. */
+  readonly creatureType: string | null;
+  readonly elite: boolean | null;
+}
 
 export type ModifierApplicability = 'unconditional' | 'conditions-met' | 'conditions-not-met' | 'conditions-unevaluated';
 

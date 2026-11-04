@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import type { TargetConfiguration } from '../../core/build/document';
 import {
-  applyTargetDummy, BURST_FALLOFF_RULES, calculateAbilityDamage,
+  applyTargetDummy, BURST_FALLOFF_RULES, calculateAbilityDamage, calculateCriticalHit,
+  type CriticalDamageResult, type CriticalInputs, type CriticalStep,
   type AbilityDamageResult, type AbilityDamageStep, type ComponentDamageResult, type DamageComponentId,
   type ModifierAggregationResult, type ModifierConfidence, type ModifierSource, type NormalizedModifier, type TargetDamageResult,
 } from '../../core/calculation';
@@ -16,6 +17,8 @@ import './results.css';
 export interface AbilityDamageInputs {
   readonly aggregation: ModifierAggregationResult;
   readonly target: TargetConfiguration;
+  /** T0013-F2 critical scenario (creature type and resolved sub-skill levels). Omitted = no critical stage. */
+  readonly critical?: CriticalInputs;
 }
 
 const NUMBER = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
@@ -113,7 +116,7 @@ function ComponentBreakdown({ component, target, modifiers }: { component: Compo
 }
 
 /** Numerical presentation only: all operands, contributions and totals come from engine steps. */
-function PublicBreakdown({ components, target, modifiers }: { components: readonly ComponentDamageResult[]; target: TargetDamageResult; modifiers: ReadonlyMap<string, NormalizedModifier> }) {
+function PublicBreakdown({ components, target, modifiers, critical }: { components: readonly ComponentDamageResult[]; target: TargetDamageResult; modifiers: ReadonlyMap<string, NormalizedModifier>; critical: CriticalDamageResult | null }) {
   const number = (value: number | null) => value !== null && Number.isFinite(value) && value >= 0 ? formatDamage(value) : 'Unavailable';
   return <details className="damage-breakdown calc-breakdown"><summary>Damage breakdown</summary>
     {components.map(component => {
@@ -142,7 +145,94 @@ function PublicBreakdown({ components, target, modifiers }: { components: readon
         </ol>
       </section>;
     })}
+    {critical && <CriticalBreakdown critical={critical} modifiers={modifiers} />}
   </details>;
+}
+
+const chancePercent = (fraction: number) => `${NUMBER.format(fraction * 100)}%`;
+
+function criticalSource(step: CriticalStep, modifiers: ReadonlyMap<string, NormalizedModifier>): string | null {
+  if (step.kind === 'skill') return step.skill?.origin === 'imported' ? 'imported' : step.skill?.origin === 'manual' ? 'manual' : null;
+  const modifier = step.modifierKey ? modifiers.get(step.modifierKey) : undefined;
+  if (!modifier || modifier.source.kind === 'skill-advancement') return null;
+  return modifier.source.slot === 'OffHandShield' ? 'OffHand' : modifier.source.slot;
+}
+
+/** Short actionable hint for the most common missing input; other reasons stay in the debug view. */
+function criticalHint(critical: CriticalDamageResult, data: GameDataRepository): string | null {
+  if (critical.system.status !== 'supported') return null;
+  if (critical.creatureType === null) return 'select a creature type';
+  if (critical.skillId && critical.skill?.level === null) return `enter ${data.getSkill(critical.skillId)?.name ?? critical.skillId} level`;
+  return null;
+}
+
+/** Public numerical critical rows: chance, critical hit and expected damage per successful hit. */
+function CriticalRows({ critical, data, multipleHits, count }: { critical: CriticalDamageResult; data: GameDataRepository; multipleHits: boolean; count: number }) {
+  if (critical.status === 'no-critical-system') {
+    return <div className="result-row result-critical" data-critical="none"><dt>Critical hit</dt><dd><span className="muted">No critical-hit system</span></dd></div>;
+  }
+  const unavailable = (hint: string | null) => <span className="muted">Unavailable{hint && <small className="result-hint"> · {hint}</small>}</span>;
+  const hint = criticalHint(critical, data);
+  const skill = critical.skill;
+  const scope = critical.creatureType ? [critical.creatureType.label,
+    skill?.level !== null && skill ? `${skill.skillName} ${skill.level}${skill.origin ? ` (${skill.origin})` : ''}` : null].filter(Boolean).join(' · ') : null;
+  if (critical.system.status !== 'supported') {
+    return <div className="result-row result-critical" data-critical="unavailable"><dt>Critical hit</dt><dd>{unavailable(critical.system.status === 'conditional' ? 'needs an active effect' : null)}</dd></div>;
+  }
+  return <>
+    <div className="result-row result-critical" data-critical="chance"><dt>Critical chance</dt>
+      <dd>{critical.chance.value === null ? unavailable(hint) : <>{chancePercent(critical.chance.value)}{scope && <small className="result-scope-note"> · {scope}</small>}</>}</dd></div>
+    {critical.hits.map(hit => <div key={`crit-${hit.componentId}`} className="result-row result-critical" data-critical="hit" data-critical-component={hit.componentId}>
+      <dt>{multipleHits ? `${hitLabel(hit.componentId)} critical` : 'Critical hit'}{count > 1 ? ' · per target' : ''}</dt>
+      <dd>{hit.critical === null ? unavailable(null) : <span className={`damage-value ${damageTypeClass(hit.damageType)}`}>{formatDamage(hit.critical)} {hit.damageType}</span>}</dd></div>)}
+    {critical.hits.map(hit => <div key={`expected-${hit.componentId}`} className="result-row result-critical" data-critical="expected" data-critical-component={hit.componentId}>
+      <dt>{multipleHits ? `${hitLabel(hit.componentId)} expected` : 'Expected per hit'}{count > 1 ? ' · per target' : ''}</dt>
+      <dd>{hit.expected === null ? unavailable(null) : formatDamage(hit.expected)}</dd></div>)}
+  </>;
+}
+
+/** Numerical critical contributions for the public Damage breakdown; no IDs, paths or assumption text. */
+function CriticalBreakdown({ critical, modifiers }: { critical: CriticalDamageResult; modifiers: ReadonlyMap<string, NormalizedModifier> }) {
+  if (critical.system.status !== 'supported') return null;
+  const row = (step: CriticalStep, index: number, value: string) => {
+    const source = criticalSource(step, modifiers);
+    return <li className="calc-step" key={index} data-critical-step={step.kind}>
+      <span className="calc-step-label">{step.label}{source && ` — ${source}`}</span><span className="calc-step-value">{value}</span><span className="calc-step-total" />
+    </li>;
+  };
+  const p = critical.chance.value, m = critical.multiplier.value;
+  return <section className="calc-component calc-critical" aria-label="Critical hit calculation">
+    <h5>Critical hit{critical.creatureType && <small>vs {critical.creatureType.label}</small>}</h5>
+    <ol className="calc-steps">
+      {critical.chance.steps.map((step, index) => row(step, index, `${step.amount < 0 ? '−' : '+'}${chancePercent(Math.abs(step.amount))}`))}
+      <li className="calc-step public-final-hit"><span>Critical chance</span><span /><span className="calc-step-total">{p === null ? 'Unavailable' : chancePercent(p)}</span></li>
+      {critical.multiplier.steps.map((step, index) => row(step, index + 100, step.kind === 'base' ? `× ${formatDamage(step.amount)}` : percent(step.amount)))}
+      <li className="calc-step public-final-hit"><span>Critical multiplier</span><span /><span className="calc-step-total">{m === null ? 'Unavailable' : `× ${formatDamage(m)}`}</span></li>
+      {critical.hits.map(hit => <li className="calc-step" key={`c-${hit.componentId}`} data-critical-step="critical">
+        <span className="calc-step-label">{hitLabel(hit.componentId)} critical<small>{hit.normal === null || m === null ? 'final hit × multiplier' : `${formatDamage(hit.normal)} × ${formatDamage(m)}`}</small></span>
+        <span className="calc-step-value" /><span className="calc-step-total">{hit.critical === null ? 'Unavailable' : formatDamage(hit.critical)}</span></li>)}
+      {critical.hits.map(hit => <li className="calc-step" key={`e-${hit.componentId}`} data-critical-step="expected">
+        <span className="calc-step-label">Expected per hit<small>{hit.normal === null || p === null ? 'normal × (1 − chance) + critical × chance'
+          : `${formatDamage(hit.normal)} × ${chancePercent(1 - p)} + ${hit.critical === null ? '—' : formatDamage(hit.critical)} × ${chancePercent(p)}`}</small></span>
+        <span className="calc-step-value" /><span className="calc-step-total">{hit.expected === null ? 'Unavailable' : formatDamage(hit.expected)}</span></li>)}
+    </ol>
+  </section>;
+}
+
+/** Development-only critical diagnostics (?debugDamage=1). */
+function CriticalDiagnostics({ critical }: { critical: CriticalDamageResult }) {
+  const { system } = critical;
+  return <><p className="calc-subhead">Critical stage</p><ul className="calc-notes" data-critical-debug="">
+    <li>System: {system.explanation}{system.status === 'supported' && ` CritDamageMod ${system.critDamageMod ?? 'absent'}; chance hooks ${system.chanceHooks.join(', ') || 'none'}; damage hooks ${system.damageHooks.join(', ') || 'none'}.`}</li>
+    {critical.skillId && <li>Sub-skill {critical.skillId}: {critical.skill?.explanation}</li>}
+    {critical.chance.reason && <li>Chance: {critical.chance.reason}</li>}
+    {critical.multiplier.reason && <li>Multiplier: {critical.multiplier.reason}</li>}
+    {[...critical.chance.steps, ...critical.multiplier.steps].map((step, index) => <li key={index}>{step.label}: {step.explanation} ({step.confidence})</li>)}
+    {critical.decisions.filter(d => d.status !== 'applied').map(d => <li key={d.modifier.key} data-critical-decision={d.status}>
+      {d.modifier.attributeId} {d.modifier.sourceValue} ({d.status}): {d.explanation}</li>)}
+    {critical.warnings.map(w => <li key={`${w.code}|${w.message}`} data-warning={w.code}>{w.message}</li>)}
+    {critical.assumptions.map(a => <li key={a}>{a}</li>)}
+  </ul></>;
 }
 
 function UnsupportedDetails({ records, label }: { records: readonly ClassifiedUnsupportedEffect[]; label: string }) {
@@ -162,9 +252,11 @@ function UnsupportedDetails({ records, label }: { records: readonly ClassifiedUn
 export function AbilityResults({ ability, inputs, data, idPrefix, result: precomputed }: { ability: Ability; inputs: AbilityDamageInputs; data: GameDataRepository; idPrefix: string;
   /** Optional result already calculated by the caller for the same ability and inputs. */
   result?: AbilityDamageResult }) {
-  const { result, target } = useMemo(() => {
+  const { result, target, critical } = useMemo(() => {
     const result = precomputed ?? calculateAbilityDamage(ability.id, inputs.aggregation, data);
-    return { result, target: applyTargetDummy(result, inputs.target) };
+    const target = applyTargetDummy(result, inputs.target);
+    // T0013-F2: separate downstream stage; never changes the normal-hit result above.
+    return { result, target, critical: inputs.critical ? calculateCriticalHit(result, target, inputs.critical, data) : null };
   }, [precomputed, ability.id, inputs, data]);
   const modifiers = useMemo(() => new Map(result.aggregation.modifiers.map(m => [m.key, m])), [result]);
   const debug = damageDebugEnabled();
@@ -178,7 +270,8 @@ export function AbilityResults({ ability, inputs, data, idPrefix, result: precom
     'burst-falloff-probabilistic', 'multiple-ability-conversions'].includes(w.code));
   const sideEffects = target.abilityEffects.filter(m => m.category === 'ability-taunt-flat' || m.category === 'ability-reset-time-flat');
   const assumptions = [...new Set([...result.assumptions, ...target.assumptions])];
-  const allWarnings = [...result.warnings, ...target.warnings].filter(w => w.code !== 'unsupported-build-effects');
+  // The T0013 engine's own 'critical-unavailable' note is superseded by the T0013-F2 stage when it runs.
+  const allWarnings = [...result.warnings, ...target.warnings].filter(w => w.code !== 'unsupported-build-effects' && !(critical && w.code === 'critical-unavailable'));
   const classified = classifyBuildWarnings(result.aggregation, data);
   const warningParts = [
     classified.damage.length > 0 ? `${classified.damage.length} unresolved damage ${classified.damage.length === 1 ? 'effect' : 'effects'}` : null,
@@ -190,7 +283,7 @@ export function AbilityResults({ ability, inputs, data, idPrefix, result: precom
   const status = hits.length === 0 || hits.every(hit => hit.perTarget === null) ? 'Unavailable'
     : hits.some(hit => hit.perTarget === null || (count > 1 && hit.total === null)) || classified.damage.length + classified.unknown.length > 0 ||
       allWarnings.some(warning => !informationalCodes.has(warning.code)) ? 'Estimated'
-      : target.confidence !== 'validated' || hits.some(hit => hit.estimated) ? 'Estimated' : null;
+      : target.confidence !== 'validated' || hits.some(hit => hit.estimated) || critical?.status === 'calculated' ? 'Estimated' : null;
   return <section className="ability-results" aria-labelledby={`${idPrefix}-results-title`} data-confidence={target.confidence}>
     <h4 id={`${idPrefix}-results-title`}>Damage{status && <small className="result-status" role="status" title={status === 'Estimated' ? 'This value uses estimated or provisional rules.' : 'A supported value cannot be calculated.'}>{status}</small>}{target.burst && <span className="result-scope"> · Burst {target.burst.radius} m{target.burst.source === 'treasure-conversion' ? ' (mod)' : ''}</span>}</h4>
     {hits.length === 0 ? <p className="muted">No direct hit is published{ability.pve.dots?.length ? '; DoT damage is not calculated yet.' : '.'}</p>
@@ -204,9 +297,10 @@ export function AbilityResults({ ability, inputs, data, idPrefix, result: precom
         <dd>{hit.total === null ? <span className="muted">Unavailable</span>
           : <>{formatDamage(hit.total)}{hit.estimated && <small className="result-estimate">Estimated</small>}</>}</dd>
       </div>)}
-      <div className="result-row"><dt>Critical hit</dt><dd>{result.criticalDamage === null ? <span className="muted">Unavailable</span> : formatDamage(result.criticalDamage)}</dd></div>
+      {critical ? <CriticalRows critical={critical} data={data} multipleHits={hits.length > 1} count={count} />
+        : <div className="result-row"><dt>Critical hit</dt><dd><span className="muted">Unavailable</span></dd></div>}
     </dl>}
-    <PublicBreakdown components={breakdownComponents} target={target} modifiers={modifiers} />
+    <PublicBreakdown components={breakdownComponents} target={target} modifiers={modifiers} critical={critical} />
     {debug && <>
     {count > 1 && targetLimits.map(w => <p key={w.code} className="result-note" data-warning={w.code}>{w.message}</p>)}
     {sideEffects.length > 0 && <p className="result-note result-side-effects">Not damage: {sideEffects.map(m => m.category === 'ability-taunt-flat'
@@ -227,6 +321,7 @@ export function AbilityResults({ ability, inputs, data, idPrefix, result: precom
         <li data-falloff="indirect">Indirect (DoTs, not calculated): {target.falloff.indirect.explanation}</li></ul></>}
       {target.abilityEffects.length > 0 && <><p className="calc-subhead">Ability changes from mods</p><ul className="calc-notes">{target.abilityEffects.map(m =>
         <li key={m.key} data-ability-effect={m.category}>{m.attributeLabel ?? m.attributeId}: {m.sourceValue}{m.unit === 'seconds' ? ' s' : m.unit === 'meters' ? ' m' : ''} ({sourceLabel(m.source)})</li>)}</ul></>}
+      {critical && <CriticalDiagnostics critical={critical} />}
       {assumptions.length > 0 && <><p className="calc-subhead">Assumptions</p><ul className="calc-notes">
         {assumptions.map(a => <li key={a}>{a}</li>)}</ul></>}
     </details>

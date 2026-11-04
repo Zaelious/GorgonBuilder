@@ -773,7 +773,7 @@ Guidelines:
 
 ## Approved UI Follow-ups — Historical and Post-T0013-F1
 
-T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. T0008-F2 is the next approved unimplemented ticket, followed by T0013-F2 and T0015 Sparks. Implement each ticket on its own feature branch; documenting a ticket does not start or complete its implementation. Follow-up tickets must respect their stated scope.
+T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. T0008-F2 was squash-merged 2026-11-04 via [PR #39](https://github.com/Zaelious/GorgonBuilder/pull/39) (`3aff873`). T0013-F2 is implemented for product-owner review (see its status); T0015 Sparks follows only after that review. Implement each ticket on its own feature branch; documenting a ticket does not start or complete its implementation. Follow-up tickets must respect their stated scope.
 
 ## T0008-F1 — Imported Effective Skill Levels and Ability Picker UX
 
@@ -835,7 +835,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 ## T0008-F2 — Ability Role Labels, Relevant Mods, and Variant Picker Consolidation
 
-**Status:** In progress on [draft PR #39](https://github.com/Zaelious/GorgonBuilder/pull/39), branch `feature/t0008-f2-ability-roles-variants` (2026-11-04); automated verification and regenerated coverage audit pending. Not yet customer-accepted.
+**Status:** Squash-merged 2026-11-04 via [PR #39](https://github.com/Zaelious/GorgonBuilder/pull/39), commit `3aff873` (includes T0008-F2-R1). [Verification](T0008_F2_Verification.md).
 
 **Complexity:** High
 
@@ -888,7 +888,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 ## T0008-F2-R1 — Review Corrections: Conditional Coverage Audit, Mark Weakness Grouping, Public Variant Labels
 
-**Status:** Implemented on the T0008-F2 branch and [draft PR #39](https://github.com/Zaelious/GorgonBuilder/pull/39) (2026-11-04); awaiting customer hands-on with T0008-F2. [Verification](T0008_F2_Verification.md).
+**Status:** Merged with T0008-F2 via [PR #39](https://github.com/Zaelious/GorgonBuilder/pull/39) (`3aff873`, 2026-11-04). [Verification](T0008_F2_Verification.md).
 
 **Complexity:** Standard
 
@@ -1169,7 +1169,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 ## T0013-F2 — Imported Anatomy/Phrenology Critical Hits and Target Conditions
 
-**Status:** Planned; product-owner approved 2026-11-04. Not implemented.
+**Status:** Implemented for product-owner review on `feature/t0013-f2-critical-hits` (2026-11-04); not merged. Source-backed Anatomy/Phrenology critical chance, published multipliers, equipment critical modifiers, creature-type/Elite target conditions and expected damage per successful hit; no in-game validation yet. [Verification](T0013_F2_Verification.md).
 
 **Complexity:** High
 

@@ -273,7 +273,8 @@ describe('T0012 aggregation API properties', () => {
   });
 
   it('accepts an extended registry without changing aggregation code', () => {
-    const critical = createModifierRegistry([...DEFAULT_MODIFIER_RULES, {
+    // T0013-F2 maps this attribute by default; replace that rule with a test-only one.
+    const critical = createModifierRegistry([...DEFAULT_MODIFIER_RULES.filter(rule => rule.id !== 'critical-damage-percent'), {
       id: 'test-critical-damage', description: 'test-only', category: 'critical-damage-percent', operation: 'percent', unit: 'fraction',
       displayTypes: ['AsPercent'], confidence: 'unknown', assumptions: ['test fixture only'],
       match: attribute => attribute.id === 'MOD_CRITICAL_HIT_DAMAGE' ? { kind: 'general', delivery: 'direct' } : null,

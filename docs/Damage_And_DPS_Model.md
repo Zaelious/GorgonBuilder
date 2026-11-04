@@ -138,6 +138,12 @@ Until exact crit rules are validated:
 - do not fabricate unknown crit chance
 - allow target-dependent or skill-dependent crit logic to remain marked unsupported/assumed
 
+**T0013-F2 implementation (in review, not game-validated):** chance = cumulative official Anatomy/Phrenology
+sub-skill reward notes for the selected creature type (partially validated against the wiki) + applicable equipment
+chance bonuses (assumed additive); multiplier = published `CritDamageMod` + applicable critical-damage bonuses
+(assumed additive; Archery 1.25 vs wiki Anatomy 1.5 is an open conflict); critical = final per-target hit × multiplier;
+expected per successful hit = normal × (1 − p) + critical × p. See [T0013-F2 verification](T0013_F2_Verification.md).
+
 ## AoE
 
 Ability cards show:

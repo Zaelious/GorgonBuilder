@@ -5,8 +5,17 @@ import { calculateAbilityDamage } from './ability-damage';
 import { damageHooksForAbility } from './keyword-damage';
 import type { ModifierAggregationResult, ModifierCategory, NormalizedModifier } from './modifiers';
 import { parseProseDamageClause, resolveProseDamage, type ProseDamageFailure, type ProseDamageResolution } from './prose-damage-grammar';
-import { parseEffectDescription } from './registry';
+import { DEFAULT_MODIFIER_RULES, createModifierRegistry, parseEffectDescription } from './registry';
 import { TREASURE_EFFECT_RULES, interpretTreasureEffect } from './treasure-effect-rules';
+import { CRITICAL_TREASURE_RULES } from './critical-treasure-rules';
+
+/**
+ * The three snapshots reproduce the accepted T0013-F1 report exactly. T0013-F2 critical and target-conditional curated
+ * rules depend on scenario inputs (creature type, Elite) and a separate critical stage, so they are excluded here and
+ * documented in docs/T0013_F2_Verification.md.
+ */
+const T0013_F1_RULES = TREASURE_EFFECT_RULES.filter(rule => !CRITICAL_TREASURE_RULES.includes(rule));
+const T0013_F1_REGISTRY = createModifierRegistry(DEFAULT_MODIFIER_RULES.filter(rule => rule.category !== 'critical-chance-percent' && rule.category !== 'critical-damage-percent'));
 
 /**
  * T0013-F1 direct-damage coverage audit. Four questions stay separate:
@@ -231,10 +240,10 @@ export function inventoryTreasureEffects(data: GameDataRepository): TreasureCove
   const noKeywords = { ...data, keywordRules: [] };
   const snapshots: readonly Snapshot[] = [
     // T0014: direct PvE hooks only, the two original Mock rules, no grammar.
-    { name: 't0014', context: noKeywords, options: { treasureRules: TREASURE_EFFECT_RULES.filter(r => ['power_4032', 'power_4066'].includes(r.powerId)), proseGrammar: false } },
+    { name: 't0014', context: noKeywords, options: { registry: T0013_F1_REGISTRY, treasureRules: TREASURE_EFFECT_RULES.filter(r => ['power_4032', 'power_4066'].includes(r.powerId)), proseGrammar: false } },
     // First T0013-F1 commit: keyword hooks + 38 curated definitions + Mock rules, no grammar.
-    { name: 'initial', context: data, options: { proseGrammar: false } },
-    { name: 'final', context: data, options: {} },
+    { name: 'initial', context: data, options: { registry: T0013_F1_REGISTRY, treasureRules: T0013_F1_RULES, proseGrammar: false } },
+    { name: 'final', context: data, options: { registry: T0013_F1_REGISTRY, treasureRules: T0013_F1_RULES } },
   ];
   const combat = new Set(data.skills.filter(s => s.combat).map(s => s.id));
   const abilities = data.abilities.filter(a => combat.has(a.skill.skillId ?? ''));

@@ -62,7 +62,14 @@ export function getMappingIndex(data: ModifierDataContext): MappingIndex {
       }
     }
   }
+  const addHook = (attributeId: string, hook: string) => {
+    const hooks = hooksByAttribute.get(attributeId) ?? new Set<string>();
+    hooks.add(hook); hooksByAttribute.set(attributeId, hooks);
+  };
+  // T0013-F2: critical-chance hooks are published at the ability's top level (e.g. Aimed Shot).
+  for (const ability of data.abilities) for (const attributeId of ability.attributeHooks[CRITICAL_CHANCE_HOOK] ?? []) addHook(attributeId, CRITICAL_CHANCE_HOOK);
   for (const rule of staticDamageKeywordRules(data)) {
+    for (const hook of [CRITICAL_CHANCE_HOOK, CRITICAL_DAMAGE_HOOK]) for (const attributeId of rule.attributeHooks[hook] ?? []) addHook(attributeId, hook);
     for (const hook of ['AttributesThatDeltaDamage', 'AttributesThatModDamage']) {
       for (const attributeId of rule.attributeHooks[hook] ?? []) {
         const hooks = hooksByAttribute.get(attributeId) ?? new Set<string>();
@@ -74,6 +81,10 @@ export function getMappingIndex(data: ModifierDataContext): MappingIndex {
   indexes.set(data, index);
   return index;
 }
+
+/** Official hook names used by the T0013-F2 critical stage (ability top level, PvE and abilitykeywords rules). */
+export const CRITICAL_CHANCE_HOOK = 'AttributesThatDeltaCritChance';
+export const CRITICAL_DAMAGE_HOOK = 'AttributesThatModCritDamage';
 
 const FAMILY_ASSUMPTION = 'Category comes from the official attribute ID family, label and DisplayType; '
   + 'formula ordering/stacking is decided and validated by the damage engine, not here.';
@@ -115,6 +126,14 @@ function damageTypeFamily(prefix: string, suffix: string, delivery: DamageDelive
     const resolved = delivery !== 'from-label' ? delivery : /Direct ?& ?Per-Tick/u.test(attribute.label) ? 'direct-and-indirect' : null;
     return { kind: 'damage-type', damageType, delivery: resolved };
   };
+}
+
+const CRITICAL_UNIT_ASSUMPTION = 'AsPercent/AsBuffMod critical deltas are fractions (0.04 = +4 percentage points of chance; 3.15 = +315% critical damage), matching the published display convention. Stacking is decided by the critical stage.';
+
+/** Any official attribute that some ability or static keyword rule lists under the critical hook. Never normal damage. */
+function criticalHook(hook: string) {
+  return (attribute: Attribute, index: MappingIndex): ModifierScope | null =>
+    index.hooksByAttribute.get(attribute.id)?.has(hook) ? { kind: 'ability-attribute-hook', attributeId: attribute.id, hook } : null;
 }
 
 function rule(id: string, category: ModifierCategory, operation: ModifierOperation, description: string,
@@ -160,6 +179,10 @@ export const DEFAULT_MODIFIER_RULES: readonly ModifierMappingRule[] = Object.fre
   rule('damage-type-percent', 'damage-type-percent', 'percent', 'MOD_<TYPE> without DIRECT/INDIRECT suffix', damageTypeFamily('MOD_', '', 'from-label')),
   ...(['MAX_HEALTH', 'MAX_POWER', 'MAX_ARMOR'] as const).map(id =>
     rule(`max-resource-flat:${id}`, 'max-resource-flat', 'flat', `${id} — maximum resource points`, exact(id, { kind: 'general', delivery: null }), ['AsInt'])),
+  { ...rule('critical-chance-percent', 'critical-chance-percent', 'percent', 'Attributes listed in an official AttributesThatDeltaCritChance hook (T0013-F2)',
+    criticalHook(CRITICAL_CHANCE_HOOK), ['AsPercent', 'AsBuffMod']), assumptions: [FAMILY_ASSUMPTION, CRITICAL_UNIT_ASSUMPTION] },
+  { ...rule('critical-damage-percent', 'critical-damage-percent', 'percent', 'Attributes listed in an official AttributesThatModCritDamage hook (T0013-F2)',
+    criticalHook(CRITICAL_DAMAGE_HOOK), ['AsPercent', 'AsBuffMod']), assumptions: [FAMILY_ASSUMPTION, CRITICAL_UNIT_ASSUMPTION] },
   rule('damage-type-mitigation-flat', 'damage-type-mitigation-flat', 'flat', 'MITIGATION_<TYPE> — "<Type> Damage Reduction"',
     damageTypeFamily('MITIGATION_', '', 'from-label')),
 ]);

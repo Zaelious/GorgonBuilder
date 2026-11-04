@@ -1,0 +1,110 @@
+[
+  {
+    "mode": "preview",
+    "width": 1440,
+    "height": 900,
+    "scenarios": [
+      {
+        "creature": "Human",
+        "chance": "5% · Human · Human Phrenology 30 (manual)",
+        "critical": "1,005.7 Psychic",
+        "expected": "219.39"
+      },
+      {
+        "creature": "Anatomy_Canines",
+        "chance": "0% · Canine",
+        "critical": "1,005.7 Psychic",
+        "expected": "178"
+      },
+      {
+        "creature": "Anatomy_Orcs",
+        "chance": "Unavailable · enter Orc Phrenology level",
+        "critical": "1,005.7 Psychic",
+        "expected": "Unavailable"
+      },
+      {
+        "creature": "Unknown",
+        "chance": "Unavailable · select a creature type",
+        "critical": "1,005.7 Psychic",
+        "expected": "Unavailable"
+      }
+    ],
+    "geometry": {
+      "width": 1440,
+      "scroll": 1440
+    },
+    "debugDiagnostics": false
+  },
+  {
+    "mode": "preview",
+    "width": 375,
+    "height": 812,
+    "scenarios": [
+      {
+        "creature": "Human",
+        "chance": "5% · Human · Human Phrenology 30 (manual)",
+        "critical": "1,005.7 Psychic",
+        "expected": "219.39"
+      },
+      {
+        "creature": "Anatomy_Canines",
+        "chance": "0% · Canine",
+        "critical": "1,005.7 Psychic",
+        "expected": "178"
+      },
+      {
+        "creature": "Anatomy_Orcs",
+        "chance": "Unavailable · enter Orc Phrenology level",
+        "critical": "1,005.7 Psychic",
+        "expected": "Unavailable"
+      },
+      {
+        "creature": "Unknown",
+        "chance": "Unavailable · select a creature type",
+        "critical": "1,005.7 Psychic",
+        "expected": "Unavailable"
+      }
+    ],
+    "geometry": {
+      "width": 375,
+      "scroll": 375
+    },
+    "debugDiagnostics": false
+  },
+  {
+    "mode": "preview",
+    "width": 320,
+    "height": 812,
+    "scenarios": [
+      {
+        "creature": "Human",
+        "chance": "5% · Human · Human Phrenology 30 (manual)",
+        "critical": "1,005.7 Psychic",
+        "expected": "219.39"
+      },
+      {
+        "creature": "Anatomy_Canines",
+        "chance": "0% · Canine",
+        "critical": "1,005.7 Psychic",
+        "expected": "178"
+      },
+      {
+        "creature": "Anatomy_Orcs",
+        "chance": "Unavailable · enter Orc Phrenology level",
+        "critical": "1,005.7 Psychic",
+        "expected": "Unavailable"
+      },
+      {
+        "creature": "Unknown",
+        "chance": "Unavailable · select a creature type",
+        "critical": "1,005.7 Psychic",
+        "expected": "Unavailable"
+      }
+    ],
+    "geometry": {
+      "width": 320,
+      "scroll": 320
+    },
+    "debugDiagnostics": false
+  }
+]
