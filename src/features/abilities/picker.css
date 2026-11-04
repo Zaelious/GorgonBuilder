@@ -6,3 +6,6 @@
 .ability-picker .respect-skill-level { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.8125rem; color: var(--color-text); cursor: pointer; white-space: nowrap; }
 .ability-picker .respect-skill-level input { width: 1rem; height: 1rem; margin: 0; padding: 0; min-height: 0; flex: none; accent-color: var(--color-positive); }
 .ability-picker .quick-add-none { display: block; color: var(--color-warning); }
+
+.ability-role-labels { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-block: 0.3rem; }
+.ability-role { display: inline-block; font-size: 0.7rem; line-height: 1.35; padding: 0.12rem 0.38rem; border: 1px solid var(--color-border); border-radius: 0.35rem; color: var(--color-text); background: var(--color-surface); }
