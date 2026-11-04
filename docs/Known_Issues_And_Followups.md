@@ -1,6 +1,6 @@
 # GorgonBuilder — Known Issues and Follow-Ups
 
-**Last updated:** 2026-11-01
+**Last updated:** 2026-11-04
 
 ## KI-0001 — Exact Damage Formula Is Not Fully Known
 
@@ -12,7 +12,7 @@ Known confirmed example:
 
 - Skill Base Damage references original ability base only.
 
-**Action:** T0013 merged through [PR #32](https://github.com/Zaelious/GorgonBuilder/pull/32) with a pure damage engine, original-base Skill Base contribution and explicit provisional stacking assumptions. T0014's opt-in damage breakdown merged via [PR #34](https://github.com/Zaelious/GorgonBuilder/pull/34). T0013-F1 now takes priority over T0015 to audit and expand combat-wide treasure-effect coverage (only two exact Mock prose power rules currently implemented). Estimate intermediate 6–8 direct Burst falloff transparently until measured, rather than falsely claiming it is published. T0015 remains needed for Spark integration; do not promote assumed rules based on synthetic tests. Keep internal confidence/provenance without repetitive UI badges; show specific warnings for genuinely unmodeled mechanics. Minor T0013 confidence nuance: a minimal synthetic base-only case can be marked validated while published-hit direct delivery remains assumed; address when clarifying result display/validation, not as a blocker to UI integration.
+**Action:** T0013 merged through [PR #32](https://github.com/Zaelious/GorgonBuilder/pull/32) and T0014's opt-in damage breakdown through [PR #34](https://github.com/Zaelious/GorgonBuilder/pull/34). T0013-F1 was customer-accepted and squash-merged 2026-11-04 in [PR #36](https://github.com/Zaelious/GorgonBuilder/pull/36) (`acfdfcf`): complete v490 inventory, broad source-backed direct damage mappings, separate calculation coverage and explicit estimated intermediate Burst falloff. **All percentage stacking and additional formula assumptions are still provisional until measured in game**, despite successful synthetic tests. T0013-F2 (critical hits) and T0015 (Sparks) follow the approved UI tickets. Preserve confidence/provenance, avoid repetitive non-actionable warnings, and keep actual damage uncertainties distinct from taunt/reuse-only remainders (T0010-F2). A minimal synthetic base-only case may still be marked validated while published-hit direct delivery remains assumed; review its label during later formula validation, not as a retroactive T0013-F1 merge blocker.
 
 ## KI-0002 — Storage Export Does Not Reliably Mark Active Equipment
 
@@ -142,20 +142,21 @@ The published attribute token syntax is parsed separately in `src/features/mods/
 - optional accounts/claim anonymous builds
 - game-data diff/update automation
 
-## T0013-F1 follow-ups discovered (2026-11-03, updated by the direct-damage correction; review pending)
+## T0013-F1 follow-ups (customer-accepted 2026-11-04; implementation follow-ups approved)
 
 - **Stateless prose (done in the T0013-F1 correction).** The reusable grammar covers
   unconditional named-ability, skill and group damage clauses; 123 unconditional combat
   entries remain (typos, missing attributes, split components). See the
   [report](treasure-coverage/README.md).
-- **Next: critical hits** (Anatomy/Phrenology, creature-type target, ability crit rules,
+- **T0013-F2: critical hits** (Anatomy/Phrenology, creature-type target, ability crit rules,
   equipment crit). The creature-type selector also unlocks 1,460 conditional
   creature-type entries and 250 Elite entries.
 - **Target/state condition and buff toggles** for 2,563 conditional and 2,933 stateful
   direct entries (sub-families listed in the report).
-- **Runtime label for non-damage remainders.** Taunt/reuse/Rage side clauses are still
-  listed as "Across build" unmodeled effects in the damage card; they do not change
-  the direct number. Consider a separate non-damage label in a UI ticket.
+- **T0010-F2: runtime damage-warning relevance.** Taunt/reuse/Rage side clauses are still
+  listed as "Across build" unmodeled effects in the damage card even when their damage clause
+  calculates correctly. Distinguish classified non-damage remainders from truly unresolved damage
+  mechanics without hiding genuine uncertainty.
 - **T0013-F3 candidate: damage allocation and conversion measurements.** Establish
   flat allocation among ordinary/health/armor hit components, indirect delivery,
   stacking/order, stateless damage-type conversions and duplicate-conversion rules.
@@ -169,3 +170,10 @@ The published attribute token syntax is parsed separately in `src/features/mods/
 - **Existing 320 px layout:** planner help extends the document to 322 px on both
   main `160b073` and T0013-F1. The damage popover is bounded. Preserve this separate
   minor layout follow-up; [comparison](verification/t0013-f1/baseline-overflow.json).
+
+## Approved post-T0013-F1 product-owner follow-ups (2026-11-04)
+
+- **T0010-F2 — Equipment Mod Search Visibility and Damage Warning Relevance (Codex Medium).** With nonempty shared search such as `core`, hide equipment display rows with no matching Available mods, show truthful counts and provide Show all; restore all rows on clearing. Preserve equipment, imported/selected mods and uncertainty flags. Separate non-damage-only taunt/reuse/Rage warnings from genuine damage uncertainties. No new damage formula.
+- **T0008-F2 — Ability Role Labels, Relevant Mods and Variant Picker Consolidation (Codex High).** Show source-backed Basic/Core/Nice/Epic/Minor Healing/Major Healing/Signature Support/Signature Debuff/Survival Utility roles; verify category-related gear effects actually reach eligible abilities without duplication or conditional keyword leaks. Compact only Vampirism Blood Mist, Animal Handling Call Stabled Pet, Bard SoD, Mentalism Mindworm, Necromancy SZ, Priest Triage and Priest Flamestrike. Preserve exact canonical IDs/ranks. Correct 'unconditional' audit counts for required-active-skill source conditions; report affected totals.
+- **T0013-F2 — Imported Anatomy/Phrenology Critical Hits and Target Conditions (Codex Extra High).** Full working critical chance/critical hit/expected hit calculator using imported/manual creature subskills, target creature selector and source-backed equipped crit modifiers. Keep unknown rules marked provisional; no full rotation/DPS, Spark, pet or DoT work.
+- **Sequence:** T0010-F2 → T0008-F2 → T0013-F2 → existing T0015 Mastery Sparks. All remain unimplemented until separately assigned.

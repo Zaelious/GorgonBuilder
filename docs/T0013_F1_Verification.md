@@ -1,7 +1,7 @@
 # T0013-F1 — Combat Treasure Effect Coverage, Direct-Damage Correction and Burst Estimate
 
-Implemented for customer review on PR #36; **not merged and not game-math accepted**.
-Base: `main` at `160b073` (PR #35), branch `feature/t0013-f1-combat-treasure-coverage`.
+Customer-accepted and squash-merged 2026-11-04 via [PR #36](https://github.com/Zaelious/GorgonBuilder/pull/36), commit `acfdfcf58e22e7d1c2fcd7fef0e3379f6e27484a`. **Customer manual acceptance tests passed**, final-head GitHub CI and Cloudflare preview passed; specific game-math stacking and falloff assumptions remain unvalidated.
+Implemented from `main` at `160b073` (PR #35) on `feature/t0013-f1-combat-treasure-coverage`; merged result on `main` is `acfdfcf`.
 No private character data was used. Critical hits, DoTs, pets and Sparks are not implemented here.
 
 ## Final correction (second T0013-F1 commit)
