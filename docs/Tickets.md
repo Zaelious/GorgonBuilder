@@ -835,7 +835,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 ## T0008-F2 — Ability Role Labels, Relevant Mods, and Variant Picker Consolidation
 
-**Status:** Planned; product-owner approved 2026-11-04. Not implemented.
+**Status:** In progress on [draft PR #39](https://github.com/Zaelious/GorgonBuilder/pull/39), branch `feature/t0008-f2-ability-roles-variants` (2026-11-04); automated verification and regenerated coverage audit pending. Not yet customer-accepted.
 
 **Complexity:** High
 
