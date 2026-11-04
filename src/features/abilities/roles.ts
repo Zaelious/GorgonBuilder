@@ -23,7 +23,10 @@ export interface AbilityRole {
 export function abilityRoles(ability: Pick<Ability, 'keywords' | 'conditionalKeywords'>): AbilityRole[] {
   const staticKeywords = new Set(ability.keywords ?? []);
   const conditionalKeywords = new Set((ability.conditionalKeywords ?? []).map(entry => entry.keyword));
-  return ABILITY_ROLE_LABELS.flatMap(([keyword, label]) =>
-    staticKeywords.has(keyword) ? [{ keyword, label, conditional: false }] :
-      conditionalKeywords.has(keyword) ? [{ keyword, label, conditional: true }] : []);
+  const roles: AbilityRole[] = [];
+  for (const [keyword, label] of ABILITY_ROLE_LABELS) {
+    if (staticKeywords.has(keyword)) roles.push({ keyword, label, conditional: false });
+    else if (conditionalKeywords.has(keyword)) roles.push({ keyword, label, conditional: true });
+  }
+  return roles;
 }
