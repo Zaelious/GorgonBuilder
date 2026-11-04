@@ -154,7 +154,7 @@ This is a separate narrow preflight PR, not part of T0009's equipment UI.
 
 ## Calculation Tickets
 
-**Public UI correction (T0010-F2, 2026-11-04):** calculation breakdowns and technical source records referenced in historical acceptance steps below are now available only on the Vite development server with `?debugDamage=1`. Normal public damage views show calculated values and concise Estimated/Partial/Unavailable status. Production preview ignores the flag. Engine diagnostics remain complete and automated tests still inspect them.
+**Public UI correction (T0010-F2, 2026-11-04):** calculation breakdowns and technical source records referenced in historical acceptance steps below are now available only on the Vite development server with `?debugDamage=1`. Normal public damage views show calculated values and concise Estimated/Unavailable status. Production preview ignores the flag. Engine diagnostics remain complete and automated tests still inspect them.
 
 ### T0012 accepted modifier aggregation (2026-11-02)
 
@@ -331,3 +331,6 @@ source link/equation in the collapsed breakdown and reachable Remove at mobile s
 3. Add/remove an applicable gear crit chance/crit damage bonus. Verify normal hit, critical damage, chance and expected successful-hit average, plus full provenance and formula confidence.
 4. Repeat with no resolved import, unsupported ability, zero chance and high critical multipliers. Compare at least one controlled Project Gorgon test, explicitly recording any remaining assumptions.
 5. Run pinned data checks, lint, typecheck, all tests, build and browser smoke.
+
+
+T0010-F2 final clarification: the public view includes a default-collapsed **Damage breakdown** showing actual engine steps, individual named equipment/skill contributions, flat/percentage/Skill Base contributions, target multipliers and final hit/total. It contains numerical presentation only: no raw IDs, source paths, uncertainty/exclusion inventories, implementation assumptions or long explanations. Those diagnostics remain available only through the development `?debugDamage=1` view. Public `Partial` labels are replaced with `Estimated`; unavailable numbers remain `Unavailable`. No engine results or accepted mod-search/Selected-heading behavior change.

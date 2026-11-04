@@ -112,6 +112,39 @@ function ComponentBreakdown({ component, target, modifiers }: { component: Compo
   </section>;
 }
 
+/** Numerical presentation only: all operands, contributions and totals come from engine steps. */
+function PublicBreakdown({ components, target, modifiers }: { components: readonly ComponentDamageResult[]; target: TargetDamageResult; modifiers: ReadonlyMap<string, NormalizedModifier> }) {
+  const number = (value: number | null) => value !== null && Number.isFinite(value) && value >= 0 ? formatDamage(value) : 'Unavailable';
+  return <details className="damage-breakdown calc-breakdown"><summary>Damage breakdown</summary>
+    {components.map(component => {
+      const hit = target.hits.find(row => row.componentId === component.id);
+      return <section className="calc-component" key={component.id} aria-label={`${hitLabel(component.id)} calculation`}>
+        <h5>{hitLabel(component.id)}</h5><ol className="calc-steps">
+          {component.steps.map((step, index) => {
+            const modifier = step.modifierKey ? modifiers.get(step.modifierKey) : undefined;
+            const label = step.operation === 'base' ? 'Published base' : (modifier?.attributeLabel && modifier.attributeLabel !== modifier.attributeId ? modifier.attributeLabel : CATEGORY_LABELS[step.category]) ?? 'Damage bonus';
+            const source = modifier ? modifier.source.kind === 'skill-advancement'
+              ? `${modifier.source.skillId} advancement` : modifier.source.slot === 'OffHandShield' ? 'OffHand' : modifier.source.slot : null;
+            return <li className="calc-step" key={index}>
+              <span className="calc-step-label">{label}{source && ` — ${source}`}
+                {step.operation !== 'base' && step.operation !== 'add-flat' && <small>{percent(step.operand)} of {step.operation === 'add-skill-base-contribution' ? 'original base ' : ''}{formatDamage(step.basis)}</small>}</span>
+              <span className="calc-step-value">{step.operation === 'base' ? number(step.contribution) : Number.isFinite(step.contribution) ? signed(step.contribution) : 'Unavailable'}</span>
+              <span className="calc-step-total">{number(step.after)}</span>
+            </li>;
+          })}
+          {hit?.steps.map((step, index) => <li className="calc-step" key={`target-${index}`}>
+            <span className="calc-step-label">{step.kind === 'ability-multiplier' ? 'Ability damage multiplier' : step.kind === 'burst-falloff' ? 'Burst target multiplier' : 'Target resistance / vulnerability'}</span>
+            <span className="calc-step-value">{step.multiplier === null ? 'Unavailable' : `× ${formatDamage(step.multiplier)}`}</span>
+            <span className="calc-step-total">{number(step.after)}</span>
+          </li>)}
+          <li className="calc-step public-final-hit"><span>Final hit</span><span /><span className="calc-step-total">{number(hit?.perTarget ?? null)}</span></li>
+          {target.configuredTargets > 1 && <li className="calc-step"><span>Enemy total</span><span>{target.affectedTargets === null ? 'Unavailable' : `× ${target.affectedTargets}`}</span><span className="calc-step-total">{number(hit?.total ?? null)}</span></li>}
+        </ol>
+      </section>;
+    })}
+  </details>;
+}
+
 function UnsupportedDetails({ records, label }: { records: readonly ClassifiedUnsupportedEffect[]; label: string }) {
   if (!records.length) return null;
   return <><p className="calc-subhead">{label} ({records.length})</p><ul className="calc-notes">{records.map(({ effect, evidence, kind }) =>
@@ -154,10 +187,10 @@ export function AbilityResults({ ability, inputs, data, idPrefix }: { ability: A
   const informationalCodes = new Set(['critical-unavailable', 'provisional-formula', 'components-not-combined', 'single-target-ability', 'unsupported-build-effects']);
   const status = hits.length === 0 || hits.every(hit => hit.perTarget === null) ? 'Unavailable'
     : hits.some(hit => hit.perTarget === null || (count > 1 && hit.total === null)) || classified.damage.length + classified.unknown.length > 0 ||
-      allWarnings.some(warning => !informationalCodes.has(warning.code)) ? 'Partial'
+      allWarnings.some(warning => !informationalCodes.has(warning.code)) ? 'Estimated'
       : target.confidence !== 'validated' || hits.some(hit => hit.estimated) ? 'Estimated' : null;
   return <section className="ability-results" aria-labelledby={`${idPrefix}-results-title`} data-confidence={target.confidence}>
-    <h4 id={`${idPrefix}-results-title`}>Damage{status && <small className="result-status" role="status" title={status === 'Partial' ? 'Only supported contributions are shown.' : status === 'Estimated' ? 'This value uses estimated or provisional rules.' : 'A supported value cannot be calculated.'}>{status}</small>}{target.burst && <span className="result-scope"> · Burst {target.burst.radius} m{target.burst.source === 'treasure-conversion' ? ' (mod)' : ''}</span>}</h4>
+    <h4 id={`${idPrefix}-results-title`}>Damage{status && <small className="result-status" role="status" title={status === 'Estimated' ? 'This value uses estimated or provisional rules.' : 'A supported value cannot be calculated.'}>{status}</small>}{target.burst && <span className="result-scope"> · Burst {target.burst.radius} m{target.burst.source === 'treasure-conversion' ? ' (mod)' : ''}</span>}</h4>
     {hits.length === 0 ? <p className="muted">No direct hit is published{ability.pve.dots?.length ? '; DoT damage is not calculated yet.' : '.'}</p>
       : <dl className="result-rows">{hits.map(hit => <div key={hit.componentId} className="result-row" data-component={hit.componentId}>
         <dt>{hitLabel(hit.componentId)}{count > 1 ? ' · per target' : ''}</dt>
@@ -171,6 +204,7 @@ export function AbilityResults({ ability, inputs, data, idPrefix }: { ability: A
       </div>)}
       <div className="result-row"><dt>Critical hit</dt><dd>{result.criticalDamage === null ? <span className="muted">Unavailable</span> : formatDamage(result.criticalDamage)}</dd></div>
     </dl>}
+    <PublicBreakdown components={breakdownComponents} target={target} modifiers={modifiers} />
     {debug && <>
     {count > 1 && targetLimits.map(w => <p key={w.code} className="result-note" data-warning={w.code}>{w.message}</p>)}
     {sideEffects.length > 0 && <p className="result-note result-side-effects">Not damage: {sideEffects.map(m => m.category === 'ability-taunt-flat'

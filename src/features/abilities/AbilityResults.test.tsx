@@ -101,7 +101,7 @@ describe('T0014 ability results in the popover', () => {
   it('shows the provisional normal hit, critical limitation and a collapsed ordered breakdown without a confidence badge', async () => {
     seed(); await render(); await inspect(1);
     const section = results();
-    expect(section.querySelector('h4')!.textContent).toBe('DamagePartial');
+    expect(section.querySelector('h4')!.textContent).toBe('DamageEstimated');
     expect(section.querySelector('.confidence-badge')).toBeNull();
     expect(section.dataset.confidence).toBe('unknown');
     expect(rowText('health-specific')).toEqual(['Health hit:526.7 Psychic']);
@@ -109,10 +109,10 @@ describe('T0014 ability results in the popover', () => {
     expect(control('.result-limits').textContent).toBe('Not included: special ability rules');
     expect(control('.result-build-limits').textContent).toBe('Across build: 11 effects with unknown damage relevance; applicability to this ability is unconfirmed.');
     // Simple by default: math is on demand, after the visible values and before Relevant Mods.
-    const breakdown = control<HTMLDetailsElement>('.calc-breakdown');
+    const breakdown = control<HTMLDetailsElement>('.calc-breakdown:not(.damage-breakdown)');
     expect(breakdown.open).toBe(false);
     expect(section.compareDocumentPosition(control('.ability-popover .relevant-mods')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    await click('.calc-breakdown summary');
+    await click('.calc-breakdown:not(.damage-breakdown) summary');
     const steps = [...breakdown.querySelectorAll<HTMLElement>('.calc-step')];
     expect(steps.map(s => s.dataset.category)).toEqual(['original-base', 'all-direct-damage-flat', 'all-direct-damage-flat',
       'skill-base-damage-percent', 'skill-base-damage-percent']);
@@ -135,8 +135,8 @@ describe('T0014 ability results in the popover', () => {
     expect(draft().equipment.some(e => e.slot === 'Ring')).toBe(false);
     await inspect(1);
     expect(rowText('health-specific')).toEqual(['Health hit:351.7 Psychic']);
-    await click('.calc-breakdown summary');
-    expect([...container.querySelectorAll('.calc-step-total')].map(s => s.textContent)).toEqual(['178', '236', '271.6', '351.7']);
+    await click('.calc-breakdown:not(.damage-breakdown) summary');
+    expect([...container.querySelectorAll('.calc-breakdown:not(.damage-breakdown) .calc-step-total')].map(s => s.textContent)).toEqual(['178', '236', '271.6', '351.7']);
   });
 
   it('applies target count and damage-type modifiers only to relevant stages and saves them in BuildDocument v1', async () => {
@@ -167,7 +167,7 @@ describe('T0014 ability results in the popover', () => {
     expect(control('.target-set-count').textContent).toBe(' · 1 set');
     await inspect(1);
     expect(rowText('health-specific')).toEqual(['Health hit · per target:632.04 Psychic', 'Total · 1 enemy:632.04']);
-    await click('.calc-breakdown summary');
+    await click('.calc-breakdown:not(.damage-breakdown) summary');
     const targetStep = control('.calc-step[data-category="target-damage-type"]');
     expect(targetStep.textContent).toContain('vulnerability 25% · resistance 5%');
     expect(targetStep.querySelector('.calc-step-value')!.textContent).toBe('× 1.2');
@@ -295,8 +295,8 @@ describe('T0014 Mock modifiers in the popover (Psychology + Deer)', () => {
       expect(rows[0]).toBe(`Health hit${count > 1 ? ' · per target' : ''}:${perTarget} Psychic`);
       if (count > 1) expect(rows[1]).toBe(`Total · ${count} enemies:${total}`);
       expect(control('.result-side-effects').textContent).toBe('Not damage: taunt +200 · taunt +1,080 · reuse timer +1.5 s');
-      await click('.calc-breakdown summary');
-      const categories = [...container.querySelectorAll<HTMLElement>('.ability-popover .calc-step')].map(s => s.dataset.category);
+      await click('.calc-breakdown:not(.damage-breakdown) summary');
+      const categories = [...container.querySelectorAll<HTMLElement>('.ability-popover .calc-breakdown:not(.damage-breakdown) .calc-step')].map(s => s.dataset.category);
       expect(categories).toEqual(['original-base', 'ability-damage-percent', 'ability-multiplier', ...(count > 1 ? ['burst-falloff', 'affected-targets'] : [])]);
       expect(control('.calc-step[data-category="ability-damage-percent"]').textContent).toContain('Mock Damage %OffHand planned mod · +43% of 178');
     });
@@ -307,7 +307,7 @@ describe('T0014 Mock modifiers in the popover (Psychology + Deer)', () => {
     await inspect(1);
     expect(rowText('health-specific')).toEqual(['Health hit · per target:103.41 PsychicEstimated', 'Total · 6 enemies:620.44Estimated']);
     expect(results().querySelectorAll('.result-estimate')).toHaveLength(2);
-    await click('.calc-breakdown summary');
+    await click('.calc-breakdown:not(.damage-breakdown) summary');
     expect(control('[data-falloff="direct"]').textContent).toContain('100% − (6 − 5) × (75% / (9 − 5)) = 81.25%');
   });
 });

@@ -269,15 +269,21 @@ def main():
                         expect(analysis.locator('.damage-value')).to_be_visible()
                         hit = analysis.locator('.damage-value').inner_text()
                         expect(analysis.locator('.result-build-limits')).to_have_count(0)
-                        expect(analysis.locator('.result-status')).to_have_text('Partial')
-                        expect(page.locator('.calc-breakdown, .technical-details, [data-unsupported], .result-limits')).to_have_count(0)
+                        expect(analysis.locator('.result-status')).to_have_text('Estimated')
+                        expect(page.locator('.calc-breakdown:not(.damage-breakdown), .technical-details, [data-unsupported], .result-limits')).to_have_count(0)
+                        breakdown = analysis.locator('.damage-breakdown')
+                        assert not breakdown.evaluate('(e) => e.open')
+                        breakdown.locator('summary').click()
+                        expect(breakdown.locator('.public-final-hit .calc-step-total')).to_have_text('96')
+                        expect(breakdown).to_contain_text('Fire Arrow Damage — Feet')
+                        assert 'Partial' not in analysis.inner_text()
                         page.screenshot(path=str(output / f'{mode}-{width}-damage.png'), full_page=True)
                         page.keyboard.press('Escape')
                         damage_build['equipment'][0]['candidateMods'].append({'powerId': 'power_4002', 'tierId': 'id_9'})
                         seed(damage_build)
                         page.locator('.skill-panel').first.locator('.slot-button').first.click()
-                        expect(analysis.locator('.result-status')).to_have_text('Partial')
-                        expect(analysis.locator('.result-build-limits, .calc-breakdown')).to_have_count(0)
+                        expect(analysis.locator('.result-status')).to_have_text('Estimated')
+                        expect(analysis.locator('.result-build-limits, .calc-breakdown:not(.damage-breakdown)')).to_have_count(0)
                         expect(analysis.locator('.damage-value')).to_have_text(hit)
                         page.keyboard.press('Escape')
                         # Explicit debug flag exposes preserved inventories in dev; production ignores it.
@@ -285,13 +291,13 @@ def main():
                         expect(page.locator('#skill-A')).to_have_value('Archery')
                         page.locator('.skill-panel').first.locator('.slot-button').first.click()
                         if mode == 'dev':
-                            analysis.locator('.calc-breakdown > summary').click()
+                            analysis.locator('.calc-breakdown:not(.damage-breakdown) > summary').click()
                             expect(analysis.locator('[data-relevance="non-damage"]')).to_have_count(2)
                             expect(analysis.locator('.result-build-limits')).to_contain_text('unknown damage relevance')
                             expect(page.locator('.technical-details')).to_have_count(1)
                             page.screenshot(path=str(output / f'{mode}-{width}-debug.png'), full_page=True)
                         else:
-                            expect(page.locator('.calc-breakdown, .technical-details')).to_have_count(0)
+                            expect(page.locator('.calc-breakdown:not(.damage-breakdown), .technical-details')).to_have_count(0)
                         page.keyboard.press('Escape')
                         # Invalid net resistance is an unresolved scenario, never a numeric/validated result.
                         damage_build['target']['damageTypes'] = {'Fire': {'resistance': 200}}
@@ -302,7 +308,7 @@ def main():
                         print(f'{mode} {width}: damage passed', flush=True)
                         assert not errors, errors
                         results.append({'mode': mode, 'width': width, 'coreCounts': screenshot_counts, 'geometry': dimensions,
-                            'damage': hit, 'inputFrameMs': input_frames, 'debugMode': 'dev opt-in only', 'consoleErrors': errors, 'checks': '190ms debounce, rapid input/paste/clear, Available/Selected parity, settings, target previews, imported working pairs, staging, focus, refresh, read-only, public Partial/Unavailable, dev-only diagnostics'})
+                            'damage': hit, 'inputFrameMs': input_frames, 'debugMode': 'dev opt-in only', 'consoleErrors': errors, 'checks': '190ms debounce, rapid input/paste/clear, Available/Selected parity, settings, target previews, imported working pairs, staging, focus, refresh, read-only, public numerical breakdown, Estimated/Unavailable, dev-only diagnostics'})
                         context.close()
                 finally:
                     os.killpg(process.pid, signal.SIGTERM)

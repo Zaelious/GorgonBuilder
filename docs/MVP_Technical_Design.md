@@ -143,7 +143,7 @@ Do not add a fuzzy-search dependency until basic search is measured and found in
 
 ## Calculation API
 
-**T0010-F2 customer correction (2026-11-04; PR #38 pending acceptance):** public damage results show supported values and concise Estimated/Partial/Unavailable status. Full engine outputs remain unchanged and tested. Detailed math, source/debug IDs, unsupported records, implementation assumptions and technical warning lists are rendered only when `import.meta.env.DEV` is true and the URL explicitly contains `?debugDamage=1`. Production builds, including Vite preview, ignore the flag. This supersedes earlier public expandable-breakdown requirements; it does not weaken internal diagnostic contracts or introduce new calculations.
+**T0010-F2 customer correction (2026-11-04; PR #38 pending acceptance):** public damage results show supported values and concise Estimated/Unavailable status. Full engine outputs remain unchanged and tested. Technical math documentation, source/debug IDs, unsupported records, implementation assumptions and technical warning lists are rendered only when `import.meta.env.DEV` is true and the URL explicitly contains `?debugDamage=1`. Production builds, including Vite preview, ignore the flag. This supersedes earlier public expandable-breakdown requirements; it does not weaken internal diagnostic contracts or introduce new calculations.
 
 Shared equipment mod search keeps typed text local to the controls, commits one effective query after 190 ms in a React transition, and clears immediately with pending work cancelled. Row visibility and both Available/Selected lists consume that same query. The repository-wide power index is shared; prepared relevance maps are memoized by equipment definition IDs and active skills, independently of query, target/category changes and working-mod edits. Selected matching is independent of Available eligibility/category filters; visible counts remain separate and original edit indices are preserved.
 
@@ -320,3 +320,6 @@ User-facing errors should distinguish:
 - build-schema migration failure
 
 Unknown game mechanics should generate a calculation warning, not a fabricated precise result.
+
+
+T0010-F2 final clarification: the public view includes a default-collapsed **Damage breakdown** showing actual engine steps, individual named equipment/skill contributions, flat/percentage/Skill Base contributions, target multipliers and final hit/total. It contains numerical presentation only: no raw IDs, source paths, uncertainty/exclusion inventories, implementation assumptions or long explanations. Those diagnostics remain available only through the development `?debugDamage=1` view. Public `Partial` labels are replaced with `Estimated`; unavailable numbers remain `Unavailable`. No engine results or accepted mod-search/Selected-heading behavior change.

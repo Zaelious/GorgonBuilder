@@ -40,7 +40,7 @@ Third-party tools/libraries may be used as implementation references or parsers,
 
 Every calculated value must remain explainable by the pure engine, with complete breakdowns, provenance, confidence, assumptions and unresolved effects retained for testing.
 
-**Product-owner correction, T0010-F2 (2026-11-04):** ordinary users see supported calculated values, useful target/scenario controls, and concise **Estimated**, **Partial** or **Unavailable** status where needed. Internal calculation breakdowns, unsupported-effect inventories, debug IDs/provenance, formula assumptions and technical warning lists are development/debug-only, rather than public expandable UI. The explicit developer opt-in is `?debugDamage=1` on the Vite development server; production ignores this flag. This presentation decision does not validate a provisional value or change any engine output.
+**Product-owner correction, T0010-F2 (2026-11-04):** ordinary users see supported calculated values, useful target/scenario controls, and concise **Estimated** or **Unavailable** status where needed. Internal diagnostic documentation, unsupported-effect inventories, debug IDs/provenance, formula assumptions and technical warning lists are development/debug-only, rather than public expandable UI. The explicit developer opt-in is `?debugDamage=1` on the Vite development server; production ignores this flag. This presentation decision does not validate a provisional value or change any engine output.
 
 ### 2.3 Separate facts from interpretation
 
@@ -435,3 +435,6 @@ A result is trustworthy when:
 - unsupported assumptions are surfaced
 - pure-engine tests pass
 - real in-game validation supports the result where possible
+
+
+T0010-F2 final clarification: the public view includes a default-collapsed **Damage breakdown** showing actual engine steps, individual named equipment/skill contributions, flat/percentage/Skill Base contributions, target multipliers and final hit/total. It contains numerical presentation only: no raw IDs, source paths, uncertainty/exclusion inventories, implementation assumptions or long explanations. Those diagnostics remain available only through the development `?debugDamage=1` view. Public `Partial` labels are replaced with `Estimated`; unavailable numbers remain `Unavailable`. No engine results or accepted mod-search/Selected-heading behavior change.

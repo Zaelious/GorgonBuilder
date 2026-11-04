@@ -7,6 +7,8 @@ import { aggregateBuildModifiers } from '../../core/calculation/aggregate';
 import { calculateAbilityDamage } from '../../core/calculation/ability-damage';
 import { AbilityResults } from './AbilityResults';
 import { AbilityFacts } from './AbilityFacts';
+import { psychologyFixture } from '../../core/calculation/fixtures';
+import { formatDamage } from './AbilityResults';
 import { damageDebugEnabled } from './damage-debug';
 let data: ReturnType<typeof loadPlannerFixture>;
 beforeAll(() => { data = loadPlannerFixture(); });
@@ -34,6 +36,14 @@ it('keeps supported, partial and unavailable numbers truthful and retains full d
     </>));
     await render();
     expect(container.querySelector('.damage-value')!.textContent).toBe('178 Psychic');
+    const breakdown = container.querySelector<HTMLDetailsElement>('.damage-breakdown')!;
+    expect(breakdown.open).toBe(false);
+    await act(async () => breakdown.querySelector<HTMLElement>('summary')!.click());
+    expect(breakdown.open).toBe(true);
+    expect(breakdown.querySelector('.public-final-hit .calc-step-total')!.textContent).toBe('178');
+    expect(breakdown.textContent).toContain('Published base');
+    expect(breakdown.textContent).not.toMatch(/PvE|assumption|unsupported|uncertain|excluded|MOD_/iu);
+    expect(container.textContent).not.toContain('Partial');
     expect(container.querySelector('.result-status')).toBeNull();
     target.damageTypes.Psychic = { vulnerability: 10 };
     await render();
@@ -41,11 +51,11 @@ it('keeps supported, partial and unavailable numbers truthful and retains full d
     expect(container.querySelector('.damage-value')!.textContent).toBe('195.8 Psychic');
     target.damageTypes = {};
     await render();
-    expect(container.querySelector('.calc-breakdown, .technical-details, [data-unsupported], [data-warning], .official-id')).toBeNull();
-    expect(container.textContent).not.toMatch(/Across build|Assumptions|MOD_|power_|Published base|Calculation breakdown/u);
+    expect(container.querySelector('.calc-breakdown:not(.damage-breakdown), .technical-details, [data-unsupported], [data-warning], .official-id')).toBeNull();
+    expect(container.textContent).not.toMatch(/Across build|Assumptions|MOD_|power_|Calculation breakdown/u);
     const partial = { ...aggregation, warnings: [{ code: 'unknown-power' as const, message: 'Private debug identity: power_unknown' }] };
     await render(repository, partial);
-    expect(container.querySelector('.result-status')!.textContent).toBe('Partial');
+    expect(container.querySelector('.result-status')!.textContent).toBe('Estimated');
     expect(container.textContent).not.toContain('power_unknown');
     expect(container.querySelector('.damage-value')!.textContent).toBe('178 Psychic');
     const unresolved = { ...repository, getAbility: () => ({ ...clean, damage: { ...clean.damage, healthSpecificDamage: Number.NaN } }) };
@@ -55,9 +65,31 @@ it('keeps supported, partial and unavailable numbers truthful and retains full d
     const before = calculateAbilityDamage(clean.id, partial, repository);
     history.replaceState(null, '', '/?debugDamage=1');
     await render(repository, partial);
-    expect(container.querySelector('.calc-breakdown')).not.toBeNull();
+    expect(container.querySelector('.calc-breakdown:not(.damage-breakdown)')).not.toBeNull();
     expect(container.querySelector('.technical-details')).not.toBeNull();
     expect(container.textContent).toContain('Calculation breakdown');
     expect(calculateAbilityDamage(clean.id, partial, repository)).toEqual(before);
   } finally { await act(async () => root.unmount()); container.remove(); history.replaceState(null, '', '/'); }
+});
+
+it('shows individual applied equipment and original-base contributions, never excluded sources or diagnostics', async () => {
+  history.replaceState(null, '', '/');
+  const aggregation = aggregateBuildModifiers(psychologyFixture(data.gameDataVersion), data);
+  const ability = data.getAbility('ability_6553')!;
+  const result = calculateAbilityDamage(ability.id, aggregation, data);
+  const container = document.createElement('div'); const root = createRoot(container);
+  try {
+    await act(async () => root.render(<AbilityResults ability={ability} inputs={{ aggregation, target: { count: 1, damageTypes: {} } }} data={data} idPrefix="sources" />));
+    const breakdown = container.querySelector('.damage-breakdown')!;
+    expect(breakdown.textContent).toContain('— Ring');
+    expect(breakdown.textContent).toContain('— Head');
+    expect(breakdown.textContent).toContain('+175');
+    expect(breakdown.textContent).toContain('original base 178');
+    const component = result.components.find(c => c.id === 'health-specific')!;
+    expect(breakdown.querySelectorAll('.calc-step')).toHaveLength(component.steps.length + 1);
+    expect(breakdown.querySelector('.public-final-hit .calc-step-total')!.textContent).toBe(formatDamage(component.provisionalDamage!));
+    expect(container.querySelector('.result-row .damage-value')!.textContent).toBe(`${formatDamage(component.provisionalDamage!)} Psychic`);
+    expect(breakdown.textContent).not.toMatch(/MOD_|BOOST_|equipment:|PvE|unsupported|excluded|uncertain|assumptions/iu);
+    expect(container.querySelector('.result-status')!.textContent).toBe('Estimated');
+  } finally { await act(async () => root.unmount()); }
 });
