@@ -2,7 +2,7 @@
 
 **Status:** Condensed v1 implementation series approved  
 **Version:** 2.0  
-**Date:** 2026-10-31
+**Date:** 2026-11-04
 
 ## Scope Philosophy
 
@@ -771,9 +771,9 @@ Guidelines:
 5. Search, set rarity/location/level filters, navigate to page 2, equip/unequip; assert page and scroll do not reset. Verify keyboard, 375px and 320px.
 6. Run pinned-data check, lint, typecheck, full tests, build, Cloudflare dry-run, diff whitespace and dev/production browser smoke. Provide PR, preview, screenshots and private customer-relevant counts only (never uploaded files).
 
-## Approved UI Follow-ups — Scheduled Before T0012
+## Approved UI Follow-ups — Historical and Post-T0013-F1
 
-These product-owner-approved follow-ups refine already-merged UI flows without changing the T0012 calculation scope. Implement in separate feature branches, one ticket at a time. Neither ticket is started or completed merely by being added here.
+T0008-F1 and T0010-F1 below are historical accepted UI follow-ups. T0008-F2 and T0010-F2 are new product-owner-approved work planned for **after** merged T0013-F1. Implement each ticket on its own feature branch; documenting a ticket does not start or complete its implementation. Neither ticket should change unrelated critical/Spark systems.
 
 ## T0008-F1 — Imported Effective Skill Levels and Ability Picker UX
 
