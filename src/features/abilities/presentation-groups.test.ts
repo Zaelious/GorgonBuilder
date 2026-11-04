@@ -35,6 +35,7 @@ it('conditional keyword-only roles are identified as conditional, not unconditio
 it('groups only the seven approved, exact-ID verified variant sets in v490', () => {
   expect(SPECIFIED_VARIANT_FAMILIES).toHaveLength(7);
   let grouped = 0;
+  let variantSeries = 0;
   for (const skillId of [...new Set(SPECIFIED_VARIANT_FAMILIES.map(spec => spec.skillId))]) {
     const abilities = data.getAbilitiesForSkill(skillId);
     const sourceGroups = groupAbilities(abilities);
@@ -46,7 +47,11 @@ it('groups only the seven approved, exact-ID verified variant sets in v490', () 
       const group = pickerGroups.find(candidate => candidate.isVariantFamily && candidate.name === spec.name);
       expect(group, `${skillId} / ${spec.name}`).toBeDefined();
       expect(group!.abilities.map(ability => ability.id).sort()).toEqual([...spec.ids].sort());
-      expect(group!.variants.length).toBeGreaterThan(1);
+      expect(group!.variants.map(variant => variant.name)).toEqual(spec.variants.map(variant => variant.name));
+      variantSeries += group!.variants.length;
+      for (const variant of group!.variants) {
+        expect(variant.abilities.map(ability => ability.id).sort()).toEqual(variant.canonicalGroups.flatMap(source => source.abilities.map(ability => ability.id)).sort());
+      }
       expect(group!.variants.flatMap(variant => variant.abilities.map(ability => ability.id)).sort()).toEqual([...spec.ids].sort());
       grouped++;
     }
@@ -56,6 +61,7 @@ it('groups only the seven approved, exact-ID verified variant sets in v490', () 
     }
   }
   expect(grouped).toBe(7);
+  expect(variantSeries).toBe(14);
 });
 
 it('a partially available variant family fails closed to ordinary UpgradeOf families', () => {
