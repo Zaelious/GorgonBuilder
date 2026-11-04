@@ -317,7 +317,7 @@ source link/equation in the collapsed breakdown and reachable Remove at mobile s
 4. Inspect supported, estimated and unavailable damage cases. Public views show truthful values/status, target controls and an expandable **numerical Damage breakdown** with named contributions but no diagnostic inventories, source IDs, implementation assumptions or technical warning lists. Damage numbers must match the engine.
 5. In development only, open `/?debugDamage=1`: inspect retained damage/secondary/unknown classification, source provenance, assumptions and full breakdowns. Production preview with the same flag must still show the simplified public view. Run the complete quality suite and six Chromium dev/preview viewport checks.
 
-### T0008-F2 — Official ability roles, Relevant Mods and scoped variant grouping (planned)
+### T0008-F2 — Official ability roles, Relevant Mods and scoped variant grouping (draft PR #39; awaiting customer check)
 
 1. Inspect Basic/Core/Nice/Epic and all five other supported ability-role labels in the picker and equipped ability details. Cross-check official keyword data; do not display conditional membership as unconditional.
 2. Equip a Core/Nice/Epic/category bonus, verify it appears as relevant for the correct ability and contributes direct damage only when the existing engine has a supported hook. Excluded abilities remain unaffected. Healing/utility mods can be source-relevant without a fabricated damage/healing calculation.
