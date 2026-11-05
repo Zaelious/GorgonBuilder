@@ -9,6 +9,7 @@ export type TreasureTargetCondition =
 import type { ModifierDataContext } from './registry';
 import { DIRECT_TREASURE_RULES } from './direct-treasure-rules';
 import { CRITICAL_TREASURE_RULES } from './critical-treasure-rules';
+import { SCENARIO_TREASURE_RULES } from './scenario-treasure-rules';
 import { resolveProseDamage, type ProseDamageResolution } from './prose-damage-grammar';
 
 /**
@@ -28,6 +29,7 @@ export interface TreasureEffectDraft {
   readonly attributeLabel: string;
   readonly scope: ModifierScope;
   readonly value: number;
+  readonly proc?: { readonly probability: number; readonly effect: 'multiply-hit' | 'add-flat' };
   readonly sourceValue: string;
   readonly assumptions: readonly string[];
   readonly targetCondition?: TreasureTargetCondition;
@@ -77,6 +79,7 @@ function all<T>(values: readonly (T | null)[]): T[] | null {
 export const TREASURE_EFFECT_RULES: readonly TreasureEffectRule[] = Object.freeze([
   ...DIRECT_TREASURE_RULES,
   ...CRITICAL_TREASURE_RULES,
+  ...SCENARIO_TREASURE_RULES,
   {
     id: 'treasure:MockAndRidiculeBoost', powerId: 'power_4066', internalName: 'MockAndRidiculeBoost',
     description: '"Mock and Ridicule deal +X% damage and taunt +Y" → MOD_ABILITY_MOCK/MOD_ABILITY_RIDICULE % and taunt',

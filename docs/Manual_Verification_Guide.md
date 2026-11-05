@@ -334,8 +334,15 @@ Full procedure, sources, fixtures and the controlled in-game comparison: [T0013-
 4. Add/remove `power_4009`/`power_9009` (Psychology/Mentalism critical damage), ArcheryBoost tiers 6+ (chance) and ArcheryCritDamage. Inspect the **Critical hit** section of the collapsed Damage breakdown; normal hits never change. Check a 0% case and a high multiplier (tiers id_25: ×6.9).
 5. Check Elite = Not Elite with Decapitate + `power_1203` and Undead with Flashing Strike + `power_1253`. Repeat at 1440/375/320 px; `?debugDamage=1` diagnostics appear only in dev. Run the quality suite and `critical.smoke.mjs` in dev and preview.
 
-### T0014-F1 — Stampede stacking and chance-based damage procs (planned)
+### T0014-F1 — Stampede stacks and damage procs (implemented for review)
 
-This ticket is approved but not started. At minimum verify the 0/1/15 current-stack Stampede scenario using one and two selected *of Continuous Trampling* mods, with source-by-source bonus and reversal on removal. Check Strike a Nerve's unconditional +N flat damage, distinct probability/double-damage result and expected damage, then one other audited chance-based effect. Recheck normal/critical calculations, session-only scenario state, unsupported duplicate-proc behavior, and 1440/375/320 px. Compare at least one Stampede and one proc scenario with actual Project Gorgon measurements; keep stacking/order unvalidated when no direct evidence exists. [Ticket](Tickets.md#t0014-f1--stampede-stacking-and-chance-based-damage-proc-scenarios).
+Follow the concise [product-owner checklist and controlled game measurements](T0014_F1_Verification.md#product-owner-checklist).
+Without an import, test Cow Stampede with one/two Continuous Trampling mods at 0/1/15 current stacks and remove or
+replace the exact selected tiers. Check Psychology Strike a Nerve with `power_4062/id_25`: unconditional +100 once,
+33% separate double-damage proc, and expected per successful noncritical hit. Check Deer Bash `power_21023/id_13`
+(24%, +92% triggered damage), then duplicate Strike a Nerve sources (combined Unavailable). Recheck unrelated
+Anatomy/Phrenology chance/multiplier, narrow layouts and session-only stack state; never save these scenarios in
+BuildDocument v1. Formulas remain Estimated pending actual game evidence. Separate [new coverage](treasure-coverage/T0014-F1.md)
+from unchanged historical snapshots.
 
 T0010-F2 final clarification: the public view includes a default-collapsed **Damage breakdown** showing actual engine steps, individual named equipment/skill contributions, flat/percentage/Skill Base contributions, target multipliers and final hit/total. It contains numerical presentation only: no raw IDs, source paths, uncertainty/exclusion inventories, implementation assumptions or long explanations. Those diagnostics remain available only through the development `?debugDamage=1` view. Public `Partial` labels are replaced with `Estimated`; unavailable numbers remain `Unavailable`. No engine results or accepted mod-search/Selected-heading behavior change.

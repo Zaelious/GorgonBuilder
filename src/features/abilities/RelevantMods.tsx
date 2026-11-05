@@ -19,7 +19,7 @@ const matchEvidence = (match: Row['match']) => match === 'attribute' ? 'publishe
   : match === 'keyword' ? 'static official ability category/keyword' : 'official ability icon and name';
 
 /** A source-linked mod is not necessarily part of computed direct damage. */
-export function relevantModDamageStatus(row: Row, result: AbilityDamageResult | null): 'included' | 'uncertain' | 'not-included' | 'relevant' {
+export function relevantModDamageStatus(row: Row, result: AbilityDamageResult | null): 'included' | 'uncertain' | 'scenario' | 'not-included' | 'relevant' {
   if (!result) return 'relevant';
   const decisions = result.components.filter(component => component.delivery === 'direct').flatMap(component =>
     component.decisions.filter(decision => {
@@ -33,6 +33,9 @@ export function relevantModDamageStatus(row: Row, result: AbilityDamageResult | 
     }));
   if (decisions.some(decision => decision.status === 'applied')) return 'included';
   if (decisions.some(decision => decision.status === 'uncertain')) return 'uncertain';
+  if (decisions.some(({ modifier }) => (modifier.category === 'stampede-damage-per-stack' || modifier.category === 'stampede-stunned-percent' || modifier.category === 'chance-damage-proc')
+    && modifier.scope.kind === 'ability-attribute-hook' && modifier.scope.skillId === result.ability?.skill.skillId
+    && result.ability?.pve.attributeHooks[modifier.scope.hook]?.includes(modifier.scope.attributeId))) return 'scenario';
   return 'not-included';
 }
 
@@ -63,7 +66,7 @@ export function RelevantMods({ rows, equipment, data, idPrefix, damageResult = n
         return <li key={rowKey(row)} data-relevant-mod={rowKey(row)} data-power-id={row.mod.powerId} data-tier-id={row.mod.tierId ?? ''}
           data-source-slot={selection.slot} data-source-kind={row.source} aria-describedby={debug ? `${idPrefix}-source-${position + 1}` : undefined} title={debug ? provenance(row, selection, data) : undefined}>
           <span className="relevant-effect"><EffectDescriptions descriptions={row.tier.effectDescriptions} data={data} fallback={power ? powerName(power) : row.mod.powerId} /></span>
-          {damageResult && <small className="relevant-mod-status">{({ included: 'Included in direct damage', uncertain: 'Direct damage uncertain', 'not-included': 'Relevant only · not added to direct damage', relevant: 'Source-relevant' } as const)[relevantModDamageStatus(row, damageResult)]}</small>}
+          {damageResult && <small className="relevant-mod-status">{({ included: 'Included in direct damage', uncertain: 'Direct damage uncertain', scenario: 'Damage scenario', 'not-included': 'Relevant only · not added to direct damage', relevant: 'Source-relevant' } as const)[relevantModDamageStatus(row, damageResult)]}</small>}
         </li>;
       })}</ul>}
   </section>;
