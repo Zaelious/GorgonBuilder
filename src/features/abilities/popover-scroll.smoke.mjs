@@ -83,7 +83,10 @@ async function run(browser, url, [width, height]) {
   const name = `${width}x${height}`;
   await page.screenshot({ path: path.join(output, `${name}-compact.png`) });
 
-  for (const summary of ['.calc-breakdown > summary', '.technical-details > summary', '.bar-edit-actions > summary']) {
+  // T0010-F2 split the public Damage breakdown from the debug-only Calculation breakdown/Technical details; expand
+  // every disclosure that exists in the current mode (public, or dev with ?debugDamage=1).
+  for (const summary of ['.damage-breakdown > summary', '.calc-breakdown:not(.damage-breakdown) > summary', '.technical-details > summary', '.bar-edit-actions > summary']) {
+    if (await card.locator(summary).count() === 0) continue;
     await card.locator(summary).click();
     await page.waitForTimeout(80);
   }

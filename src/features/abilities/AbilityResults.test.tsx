@@ -105,9 +105,14 @@ describe('T0014 ability results in the popover', () => {
     expect(section.querySelector('.confidence-badge')).toBeNull();
     expect(section.dataset.confidence).toBe('unknown');
     expect(rowText('health-specific')).toEqual(['Health hit:526.7 Psychic']);
-    expect(section.textContent).toContain('Critical hitUnavailable');
+    // T0013-F2: without a creature type the chance (and expected value) stay Unavailable; the source-backed multiplier
+    // (1.25 + the fixture's planned +90% Psychology crit damage) still gives a critical hit.
+    expect(section.textContent).toContain('Critical chanceUnavailable · select a creature type');
+    expect(section.textContent).toContain('Critical hit1,132.41 Psychic');
+    expect(section.textContent).toContain('Expected per hitUnavailable');
     expect(control('.result-limits').textContent).toBe('Not included: special ability rules');
-    expect(control('.result-build-limits').textContent).toBe('Across build: 11 effects with unknown damage relevance; applicability to this ability is unconfirmed.');
+    // The Psychology crit-damage candidate is now a mapped critical modifier, not an unknown effect (11 → 10).
+    expect(control('.result-build-limits').textContent).toBe('Across build: 10 effects with unknown damage relevance; applicability to this ability is unconfirmed.');
     // Simple by default: math is on demand, after the visible values and before Relevant Mods.
     const breakdown = control<HTMLDetailsElement>('.calc-breakdown:not(.damage-breakdown)');
     expect(breakdown.open).toBe(false);
@@ -121,8 +126,10 @@ describe('T0014 ability results in the popover', () => {
     expect(steps[4]!.textContent).toContain('Head planned mod · +45% of base 178');
     expect(steps[4]!.getAttribute('title')).toContain('basis is the original published base only');
     expect(breakdown.textContent).toContain('Assumptions');
-    expect(breakdown.textContent).toContain('Unknown damage relevance (11)');
-    expect(breakdown.querySelectorAll('[data-warning="critical-unavailable"]')).toHaveLength(1);
+    expect(breakdown.textContent).toContain('Unknown damage relevance (10)');
+    // The T0013 engine note is superseded by the critical-stage diagnostics in debug mode.
+    expect(breakdown.querySelectorAll('[data-warning="critical-unavailable"]')).toHaveLength(0);
+    expect(breakdown.querySelector('[data-critical-debug]')!.textContent).toContain('PhrenologyCriticals');
   });
 
   it('recalculates the card and explains the delta when one item is removed', async () => {

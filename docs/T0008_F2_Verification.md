@@ -1,6 +1,6 @@
 # T0008-F2 — draft implementation / verification
 
-**Status:** in progress, [draft PR #39](https://github.com/Zaelious/GorgonBuilder/pull/39); not customer-accepted or merged.
+**Status:** squash-merged 2026-11-04 via [PR #39](https://github.com/Zaelious/GorgonBuilder/pull/39), commit `3aff873`.
 
 ## Scope and official v490 evidence
 

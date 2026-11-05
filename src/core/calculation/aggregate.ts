@@ -4,10 +4,10 @@ import {
   CONFIDENCE_ORDER, MODIFIER_AGGREGATION_SCHEMA_VERSION,
   type AggregationWarning, type EquipmentSourceRef, type ModifierAggregationResult, type ModifierApplicability,
   type ModifierCategory, type ModifierCondition, type ModifierConfidence, type ModifierSource, type NormalizedModifier,
-  type SkillSlotName, type UnsupportedEffect, type UnsupportedReason, type UnsupportedSkillSource,
+  type SkillSlotName, type TargetConditionContext, type UnsupportedEffect, type UnsupportedReason, type UnsupportedSkillSource,
 } from './modifiers';
 import { defaultModifierRegistry, parseEffectDescription, type ModifierDataContext, type ModifierRegistry } from './registry';
-import { interpretTreasureEffect, type TreasureEffectRule } from './treasure-effect-rules';
+import { interpretTreasureEffect, type TreasureEffectRule, type TreasureTargetCondition } from './treasure-effect-rules';
 
 export interface AggregateOptions {
   /** Defaults to the documented initial mapping subset. */
@@ -16,6 +16,20 @@ export interface AggregateOptions {
   readonly treasureRules?: readonly TreasureEffectRule[];
   /** Reusable unconditional named-damage prose grammar; on by default, off only for preserved coverage baselines. */
   readonly proseGrammar?: boolean;
+  /** T0013-F2 target dummy creature type / Elite state for curated target-conditional rules. Omitted = unknown. */
+  readonly target?: TargetConditionContext;
+}
+
+/** Evaluate a curated target condition against the scenario; unknown inputs stay unevaluated. */
+function targetCondition(condition: TreasureTargetCondition, target: TargetConditionContext | undefined): ModifierCondition {
+  if (condition.kind === 'elite') {
+    const elite = target?.elite ?? null;
+    return { kind: 'target-elite', elite: condition.elite, status: elite === null ? 'unevaluated' : elite === condition.elite ? 'met' : 'not-met' };
+  }
+  const creature = target?.creatureType ?? null;
+  const status = creature === null || condition.ambiguousCreatureTypeIds.includes(creature) ? 'unevaluated'
+    : condition.creatureTypeIds.includes(creature) ? 'met' : 'not-met';
+  return { kind: 'target-creature-type', creatureTypeIds: condition.creatureTypeIds, ambiguousCreatureTypeIds: condition.ambiguousCreatureTypeIds, status };
 }
 
 const ADVANCEMENT_SUM_ASSUMPTION = 'Advancement-table entries are treated as per-level increments and summed for levels 1..configured level; unvalidated.';
@@ -87,11 +101,12 @@ export function aggregateBuildModifiers(build: BuildDocument, data: ModifierData
           { proseGrammar: options.proseGrammar !== false }) : null;
       if (curated?.kind === 'drafts') {
         for (const draft of curated.drafts) {
+          const conditions = draft.targetCondition ? [targetCondition(draft.targetCondition, options.target)] : [];
           out.modifiers.push({
             key: `${input.key}/rule:${draft.part}`, category: draft.category, operation: draft.operation,
             attributeId: draft.attributeId, attributeLabel: draft.attributeLabel, scope: draft.scope,
             value: draft.value, sourceValue: draft.sourceValue, unit: draft.unit,
-            conditions: [], applicability: 'unconditional', mappingRuleId: curated.rule.id,
+            conditions, applicability: applicability(conditions), mappingRuleId: curated.rule.id,
             confidence: curated.rule.confidence, assumptions: [...draft.assumptions], source: input.source,
           });
         }

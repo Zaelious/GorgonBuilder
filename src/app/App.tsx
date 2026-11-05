@@ -7,7 +7,8 @@ import { EquipmentPlanner } from '../features/equipment/EquipmentPlanner';
 import { ImportCharacter } from '../features/import/ImportCharacter';
 import { TargetDummy } from '../features/abilities/TargetDummy';
 import type { AbilityDamageInputs } from '../features/abilities/AbilityResults';
-import { aggregateBuildModifiers } from '../core/calculation';
+import { aggregateBuildModifiers, getCreatureType, resolveCriticalSkillLevel } from '../core/calculation';
+import { eliteFlag, readCriticalScenario, writeCriticalScenario, type CriticalScenario } from '../persistence/local/critical-scenario';
 import { useSessionFlag } from './useSessionFlag';
 import type { ImportSession } from '../features/import/inventory';
 import { createDraftAutosave } from '../persistence/local/autosave';
@@ -57,8 +58,19 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
   // Calculation UI is opt-in for this browser session (not saved in the build). When on, one pure aggregation per
   // committed build feeds every equipped ability result.
   const [damageAnalysis, setDamageAnalysis] = useSessionFlag('damageAnalysis');
-  const damageInputs = useMemo<AbilityDamageInputs | undefined>(() => damageAnalysis
-    ? { aggregation: aggregateBuildModifiers(build, data), target: build.target } : undefined, [build, data, damageAnalysis]);
+  // T0013-F2 critical scenario (creature type, Elite, manual sub-skill levels): browser-session state, never the build.
+  const [criticalScenario, setCriticalScenarioState] = useState<CriticalScenario>(readCriticalScenario);
+  const updateCriticalScenario = (next: CriticalScenario) => { setCriticalScenarioState(next); writeCriticalScenario(next); };
+  const character = imported?.character;
+  const damageInputs = useMemo<AbilityDamageInputs | undefined>(() => {
+    if (!damageAnalysis) return undefined;
+    const creatureType = getCreatureType(criticalScenario.creatureType, data)?.id ?? null;
+    return {
+      aggregation: aggregateBuildModifiers(build, data, { target: { creatureType, elite: eliteFlag(criticalScenario.elite) } }),
+      target: build.target,
+      critical: { creatureType, skillLevel: skillId => resolveCriticalSkillLevel(skillId, { snapshot: character, manualLevels: criticalScenario.manualLevels }, data) },
+    };
+  }, [build, data, damageAnalysis, criticalScenario, character]);
 
   useEffect(() => {
     const flush = () => { autosave.flush(); };
@@ -154,7 +166,8 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
       <SkillPlanner slot="A" skill={build.skillSlotA} bar={build.abilityBarA} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} equipment={build.equipment} imported={imported?.character} damageInputs={damageInputs} />
       <SkillPlanner slot="B" skill={build.skillSlotB} bar={build.abilityBarB} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} equipment={build.equipment} imported={imported?.character} damageInputs={damageInputs} />
     </div>
-    {damageAnalysis && <TargetDummy build={build} data={data} onEdit={commit} readOnly={readOnly} />}
+    {damageAnalysis && <TargetDummy build={build} data={data} onEdit={commit} readOnly={readOnly}
+      critical={{ scenario: criticalScenario, onChange: updateCriticalScenario, imported: character }} />}
     <div className="skill-change-notice" aria-live="polite">{cleared && <p>
       <span>{cleared.message}</span>
       <button type="button" onClick={undoCleared}>Undo</button>

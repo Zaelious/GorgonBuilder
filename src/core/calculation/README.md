@@ -94,8 +94,7 @@ order are not validated in game. Advancement totals are `assumed`. Nothing is
 `validated` until customer game-math checks (T0013) confirm it. Each modifier
 has its own `assumptions`.
 
-**Intentionally unsupported for now** (kept as `unmapped-attribute`): crit damage and
-chance, target vulnerability (`VULN_*`, T0014), combat refresh, taunt, reset time,
+**Intentionally unsupported for now** (kept as `unmapped-attribute`): target vulnerability (`VULN_*`, T0014), combat refresh, taunt, reset time,
 power cost, accuracy/evasion, `*_DIRECT`/`*_INDIRECT`/elite mitigation, pet and
 sender attributes, attributes outside supported direct or static keyword hooks,
 and skill-named families whose label names something else (e.g.
@@ -108,8 +107,9 @@ supply it as `options.registry`. A rule has an ID, category, operation, unit,
 expected DisplayTypes, confidence, assumptions and a `match(attribute, index)`
 function. The function returns a scope or null. `MappingIndex` provides official
 skills by ID suffix, published damage types and ability hook membership.
-`critical-damage-percent` and `critical-chance-percent` are reserved categories
-with no default rule. The aggregation code does not change.
+T0013-F2 maps `critical-chance-percent` / `critical-damage-percent` for official attributes listed in an
+`AttributesThatDeltaCritChance` / `AttributesThatModCritDamage` hook (ability record or static abilitykeywords
+rule). They never contribute to normal damage. The aggregation code does not change.
 
 ## Fixtures and review
 
@@ -285,3 +285,25 @@ only), other mechanics (taunt, reuse, DoT, crit, pets...) and validation confide
 with three snapshots: T0014 (no keyword rules, two Mock rules), the first T0013-F1
 commit (no grammar) and final. Audit prose screening never supplies runtime damage formulas.
 See [verification](../../../docs/T0013_F1_Verification.md) for assumptions and limitations.
+
+## Critical hits and target conditions (T0013-F2)
+
+`calculateCriticalHit(result, target, { creatureType, skillLevel }, repository)` is a separate pure stage after
+`applyTargetDummy`. It never changes T0013/T0014 results.
+
+- **System:** official static keyword `PhrenologyCriticals` / `AnatomyCriticals` (`critical-rules.ts`). Conditional
+  grants (Knife, Vampirism) are unavailable; a multiplier without a keyword is unresolved; neither means no system.
+- **Chance:** cumulative official sub-skill reward notes at the effective level for the selected creature's sub-skill
+  (`criticalChanceTable`), only for the skills the notes name, plus applicable chance bonuses (additive, assumed).
+  Unknown creature or missing level gives null. A creature without a Phrenology sub-skill gives 0% (assumed).
+- **Multiplier:** published `CritDamageMod` plus applicable critical-damage bonuses (additive, assumed). The Archery
+  1.25 value conflicts with the wiki's Anatomy 1.5 and stays explicitly assumed.
+- **Values:** critical = per-target hit × M; expected = N × (1 − p) + C × p, per hit component and in totals.
+- **Skill levels:** `resolveCriticalSkillLevel` — manual override, else a uniquely resolved imported exported `Level`
+  (BonusLevels never re-added), else null. Missing/unresolved sub-skills are never level 0.
+- **Target conditions:** `aggregateBuildModifiers(build, data, { target: { creatureType, elite } })` evaluates the
+  curated `target-creature-type` / `target-elite` conditions (`critical-treasure-rules.ts`); unknown targets leave them
+  unevaluated (uncertain, not added).
+- The coverage report's three snapshots pin the T0013-F1 rules and registry, so they remain byte-identical.
+
+See [T0013-F2 verification](../../../docs/T0013_F2_Verification.md) for sources, confidence and fixtures.

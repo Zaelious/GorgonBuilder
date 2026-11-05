@@ -40,3 +40,7 @@
 .ability-results .result-side-effects { color: var(--color-secondary); }
 
 .ability-results .result-status { color: var(--color-warning); font-size: 0.6875rem; font-weight: 400; }
+
+/* T0013-F2 critical rows: compact scope/hint text beside the value. */
+.result-rows .result-scope-note, .result-rows .result-hint { color: var(--color-muted); font-size: 0.6875rem; font-weight: 400; }
+.calc-critical { margin-top: 0.5rem; }

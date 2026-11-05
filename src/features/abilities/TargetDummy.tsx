@@ -4,6 +4,12 @@ import {
   configuredTargetDamageTypes, TARGET_COUNT_MAX, TARGET_COUNT_MIN, TARGET_PERCENT_MAX, TARGET_PERCENT_MIN, type TargetPercentField,
 } from '../../core/build/target';
 import type { GameDataRepository } from '../../data/repository/repository';
+import type { ImportedCharacterSnapshot } from '../../core/import';
+import {
+  CRITICAL_SKILL_LEVEL_MAX, CRITICAL_SKILL_LEVEL_MIN, creatureTypes, getCreatureType, isValidCriticalSkillLevel, resolveCriticalSkillLevel,
+  setManualCriticalLevel, type CriticalSkillLevel,
+} from '../../core/calculation';
+import type { CriticalScenario, EliteSetting } from '../../persistence/local/critical-scenario';
 import type { BuildEdit } from '../../app/editor/build-editor';
 import { NON_DAMAGING_TYPE, damageTypeClass } from './AbilityFacts';
 import { damageDebugEnabled } from './damage-debug';
@@ -46,11 +52,91 @@ function NumberField({ id, label, value, min, max, step, onCommit, error, descri
     {!valid && <span id={`${id}-error`} className="warning target-error" role="alert">{error}</span>}</>;
 }
 
+export interface CriticalTargetProps {
+  readonly scenario: CriticalScenario;
+  readonly onChange: (next: CriticalScenario) => void;
+  /** Local CharacterSheet snapshot; never uploaded. */
+  readonly imported: ImportedCharacterSnapshot | undefined;
+}
+
+/** Manual sub-skill level: empty means "use the imported level"; only valid whole numbers are committed. */
+function CriticalLevelField({ skill, onCommit }: { skill: CriticalSkillLevel; onCommit: (level: number | null) => void }) {
+  const shown = skill.level === null ? '' : String(skill.level);
+  const [draft, setDraft] = useState({ shown, text: shown });
+  if (draft.shown !== shown) setDraft({ shown, text: shown });
+  const text = draft.shown === shown ? draft.text : shown;
+  const id = `critical-level-${skill.skillId}`;
+  const valid = text.trim() === '' || isValidCriticalSkillLevel(Number(text));
+  return <><input id={id} type="number" inputMode="numeric" min={CRITICAL_SKILL_LEVEL_MIN} max={CRITICAL_SKILL_LEVEL_MAX} step={1} value={text}
+    placeholder="—" aria-label={`${skill.skillName} level`} aria-invalid={!valid} aria-describedby={!valid ? `${id}-error` : undefined}
+    onChange={e => {
+      const next = e.target.value;
+      setDraft({ shown, text: next });
+      if (next.trim() === '') onCommit(null);
+      else if (isValidCriticalSkillLevel(Number(next))) onCommit(Number(next));
+    }} onBlur={() => setDraft({ shown, text: shown })} />
+    {!valid && <span id={`${id}-error`} className="warning target-error" role="alert">Use a whole number {CRITICAL_SKILL_LEVEL_MIN}–{CRITICAL_SKILL_LEVEL_MAX}.</span>}</>;
+}
+
+function sourceText(skill: CriticalSkillLevel): string {
+  if (skill.origin === 'manual') return 'Manual';
+  if (skill.origin === 'imported') return 'Imported';
+  if (skill.imported && skill.imported.status !== 'resolved') return 'Not in import';
+  return 'Not set';
+}
+
+/** T0013-F2: creature type, Elite flag and the selected creature's Anatomy/Phrenology levels (session scenario only). */
+function CriticalTargetControls({ data, critical }: { data: GameDataRepository; critical: CriticalTargetProps }) {
+  const { scenario, onChange, imported } = critical;
+  const types = useMemo(() => creatureTypes(data), [data]);
+  const creature = getCreatureType(scenario.creatureType, data);
+  const skills = creature ? [creature.anatomySkillId, creature.phrenologySkillId].filter((id): id is string => id !== null)
+    .map(id => resolveCriticalSkillLevel(id, { snapshot: imported, manualLevels: scenario.manualLevels }, data)) : [];
+  const set = skills.filter(skill => skill.level !== null).length;
+  const setLevel = (skillId: string, level: number | null) => {
+    const manualLevels = setManualCriticalLevel(scenario.manualLevels, skillId, level);
+    if (manualLevels !== scenario.manualLevels) onChange({ ...scenario, manualLevels });
+  };
+  return <fieldset className="target-critical-fields">
+    <legend className="sr-only">Critical-hit target</legend>
+    <label className="target-select" htmlFor="target-creature"><span>Creature</span>
+      <select id="target-creature" value={creature?.id ?? ''} onChange={e => onChange({ ...scenario, creatureType: e.target.value || null })}>
+        <option value="">Unknown</option>
+        {types.map(type => <option key={type.id} value={type.id}>{type.label}</option>)}
+      </select></label>
+    <label className="target-select" htmlFor="target-elite"><span>Elite</span>
+      <select id="target-elite" value={scenario.elite} onChange={e => onChange({ ...scenario, elite: e.target.value as EliteSetting })}>
+        <option value="unknown">Unknown</option><option value="elite">Elite</option><option value="non-elite">Not Elite</option>
+      </select></label>
+    <details className="target-critical">
+      <summary>Critical skills{creature && <span className="target-set-count"> · {set} of {skills.length} set</span>}</summary>
+      <div className="target-critical-content">
+        {!creature ? <p className="muted">Choose a creature type to use its Anatomy and Phrenology levels.</p> : <>
+          <table><thead><tr><th scope="col">Sub-skill</th><th scope="col">Level</th><th scope="col">Source</th></tr></thead>
+            <tbody>{skills.map(skill => <tr key={skill.skillId} data-critical-skill={skill.skillId} data-origin={skill.origin ?? 'none'}>
+              <th scope="row"><label htmlFor={`critical-level-${skill.skillId}`}>{skill.skillName}</label></th>
+              <td><CriticalLevelField skill={skill} onCommit={level => setLevel(skill.skillId, level)} /></td>
+              <td><span className="critical-source">{sourceText(skill)}</span>
+                {skill.origin === 'manual' && skill.imported?.status === 'resolved' && <button type="button" className="link-button critical-use-imported"
+                  onClick={() => setLevel(skill.skillId, null)}>Use imported ({skill.imported.level})</button>}
+                {skill.origin === 'manual' && skill.imported?.status !== 'resolved' && <button type="button" className="link-button critical-clear"
+                  aria-label={`Clear ${skill.skillName} level`} onClick={() => setLevel(skill.skillId, null)}>Clear</button>}</td>
+            </tr>)}</tbody></table>
+          {!creature.phrenologySkillId && <p className="muted">{creature.label} has no Phrenology sub-skill.</p>}
+          <p className="muted">Imported levels come from your local CharacterSheet. A typed level overrides it for this browser session.</p>
+        </>}
+      </div>
+    </details>
+  </fieldset>;
+}
+
 /**
  * Custom target dummy (T0014): enemy count 1–20 and per-damage-type vulnerability/resistance percentages, saved in
  * the existing BuildDocument v1 `target`. Math lives in core/calculation/target-damage.
  */
-export function TargetDummy({ build, data, onEdit, readOnly }: { build: BuildDocument; data: GameDataRepository; onEdit: (edit: BuildEdit) => void; readOnly: boolean }) {
+export function TargetDummy({ build, data, onEdit, readOnly, critical }: { build: BuildDocument; data: GameDataRepository; onEdit: (edit: BuildEdit) => void; readOnly: boolean;
+  /** T0013-F2 critical scenario; session state, so it stays usable on read-only builds. */
+  critical?: CriticalTargetProps }) {
   const types = useMemo(() => targetDamageTypes(build, data), [build, data]);
   const configured = configuredTargetDamageTypes(build.target).length;
   const percentField = (damageType: string, field: TargetPercentField) => {
@@ -80,5 +166,6 @@ export function TargetDummy({ build, data, onEdit, readOnly }: { build: BuildDoc
         </div>
       </details>
     </fieldset>
+    {critical && <CriticalTargetControls data={data} critical={critical} />}
   </section>;
 }

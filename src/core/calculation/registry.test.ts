@@ -33,6 +33,13 @@ it.each([
   ['BOOST_CRUSHING', 'damage-type-flat', { kind: 'damage-type', damageType: 'Crushing', delivery: null }],
   ['MITIGATION_CRUSHING', 'damage-type-mitigation-flat', { kind: 'damage-type', damageType: 'Crushing', delivery: null }],
   ['MAX_HEALTH', 'max-resource-flat', { kind: 'general', delivery: null }],
+  // T0013-F2: official critical hooks (ability top level, PvE and abilitykeywords rules); never normal damage.
+  ['MOD_CRITICAL_HIT_DAMAGE', 'critical-damage-percent', { kind: 'ability-attribute-hook', attributeId: 'MOD_CRITICAL_HIT_DAMAGE', hook: 'AttributesThatModCritDamage' }],
+  ['MOD_CRITICAL_HIT_DAMAGE_ANATOMY', 'critical-damage-percent', { kind: 'ability-attribute-hook', attributeId: 'MOD_CRITICAL_HIT_DAMAGE_ANATOMY', hook: 'AttributesThatModCritDamage' }],
+  ['ABILITY_CRITICAL_HIT_DAMAGE_MOD_SYSTEMSHOCK', 'critical-damage-percent', { kind: 'ability-attribute-hook', attributeId: 'ABILITY_CRITICAL_HIT_DAMAGE_MOD_SYSTEMSHOCK', hook: 'AttributesThatModCritDamage' }],
+  ['DELTA_ANATOMY_CRITICAL_CHANCE', 'critical-chance-percent', { kind: 'ability-attribute-hook', attributeId: 'DELTA_ANATOMY_CRITICAL_CHANCE', hook: 'AttributesThatDeltaCritChance' }],
+  ['ABILITY_CRIT_CHANCE_DELTA_AIMEDSHOT', 'critical-chance-percent', { kind: 'ability-attribute-hook', attributeId: 'ABILITY_CRIT_CHANCE_DELTA_AIMEDSHOT', hook: 'AttributesThatDeltaCritChance' }],
+  ['SKILL_CRIT_CHANCE_DELTA_CROSSBOW', 'critical-chance-percent', { kind: 'ability-attribute-hook', attributeId: 'SKILL_CRIT_CHANCE_DELTA_CROSSBOW', hook: 'AttributesThatDeltaCritChance' }],
 ])('maps %s to %s using official identities', (attributeId, category, scope) => {
   const result = defaultModifierRegistry.interpretAttribute(attributeId, data);
   expect(result).toMatchObject({ kind: 'modifier', rule: { category }, scope });
@@ -40,7 +47,7 @@ it.each([
 
 it.each([
   ['BOOST_SKILL_ANIMALHANDLING', 'unmapped-attribute'],   // label names specific abilities, not the skill
-  ['MOD_CRITICAL_HIT_DAMAGE', 'unmapped-attribute'],      // crit is outside the initial subset
+  ['MONSTER_CRIT_CHANCE', 'unmapped-attribute'],          // monster-side crit stat; no player ability hook
   ['VULN_PSYCHIC', 'unmapped-attribute'],                 // target debuff semantics belong to T0014
   ['MITIGATION_CRUSHING_DIRECT', 'unmapped-attribute'],
   ['MOD_ABILITY_KEYWORD_SELFDESTRUCT', 'unexpected-display-type'],

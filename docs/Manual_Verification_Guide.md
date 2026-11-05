@@ -317,20 +317,22 @@ source link/equation in the collapsed breakdown and reachable Remove at mobile s
 4. Inspect supported, estimated and unavailable damage cases. Public views show truthful values/status, target controls and an expandable **numerical Damage breakdown** with named contributions but no diagnostic inventories, source IDs, implementation assumptions or technical warning lists. Damage numbers must match the engine.
 5. In development only, open `/?debugDamage=1`: inspect retained damage/secondary/unknown classification, source provenance, assumptions and full breakdowns. Production preview with the same flag must still show the simplified public view. Run the complete quality suite and six Chromium dev/preview viewport checks.
 
-### T0008-F2 — Official ability roles, Relevant Mods and scoped variant grouping (draft PR #39; awaiting customer check)
+### T0008-F2 — Official ability roles, Relevant Mods and scoped variant grouping (merged PR #39, `3aff873`)
 
 1. Inspect Basic/Core/Nice/Epic and all five other supported ability-role labels in the picker and equipped ability details. Cross-check official keyword data; do not display conditional membership as unconditional.
 2. Equip a Core/Nice/Epic/category bonus, verify it appears as relevant for the correct ability and contributes direct damage only when the existing engine has a supported hook. Excluded abilities remain unaffected. Healing/utility mods can be source-relevant without a fabricated damage/healing calculation.
 3. For Vampirism Blood Mist, Animal Handling Call Stabled Pet and Mark Weakness, Bard SoD, Mentalism Mindworm, Necromancy SZ, Priest Triage and Priest Flamestrike, choose two different published variants/ranks. Confirm exact identities, readable series labels without InternalNames, search, selected markers, add/replace/removal and autosave. A non-standard series (e.g. Flamestrike "Alternate version A") shows its tag in the equipped ability popover. Other families remain unchanged.
 4. Inspect the regenerated T0013-F1 audit. Required-active-skill entries are in the Conditional column, not unmodeled, and published figures reproduce. Spot-check `power_12191`: Sword + Animal Handling includes it, Sword + Archery does not. Check 1440/375/320 px, keyboard and long-scroll behavior.
 
-### T0013-F2 — Anatomy/Phrenology critical calculations (planned)
+### T0013-F2 — Anatomy/Phrenology critical calculations (implemented for review)
 
-1. Import current CharacterSheet locally and inspect Anatomy/Phrenology creature subskills; ensure exported effective Level is not increased again by BonusLevels. Without import, enter manual values and verify the source distinction.
-2. Compare at least two abilities using different supported critical systems and switch target creature types. Confirm inappropriate creature subskills do not affect chance and unknown systems remain unresolved.
-3. Add/remove an applicable gear crit chance/crit damage bonus. Verify normal hit, critical damage, chance and expected successful-hit average, plus full provenance and formula confidence.
-4. Repeat with no resolved import, unsupported ability, zero chance and high critical multipliers. Compare at least one controlled Project Gorgon test, explicitly recording any remaining assumptions.
-5. Run pinned data checks, lint, typecheck, all tests, build and browser smoke.
+Full procedure, sources, fixtures and the controlled in-game comparison: [T0013-F2 verification](T0013_F2_Verification.md).
+
+1. Turn on Damage analysis. In the target dummy choose a **Creature** type and open **Critical skills**. With a locally imported CharacterSheet the matching Anatomy/Phrenology sub-skills show **Imported** with the exported Level (BonusLevels not added again); missing sub-skills show **Not in import**, never 0. Without an import, type a level: the source shows **Manual**.
+2. Override an imported level, reimport: the manual level stays. Click **Use imported**: the imported level returns. Reload the tab: creature, Elite and manual levels are remembered for the session; the saved build is unchanged.
+3. Open Mock (Phrenology) and an Archery ability such as Aimed Shot (Anatomy). Switch creature types: only the matching system's sub-skill changes chance; Canine gives Phrenology 0%; an unknown type or missing level shows Unavailable. A Sword ability shows **No critical-hit system**.
+4. Add/remove `power_4009`/`power_9009` (Psychology/Mentalism critical damage), ArcheryBoost tiers 6+ (chance) and ArcheryCritDamage. Inspect the **Critical hit** section of the collapsed Damage breakdown; normal hits never change. Check a 0% case and a high multiplier (tiers id_25: ×6.9).
+5. Check Elite = Not Elite with Decapitate + `power_1203` and Undead with Flashing Strike + `power_1253`. Repeat at 1440/375/320 px; `?debugDamage=1` diagnostics appear only in dev. Run the quality suite and `critical.smoke.mjs` in dev and preview.
 
 
 T0010-F2 final clarification: the public view includes a default-collapsed **Damage breakdown** showing actual engine steps, individual named equipment/skill contributions, flat/percentage/Skill Base contributions, target multipliers and final hit/total. It contains numerical presentation only: no raw IDs, source paths, uncertainty/exclusion inventories, implementation assumptions or long explanations. Those diagnostics remain available only through the development `?debugDamage=1` view. Public `Partial` labels are replaced with `Estimated`; unavailable numbers remain `Unavailable`. No engine results or accepted mod-search/Selected-heading behavior change.

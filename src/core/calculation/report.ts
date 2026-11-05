@@ -37,7 +37,9 @@ export function formatAggregationReport(result: ModifierAggregationResult, title
     '', '## Supported modifiers', ''];
   for (const m of result.modifiers) {
     lines.push(`- ${m.category} | ${m.operation} ${valueText(m)} | ${m.attributeId} "${m.attributeLabel ?? ''}" | ${scopeText(m.scope)} | ${m.applicability}`
-      + `${m.conditions.length ? ` [${m.conditions.map(c => c.kind === 'requires-active-skill' ? `requires ${c.skillId}: ${c.status}` : `qualifier ${c.qualifier}`).join('; ')}]` : ''}`
+      + `${m.conditions.length ? ` [${m.conditions.map(c => c.kind === 'requires-active-skill' ? `requires ${c.skillId}: ${c.status}`
+        : c.kind === 'source-qualifier' ? `qualifier ${c.qualifier}`
+          : c.kind === 'target-elite' ? `target ${c.elite ? 'Elite' : 'non-Elite'}: ${c.status}` : `target ${c.creatureTypeIds.join('/')}: ${c.status}`).join('; ')}]` : ''}`
       + ` | ${m.confidence} | ${sourceText(m.source)}`);
   }
   lines.push('', '## Unsupported / unresolved effects', '');
