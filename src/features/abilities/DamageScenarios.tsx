@@ -1,6 +1,6 @@
 import type { DamageProcResult, StampedeScenarioResult, ModifierSource, UnsupportedEffect } from '../../core/calculation';
 import type { GameDataRepository } from '../../data/repository/repository';
-import { writeStampedeStacks } from '../../persistence/local/stampede-scenario';
+import { writeStampedeStacks, writeWhileStunned } from '../../persistence/local/stampede-scenario';
 
 const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 const value = (n: number | null) => n === null ? 'Unavailable' : number.format(n);
@@ -14,17 +14,19 @@ function sourceName(source: ModifierSource | UnsupportedEffect['source'], data: 
 export function StampedeRows({ scenario, idPrefix }: { scenario: StampedeScenarioResult; idPrefix: string }) {
   const count = scenario.baseline.configuredTargets;
   return <>
-    <div className="result-row stampede-control"><dt><label htmlFor={`${idPrefix}-stampede-stacks`}>Current Stampede stacks</label></dt><dd>
+    {scenario.hasStackSources && <div className="result-row stampede-control"><dt><label htmlFor={`${idPrefix}-stampede-stacks`}>Current Stampede stacks</label></dt><dd>
       <select id={`${idPrefix}-stampede-stacks`} value={scenario.stacks} onChange={event => writeStampedeStacks(Number(event.target.value))}
         title="Assumed current stacks before this attack; 0 is the first attack.">
         {Array.from({ length: 16 }, (_, stacks) => <option key={stacks} value={stacks}>{stacks}</option>)}
       </select>
-    </dd></div>
+    </dd></div>}
+    {scenario.stunnedModifiers.length > 0 && <div className="result-row stampede-control"><dt><label htmlFor={`${idPrefix}-while-stunned`}>While Stunned</label></dt><dd><input id={`${idPrefix}-while-stunned`} type="checkbox" checked={scenario.whileStunned} onChange={event => writeWhileStunned(event.target.checked)} /></dd></div>}
     {scenario.baseline.hits.map(hit => {
-      const projected = scenario.projected?.hits.find(row => row.componentId === hit.componentId);
+      const projected = (scenario.whileStunned ? scenario.stacked : scenario.projected)?.hits.find(row => row.componentId === hit.componentId);
       return <div className="result-row" key={hit.componentId} data-stampede="projected"><dt>Stampede at {scenario.stacks} stacks{count > 1 ? ' · per target' : ''}</dt>
         <dd>{value(projected?.perTarget ?? null)} <small className="result-estimate">{scenario.status === 'estimated' ? 'Estimated' : 'Unavailable'}</small></dd></div>;
     })}
+    {scenario.whileStunned && scenario.baseline.hits.map(hit => <div className="result-row" key={`stunned-${hit.componentId}`} data-stampede="stunned"><dt>Stampede at {scenario.stacks} stacks · While Stunned{count > 1 ? ' · per target' : ''}</dt><dd>{value(scenario.projected?.hits.find(h => h.componentId === hit.componentId)?.perTarget ?? null)} <small className="result-estimate">{scenario.status === 'estimated' ? 'Estimated' : 'Unavailable'}</small></dd></div>)}
     {count > 1 && scenario.projected?.hits.map(hit => <div className="result-row" key={`total-${hit.componentId}`} data-stampede="total">
       <dt>Stacked total</dt><dd>{value(hit.total)}</dd></div>)}
   </>;
@@ -45,7 +47,7 @@ export function ProcRows({ proc, count }: { proc: DamageProcResult; count: numbe
 /** Numerical source contributions only; assumptions and raw source identities remain in the debug view. */
 export function ScenarioBreakdown({ stampede, proc, data }: { stampede: StampedeScenarioResult | null; proc: DamageProcResult | null; data: GameDataRepository }) {
   return <>
-    {stampede && <section className="calc-component" aria-label="Stampede stack contributions"><h5>Current stacks · {stampede.stacks} <small>Estimated</small></h5>
+    {stampede && <section className="calc-component" aria-label="Stampede stack contributions"><h5>Current stacks · {stampede.stacks} <small>{stampede.status === 'estimated' ? 'Estimated' : 'Unavailable'}</small></h5>
       <ol className="calc-steps">{stampede.contributions.map(contribution => <li className="calc-step" key={contribution.modifier.key}>
         <span className="calc-step-label">{sourceName(contribution.modifier.source, data)}<small>+{value(contribution.perStack)} per stack × {contribution.stacks}</small></span>
         <span className="calc-step-value">+{value(contribution.flatBonus)}</span><span />

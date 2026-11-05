@@ -47,6 +47,10 @@ export interface StackContribution {
 export interface StampedeScenarioResult {
   readonly status: 'estimated' | 'unavailable';
   readonly stacks: number;
+  readonly hasStackSources: boolean;
+  readonly whileStunned: boolean;
+  readonly stunnedModifiers: readonly NormalizedModifier[];
+  readonly stacked: TargetDamageResult | null;
   readonly contributions: readonly StackContribution[];
   readonly flatBonus: number | null;
   readonly baseline: TargetDamageResult;
@@ -60,27 +64,37 @@ export interface StampedeScenarioResult {
 
 /** A current-state scenario, never stack generation, time tracking or a new damage formula. */
 export function calculateStampedeScenario(result: AbilityDamageResult, target: TargetConfiguration, stacks: number,
-  data: AbilityDamageData): StampedeScenarioResult | null {
-  const decisions = scenarioDecisions(result, 'stampede-damage-per-stack', data);
-  const relevant = decisions.filter(d => d.status !== 'excluded');
+  data: AbilityDamageData, whileStunned = false): StampedeScenarioResult | null {
+  const stackDecisions = scenarioDecisions(result, 'stampede-damage-per-stack', data);
+  const stunDecisions = scenarioDecisions(result, 'stampede-stunned-percent', data);
+  const decisions = [...stackDecisions, ...stunDecisions];
+  const relevantStacks = stackDecisions.filter(d => d.status !== 'excluded');
+  const relevantStun = stunDecisions.filter(d => d.status !== 'excluded');
+  const relevant = [...relevantStacks, ...relevantStun];
   if (!relevant.length) return null;
-  const valid = isValidStampedeStacks(stacks) && relevant.every(d => d.status === 'applied'
+  const valid = isValidStampedeStacks(stacks) && [...relevantStacks, ...(whileStunned ? relevantStun : [])].every(d => d.status === 'applied'
     && Number.isFinite(d.modifier.value) && d.modifier.value >= 0)
     && matchingVersions(result, data);
-  const contributions = valid ? relevant.map(({ modifier }) => ({ modifier, perStack: modifier.value, stacks, flatBonus: modifier.value * stacks })) : [];
+  const contributions = valid ? relevantStacks.map(({ modifier }) => ({ modifier, perStack: modifier.value, stacks, flatBonus: modifier.value * stacks })) : [];
   const flatBonus = valid ? contributions.reduce((sum, c) => sum + c.flatBonus, 0) : null;
   const replacements = new Map(contributions.map(c => [c.modifier.key, c]));
-  const projectedDamage = !valid ? null : stacks === 0 ? result : calculateAbilityDamage(result.requestedAbilityId,
+  const stackedDamage = !valid ? null : stacks === 0 ? result : calculateAbilityDamage(result.requestedAbilityId,
     withModifiers(result.aggregation, result.aggregation.modifiers.map(modifier => {
       const contribution = replacements.get(modifier.key);
       return contribution ? { ...modifier, category: 'ability-damage-flat', value: contribution.flatBonus,
         sourceValue: `${modifier.sourceValue} × ${stacks}`, attributeLabel: 'Continuous Trampling stack damage' } : modifier;
     })), data);
+  const stunnedModifiers = relevantStun.map(d => d.modifier);
+  const stunKeys = new Set(stunnedModifiers.map(m => m.key));
+  const projectedDamage = !stackedDamage ? null : !whileStunned || !stunnedModifiers.length ? stackedDamage
+    : calculateAbilityDamage(result.requestedAbilityId, withModifiers(stackedDamage.aggregation,
+      stackedDamage.aggregation.modifiers.map(m => stunKeys.has(m.key) ? { ...m, category: 'ability-damage-percent' } : m)), data);
   const baseline = applyTargetDummy(result, target);
-  const projected = projectedDamage ? stacks === 0 ? baseline : applyTargetDummy(projectedDamage, target) : null;
+  const stacked = stackedDamage ? stacks === 0 ? baseline : applyTargetDummy(stackedDamage, target) : null;
+  const projected = projectedDamage ? projectedDamage === result ? baseline : applyTargetDummy(projectedDamage, target) : null;
   const available = projected !== null && projected.hits.some(h => h.perTarget !== null);
-  return { status: valid && available ? 'estimated' : 'unavailable', stacks, contributions, flatBonus, baseline, projected, projectedDamage,
-    decisions, assumptions: [DAMAGE_SCENARIO_ASSUMPTIONS.stacks],
+  return { status: valid && available ? 'estimated' : 'unavailable', stacks, hasStackSources: relevantStacks.length > 0, whileStunned: whileStunned && stunnedModifiers.length > 0, stunnedModifiers, stacked, contributions, flatBonus, baseline, projected, projectedDamage,
+    decisions, assumptions: [DAMAGE_SCENARIO_ASSUMPTIONS.stacks, ...stunnedModifiers.flatMap(m => m.assumptions)],
     warnings: valid ? available ? [] : ['A required direct-hit or target value is unavailable.'] : ['Stacks must be whole numbers from 0 to 15 and all contributing sources must have resolved applicability and matching data versions.'] };
 }
 

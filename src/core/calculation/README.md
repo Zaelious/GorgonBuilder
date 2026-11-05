@@ -329,3 +329,9 @@ Critical results remain an independent downstream stage; no joint critical/proc 
 Only `expectedProcHit` is a probability identity. These scenarios are not a timeline, stack tracker or DPS model.
 The optional UI stores current stacks in sessionStorage only. The three historical coverage snapshots exclude
 these new rules; [the separate audit](../../../docs/treasure-coverage/T0014-F1.md) lists all 150 new tier mappings.
+
+R1 adds exact `power_20020/CowStampedeVsStunned` (25 tiers). The optional sixth argument to
+`calculateStampedeScenario` is the player-only `whileStunned` boolean (default false). The result retains `stacked`
+for the stack-only comparison and `projected` for the combined hit. The equipped scenario percentage becomes an
+ordinary ability percentage only when enabled; all existing formula/target stages and original-base Skill Base
+behavior are preserved. It is not a universal final-hit multiplier.

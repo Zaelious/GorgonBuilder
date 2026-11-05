@@ -26,3 +26,16 @@ export function subscribeStampedeStacks(listener: () => void): () => void {
   listeners.add(listener);
   return () => { listeners.delete(listener); };
 }
+
+export const STAMPEDE_STUNNED_KEY = 'gorgonbuilder.session.stampede-while-stunned';
+let stunnedFallback: boolean | null = null;
+export function readWhileStunned(): boolean {
+  try { return sessionStorage.getItem(STAMPEDE_STUNNED_KEY) === 'true'; } catch { return false; }
+}
+export const whileStunnedSnapshot = (): boolean => stunnedFallback ?? readWhileStunned();
+export function writeWhileStunned(value: boolean): void {
+  if (typeof value !== 'boolean') return;
+  try { sessionStorage.setItem(STAMPEDE_STUNNED_KEY, JSON.stringify(value)); stunnedFallback = null; }
+  catch { stunnedFallback = value; }
+  for (const listener of listeners) listener();
+}

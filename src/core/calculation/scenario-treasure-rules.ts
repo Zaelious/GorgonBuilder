@@ -81,6 +81,20 @@ export const SCENARIO_TREASURE_RULES: readonly TreasureEffectRule[] = Object.fre
       return draft ? [draft] : null;
     },
   },
+  {
+    id: 'treasure:CowStampedeVsStunned', powerId: 'power_20020', internalName: 'CowStampedeVsStunned',
+    description: 'Stampede percentage damage only while the player is stunned (manual scenario).',
+    pattern: /^(?:<icon=\d+>)*Stampede deals \+(\d+(?:\.\d+)?)% damage if used while you are stunned$/u,
+    confidence: 'assumed',
+    interpret(match, data) {
+      const draft = hooked(data, 'Cow', 'MOD_ABILITY_STAMPEDE', 'AttributesThatModDamage', {
+        part: 'while-stunned', category: 'stampede-stunned-percent', operation: 'percent', unit: 'fraction',
+        value: Number(match[1]) / 100, sourceValue: `${match[1]}%`,
+        assumptions: ['Estimated: the equipped Stampede bonus applies only while the player is stunned. Its percentage uses the existing base-plus-flats percentage basis, additive with other non-base percentages; Skill Base remains on original base. In-game ordering is unvalidated.'],
+      });
+      return draft ? [draft] : null;
+    },
+  },
   ...definitions.map((definition): TreasureEffectRule => ({
     id: `treasure:${definition.internalName}`, powerId: definition.powerId, internalName: definition.internalName,
     description: 'Independent unconditional direct damage and a source-backed chance-based direct-hit scenario.',

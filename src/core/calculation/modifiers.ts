@@ -40,6 +40,7 @@ export type ModifierCategory =
   | 'critical-chance-percent'
   // T0014-F1 scenario inputs; excluded from ordinary damage until explicitly evaluated.
   | 'stampede-damage-per-stack'
+  | 'stampede-stunned-percent'
   | 'chance-damage-proc'
   // Non-damage character stats
   | 'max-resource-flat'              // MAX_HEALTH, MAX_POWER, MAX_ARMOR

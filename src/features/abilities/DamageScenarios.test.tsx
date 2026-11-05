@@ -3,7 +3,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createDefaultBuildDocument, type BuildDocument, type EquipmentSelection } from '../../core/build/document';
 import { aggregateBuildModifiers } from '../../core/calculation';
-import { readStampedeStacks, STAMPEDE_STACKS_KEY, writeStampedeStacks } from '../../persistence/local/stampede-scenario';
+import { readStampedeStacks, STAMPEDE_STACKS_KEY, writeStampedeStacks, readWhileStunned, STAMPEDE_STUNNED_KEY } from '../../persistence/local/stampede-scenario';
 import { loadPlannerFixture } from '../../test/planner-fixture';
 import { AbilityResults } from './AbilityResults';
 
@@ -102,4 +102,36 @@ describe('compact manual damage scenarios', () => {
   it.each(['-1', '16', '1.5', '"15"', 'null', '{}', 'invalid'])('falls back safely for invalid stored stacks %s', stored => {
     sessionStorage.setItem(STAMPEDE_STACKS_KEY, stored); expect(readStampedeStacks()).toBe(0);
   });
+});
+
+describe('While Stunned and unavailable status correction', () => {
+  it('shows only the equipped Stampede checkbox, toggles the combined result and restores session state', async () => {
+    const b = build('Cow', mod('power_20004', 'id_20'), mod('power_20020', 'id_25', 'Necklace'));
+    const saved = JSON.stringify(b); await render(b, 'ability_6138');
+    let checkbox = container.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    expect(checkbox.checked).toBe(false);
+    await stacks('15'); await act(async () => checkbox.click());
+    expect(text('[data-stampede="stunned"] dd')).toBe('13,412 Estimated');
+    expect(text('[data-stampede="projected"] dd')).toBe('958 Estimated');
+    expect(text('.damage-breakdown')).toContain('Necklace'); expect(text('.damage-breakdown')).toContain('+1,300%');
+    expect(JSON.stringify(b)).toBe(saved);
+    await render(b, 'ability_6124'); expect(container.querySelector('input[type="checkbox"]')).toBeNull();
+    await render(b, 'ability_6138'); checkbox = container.querySelector<HTMLInputElement>('input[type="checkbox"]')!; expect(checkbox.checked).toBe(true);
+    await act(async () => checkbox.click()); expect(container.querySelector('[data-stampede="stunned"]')).toBeNull();
+    b.equipment.pop(); await render(b, 'ability_6138'); expect(container.querySelector('input[type="checkbox"]')).toBeNull();
+  });
+  it('uses Unavailable in both public breakdown headings when the target is invalid', async () => {
+    const b = build('Cow', mod('power_20004','id_20')); b.target.damageTypes.Crushing = { vulnerability: 0, resistance: 150 };
+    await render(b, 'ability_6138');
+    expect(text('.damage-breakdown')).toContain('Current stacks · 0 Unavailable');
+    expect(text('.damage-breakdown')).toContain('Stampede at 0 stacks · Unavailable');
+    expect(text('.damage-breakdown')).not.toContain('Estimated');
+  });
+});
+
+it.each(['false', '0', '1', '"true"', '{}', 'null', 'invalid'])('rejects invalid/nontrue stunned session input %s', stored => {
+  sessionStorage.setItem(STAMPEDE_STUNNED_KEY, stored); expect(readWhileStunned()).toBe(false);
+});
+it('restores an explicitly true stunned session', () => {
+  sessionStorage.setItem(STAMPEDE_STUNNED_KEY, 'true'); expect(readWhileStunned()).toBe(true);
 });

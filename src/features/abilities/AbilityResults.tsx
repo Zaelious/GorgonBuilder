@@ -12,7 +12,7 @@ import { classifyBuildWarnings, type ClassifiedUnsupportedEffect } from '../../c
 import { damageDebugEnabled } from './damage-debug';
 import { damageTypeClass, isNonDamaging } from './AbilityFacts';
 import type { Ability } from './groups';
-import { stampedeStacksSnapshot, subscribeStampedeStacks } from '../../persistence/local/stampede-scenario';
+import { stampedeStacksSnapshot, subscribeStampedeStacks, whileStunnedSnapshot } from '../../persistence/local/stampede-scenario';
 import { StampedeRows, ProcRows, ScenarioBreakdown, ScenarioDiagnostics } from './DamageScenarios';
 import './results.css';
 
@@ -124,7 +124,7 @@ function PublicBreakdown({ components, target, modifiers, critical, stampede, pr
   const number = (value: number | null) => value !== null && Number.isFinite(value) && value >= 0 ? formatDamage(value) : 'Unavailable';
   return <details className="damage-breakdown calc-breakdown"><summary>Damage breakdown</summary>
     <ScenarioBreakdown stampede={stampede} proc={proc} data={data} />
-    {stampede && <p>Stampede at {stampede.stacks} stacks · Estimated</p>}
+    {stampede && <p>Stampede at {stampede.stacks} stacks{stampede.whileStunned ? ' · While Stunned' : ''} · {stampede.status === 'estimated' ? 'Estimated' : 'Unavailable'}</p>}
     {components.map(component => {
       const hit = target.hits.find(row => row.componentId === component.id);
       return <section className="calc-component" key={component.id} aria-label={`${hitLabel(component.id)} calculation`}>
@@ -259,13 +259,14 @@ export function AbilityResults({ ability, inputs, data, idPrefix, result: precom
   /** Optional result already calculated by the caller for the same ability and inputs. */
   result?: AbilityDamageResult }) {
   const stacks = useSyncExternalStore(subscribeStampedeStacks, stampedeStacksSnapshot, () => 0);
+  const whileStunned = useSyncExternalStore(subscribeStampedeStacks, whileStunnedSnapshot, () => false);
   const { result, target, critical, stampede, proc } = useMemo(() => {
     const result = precomputed ?? calculateAbilityDamage(ability.id, inputs.aggregation, data);
     const target = applyTargetDummy(result, inputs.target);
     // T0013-F2: separate downstream stage; never changes the normal-hit result above.
     return { result, target, critical: inputs.critical ? calculateCriticalHit(result, target, inputs.critical, data) : null,
-      stampede: calculateStampedeScenario(result, inputs.target, stacks, data), proc: calculateDamageProcs(result, target, inputs.target, data) };
-  }, [precomputed, ability.id, inputs, data, stacks]);
+      stampede: calculateStampedeScenario(result, inputs.target, stacks, data, whileStunned), proc: calculateDamageProcs(result, target, inputs.target, data) };
+  }, [precomputed, ability.id, inputs, data, stacks, whileStunned]);
   const breakdownResult = stampede?.projectedDamage ?? result;
   const modifiers = useMemo(() => new Map(breakdownResult.aggregation.modifiers.map(m => [m.key, m])), [breakdownResult]);
   const debug = damageDebugEnabled();
@@ -321,7 +322,7 @@ export function AbilityResults({ ability, inputs, data, idPrefix, result: precom
     {result.warnings.some(w => w.code === 'aggregation-incomplete') && <p className="result-note result-build-limits">Across build: some sources could not be resolved.</p>}
     <details className="calc-breakdown"><summary>Calculation breakdown</summary>
       <p className="calc-confidence">{CONFIDENCE_LABELS[target.confidence].help} Values are calculations from published data, not in-game measurements. * marks an assumed rule.</p>
-      {breakdownComponents.map(component => <ComponentBreakdown key={component.id} component={component} target={target} modifiers={modifiers} />)}
+      {breakdownComponents.map(component => <ComponentBreakdown key={component.id} component={component} target={stampede?.projected ?? target} modifiers={modifiers} />)}
       {uniqueWarnings.length > 0 && <><p className="calc-subhead">Limitations</p><ul className="calc-notes">{uniqueWarnings.map(w =>
         <li key={`${w.code}|${w.message}`} data-warning={w.code}>{w.message}</li>)}</ul></>}
       <UnsupportedDetails records={classified.damage} label="Unresolved damage effects" />

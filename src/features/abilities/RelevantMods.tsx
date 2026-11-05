@@ -33,7 +33,7 @@ export function relevantModDamageStatus(row: Row, result: AbilityDamageResult | 
     }));
   if (decisions.some(decision => decision.status === 'applied')) return 'included';
   if (decisions.some(decision => decision.status === 'uncertain')) return 'uncertain';
-  if (decisions.some(({ modifier }) => (modifier.category === 'stampede-damage-per-stack' || modifier.category === 'chance-damage-proc')
+  if (decisions.some(({ modifier }) => (modifier.category === 'stampede-damage-per-stack' || modifier.category === 'stampede-stunned-percent' || modifier.category === 'chance-damage-proc')
     && modifier.scope.kind === 'ability-attribute-hook' && modifier.scope.skillId === result.ability?.skill.skillId
     && result.ability?.pve.attributeHooks[modifier.scope.hook]?.includes(modifier.scope.attributeId))) return 'scenario';
   return 'not-included';

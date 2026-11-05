@@ -10,6 +10,8 @@ T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on
 
 ## Implemented for Review
 
+R1 extends the same PR #41 with the exact Necklace `power_20020/CowStampedeVsStunned`, all 25 selected tiers, and a session-only player **While Stunned** checkbox. Stack-only and combined projections use the existing formula; ordering remains Estimated. Both unavailable-status heading corrections are included. See the R1 appendix in [verification](T0014_F1_Verification.md).
+
 - **T0014-F1 — Stampede Stacking and Chance-Based Damage Proc Scenarios** (2026-11-05). Pure scenario stages reuse aggregation, the ordinary formula and target dummy. Six exact v490 powers / 150 tier mappings (25 stack + 125 proc), per-source contributions, compact results, and session-only stacks. New calculation/UI tests and Chromium dev/preview checks at 1440/375/320 px. [Verification](T0014_F1_Verification.md), [audit](treasure-coverage/T0014-F1.md). No in-game validation or critical/proc combined expectation is claimed.
 
 ## Completed Tickets

@@ -50,3 +50,4 @@
 .stampede-control select { width: 3.5rem; min-height: 1.75rem; padding: 0.125rem 0.25rem; color: var(--color-text); background: var(--color-input); border: 1px solid var(--color-border-strong); border-radius: var(--radius-control); font: inherit; }
 .proc-source p { margin-block: 0.25rem; overflow-wrap: anywhere; }
 @media (pointer: coarse) { .stampede-control select { min-height: 2.75rem; } }
+.ability-results .stampede-control input[type=checkbox] { width: 1rem; height: 1rem; min-height: 1rem; margin: 0; padding: 0; }

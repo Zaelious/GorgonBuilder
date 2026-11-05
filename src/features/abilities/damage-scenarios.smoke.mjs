@@ -24,7 +24,7 @@ const draft = {
   skillSlotA: { skillId: 'Cow', level: 0 }, skillSlotB: { skillId: 'Psychology', level: 0 },
   abilityBarA: [{ abilityId: 'ability_6138', rank: null }, { abilityId: 'ability_6124', rank: null }],
   abilityBarB: [{ abilityId: 'ability_1298', rank: null }, { abilityId: 'ability_6553', rank: null }],
-  equipment: [equipment('Chest', ['power_20004', 'id_20'], ['power_4062', 'id_25']), equipment('Hands')],
+  equipment: [equipment('Chest', ['power_20004', 'id_20'], ['power_4062', 'id_25']), equipment('Hands'), equipment('Necklace', ['power_20020', 'id_25'])],
   target: { count: 1, damageTypes: {} },
 };
 const port = mode === 'dev' ? 5196 : 5197, url = `http://127.0.0.1:${port}/`;
@@ -69,6 +69,15 @@ try {
       assert((await row(card, '[data-stampede="projected"]')).startsWith(`${expected} `), `${stacks} stacks => ${expected}`);
       cases.push({ stacks: Number(stacks), projected: expected });
     }
+    const stun = card.getByLabel('While Stunned', { exact: true });
+    assert(!(await stun.isChecked()), 'stun defaults off');
+    await stun.focus(); await page.keyboard.press('Space');
+    assert((await row(card, '[data-stampede="stunned"]')).startsWith('13,412 '), '15 stacks plus selected stunned percentage');
+    await card.locator('.stampede-control select').selectOption('0');
+    assert((await row(card, '[data-stampede="stunned"]')).startsWith('2,912 '), 'zero stacks stunned');
+    await page.screenshot({ path: resolve(output, `${mode}-${width}-stunned.png`) });
+    await card.locator('.stampede-control select').selectOption('15');
+    await stun.uncheck();
     assert(await page.evaluate(() => localStorage.getItem('gorgonbuilder.current-draft')) === originalDraft, 'stack scenario leaves saved build unchanged');
     assert(!(await card.locator('.damage-breakdown').evaluate(e => e.open)), 'breakdown collapsed by default');
     await card.locator('.damage-breakdown > summary').click();
@@ -96,7 +105,7 @@ try {
     card = await open(); assert((await row(card, '[data-stampede="projected"]')).startsWith('1,243 '), 'tier replacement recalculates'); await close();
     await selectedHands.locator('.candidate-remove').click();
     card = await open(); assert((await row(card, '[data-stampede="projected"]')).startsWith('268 '), 'removing source reverses contribution'); await close();
-    card = await open(1, 2); assert(await card.locator('.stampede-control').count() === 0, 'other Cow ability has no stack control'); await close();
+    card = await open(1, 2); assert(await card.locator('.stampede-control select').count() === 0, 'other Cow ability has no stack control'); await close();
 
     // Strike a Nerve: unconditional +100 and independent random-damage / critical displays.
     card = await open(2);
@@ -124,15 +133,17 @@ try {
     assert(await card.locator('[data-critical="chance"] dd').textContent() === criticalBefore, 'critical probability still unchanged');
     await close();
 
+    card = await open(); await card.getByLabel('While Stunned', { exact: true }).check(); await close();
     await page.reload(); await page.locator('#target-creature').waitFor(); card = await open();
+    assert(await card.getByLabel('While Stunned', { exact: true }).isChecked(), 'stun restored after refresh');
     assert(await card.locator('.stampede-control select').inputValue() === '15', 'current stacks survive reload'); await close();
     await chest.locator('> summary').click(); await chest.locator('[data-selected-power-id="power_20004"] .candidate-remove').click();
-    card = await open(); assert(await card.locator('.stampede-control').count() === 0, 'last removal hides control');
+    card = await open(); assert(await card.locator('.stampede-control select').count() === 0, 'last removal hides control');
     assert(await row(card, '[data-component="damage"]') === '208 Crushing', 'last removal restores baseline'); await close();
     const geometry = await page.evaluate(() => ({ width: innerWidth, scroll: document.documentElement.scrollWidth }));
     assert(geometry.scroll <= width + (width === 320 ? 2 : 0), 'no added document overflow');
     assert(errors.length === 0, `browser errors: ${errors.join('; ')}`);
-    results.push({ mode, width, height, iconTransport: localIcons ? 'local-placeholder' : 'official-cdn', cases, twoSources: 1933, tierReplacement: 1243, removal: 268, proc: { normal: 530, triggered: 1060, probability: 0.33, expected: 704.9 }, geometry, errors });
+    results.push({ mode, width, height, iconTransport: localIcons ? 'local-placeholder' : 'official-cdn', cases, stunned: { zeroStacks: 2912, fifteenStacksOneMod: 13412 }, twoSources: 1933, tierReplacement: 1243, removal: 268, proc: { normal: 530, triggered: 1060, probability: 0.33, expected: 704.9 }, geometry, errors });
     await context.close();
 
     // A second audited chance power, using another clean manual build and the real UI.

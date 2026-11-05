@@ -197,3 +197,112 @@ the exact adjacent families named in the audit. Allocation/conversion remains th
 timed events, random target conversions, pets/DoTs and T0015 Sparks were not implemented. The main chunk warning and
 pre-existing 320 px overflow remain separate performance/layout work. Acceptance/merge requires its own review;
 this ticket opens a PR without merging it.
+
+
+## T0014-F1-R1 — While Stunned
+
+Continues the existing branch and PR #41. No new branch/PR, merge, schema/import change or T0015 work.
+Exact source: **power_20020 / CowStampedeVsStunned**, official **Necklace** slot. Full sentence:
+“Stampede deals +N% damage if used while you are stunned.” The condition is the **player**, not the target.
+Previously retained as unsupported conditional prose; no existing numeric rule applied it.
+The Cow wiki reference describes an Epic Necklace with +1300% at level 125. Pinned v490 specifies Rare minimum
+rarity at tiers 1–7 and Epic at tiers 8–25. Tier 25 has minimum/skill prerequisite level 125 and maximum level 140.
+No live wiki fetch or in-game measurement establishes formula ordering.
+
+| Exact tier | Published bonus | Minimum rarity |
+|---|---:|---|
+| `id_1` | +100% | Rare |
+| `id_2` | +150% | Rare |
+| `id_3` | +200% | Rare |
+| `id_4` | +250% | Rare |
+| `id_5` | +300% | Rare |
+| `id_6` | +350% | Rare |
+| `id_7` | +400% | Rare |
+| `id_8` | +450% | Epic |
+| `id_9` | +500% | Epic |
+| `id_10` | +550% | Epic |
+| `id_11` | +600% | Epic |
+| `id_12` | +650% | Epic |
+| `id_13` | +700% | Epic |
+| `id_14` | +750% | Epic |
+| `id_15` | +800% | Epic |
+| `id_16` | +850% | Epic |
+| `id_17` | +900% | Epic |
+| `id_18` | +950% | Epic |
+| `id_19` | +1000% | Epic |
+| `id_20` | +1050% | Epic |
+| `id_21` | +1100% | Epic |
+| `id_22` | +1150% | Epic |
+| `id_23` | +1200% | Epic |
+| `id_24` | +1250% | Epic |
+| `id_25` | +1300% | Epic |
+
+All 25 exact full templates map to `stampede-stunned-percent`, with official Cow skill scope and
+`MOD_ABILITY_STAMPEDE` through `AttributesThatModDamage`. This scenario input never adds ordinary damage.
+An applicable equipped source exposes the default-off **While Stunned** checkbox. Session storage key
+`gorgonbuilder.session.stampede-while-stunned` accepts only literal boolean true; invalid/missing inputs default off.
+No actual combat status is inferred. Removing the source hides its control and contribution.
+
+When enabled, the source becomes an ordinary `ability-damage-percent` modifier in the existing engine, retaining
+its exact Necklace/tier provenance. Stack flats and target stages are reused; other non-base percentages add on
+the same base-plus-flats basis, and Skill Base stays on original published base. Combined and stack-only projections
+are distinguished from the ordinary baseline. The numerical breakdown shows the Necklace, selected percentage,
+percentage contribution, separate stack flats and final projection. Both formerly hardcoded Estimated headers now
+follow scenario.status, including Unavailable projections (tested using >100% net target resistance).
+
+**Estimated:** ordering, cross-mod stacking, caps and rounding remain unmeasured. Multiple stunned sources follow
+the existing additive percentage convention provisionally. No final-hit ×14 shortcut is used.
+
+Synthetic Stampede 12 example: base 208, Chest +50/stack, Hands +65/stack, tier-25 Necklace +1300%:
+
+| Current stacks | While Stunned | Stack-only | Combined |
+|---:|---|---:|---:|
+| 0 | Off | 208 | 208 |
+| 15 | Off | 1,933 | 1,933 |
+| 0 | On | 208 | 2,912 |
+| 15 | On | 1,933 | 27,062 |
+
+These isolated values happen to equal 14× stack-only damage. Add another +50% ability bonus and +50% Skill Base:
+`1933 × 14.5 + 208 × 0.5 = 28,132.5`, demonstrating why a universal final-hit multiplier is incorrect.
+Tier 1 instead grants +100%, producing 416 from a naked 208 baseline. All figures are synthetic, not game validation.
+
+New tests cover all exact tiers/rarities; no source, unchecked, enabled, tier replacement and removal; all four
+stack/stun combinations; unrelated abilities; other percentage/original-base behavior; checkbox session restore and
+invalid values; and unavailable labels. Existing proc/Anatomy/Phrenology tests remain regression coverage.
+
+Manual check: equip Cow/Stampede and this Necklace, toggle While Stunned at 0/15 stacks, replace the exact tier,
+then remove the Necklace. Verify ordinary and stack-only values stay independent. Expand Damage breakdown for
+the Necklace percentage/contribution and each stack source. Reload for session retention; inspect another Cow
+ability (no checkbox) and unchanged critical/proc fixtures. In game, isolate normal/stunned hits with/without stack
+flats, another percentage and Skill Base. Measure ordering, caps, rounding and duplicate behavior before validation.
+
+Changed files: scenario category/rule/stage, ability results/Relevant Mods/CSS, session utility, calculation/UI tests,
+browser smoke/evidence and this appendix. Original 150-tier F1 audit remains historical; R1 adds 25 mappings separately
+(175 scenario tiers total). No unrelated conditional ability family was implemented.
+
+R1 check commands: `npm run data:update -- --check`, `npm run lint`, `npm run typecheck`,
+`npx vitest run src/core/calculation/stampede-stunned.test.ts src/features/abilities/DamageScenarios.test.tsx --maxWorkers=1 --testTimeout=20000`
+(**29 passed**), `npm test -- --maxWorkers=2 --testTimeout=20000`,
+`npm run coverage:treasure -- --check` (historical reports unchanged), `npm run build`, Wrangler dry-run and
+`git diff --check`. Build still reports a nonblocking ~509 kB chunk warning.
+An initial regression fixture used target count zero, which leaves a valid single-target hit in the established
+engine; it was corrected to invalid net resistance. A broad focused run hit the default 5-second timeout under
+concurrent verification load; the focused R1 run passed with the established 20-second timeout. No damage or test
+framework behavior was changed to accommodate these execution issues.
+
+Chromium dev and production preview both passed at 1440×900, 375×812 and 320×812 with the new checkbox,
+keyboard Space toggling, 0/15-stack combined values, refresh restoration, actual mod edits and critical/proc
+regressions. Zero application console/page errors with the existing local-icon test option; no added overflow,
+and Remove remains reachable. The main scenario checks show 13,412 for one +50 stack mod at 15 stacks while
+stunned; separate core tests check two mods at 27,062. These tests do not measure game mechanics.
+
+Evidence: [dev results](verification/t0014-f1-r1/dev-results.json),
+[preview results](verification/t0014-f1-r1/preview-results.json),
+[desktop stunned](verification/t0014-f1-r1/preview-1440-stunned.png),
+[375 px stunned](verification/t0014-f1-r1/preview-375-stunned.png),
+[320 px stunned](verification/t0014-f1-r1/preview-320-stunned.png).
+
+Final R1 results: **1,164 tests passed across 59 files**, including 29 focused R1/scenario UI tests. Pinned-data,
+lint, typecheck, historical coverage, build, Wrangler dry-run and diff checks passed. Both Chromium modes passed
+all three viewports. GitHub CI for the new commit is checked separately at handoff; prior-head approval does not
+validate this correction's game formulas. PR #41 remains open for product-owner review.
