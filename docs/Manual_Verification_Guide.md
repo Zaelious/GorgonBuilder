@@ -324,7 +324,7 @@ source link/equation in the collapsed breakdown and reachable Remove at mobile s
 3. For Vampirism Blood Mist, Animal Handling Call Stabled Pet and Mark Weakness, Bard SoD, Mentalism Mindworm, Necromancy SZ, Priest Triage and Priest Flamestrike, choose two different published variants/ranks. Confirm exact identities, readable series labels without InternalNames, search, selected markers, add/replace/removal and autosave. A non-standard series (e.g. Flamestrike "Alternate version A") shows its tag in the equipped ability popover. Other families remain unchanged.
 4. Inspect the regenerated T0013-F1 audit. Required-active-skill entries are in the Conditional column, not unmodeled, and published figures reproduce. Spot-check `power_12191`: Sword + Animal Handling includes it, Sword + Archery does not. Check 1440/375/320 px, keyboard and long-scroll behavior.
 
-### T0013-F2 — Anatomy/Phrenology critical calculations (implemented for review)
+### T0013-F2 — Anatomy/Phrenology critical calculations (merged; formulas provisional)
 
 Full procedure, sources, fixtures and the controlled in-game comparison: [T0013-F2 verification](T0013_F2_Verification.md).
 
@@ -334,5 +334,8 @@ Full procedure, sources, fixtures and the controlled in-game comparison: [T0013-
 4. Add/remove `power_4009`/`power_9009` (Psychology/Mentalism critical damage), ArcheryBoost tiers 6+ (chance) and ArcheryCritDamage. Inspect the **Critical hit** section of the collapsed Damage breakdown; normal hits never change. Check a 0% case and a high multiplier (tiers id_25: ×6.9).
 5. Check Elite = Not Elite with Decapitate + `power_1203` and Undead with Flashing Strike + `power_1253`. Repeat at 1440/375/320 px; `?debugDamage=1` diagnostics appear only in dev. Run the quality suite and `critical.smoke.mjs` in dev and preview.
 
+### T0014-F1 — Stampede stacking and chance-based damage procs (planned)
+
+This ticket is approved but not started. At minimum verify the 0/1/15 current-stack Stampede scenario using one and two selected *of Continuous Trampling* mods, with source-by-source bonus and reversal on removal. Check Strike a Nerve's unconditional +N flat damage, distinct probability/double-damage result and expected damage, then one other audited chance-based effect. Recheck normal/critical calculations, session-only scenario state, unsupported duplicate-proc behavior, and 1440/375/320 px. Compare at least one Stampede and one proc scenario with actual Project Gorgon measurements; keep stacking/order unvalidated when no direct evidence exists. [Ticket](Tickets.md#t0014-f1--stampede-stacking-and-chance-based-damage-proc-scenarios).
 
 T0010-F2 final clarification: the public view includes a default-collapsed **Damage breakdown** showing actual engine steps, individual named equipment/skill contributions, flat/percentage/Skill Base contributions, target multipliers and final hit/total. It contains numerical presentation only: no raw IDs, source paths, uncertainty/exclusion inventories, implementation assumptions or long explanations. Those diagnostics remain available only through the development `?debugDamage=1` view. Public `Partial` labels are replaced with `Estimated`; unavailable numbers remain `Unavailable`. No engine results or accepted mod-search/Selected-heading behavior change.

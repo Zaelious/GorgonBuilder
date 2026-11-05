@@ -1,6 +1,6 @@
 # T0013-F2 — Imported Anatomy/Phrenology Critical Hits and Target Conditions: Verification
 
-**Status:** Implemented for product-owner review on `feature/t0013-f2-critical-hits`, based on `main` at `3aff873` (T0008-F2, PR #39). Not merged. **No Project Gorgon in-game measurement was performed by this implementation.** Synthetic tests check that the implementation is consistent; they do not validate the game formulas.
+**Status:** Customer-accepted and squash-merged 2026-11-05 via [PR #40](https://github.com/Zaelious/GorgonBuilder/pull/40), commit `696c01acd2ef41bdf9b6a1bda98f82c6af0f39d7` (based on T0008-F2, PR #39). The product owner checked the UI and waived two optional copy-only review suggestions. **No Project Gorgon in-game critical-formula measurement has been reported.** Synthetic tests check internal consistency, not real-game formulas; KI-0016 and Estimated assumptions remain open.
 
 ## What is implemented
 
@@ -223,3 +223,7 @@ Results: [dev](verification/t0013-f2/dev-results.json), [preview](verification/t
 - Stateful critical grants: Aimed Shot's next-attack chance, ArcheryCritFaster and the Knife conditional systems (which need a multiplier source). Crit-triggered effects.
 - Gourmand brewing creature-type and Elite bonuses (consumables), and the remaining ambiguous conditional families.
 - Update `burst-estimate.smoke.mjs` and `prose-grammar.smoke.mjs` for the T0010-F2 debug split.
+
+## Post-merge product-owner follow-up (2026-11-05)
+
+The product owner accepted the critical UI/gear/manual-level functionality. Two non-blocking wording suggestions (more detailed public Unavailable explanations and the AoE primary-target help label) were explicitly waived; neither requires a retroactive correction. The next approved ticket, T0014-F1, separately addresses Stampede stack-count scenarios and chance-based non-critical damage procs (including Strike a Nerve); they are **not** implemented in T0013-F2. Controlled in-game critical multiplier and chance validation is still desirable and remains open as KI-0016.

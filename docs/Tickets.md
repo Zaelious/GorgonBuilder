@@ -773,7 +773,7 @@ Guidelines:
 
 ## Approved UI Follow-ups — Historical and Post-T0013-F1
 
-T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. T0008-F2 was squash-merged 2026-11-04 via [PR #39](https://github.com/Zaelious/GorgonBuilder/pull/39) (`3aff873`). T0013-F2 is implemented for product-owner review (see its status); T0015 Sparks follows only after that review. Implement each ticket on its own feature branch; documenting a ticket does not start or complete its implementation. Follow-up tickets must respect their stated scope.
+T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. T0008-F2 was squash-merged 2026-11-04 via [PR #39](https://github.com/Zaelious/GorgonBuilder/pull/39) (`3aff873`). T0013-F2 was customer-accepted and squash-merged 2026-11-05 via [PR #40](https://github.com/Zaelious/GorgonBuilder/pull/40) (`696c01a`). The next approved unstarted ticket is T0014-F1 (Stampede stacking and chance-based damage proc scenarios), then T0015 Sparks. Implement each ticket on its own feature branch; documenting a ticket does not start or complete its implementation. Follow-up tickets must respect their stated scope.
 
 ## T0008-F1 — Imported Effective Skill Levels and Ability Picker UX
 
@@ -1169,7 +1169,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 ## T0013-F2 — Imported Anatomy/Phrenology Critical Hits and Target Conditions
 
-**Status:** Implemented for product-owner review on `feature/t0013-f2-critical-hits` (2026-11-04); not merged. Source-backed Anatomy/Phrenology critical chance, published multipliers, equipment critical modifiers, creature-type/Elite target conditions and expected damage per successful hit; no in-game validation yet. [Verification](T0013_F2_Verification.md).
+**Status:** Customer-accepted and squash-merged 2026-11-05 via [PR #40](https://github.com/Zaelious/GorgonBuilder/pull/40), commit `696c01acd2ef41bdf9b6a1bda98f82c6af0f39d7`. Source-backed Anatomy/Phrenology critical chance, published multipliers, equipment critical modifiers, creature-type/Elite target conditions and expected damage per successful hit. 1,096 synthetic tests, GitHub CI and Cloudflare preview passed; customer UI checks passed. In-game critical formula validation remains outstanding and Estimated (KI-0016). The two optional UI wording review comments were waived by the product owner. [Verification](T0013_F2_Verification.md).
 
 **Complexity:** High
 
@@ -1268,6 +1268,61 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 3. Test 1 and multiple enemies.
 4. Try the optional Respect Skill Level toggle at different skill levels, confirm default highest tier versus highest eligible tier, and verify manual override and unchanged equipped abilities.
 5. Run the quality suite.
+
+## T0014-F1 — Stampede Stacking and Chance-Based Damage Proc Scenarios
+
+**Status:** Planned; product-owner approved 2026-11-05. Not started.
+
+**Queue:** Next after T0013-F2 (merged PR #40); complete before T0015 Mastery Sparks. This is one bounded ticket covering two closely related scenario-based damage families.
+
+**Complexity:** High
+
+**Recommended Codex reasoning effort:** Extra High
+
+**Verification:** Source-backed v490 audit, deterministic calculation tests, responsive Chromium checks, and focused customer in-game checks for unvalidated ordering/stacking.
+
+**Goal:** Let users model (a) how many stacks of the equipped *of Continuous Trampling* Stampede effect are already active and (b) chance-based direct-damage treasure procs such as Strike a Nerve's 33% chance to double damage. Present ordinary, proc/stack-adjusted and expected per-successful-hit numbers without pretending to simulate time, cast sequences or DPS.
+
+**Dependencies:** T0012,T0013,T0013-F1,T0013-F2,T0014,T0008-F2.
+
+**Allowed areas:**
+- `src/core/calculation` (typed scenario contracts and independent, pure stack/proc stages; existing aggregation/provenance)
+- `src/features/abilities` and narrow browser-session scenario state in `src/persistence/local`
+- existing official v490 data lookups/treasure coverage inventory when needed
+- focused unit/component/browser tests, verification documentation and coverage reporting
+
+**Do not touch:**
+- T0015 Mastery Spark simulation or the future rotation/DPS simulator
+- automatic combat-timeline reconstruction, 60-second countdowns, cooldowns or stack generation from simulated casts
+- pets, DoT proc ticks, reactive damage, chain triggers, arbitrary stateful buffs, unrelated combat effects
+- imported CharacterSheet parsing, item selection/editing, v490 source pin, BuildDocument schema or large public UI redesign
+- speculative proc interactions/stacking claimed as validated merely because synthetic tests pass
+
+**Requirements:**
+1. **Audit the exact pinned data.** Use official v490 powers, IDs, tier texts and ability hooks. Identify the precise *of Continuous Trampling* source (Stampede boosts future Stampede attacks by +N damage for 60 seconds, stacking up to 15) and the 4 powers / 100 tier entries already catalogued as `side-clause:random-bonus` in the T0013-F1 coverage audit. Include other clearly related direct-hit chance/extra-flat patterns only if their exact source semantics and ability applicability can be established. Record named supported/unresolved examples and confidence; do not apply vague English heuristics as authoritative rules.
+2. **Stampede scenario.** Add an opt-in/manual active-stack count **0–15** (default 0) for Stampede only. Preserve the fact that the bonus applies to *future* Stampede attacks; 0 stacks is the pre-stack attack. Resolve every equipped matching mod at its exact selected tier, with separate source contributions. Proposed projected flat bonus at `s` stacks: `s × sum(applicable equipped per-stack bonuses)`; flag the cross-mod stacking/ordering as **Estimated** until compared with the game. Do not add 15 stacks merely because a mod is equipped, simulate 60-second expiration, or apply it to other Cow abilities.
+3. **Chance-based direct-hit procs.** Preserve unconditional damage separately from the random remainder. The anchor case is `Strike a Nerve deals +100 damage and has a 33% chance to deal double damage`: the existing +100 contribution must remain in normal damage, while the 33% proc has a distinct displayed chance, proc-hit amount and expected per-successful-hit output. Under a clearly labeled provisional final-hit multiplier, `expected = (1-p)×normal + p×proc-hit`. Audit/implement other source-backed direct-hit variants (`chance to deal X% more damage`, `chance to deal +N damage` where semantics are clear) using typed, testable rules, not generic prose interpretation.
+4. **Multiple sources and rule interaction.** Never silently sum probabilities or assume independent double-damage rolls when two equipped powers offer similar triggers. Research evidence for duplicate-source behavior; otherwise keep a visible per-source breakdown and show the combined proc number as Unavailable/Estimated with a specific reason. Critical-hit, proc and stack outputs must remain distinguishable; do not claim a single combined critical-plus-proc expectation without supporting interaction/ordering evidence. Preserve existing critical and normal-hit results for unrelated abilities.
+5. **Calculation integration.** Use the existing aggregation/provenance, `calculateAbilityDamage`, `applyTargetDummy` and T0013-F2 critical stage rather than duplicating formulas. Distinguish scenario-derived Stampede normal damage from the original zero-stack baseline, and add independently explained per-ability proc outcomes. Keep original-base Skill Base handling intact. Treat unknown target/damage-type ordering or other required inputs explicitly, not as silent zero.
+6. **Compact UI.** While Damage analysis is enabled, expose the 0–15 Stampede stack input only where relevant and a concise proc chance / triggered hit / expected hit breakdown only for eligible abilities. Explain that stack count represents an assumed current state, not automatically accumulated stacks. Keep development-only diagnostic inventories behind `?debugDamage=1`, and do not add repetitive explanatory panels to every equipment item. Scenario choices should be session-only, preserving BuildDocument v1.
+7. **Tests and documentation.** Add precise v490 fixtures, 0/1/15-stack examples, two different selected tier values, add/remove/replace equipment, 0%/100% and representative proc probability math, nonproc/other-ability regression, duplicate-proc uncertainty, and separation from Anatomy/Phrenology criticals. Retain prior historical coverage snapshots, or explicitly version any newly reported coverage; never rewrite historical denominators as if the old implementation already supported these mechanics. Run pinned data, lint, typecheck, focused/full tests, build, Wrangler dry-run and responsive real-Chromium smoke at 1440/375/320 px. Document unverified formulas as Estimated and provide an auditable verification report.
+
+**Non-goals:** Rotation/state-machine simulation, passive real-time stack tracking, DoT/pet/crit-triggered proc chains, hypothetical general-purpose conditional-effect editor, Sparks, DPS and broad inventory refactors.
+
+**Acceptance criteria:**
+- With Stampede and one or two equipped matching mods, 0, 1 and 15 selected stacks produce reversible, sourced projected damage changes only on Stampede; zero stacks and removed mods restore baseline.
+- Strike a Nerve's +N flat contribution is applied once; its independently described probability/double-damage outcome is displayed and no longer silently omitted from the expected-hit scenario.
+- Other supported audited chance-based effects use correct exact power/tier/ability scopes; unresolved or duplicate effects never silently change the result.
+- Ordinary damage, critical chance/damage and per-target outputs on unaffected abilities are unchanged; no generated gameplay probabilities or sequencing claims.
+- New outputs remain plainly Estimated when game ordering, cross-mod stacking, or proc interactions lack evidence.
+- Tests, CI-relevant checks and desktop/mobile browser workflows pass; the verification file distinguishes synthetic proof from live-game measurements.
+
+**Manual verification:**
+1. Without an import, equip Cow/Stampede and one *of Continuous Trampling* mod. Change current stacks 0 → 1 → 15, check the explicit per-mod per-stack contribution, then unequip it.
+2. Equip two applicable Stampede mods with different tier values. Compare the projected sum at 1 and 15 stacks and mark their interaction provisional until measured in game.
+3. Equip the Strike a Nerve +100 / 33% double-damage mod. Confirm +100 is reflected once in the normal result, while proc chance, proc hit and expected hit are separate from critical chance/damage. Remove the power and verify reversal.
+4. Spot-check at least one other audited chance-based effect, one unsupported/duplicate effect, and a non-Stampe​de/non-proc ability. Confirm no unrelated critical or damage change.
+5. In Project Gorgon, compare Stampede before/after stack buildup and Strike a Nerve normal/proc hit amounts with the same target and buffs; record any mismatch in ordering/stack semantics. Check 1440/375/320 px and run the required quality suite.
 
 ## T0015 — Mastery Spark Simulation, UI, and Damage Integration
 
