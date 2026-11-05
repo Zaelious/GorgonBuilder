@@ -307,3 +307,25 @@ See [verification](../../../docs/T0013_F1_Verification.md) for assumptions and l
 - The coverage report's three snapshots pin the T0013-F1 rules and registry, so they remain byte-identical.
 
 See [T0013-F2 verification](../../../docs/T0013_F2_Verification.md) for sources, confidence and fixtures.
+
+## Current Stampede stacks and direct-damage procs (T0014-F1)
+
+`scenario-treasure-rules.ts` maps six exact v490 identities/full tier templates into ordinary damage plus separate
+`stampede-damage-per-stack` / `chance-damage-proc` inputs. Aggregation preserves source, exact tier, probability,
+effect and assumptions. These categories never enter ordinary damage automatically.
+
+`calculateStampedeScenario(result, targetConfig, stacks, repository)` returns the unchanged zero-stack target
+baseline, per-source stack contributions, and an Estimated projected result. It assesses applicability through
+the ordinary engine, then reuses `calculateAbilityDamage` with derived ability flats and `applyTargetDummy`.
+Zero stacks reuse the original result. Skill Base continues to use the original published base.
+
+`calculateDamageProcs(result, ordinaryTarget, targetConfig, repository)` returns separate noncritical proc sources,
+chance, triggered hit, expected per successful hit and target totals. Multipliers scale the final ordinary hit;
+flat procs recalculate through the ordinary engine and target stages. Both placements are Estimated. Multiple
+sources or recognized adjacent unsupported effects withhold combined outcomes; isolated sources retain provenance.
+Missing bases/targets, unevaluated conditions, version mismatches and ambiguous flat allocation never become zero.
+Critical results remain an independent downstream stage; no joint critical/proc expectation is invented.
+
+Only `expectedProcHit` is a probability identity. These scenarios are not a timeline, stack tracker or DPS model.
+The optional UI stores current stacks in sessionStorage only. The three historical coverage snapshots exclude
+these new rules; [the separate audit](../../../docs/treasure-coverage/T0014-F1.md) lists all 150 new tier mappings.

@@ -38,6 +38,9 @@ export type ModifierCategory =
   // Reserved for future validated rules; the default registry maps nothing here yet.
   | 'critical-damage-percent'
   | 'critical-chance-percent'
+  // T0014-F1 scenario inputs; excluded from ordinary damage until explicitly evaluated.
+  | 'stampede-damage-per-stack'
+  | 'chance-damage-proc'
   // Non-damage character stats
   | 'max-resource-flat'              // MAX_HEALTH, MAX_POWER, MAX_ARMOR
   | 'damage-type-mitigation-flat'    // MITIGATION_<TYPE>
@@ -145,6 +148,8 @@ export interface NormalizedModifier {
   readonly attributeLabel: string | null;
   readonly scope: ModifierScope;
   readonly value: number;
+  /** Chance-based direct damage, independent of Anatomy/Phrenology criticals. */
+  readonly proc?: { readonly probability: number; readonly effect: 'multiply-hit' | 'add-flat' };
   /** Exact published numeric text (or the summed decimal for advancement totals). */
   readonly sourceValue: string;
   readonly unit: ModifierUnit;

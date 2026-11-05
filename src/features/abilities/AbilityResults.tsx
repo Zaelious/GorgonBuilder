@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import type { TargetConfiguration } from '../../core/build/document';
 import {
   applyTargetDummy, BURST_FALLOFF_RULES, calculateAbilityDamage, calculateCriticalHit,
+  calculateStampedeScenario, calculateDamageProcs, type StampedeScenarioResult, type DamageProcResult,
   type CriticalDamageResult, type CriticalInputs, type CriticalStep,
   type AbilityDamageResult, type AbilityDamageStep, type ComponentDamageResult, type DamageComponentId,
   type ModifierAggregationResult, type ModifierConfidence, type ModifierSource, type NormalizedModifier, type TargetDamageResult,
@@ -11,6 +12,8 @@ import { classifyBuildWarnings, type ClassifiedUnsupportedEffect } from '../../c
 import { damageDebugEnabled } from './damage-debug';
 import { damageTypeClass, isNonDamaging } from './AbilityFacts';
 import type { Ability } from './groups';
+import { stampedeStacksSnapshot, subscribeStampedeStacks } from '../../persistence/local/stampede-scenario';
+import { StampedeRows, ProcRows, ScenarioBreakdown, ScenarioDiagnostics } from './DamageScenarios';
 import './results.css';
 
 /** Build-wide calculation inputs, computed once per build edit by the planner. */
@@ -116,9 +119,12 @@ function ComponentBreakdown({ component, target, modifiers }: { component: Compo
 }
 
 /** Numerical presentation only: all operands, contributions and totals come from engine steps. */
-function PublicBreakdown({ components, target, modifiers, critical }: { components: readonly ComponentDamageResult[]; target: TargetDamageResult; modifiers: ReadonlyMap<string, NormalizedModifier>; critical: CriticalDamageResult | null }) {
+function PublicBreakdown({ components, target, modifiers, critical, stampede, proc, data }: { components: readonly ComponentDamageResult[]; target: TargetDamageResult; modifiers: ReadonlyMap<string, NormalizedModifier>; critical: CriticalDamageResult | null;
+  stampede: StampedeScenarioResult | null; proc: DamageProcResult | null; data: GameDataRepository }) {
   const number = (value: number | null) => value !== null && Number.isFinite(value) && value >= 0 ? formatDamage(value) : 'Unavailable';
   return <details className="damage-breakdown calc-breakdown"><summary>Damage breakdown</summary>
+    <ScenarioBreakdown stampede={stampede} proc={proc} data={data} />
+    {stampede && <p>Stampede at {stampede.stacks} stacks · Estimated</p>}
     {components.map(component => {
       const hit = target.hits.find(row => row.componentId === component.id);
       return <section className="calc-component" key={component.id} aria-label={`${hitLabel(component.id)} calculation`}>
@@ -252,20 +258,23 @@ function UnsupportedDetails({ records, label }: { records: readonly ClassifiedUn
 export function AbilityResults({ ability, inputs, data, idPrefix, result: precomputed }: { ability: Ability; inputs: AbilityDamageInputs; data: GameDataRepository; idPrefix: string;
   /** Optional result already calculated by the caller for the same ability and inputs. */
   result?: AbilityDamageResult }) {
-  const { result, target, critical } = useMemo(() => {
+  const stacks = useSyncExternalStore(subscribeStampedeStacks, stampedeStacksSnapshot, () => 0);
+  const { result, target, critical, stampede, proc } = useMemo(() => {
     const result = precomputed ?? calculateAbilityDamage(ability.id, inputs.aggregation, data);
     const target = applyTargetDummy(result, inputs.target);
     // T0013-F2: separate downstream stage; never changes the normal-hit result above.
-    return { result, target, critical: inputs.critical ? calculateCriticalHit(result, target, inputs.critical, data) : null };
-  }, [precomputed, ability.id, inputs, data]);
-  const modifiers = useMemo(() => new Map(result.aggregation.modifiers.map(m => [m.key, m])), [result]);
+    return { result, target, critical: inputs.critical ? calculateCriticalHit(result, target, inputs.critical, data) : null,
+      stampede: calculateStampedeScenario(result, inputs.target, stacks, data), proc: calculateDamageProcs(result, target, inputs.target, data) };
+  }, [precomputed, ability.id, inputs, data, stacks]);
+  const breakdownResult = stampede?.projectedDamage ?? result;
+  const modifiers = useMemo(() => new Map(breakdownResult.aggregation.modifiers.map(m => [m.key, m])), [breakdownResult]);
   const debug = damageDebugEnabled();
   const hits = target.hits;
   // Buffs/utility abilities (no published hit, only zero-value DoT records) get no Damage section.
   if (hits.length === 0 && (isNonDamaging(ability.damage) || !ability.pve.dots?.some(dot => dot.damagePerTick > 0))) return null;
   const omitted = notIncluded(result, target);
   const count = target.configuredTargets;
-  const breakdownComponents = result.components.filter(c => c.delivery === 'direct' && c.baseStatus !== 'absent');
+  const breakdownComponents = breakdownResult.components.filter(c => c.delivery === 'direct' && c.baseStatus !== 'absent');
   const targetLimits = target.warnings.filter(w => ['target-cap-unknown', 'single-target-ability', 'burst-falloff-undocumented',
     'burst-falloff-probabilistic', 'multiple-ability-conversions'].includes(w.code));
   const sideEffects = target.abilityEffects.filter(m => m.category === 'ability-taunt-flat' || m.category === 'ability-reset-time-flat');
@@ -288,7 +297,7 @@ export function AbilityResults({ ability, inputs, data, idPrefix, result: precom
     <h4 id={`${idPrefix}-results-title`}>Damage{status && <small className="result-status" role="status" title={status === 'Estimated' ? 'This value uses estimated or provisional rules.' : 'A supported value cannot be calculated.'}>{status}</small>}{target.burst && <span className="result-scope"> · Burst {target.burst.radius} m{target.burst.source === 'treasure-conversion' ? ' (mod)' : ''}</span>}</h4>
     {hits.length === 0 ? <p className="muted">No direct hit is published{ability.pve.dots?.length ? '; DoT damage is not calculated yet.' : '.'}</p>
       : <dl className="result-rows">{hits.map(hit => <div key={hit.componentId} className="result-row" data-component={hit.componentId}>
-        <dt>{hitLabel(hit.componentId)}{count > 1 ? ' · per target' : ''}</dt>
+        <dt>{stampede ? 'Ordinary hit · 0 stacks' : hitLabel(hit.componentId)}{count > 1 ? ' · per target' : ''}</dt>
         <dd>{hit.perTarget === null ? <span className="muted">Unavailable</span>
           : <><span className={`damage-value ${damageTypeClass(hit.damageType)}`}>{formatDamage(hit.perTarget)} {hit.damageType}</span>{hit.estimated && <small className="result-estimate">Estimated</small>}</>}</dd>
       </div>)}
@@ -297,10 +306,12 @@ export function AbilityResults({ ability, inputs, data, idPrefix, result: precom
         <dd>{hit.total === null ? <span className="muted">Unavailable</span>
           : <>{formatDamage(hit.total)}{hit.estimated && <small className="result-estimate">Estimated</small>}</>}</dd>
       </div>)}
+      {stampede && <StampedeRows scenario={stampede} idPrefix={idPrefix} />}
+      {proc && <ProcRows proc={proc} count={count} />}
       {critical ? <CriticalRows critical={critical} data={data} multipleHits={hits.length > 1} count={count} />
         : <div className="result-row"><dt>Critical hit</dt><dd><span className="muted">Unavailable</span></dd></div>}
     </dl>}
-    <PublicBreakdown components={breakdownComponents} target={target} modifiers={modifiers} critical={critical} />
+    <PublicBreakdown components={breakdownComponents} target={stampede?.projected ?? target} modifiers={modifiers} critical={critical} stampede={stampede} proc={proc} data={data} />
     {debug && <>
     {count > 1 && targetLimits.map(w => <p key={w.code} className="result-note" data-warning={w.code}>{w.message}</p>)}
     {sideEffects.length > 0 && <p className="result-note result-side-effects">Not damage: {sideEffects.map(m => m.category === 'ability-taunt-flat'
@@ -322,6 +333,7 @@ export function AbilityResults({ ability, inputs, data, idPrefix, result: precom
       {target.abilityEffects.length > 0 && <><p className="calc-subhead">Ability changes from mods</p><ul className="calc-notes">{target.abilityEffects.map(m =>
         <li key={m.key} data-ability-effect={m.category}>{m.attributeLabel ?? m.attributeId}: {m.sourceValue}{m.unit === 'seconds' ? ' s' : m.unit === 'meters' ? ' m' : ''} ({sourceLabel(m.source)})</li>)}</ul></>}
       {critical && <CriticalDiagnostics critical={critical} />}
+      <ScenarioDiagnostics stampede={stampede} proc={proc} />
       {assumptions.length > 0 && <><p className="calc-subhead">Assumptions</p><ul className="calc-notes">
         {assumptions.map(a => <li key={a}>{a}</li>)}</ul></>}
     </details>

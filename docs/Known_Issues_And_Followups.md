@@ -181,13 +181,28 @@ The published attribute token syntax is parsed separately in `src/features/mods/
 - **Creature/Elite conditional families:** only four exact powers are curated; Gourmand brewing (non-equipment), "sentient", "Pigs", Pixie Flare "total damage" and Backstab "Direct Damage to Elite" remain unmodeled.
 - **Stale browser smokes (pre-existing on main `3aff873`):** `burst-estimate.smoke.mjs` and `prose-grammar.smoke.mjs` wait for debug-only elements in production preview after T0010-F2. `popover-scroll.smoke.mjs` received a selector-only fix in T0013-F2.
 
-## T0014-F1 — Approved Stampede Stacks and Random Damage Procs (2026-11-05)
+## T0014-F1 — Stampede and Damage Proc Follow-ups (2026-11-05)
 
-**Status:** Planned, product-owner approved, not started. [Canonical ticket](Tickets.md#t0014-f1--stampede-stacking-and-chance-based-damage-proc-scenarios). Place between merged T0013-F2 and T0015 Sparks. This combines two *narrow scenario-based direct-hit mechanisms* rather than implementing the future rotation simulator.
+**Status:** Implemented for review on the feature branch. [Verification](T0014_F1_Verification.md) and
+[separate exact-power audit](treasure-coverage/T0014-F1.md). No in-game measurements were performed.
 
-- **Stampede / of Continuous Trampling:** future Stampede attacks gain a tier-specific +N bonus per active stack, with the published 15-stack cap and 60-second duration. The v1 scenario will accept a manually specified 0–15 current stack count, sum separately sourced equipped per-stack bonuses, and show its projected effect on Stampede damage. Cross-mod stacking and formula placement must be marked Estimated pending game verification; do not simulate time.
-- **Chance-based direct-hit procs:** Strike a Nerve +N flat damage plus 33% chance to deal double damage must preserve +N as unconditional normal damage while adding an *independent* proc-hit/expected-hit display. Inventory the 4 powers / 100 tiers already audited as `side-clause:random-bonus`; extend to clear chance-based flat-extra-damage variants where sourced. No assumption about multiple equipped proc copies or critical/proc interaction without evidence.
-- The T0013-F1 coverage audit already lists `side-clause:random-bonus` as a distinct unmodeled expected-value family. Keep historical snapshot counts unchanged and new coverage separately reported.
-- **Not included:** timed stack buildup, rotation/DPS, Spark rolls, DoTs/pets or broad conditional damage. T0013-F3 remains reserved as a *candidate* for allocation/conversion measurements and is not repurposed by T0014-F1.
+- Continuous Trampling uses manually selected current stacks 0–15 (default 0), with independent equipped tier values.
+  Cross-mod addition and placement before non-base percentages remain **Estimated**, including stacking/caps and
+  rounding. The published 60-second duration is not simulated.
+- Five direct-hit proc families are supported: Strike a Nerve, Deer Bash, Pig Rend, Spirit Bolt, and Cow Front Kick
+  extra flat damage. Final-hit multiplication or flat placement through the ordinary engine remain **Estimated**.
+- Duplicate proc copies retain separate source/tier/probability/effect records but combined results are **Unavailable**:
+  shared versus independent rolls, strongest-only behavior, additive probability and simultaneous triggers are unknown.
+- Critical/proc interaction and ordering remain unknown. Separate noncritical proc and critical-only expectations are
+  shown; there is no joint expectation or DPS. Pig Rend/Spirit Bolt DoTs remain unmodeled.
+- Adjacent exact-power candidates, random AoE, conditional/timed procs and triggered chains stay unavailable or outside
+  scope; the audit names each family. Implement later under a separate handoff with measured/source-backed semantics.
+- The three historical treasure-coverage snapshots remain unchanged; all 150 newly mapped tiers are reported separately.
+- Browser screenshots use deterministic local icons because Chromium does not trust this environment's proxy CA.
+  Application/layout checks passed; CDN transport and a remotely deployed Cloudflare preview were not verified.
+- Vite reports the main chunk slightly above 500 kB (~506 kB minified). Build succeeds; consider profiling/code splitting
+  under the existing browser performance follow-up, rather than mixing an unrelated architecture change into this ticket.
+
+T0013-F3 remains a separate allocation/conversion measurement candidate. T0015 was not started.
 
 T0010-F2 final clarification: the public view includes a default-collapsed **Damage breakdown** showing actual engine steps, individual named equipment/skill contributions, flat/percentage/Skill Base contributions, target multipliers and final hit/total. It contains numerical presentation only: no raw IDs, source paths, uncertainty/exclusion inventories, implementation assumptions or long explanations. Those diagnostics remain available only through the development `?debugDamage=1` view. Public `Partial` labels are replaced with `Estimated`; unavailable numbers remain `Unavailable`. No engine results or accepted mod-search/Selected-heading behavior change.

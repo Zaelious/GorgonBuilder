@@ -44,3 +44,9 @@
 /* T0013-F2 critical rows: compact scope/hint text beside the value. */
 .result-rows .result-scope-note, .result-rows .result-hint { color: var(--color-muted); font-size: 0.6875rem; font-weight: 400; }
 .calc-critical { margin-top: 0.5rem; }
+
+.stampede-control { align-items: center; margin-block: 0.25rem; }
+.ability-results .stampede-control label { display: inline; margin: 0; font: inherit; }
+.stampede-control select { width: 3.5rem; min-height: 1.75rem; padding: 0.125rem 0.25rem; color: var(--color-text); background: var(--color-input); border: 1px solid var(--color-border-strong); border-radius: var(--radius-control); font: inherit; }
+.proc-source p { margin-block: 0.25rem; overflow-wrap: anywhere; }
+@media (pointer: coarse) { .stampede-control select { min-height: 2.75rem; } }

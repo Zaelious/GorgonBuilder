@@ -106,6 +106,7 @@ export function aggregateBuildModifiers(build: BuildDocument, data: ModifierData
             key: `${input.key}/rule:${draft.part}`, category: draft.category, operation: draft.operation,
             attributeId: draft.attributeId, attributeLabel: draft.attributeLabel, scope: draft.scope,
             value: draft.value, sourceValue: draft.sourceValue, unit: draft.unit,
+            ...(draft.proc ? { proc: draft.proc } : {}),
             conditions, applicability: applicability(conditions), mappingRuleId: curated.rule.id,
             confidence: curated.rule.confidence, assumptions: [...draft.assumptions], source: input.source,
           });

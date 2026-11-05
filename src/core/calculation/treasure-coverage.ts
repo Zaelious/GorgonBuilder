@@ -8,13 +8,14 @@ import { parseProseDamageClause, resolveProseDamage, type ProseDamageFailure, ty
 import { DEFAULT_MODIFIER_RULES, createModifierRegistry, parseEffectDescription } from './registry';
 import { TREASURE_EFFECT_RULES, interpretTreasureEffect } from './treasure-effect-rules';
 import { CRITICAL_TREASURE_RULES } from './critical-treasure-rules';
+import { SCENARIO_TREASURE_RULES } from './scenario-treasure-rules';
 
 /**
  * The three snapshots reproduce the accepted T0013-F1 report exactly. T0013-F2 critical and target-conditional curated
- * rules depend on scenario inputs (creature type, Elite) and a separate critical stage, so they are excluded here and
- * documented in docs/T0013_F2_Verification.md.
+ * rules and T0014-F1 stack/proc rules depend on separate scenario stages, so they are excluded here and documented in
+ * docs/T0013_F2_Verification.md and docs/T0014_F1_Verification.md.
  */
-const T0013_F1_RULES = TREASURE_EFFECT_RULES.filter(rule => !CRITICAL_TREASURE_RULES.includes(rule));
+const T0013_F1_RULES = TREASURE_EFFECT_RULES.filter(rule => !CRITICAL_TREASURE_RULES.includes(rule) && !SCENARIO_TREASURE_RULES.includes(rule));
 const T0013_F1_REGISTRY = createModifierRegistry(DEFAULT_MODIFIER_RULES.filter(rule => rule.category !== 'critical-chance-percent' && rule.category !== 'critical-damage-percent'));
 
 /**

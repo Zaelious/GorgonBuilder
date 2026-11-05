@@ -773,7 +773,7 @@ Guidelines:
 
 ## Approved UI Follow-ups — Historical and Post-T0013-F1
 
-T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. T0008-F2 was squash-merged 2026-11-04 via [PR #39](https://github.com/Zaelious/GorgonBuilder/pull/39) (`3aff873`). T0013-F2 was customer-accepted and squash-merged 2026-11-05 via [PR #40](https://github.com/Zaelious/GorgonBuilder/pull/40) (`696c01a`). The next approved unstarted ticket is T0014-F1 (Stampede stacking and chance-based damage proc scenarios), then T0015 Sparks. Implement each ticket on its own feature branch; documenting a ticket does not start or complete its implementation. Follow-up tickets must respect their stated scope.
+T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. T0008-F2 was squash-merged 2026-11-04 via [PR #39](https://github.com/Zaelious/GorgonBuilder/pull/39) (`3aff873`). T0013-F2 was customer-accepted and squash-merged 2026-11-05 via [PR #40](https://github.com/Zaelious/GorgonBuilder/pull/40) (`696c01a`). T0014-F1 (Stampede stacking and chance-based damage proc scenarios) is implemented for review on its feature branch; T0015 Sparks remains unstarted and requires a separate handoff. Implement each ticket on its own feature branch; documenting a ticket does not start or complete its implementation. Follow-up tickets must respect their stated scope.
 
 ## T0008-F1 — Imported Effective Skill Levels and Ability Picker UX
 
@@ -1271,7 +1271,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 ## T0014-F1 — Stampede Stacking and Chance-Based Damage Proc Scenarios
 
-**Status:** Planned; product-owner approved 2026-11-05. Not started.
+**Status:** Implemented for review on `feature/t0014-f1-stampede-procs` (2026-11-05), based on latest `main` `a814bfc`. [Verification](T0014_F1_Verification.md) and [separate scenario coverage](treasure-coverage/T0014-F1.md). Game stacking/order remains Estimated; duplicate proc combinations remain Unavailable. No merge or T0015 work.
 
 **Queue:** Next after T0013-F2 (merged PR #40); complete before T0015 Mastery Sparks. This is one bounded ticket covering two closely related scenario-based damage families.
 
