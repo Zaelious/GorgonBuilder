@@ -1321,7 +1321,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 1. Without an import, equip Cow/Stampede and one *of Continuous Trampling* mod. Change current stacks 0 → 1 → 15, check the explicit per-mod per-stack contribution, then unequip it.
 2. Equip two applicable Stampede mods with different tier values. Compare the projected sum at 1 and 15 stacks and mark their interaction provisional until measured in game.
 3. Equip the Strike a Nerve +100 / 33% double-damage mod. Confirm +100 is reflected once in the normal result, while proc chance, proc hit and expected hit are separate from critical chance/damage. Remove the power and verify reversal.
-4. Spot-check at least one other audited chance-based effect, one unsupported/duplicate effect, and a non-Stampe​de/non-proc ability. Confirm no unrelated critical or damage change.
+4. Spot-check at least one other audited chance-based effect, one unsupported/duplicate effect, and a non-Stampede/non-proc ability. Confirm no unrelated critical or damage change.
 5. In Project Gorgon, compare Stampede before/after stack buildup and Strike a Nerve normal/proc hit amounts with the same target and buffs; record any mismatch in ordering/stack semantics. Check 1440/375/320 px and run the required quality suite.
 
 ## T0015 — Mastery Spark Simulation, UI, and Damage Integration
