@@ -249,6 +249,10 @@ Use the [ticket-specific verification report](T0011_F3_Verification.md) for exac
 
 ## Save/Share Tickets
 
+**Next MVP sequence:** T0018 provider decision + local backend/health proof, then T0019 secure persistent API, then T0020 public save/share/ownership/independent fork, then T0021 release. Neither deferred T0017 A/B nor T0016 defensive statistics are release gates.
+
+T0018 specifically requires architecture/ADR review, mocked BuildRepository contract tests, local health endpoint smoke, SPA/static assets regression, deploy dry-run and no credential leakage. The full create/read/update/delete/anonymous-ownership scenarios below are **T0019/T0020**, not implemented by T0018.
+
 Test at least:
 
 - create
@@ -261,7 +265,7 @@ Test at least:
 
 ## Comparison Tickets
 
-**T0017 is next:** Use the existing modifier aggregation, ability calculator and offensive Mastery Sparks. Do not require deferred T0016's defense engine, armor Sparks, whole-character totals or CurrentStats comparisons.
+**T0017 deferred post-MVP (Issue #45):** Not a dependency of T0018–T0021, and not required for v1 acceptance. When resumed, use the existing modifier aggregation, ability calculator and offensive Mastery Sparks. Do not require deferred T0016's defense engine, armor Sparks, whole-character totals or CurrentStats comparisons.
 
 Create build A, duplicate to B, change one controlled input, and confirm:
 
