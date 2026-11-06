@@ -18,7 +18,7 @@ Project Gorgon build planner inspired functionally by GorgonExplorer, but focuse
 - candidate mods
 - damage breakdown
 - Mastery Sparks
-- save/share
+- registered accounts, personal build libraries, public/private/unlisted save/share and indexed public build discovery
 - character import/validation
 - **post-MVP** A/B comparison (T0017), character/defensive stats (T0016)
 - later rotation/DPS, encounter/threat, optimizer
@@ -103,7 +103,7 @@ T0001–T0021 ends with:
 - save/share/edit/delete
 - early character-report parsing plus My Items import
 
-**Next MVP sequence:** **T0018 → T0019 → T0020 → T0021** (provider/deployment architecture → secure persistent API → save/share/duplicate UI → release). **No A/B comparison is required for remote build duplication.**
+**Approved MVP sequence (2026-11-06):** **T0018 → T0019 → T0020 → T0020-F1 → T0021**. Cloudflare Workers + D1 is selected; accounts + unique usernames own permanent builds. T0018 provides backend/auth foundation, T0019 login/session and user-ID-bound D1 CRUD, T0020 account/My Builds/visibility/Save/Share UI, T0020-F1 public search/filter/profile, T0021 release. Guest local planning remains free, account is required for permanent saving. Three visibility states: Public searchable; Unlisted guest readable by link only; Private owner-only (default). No A/B comparison is required for remote build copying.
 
 **After T0021 release:** **T0017 A/B Build Comparison** is optional and deferred ([Issue #45](https://github.com/Zaelious/GorgonBuilder/issues/45)); **T0016 Character Statistics and Defensive Calculation Engine** remains last and deferred ([Issue #43](https://github.com/Zaelious/GorgonBuilder/issues/43)), with armor/defensive Sparks and optional CurrentStats reconciliation. Neither is a v1 dependency.
 
