@@ -105,7 +105,8 @@ export function SparkEditor({ selection, equipmentIndex, activeSkillIds, data, o
   const status = mode === 'none' ? 'None'
     : !slotSupported || offhandConflict || evaluation.status === 'invalid' ? 'Not applied'
       : evaluation.status === 'pending' ? 'Not simulated'
-        : `${skillName(configuredSkill)} · ${total} ${mode === 'simulated' ? 'simulated' : 'actual'}${skillActive ? '' : ' · inactive'}`;
+        : skillActive ? `${skillName(configuredSkill)} · ${total} ${mode === 'simulated' ? 'Simulated' : 'Actual'}`
+          : `${skillName(configuredSkill)} · ${total} · Inactive`;
   const notice = !slotSupported ? 'Sparks are modeled only on MainHand, OffHand, Ring and Necklace. This saved setting is kept but not applied.'
     : offhandConflict ? 'Several saved items share the offhand position. Keep one item to edit or apply its Sparks.'
       : evaluation.status === 'invalid' ? `${evaluation.issue.message}${evaluation.issue.code === 'result-mismatch' || evaluation.issue.code === 'unsupported-model-version' ? '' : ' Saved values are kept but not applied.'}`
@@ -115,8 +116,11 @@ export function SparkEditor({ selection, equipmentIndex, activeSkillIds, data, o
   const unmodeled = mode === 'none' || !support ? [] : SKILL_DAMAGE_SPARK_OUTCOMES.filter(outcome => support.get(outcome.key) === false);
 
   return <details className="spark-editor" data-spark-mode={mode} data-spark-applied={applied ? 'true' : 'false'}>
-    <summary><span className="spark-title">Mastery Sparks</span>
-      <span className={`spark-summary${applied ? '' : mode === 'none' ? ' muted' : ' warning'}`} data-spark-summary="">{status}</span></summary>
+    <summary aria-label={`Mastery Sparks: ${status}`}>
+      <svg className="spark-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
+        <path d="M12 2.5l1.9 6.2 6.1 2.3-6.1 2.3L12 19.5l-1.9-6.2L4 11l6.1-2.3z" /><path d="M19 3.5v3M17.5 5h3M5 17.5v3M3.5 19h3" strokeLinecap="round" /></svg>
+      <span className="spark-title">Mastery Sparks</span>
+      <span className={`spark-summary${applied ? ' applied' : mode === 'none' ? '' : ' warning'}`} data-spark-summary="">{status}</span></summary>
     <div className="spark-body">
       {notice && <p className="warning spark-notice" role="status">{notice}</p>}
       {selection.slot === 'OffHandShield' && mode !== 'none' && <p className="muted spark-note">Official Spark scrolls list Off-Hand Weapons; shield eligibility is unconfirmed.</p>}

@@ -136,3 +136,111 @@ Use a fresh build (**Clear build**). Set **Psychology 100** in Skill A and **Arc
 - `docs/Manual_Verification_Guide.md` (Spark Tickets): link this report and add the 0-vs-110 table.
 - `docs/Known_Issues_And_Followups.md`: in-game Spark validation; shield eligibility; percentile/luck follow-up; KI-0003 unchanged.
 - `docs/Product_Decisions.md` (Mastery Sparks): record that Sparks belong to the item and are cleared on replacement, and the assumed active-skill requirement for All Direct outcomes.
+
+---
+
+## R1 correction — Mastery Sparks visibility and Stampede effective contributions
+
+**Scope:** applied to the existing PR #42 on `feature/t0015-mastery-sparks`, following customer testing of T0015. The T0015 history above is unchanged. BuildDocument v1, Spark model `skill-damage-sparks-v1`, its probabilities, the five outcome categories and the replacement-clears-Sparks behavior are all preserved.
+
+### A. Mastery Sparks UI
+
+Customer feedback: the panel was hard to notice, low-contrast, looked like a minor treasure-mod subsection and sat below the long Available / Selected editor.
+
+**Changes (presentation only; the editor internals are unchanged):**
+
+- Expanded order for MainHand, OffHand, Ring and Necklace: **1. STATS → 2. Mastery Sparks → 3. treasure mods (Available / Selected) → 4. Replace / Clear → 5. Item details & source** (`EquipmentPlanner.tsx`).
+- Redesigned header (`SparkEditor.tsx`, `sparks.css`):
+  - Spark icon and a full-contrast "Mastery Sparks" heading (0.9375 rem, 600), followed by a readable summary.
+  - Restrained bronze accent: a 3 px left rule, a faint border tint and the selected-mode underline. Accent #c9a26b on the surface is about 7.6:1 contrast.
+  - Expand/collapse chevron matching the equipment rows; collapsed height 2.75 rem.
+  - At ≤ 30 rem width the summary wraps under the heading instead of truncating.
+- Summary states: `— None`, `— Psychology · 110 Simulated`, `— Psychology · 110 Actual`, `— Cow · 75 Simulated`, `— Cow · 110 · Inactive`, `— Not simulated`, `— Not applied` (amber). The summary's accessible name is "Mastery Sparks: …".
+- Everything else is unchanged: modes, skill choice, 0–110 count, reroll/seed, manual entry, counts, bonuses, separate expected averages, read-only/disabled states, unsupported-attribute notes and offhand conflict handling.
+
+| | 1440 px | 375 px |
+|---|---|---|
+| Before (below mods) | ![before 1440](verification/t0015-r1/before-1440-collapsed.png) | ![before 375](verification/t0015-r1/before-375-collapsed.png) |
+| After (collapsed) | ![after 1440](verification/t0015-r1/after-1440-collapsed.png) | ![after 375](verification/t0015-r1/after-375-collapsed.png) |
+
+Expanded evidence: [1440 px](verification/t0015-r1/after-1440-expanded.png) and [320 px](verification/t0015-r1/after-320-expanded.png).
+
+### B. Stampede effective contributions (0–30)
+
+**Customer measurements:**
+
+- Setup: Stampede 12 (2 s reuse), Continuous Trampling "+N for 60 seconds", an applicable ≈1.955× percentage multiplier, and an unrelated in-game buff that shifts only the baseline.
+  - Test A, +56 only: 1,384 → 4,669, an increase of **3,285**. Predicted: 56 × 30 × 1.955 = **3,284.4**.
+  - Test B, +50 and +56: 1,384 → 7,601, an increase of **6,217**. Predicted: (50 + 56) × 30 × 1.955 = **6,216.9**.
+- Damage keeps rising for about 30 consecutive attacks. With a 60 s buff and a 2 s reuse, about 60 / 2 = 30 contributions overlap before the oldest expire. **Thirty is that practical steady state, not a game-defined stack cap.** The official v490 tier text still reads "(stacks up to 15 times)"; it is kept and matched unchanged, and is no longer treated as the scenario limit.
+
+**Changed (only the range and wording):**
+
+- `damage-scenarios.ts`: `STAMPEDE_MAX_CONTRIBUTIONS = 30`; `isValidStampedeStacks` accepts integers 0–30; the warning text is updated.
+- `DamageScenarios.tsx`: the selector offers 0–30, and its tooltip explains the 60 s / 2 s steady state.
+- `stampede-scenario.ts` (no code change): session validation already reuses `isValidStampedeStacks`, so stored 0–15 values still restore and 31, negative, fractional or malformed values fall back to 0.
+- `scenario-treasure-rules.ts`: the rule description and Estimated assumption text are updated. The exact matcher pattern is unchanged.
+
+**Formula unchanged:** flat bonus = contributions × Σ applicable Continuous Trampling values. It enters the existing T0013 formula before ordinary percentages. There is no new multiplier and no duplicated contribution, and the scenario stays **Estimated**. While Stunned still uses its separate provisional percentage stage. No other damage path, Spark stage, critical, proc, target or Skill Base calculation changed. Ordinary results for every ability are byte-identical for any selected contribution count.
+
+### Numerical regression (`src/core/calculation/stampede-contributions.test.ts`)
+
+The 1.955× multiplier is produced through ordinary modifiers: 95 × "+1% Cow Damage" plus 1 × "+0.5% All Direct" actual Sparks, for +95.5%. Stampede's published base is 208, so the planner baseline is 406.64.
+
+| Configuration | Contributions | Expected increase | Test result | Browser (preview) total |
+|---|---:|---:|---:|---:|
+| +56 only | 0 | 0 | 0 | 406.64 |
+| +56 only | 15 | 1,642.2 | 1,642.2 | — |
+| +56 only | 30 | 3,284.4 | 3,284.4 | — |
+| +50 and +56 | 0 | 0 | 0 | 406.64 |
+| +50 and +56 | 15 | 3,108.45 | 3,108.45 | 3,515.09 |
+| +50 and +56 | 30 | 6,216.9 | 6,216.9 | 6,623.54 |
+
+Both measurements are reproduced within 1 damage (3,285 vs 3,284.4; 6,217 vs 6,216.9). With the example planner baseline of 1,335.67, the totals are **4,620.07** (+56, 30) and **7,552.57** (+50/+56, 30). The 48.33-point baseline difference from the customer's unrelated buff is not "corrected" by changing the formula.
+
+Other R1 tests:
+
+- 0/1/15/16/29/30 valid and −1/31/1.5/NaN/∞ invalid.
+- Stored session values 0–30 restore; 31, `"15"`, `null`, `{}` and malformed text fall back to 0.
+- The stack flats are `[1500, 1680]`, and the percentage basis is 208 + 3,180.
+- Removing the +50 source gives 3,284.4; changing it to +4 gives 60 × 30 × 1.955; restoring it gives the identical combined result.
+- While Stunned at 30 contributions: off = 1,708; on = 1,708 × 14 = 23,912 (+1,300%).
+- Contribution changes never alter the ordinary Stampede hit, an unrelated Cow ability or the Spark simulation.
+- The UI selector has 31 options; 30 shows 1,708 and "+50 per stack × 30".
+
+Obsolete 15-limit assertions were updated, not deleted.
+
+Evidence: [Stampede 30 contributions, 1440 px](verification/t0015-r1/after-1440-stampede-30.png), [375 px](verification/t0015-r1/after-375-stampede-30.png).
+
+### R1 automated and browser results
+
+| Check | Result |
+|---|---|
+| `npm run data:update -- --check` | Validated/reused official v490 |
+| `npm run lint` / `npm run typecheck` | Pass |
+| `npm test` | **1,272 passed / 64 files** (T0015: 1,246 / 63; +26) |
+| `npm run coverage:treasure -- --check` | Committed reports current |
+| `npm run build` | Pass (main chunk 530.9 kB; the >500 kB warning predates T0015) |
+| `git diff --check` | Clean |
+| Spark smoke (`sparks.smoke.mjs`) | Dev and preview pass at 1440/375/320 px, 18 scenarios each |
+| Stampede/proc smoke (`damage-scenarios.smoke.mjs`, extended to 16/30 and 30 + While Stunned) | Dev and preview pass at 1440/375/320 px |
+
+No console errors, and no new horizontal overflow. Results: [`docs/verification/t0015-r1/`](verification/t0015-r1/).
+
+### Updated customer verification (R1)
+
+1. Expand a Ring, MainHand, OffHand or Necklace. **Mastery Sparks** appears directly under STATS, above Available / Selected.
+2. The collapsed header reads, for example, "Mastery Sparks — None". Open it: the chevron turns and the editor appears. Close it again.
+3. Simulate, Reroll, enter actual results and refresh, as in T0015 steps 2–8. The header updates (for example "Psychology · 110 Actual").
+4. Select Cow and equip **Stampede 12**. Stage Continuous Trampling **+50** (tier `id_20`) and **+56** (tier `id_22`) on Chest/Hands, and turn on Damage analysis.
+5. Set **Current Stampede stacks** to 0, 15 and 30. With your gear's multiplier *m*, each step from 0 should add 106 × contributions × *m*. At *m* = 1.955 that is +3,108.45 at 15 and +6,216.9 at 30.
+6. Remove +50: the 30-contribution increase becomes 56 × 30 × *m* (3,284.4 at 1.955). Re-add +50 and the combined increase returns.
+7. Toggle **While Stunned** (Necklace mod) and confirm its separate conditional row still changes only the stunned value.
+8. Open **Damage breakdown**: the Chest and Hands contributions are listed separately, for example "+50 per stack × 30 = +1,500" and "+56 per stack × 30 = +1,680".
+9. Check 1440, 375 and 320 px widths.
+
+### R1 limitations
+
+- Thirty contributions are only validated for the current 60 s buff and 2 s reuse. Other reuse times, haste and the exact behavior at the expiry boundary are not modeled. There is no rotation, timeline or cooldown simulation.
+- The scenario remains **Estimated** pending broader game-mechanics validation.
+- The customer's baseline differs by about 48 points because of an unrelated buff, so only the increases are compared.

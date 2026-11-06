@@ -106,9 +106,10 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
       {item && !sameLoadoutPosition(item.slot, selection.slot) && <p className="warning">Published slot is {item.slot}; saved slot {selection.slot} is retained.</p>}
       {owned && <ImportedItemWarnings item={owned} data={data} historical />}
       <ItemStats selection={selection} item={item} data={data} skillA={build.skillSlotA.skillId} skillB={build.skillSlotB.skillId} />
-      <EquipmentMods searchIndex={searchIndex} preparedSearch={prepared[index]} browser={modBrowser} selection={selection} equipmentIndex={index} item={item} skillIds={skillIds} skillA={build.skillSlotA.skillId} skillB={build.skillSlotB.skillId} data={data} onEdit={onEdit} readOnly={readOnly} available={available[index]} expanded={expanded.has(isOffhandSlot(selection.slot) ? 'OffHand' : selection.slot)} />
+      {/* T0015-R1 order: STATS → Mastery Sparks → treasure mods → actions → details & source. */}
       {(isOffensiveSparkSlot(selection.slot) || selection.sparks.mode !== 'none') && <div className="equipment-sparks">
         <SparkEditor selection={selection} equipmentIndex={index} activeSkillIds={skillIds} data={data} onEdit={onEdit} readOnly={readOnly} offhandConflict={conflict} /></div>}
+      <EquipmentMods searchIndex={searchIndex} preparedSearch={prepared[index]} browser={modBrowser} selection={selection} equipmentIndex={index} item={item} skillIds={skillIds} skillA={build.skillSlotA.skillId} skillB={build.skillSlotB.skillId} data={data} onEdit={onEdit} readOnly={readOnly} available={available[index]} expanded={expanded.has(isOffhandSlot(selection.slot) ? 'OffHand' : selection.slot)} />
       <div className="equipment-actions"><button type="button" disabled={readOnly || conflict || !officialSlots.has(selection.slot)} onClick={event => openPicker(selection.slot, index, event.currentTarget)}>Replace {isOffhandSlot(selection.slot) ? 'OffHand' : selection.slot}</button>
         <button type="button" disabled={readOnly} onClick={event => {
           if (!clearSelection(index)) return;

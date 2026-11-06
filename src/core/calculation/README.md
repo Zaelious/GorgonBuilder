@@ -342,6 +342,12 @@ baseline, per-source stack contributions, and an Estimated projected result. It 
 the ordinary engine, then reuses `calculateAbilityDamage` with derived ability flats and `applyTargetDummy`.
 Zero stacks reuse the original result. Skill Base continues to use the original published base.
 
+**T0015-R1:** `stacks` is the number of *effective concurrent* Continuous Trampling contributions, 0–30
+(`STAMPEDE_MAX_CONTRIBUTIONS`). Customer in-game tests with Stampede 12 (2 s reuse) and the 60 s buff kept gaining
+damage for about 30 attacks, matching `contributions × Σ per-contribution values × 1.955` within 1 damage for +56 and
+for +50 with +56. Thirty is that steady state, not a game stack cap. The published "(stacks up to 15 times)" text is
+matched unchanged as source data. Other reuse times and expiry timing are not modeled; the arithmetic is unchanged.
+
 `calculateDamageProcs(result, ordinaryTarget, targetConfig, repository)` returns separate noncritical proc sources,
 chance, triggered hit, expected per successful hit and target totals. Multipliers scale the final ordinary hit;
 flat procs recalculate through the ordinary engine and target stages. Both placements are Estimated. Multiple

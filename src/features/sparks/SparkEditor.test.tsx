@@ -94,6 +94,21 @@ describe('T0015 Mastery Spark editor', () => {
     expect(container.querySelector(`${row('Head')} .spark-editor`)).toBeNull();
   });
 
+  it('R1: places Mastery Sparks between item STATS and treasure mods, above actions and source details', async () => {
+    seedBuild(standard());
+    await render(); await click(`${row('Ring')} > summary`);
+    const article = control(`${row('Ring')} .equipment-selection`);
+    const order = ['.item-stats', '.spark-editor', '.mod-planner', '.equipment-actions', '.item-details-source']
+      .map(selector => article.querySelector(selector)!);
+    expect(order.every(Boolean)).toBe(true);
+    for (let i = 1; i < order.length; i++) {
+      expect(order[i - 1]!.compareDocumentPosition(order[i]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+    const summary = control(`${row('Ring')} .spark-editor > summary`);
+    expect(summary.querySelector('.spark-title')!.textContent).toBe('Mastery Sparks');
+    expect(summary.getAttribute('aria-label')).toBe('Mastery Sparks: None');
+  });
+
   it('simulates 110 Sparks by default, reproduces them from the saved seed, rerolls without touching other gear and survives refresh', async () => {
     seedBuild(standard());
     await render();
@@ -108,7 +123,7 @@ describe('T0015 Mastery Spark editor', () => {
     expect(control(`${row('Ring')} [data-spark-total]`).textContent).toBe('110 / 110');
     expect(outcomeCount('Ring', 'skillBaseDamagePercent')).toBe(String(saved.result!.outcomeCounts.skillBaseDamagePercent));
     expect(control(`${row('Ring')} tr[data-outcome="skillBaseDamagePercent"] td:last-child`).textContent).toBe(`+${saved.result!.outcomeCounts.skillBaseDamagePercent * 3}%`);
-    expect(control(`${row('Ring')} [data-spark-summary]`).textContent).toBe('Psychology · 110 simulated');
+    expect(control(`${row('Ring')} [data-spark-summary]`).textContent).toBe('Psychology · 110 Simulated');
     expect(control(`${row('Ring')} > summary small`).textContent).toContain('110 Sparks');
     expect(control(`${row('Ring')} .spark-seed`).textContent).toBe(`Seed ${saved.input.seed}`);
     // Expected averages are separate and analytical.
@@ -201,7 +216,7 @@ describe('T0015 Mastery Spark editor', () => {
   it('keeps an inactive skill\'s Sparks visible and unapplied, and offers only active combat skills', async () => {
     seedBuild([db('Ring', 'item_49083', { mode: 'actual', category: 'skill-damage', skillId: 'Cow', outcomeCounts: MANUAL })]);
     await render(); await openSparks('Ring');
-    expect(control(`${row('Ring')} [data-spark-summary]`).textContent).toBe('Cow · 110 actual · inactive');
+    expect(control(`${row('Ring')} [data-spark-summary]`).textContent).toBe('Cow · 110 · Inactive');
     expect(control(`${row('Ring')} .spark-notice`).textContent).toContain('Cow is not an active skill');
     expect([...control<HTMLSelectElement>(`${row('Ring')} .spark-field select`).options].map(o => o.textContent)).toEqual(['Cow (inactive)', 'Psychology', 'Archery']);
     await change(`${row('Ring')} .spark-field select`, 'Archery'); await tick();

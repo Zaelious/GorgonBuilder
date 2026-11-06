@@ -5,8 +5,16 @@ import type { ModifierAggregationResult, NormalizedModifier, UnsupportedEffect }
 import { applyTargetDummy, type TargetDamageResult, type TargetHitResult } from './target-damage';
 import { DAMAGE_SCENARIO_ASSUMPTIONS, UNMODELED_DAMAGE_PROCS } from './scenario-treasure-rules';
 
+/**
+ * T0015-R1: maximum *effective concurrent* Continuous Trampling contributions in the manual scenario. Customer in-game
+ * tests (Stampede 12, 2 s reuse, 60 s buff) kept gaining damage for about 30 consecutive attacks (60 s / 2 s) before
+ * older contributions expired. This is the practical steady state for that reuse time, not a game-defined stack cap;
+ * the published "(stacks up to 15 times)" wording is kept unchanged as source text.
+ */
+export const STAMPEDE_MAX_CONTRIBUTIONS = 30;
+
 export const isValidStampedeStacks = (value: unknown): value is number => typeof value === 'number'
-  && Number.isSafeInteger(value) && value >= 0 && value <= 15;
+  && Number.isSafeInteger(value) && value >= 0 && value <= STAMPEDE_MAX_CONTRIBUTIONS;
 
 const matchingVersions = (result: AbilityDamageResult, data: AbilityDamageData) => result.gameDataVersion === data.gameDataVersion
   && result.aggregation.gameDataVersion === data.gameDataVersion && result.aggregation.buildGameDataVersion === data.gameDataVersion;
@@ -95,7 +103,7 @@ export function calculateStampedeScenario(result: AbilityDamageResult, target: T
   const available = projected !== null && projected.hits.some(h => h.perTarget !== null);
   return { status: valid && available ? 'estimated' : 'unavailable', stacks, hasStackSources: relevantStacks.length > 0, whileStunned: whileStunned && stunnedModifiers.length > 0, stunnedModifiers, stacked, contributions, flatBonus, baseline, projected, projectedDamage,
     decisions, assumptions: [DAMAGE_SCENARIO_ASSUMPTIONS.stacks, ...stunnedModifiers.flatMap(m => m.assumptions)],
-    warnings: valid ? available ? [] : ['A required direct-hit or target value is unavailable.'] : ['Stacks must be whole numbers from 0 to 15 and all contributing sources must have resolved applicability and matching data versions.'] };
+    warnings: valid ? available ? [] : ['A required direct-hit or target value is unavailable.'] : [`Active contributions must be whole numbers from 0 to ${STAMPEDE_MAX_CONTRIBUTIONS} and all contributing sources must have resolved applicability and matching data versions.`] };
 }
 
 export interface ProcHit {

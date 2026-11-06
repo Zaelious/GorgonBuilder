@@ -3,7 +3,7 @@ import type { TreasureEffectDraft, TreasureEffectRule } from './treasure-effect-
 
 /** Exact v490 identities and complete tier templates, never a general English proc parser. */
 export const DAMAGE_SCENARIO_ASSUMPTIONS = {
-  stacks: 'Estimated: current Stampede stacks multiply each equipped per-stack bonus; separate equipped copies add. The resulting flat enters the existing damage formula before non-base percentages. Cross-mod stacking and placement have not been measured in game.',
+  stacks: 'Estimated: the selected active Continuous Trampling contributions (0–30) multiply each equipped per-contribution bonus; separate equipped copies add. The resulting flat enters the existing damage formula before non-base percentages. Customer tests (Stampede 12, 2 s reuse, 60 s buff) matched about 30 active contributions for +56 and for +50 and +56 together; that is a steady state, not a game stack cap. Other reuse times and expiry timing are not modeled.',
   multiplier: 'Estimated: chance-based double/+X% damage multiplies the final noncritical direct hit, including ordinary bonuses and target stages. No critical/proc interaction, independence of rolls, caps or rounding is established.',
   flat: 'Estimated: chance-based +N damage is a flat addition through the existing direct-hit formula and target stages, only when triggered. Its ordering has not been measured in game.',
   duplicates: 'Multiple applicable proc sources: stacking, shared versus independent rolls and priority are undocumented. Combined probability, proc hit and expected damage are unavailable; individual sources are isolated scenarios only.',
@@ -69,7 +69,8 @@ const definitions: readonly ProcDefinition[] = [
 export const SCENARIO_TREASURE_RULES: readonly TreasureEffectRule[] = Object.freeze([
   {
     id: 'treasure:CowStampedeStackingAdd', powerId: 'power_20004', internalName: 'CowStampedeStackingAdd',
-    description: 'Continuous Trampling: exact per-stack Stampede bonus (0–15 manually selected current stacks).',
+    // Official text still says "(stacks up to 15 times)"; it is matched unchanged and not treated as the scenario limit (T0015-R1).
+    description: 'Continuous Trampling: exact per-contribution Stampede bonus (0–30 manually selected active contributions).',
     pattern: new RegExp(`^${ICONS}Stampede boosts the damage of future Stampede attacks by \\+${N} for 60 seconds \\(stacks up to 15 times\\)$`, 'u'),
     confidence: 'assumed',
     interpret(match, data) {

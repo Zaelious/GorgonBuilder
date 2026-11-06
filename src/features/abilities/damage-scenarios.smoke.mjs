@@ -64,7 +64,8 @@ try {
     const originalDraft = await page.evaluate(() => localStorage.getItem('gorgonbuilder.current-draft'));
     assert(await row(card, '[data-component="damage"]') === '208 Crushing', 'ordinary Stampede stays 208');
     assert((await card.locator('.relevant-mods').textContent()).includes('Damage scenario'), 'relevant mod identifies its scenario calculation');
-    for (const [stacks, expected] of [['0', '208'], ['1', '258'], ['15', '958']]) {
+    // T0015-R1: 0–30 effective concurrent contributions (60 s buff / 2 s reuse).
+    for (const [stacks, expected] of [['0', '208'], ['1', '258'], ['15', '958'], ['16', '1,008'], ['30', '1,708']]) {
       const control = card.locator('.stampede-control select'); await control.focus(); await control.selectOption(stacks);
       assert((await row(card, '[data-stampede="projected"]')).startsWith(`${expected} `), `${stacks} stacks => ${expected}`);
       cases.push({ stacks: Number(stacks), projected: expected });
@@ -72,6 +73,9 @@ try {
     const stun = card.getByLabel('While Stunned', { exact: true });
     assert(!(await stun.isChecked()), 'stun defaults off');
     await stun.focus(); await page.keyboard.press('Space');
+    assert((await row(card, '[data-stampede="stunned"]')).startsWith('23,912 '), '30 contributions plus selected stunned percentage');
+    assert((await card.locator('.stampede-control select option').count()) === 31, 'selector offers 0–30');
+    await card.locator('.stampede-control select').selectOption('15');
     assert((await row(card, '[data-stampede="stunned"]')).startsWith('13,412 '), '15 stacks plus selected stunned percentage');
     await card.locator('.stampede-control select').selectOption('0');
     assert((await row(card, '[data-stampede="stunned"]')).startsWith('2,912 '), 'zero stacks stunned');

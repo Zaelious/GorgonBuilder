@@ -36,7 +36,8 @@ describe('compact manual damage scenarios', () => {
     const b = build('Cow', mod('power_20004', 'id_20')); const saved = JSON.stringify(b);
     await render(b, 'ability_6138');
     expect(text('[data-stampede="projected"] dd')).toBe('208 Estimated');
-    expect(container.querySelector<HTMLSelectElement>('.stampede-control select')!.options).toHaveLength(16);
+    expect(container.querySelector<HTMLSelectElement>('.stampede-control select')!.options).toHaveLength(31); // 0–30 (T0015-R1)
+    expect(container.querySelector<HTMLSelectElement>('.stampede-control select')!.title).toContain('2-second reuse');
     await stacks('1'); expect(text('[data-stampede="projected"] dd')).toBe('258 Estimated');
     await stacks('15'); expect(text('[data-stampede="projected"] dd')).toBe('958 Estimated');
     expect(text('[data-component="damage"] dt')).toBe('Ordinary hit · 0 stacks');
@@ -49,6 +50,9 @@ describe('compact manual damage scenarios', () => {
     expect(text('.ability-results')).not.toMatch(/power_|BOOST_|id_20|Assumed:|unmodeled|sourcePath/u);
     await render(b, 'ability_6124'); expect(container.querySelector('.stampede-control')).toBeNull();
     await render(b, 'ability_6138'); expect(text('[data-stampede="projected"] dd')).toBe('958 Estimated');
+    await stacks('30'); expect(text('[data-stampede="projected"] dd')).toBe('1,708 Estimated');
+    expect(readStampedeStacks()).toBe(30); expect(text('.damage-breakdown')).toContain('+50 per stack × 30');
+    expect(JSON.stringify(b)).toBe(saved);
   });
 
   it('recalculates after tier replacement, second equipment source and mod removal', async () => {
@@ -99,8 +103,12 @@ describe('compact manual damage scenarios', () => {
     expect(text('.ability-results')).not.toContain('Random AoE conversion');
   });
 
-  it.each(['-1', '16', '1.5', '"15"', 'null', '{}', 'invalid'])('falls back safely for invalid stored stacks %s', stored => {
+  it.each(['-1', '31', '1.5', '"15"', 'null', '{}', 'invalid'])('falls back safely for invalid stored stacks %s', stored => {
     sessionStorage.setItem(STAMPEDE_STACKS_KEY, stored); expect(readStampedeStacks()).toBe(0);
+  });
+
+  it.each([0, 1, 15, 16, 29, 30])('restores stored stacks %i, including saved 0–15 values from T0014-F1', stored => {
+    sessionStorage.setItem(STAMPEDE_STACKS_KEY, JSON.stringify(stored)); expect(readStampedeStacks()).toBe(stored);
   });
 });
 

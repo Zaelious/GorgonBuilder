@@ -7,7 +7,7 @@ import { calculateAbilityDamage } from './ability-damage';
 import { applyTargetDummy } from './target-damage';
 import { calculateCriticalHit } from './critical-damage';
 import { resolveCriticalSkillLevel } from './critical-skills';
-import { calculateDamageProcs, calculateStampedeScenario, expectedProcHit } from './damage-scenarios';
+import { calculateDamageProcs, calculateStampedeScenario, expectedProcHit, isValidStampedeStacks, STAMPEDE_MAX_CONTRIBUTIONS } from './damage-scenarios';
 import { SCENARIO_TREASURE_RULES } from './scenario-treasure-rules';
 import { interpretTreasureEffect } from './treasure-effect-rules';
 import type { AbilityDamageResult } from './ability-damage-types';
@@ -51,6 +51,12 @@ describe('exact v490 scenario treasure coverage (separate from historical snapsh
 });
 
 describe('Stampede current stacks', () => {
+  it('models 30 effective concurrent contributions (60 s buff / 2 s reuse), not the published 15-stack wording', () => {
+    expect(STAMPEDE_MAX_CONTRIBUTIONS).toBe(30);
+    // Official source text is untouched and still matched exactly.
+    expect(data.getTreasureTier('power_20004', 'id_22')!.effectDescriptions[0]).toContain('+56 for 60 seconds (stacks up to 15 times)');
+  });
+
   it.each([0, 1, 15])('uses one selected +50 source at %i stacks, keeping the ordinary attack unchanged', stacks => {
     const b = build('Cow', mod('power_20004', 'id_20'));
     const ordinary = damage(b);
@@ -111,7 +117,16 @@ describe('Stampede current stacks', () => {
     expect(result.projected!.hits[0]!.total).toBe(result.projected!.hits[0]!.perTarget);
   });
 
-  it.each([-1, 16, 1.5, NaN, Infinity])('rejects invalid current stacks %s', stacks => {
+  // T0015-R1: 0–30 effective concurrent contributions (was 0–15).
+  it.each([0, 1, 15, 16, 29, 30])('accepts %i active contributions', stacks => {
+    expect(isValidStampedeStacks(stacks)).toBe(true);
+    const result = stack(build('Cow', mod('power_20004', 'id_20')), stacks)!;
+    expect(result.status).toBe('estimated');
+    expect(result.projected!.hits[0]!.perTarget).toBe(208 + 50 * stacks);
+  });
+
+  it.each([-1, 31, 1.5, NaN, Infinity])('rejects invalid current stacks %s', stacks => {
+    expect(isValidStampedeStacks(stacks)).toBe(false);
     const result = stack(build('Cow', mod('power_20004')), stacks)!;
     expect(result.status).toBe('unavailable'); expect(result.projected).toBeNull(); expect(result.flatBonus).toBeNull();
   });
