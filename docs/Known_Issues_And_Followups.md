@@ -46,7 +46,7 @@ Architecture intentionally uses a provider-agnostic `BuildRepository`.
 
 DPS depends heavily on build-specific setup, buffs, debuffs, stacks, cooldowns, and priority choices.
 
-The condensed v1 ticket series validates the underlying per-ability engine and completes import validation, comparison, and save/share before implementing stateful rotation simulation.
+The condensed v1 ticket series validates the underlying per-ability engine, finishes existing import/My Items workflows and save/share, then releases. **A/B comparison (T0017) and character/defensive calculations (T0016) are deferred post-MVP**; neither blocks rotation planning.
 
 ## KI-0006 — Cloudflare Workers Preview Build Failures
 
@@ -136,6 +136,7 @@ The published attribute token syntax is parsed separately in `src/features/mods/
 - priority-rule rotations
 - food/drink/meditation/potions
 - Player.log optional rotation capture/replay research
+- **T0017 (post-MVP)**: Optional A/B Build Comparison using existing engine outputs; assess whether manual comparisons are worthwhile relative to automation before implementation
 - **T0016 (post-MVP)**: Character Statistics and Defensive Calculation Engine, with source-validated armor/defensive Sparks and optional CurrentStats validation; encounter/threat simulation remains a distinct later feature
 - optimizer
 - public searchable build gallery
@@ -171,7 +172,7 @@ The published attribute token syntax is parsed separately in `src/features/mods/
 - **T0010-F2 — Accepted and merged** via [PR #38](https://github.com/Zaelious/GorgonBuilder/pull/38), `34d7cd7`, 2026-11-04. Responsive Available/Selected search and a public numerical Damage breakdown are complete; diagnostic-only text is hidden from ordinary users. No damage formula changed.
 - **T0008-F2 — Ability Role Labels, Relevant Mods and Variant Picker Consolidation (Codex High).** Show source-backed Basic/Core/Nice/Epic/Minor Healing/Major Healing/Signature Support/Signature Debuff/Survival Utility roles; verify category-related gear effects actually reach eligible abilities without duplication or conditional keyword leaks. Compact only Vampirism Blood Mist, Animal Handling Call Stabled Pet, Bard SoD, Mentalism Mindworm, Necromancy SZ, Priest Triage and Priest Flamestrike. Preserve exact canonical IDs/ranks. Correct 'unconditional' audit counts for required-active-skill source conditions; report affected totals.
 - **T0013-F2 — Imported Anatomy/Phrenology Critical Hits and Target Conditions (Codex Extra High).** Full working critical chance/critical hit/expected hit calculator using imported/manual creature subskills, target creature selector and source-backed equipped crit modifiers. Keep unknown rules marked provisional; no full rotation/DPS, Spark, pet or DoT work.
-- **Sequence (completed):** T0010-F2 (PR #38) → T0008-F2 (PR #39) → T0013-F2 (PR #40) → T0014-F1 (PR #41) → T0015 Mastery Sparks (PR #42, `ff9745a`). T0017 is next for the MVP; T0016 was redefined and moved after T0021 release, so neither T0017 nor T0021 depends on it. See [Issue #43](https://github.com/Zaelious/GorgonBuilder/issues/43).
+- **Sequence (completed):** T0010-F2 (PR #38) → T0008-F2 (PR #39) → T0013-F2 (PR #40) → T0014-F1 (PR #41) → T0015 Mastery Sparks (PR #42, `ff9745a`). **T0018 is next for the MVP** ([Issue #46](https://github.com/Zaelious/GorgonBuilder/issues/46)); **T0017 A/B** ([Issue #45](https://github.com/Zaelious/GorgonBuilder/issues/45)) and **T0016 character/defensive statistics** ([Issue #43](https://github.com/Zaelious/GorgonBuilder/issues/43)) are deferred post-MVP. T0020/T0021 no longer depend on T0017, and T0021 does not depend on T0016.
 
 ## T0013-F2 open questions and follow-ups (2026-11-04)
 
