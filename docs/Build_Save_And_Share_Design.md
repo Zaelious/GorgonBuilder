@@ -1,169 +1,98 @@
-# GorgonBuilder — Build Save and Share Design
+# GorgonBuilder — Accounts, Build Save/Share and Discovery Design
 
-**Status:** Approved product contract; local draft persistence implemented in T0007; provider implementation pending  
-**Version:** 1.0  
-**Date:** 2026-10-31
+**Status:** Approved revised product-owner direction 2026-11-06: registered accounts, public/private builds, personal library and public discovery are MVP scope. T0018 Cloudflare Workers + D1 was explicitly selected. This supersedes the earlier **anonymous owner-token-first** contract.
+**Version:** 2.0
+**Date:** 2026-11-06
 
-## Goals
+## Goals and MVP roadmap
 
-**Roadmap as of 2026-11-06:** T0018 provider decision/deployment foundation → T0019 persistent and anonymous-ownership API → T0020 public save/share/ownership/independent duplicate → T0021 release. **T0017 A/B comparison and T0016 character/defensive statistics are deferred post-MVP and are not dependencies of sharing.** This document is a contract, not a claim that remote storage already exists.
+Guest planning and local autosave work without signup. Registration enables persistent owner-managed builds, personal library/profile, publication/privacy controls, and independent copying. Public users can browse, search and view published builds.
 
-- Save builds permanently.
-- Share a read-only public link.
-- Let anonymous creators later edit/delete their own build.
-- Avoid mandatory accounts for initial release.
-- Allow later accounts without invalidating existing anonymous builds.
+- T0018 [issue #46](https://github.com/Zaelious/GorgonBuilder/issues/46): Cloudflare Workers + D1 backend and auth architecture/migrations/local health.
+- T0019 [issue #48](https://github.com/Zaelious/GorgonBuilder/issues/48): signup/login sessions, D1 user/build CRUD, account ownership and visibility ACL.
+- T0020 [issue #49](https://github.com/Zaelious/GorgonBuilder/issues/49): account UI, My Builds, save/share, personal profile and copy, default skill-pair titles.
+- T0020-F1 [issue #50](https://github.com/Zaelious/GorgonBuilder/issues/50): public Search Builds directory, author pages and combat-skill filters.
+- T0021: v1 release regression/security/launch. T0016/T0017 are post-MVP.
 
-## Build Record
+## Backend and authentication
 
-Conceptual record:
+Use the already existing Cloudflare Workers Static Assets host, adding a same-origin Worker API and Cloudflare D1 database. Preserve the Vite SPA, v490 data, BuildDocument v1 and local `gorgonbuilder.current-draft`.
 
-```text
-publicId
-schemaVersion
-gameDataVersion
-buildJson
-createdAt
-updatedAt
-ownerTokenHash
-```
+A supported Cloudflare D1-compatible authentication library (Better Auth native D1 is the preferred T0018 feasibility candidate) manages accounts, OAuth provider identities, session cookies and expiry; **do not hand-roll password handling**. Recommended MVP quick signup: **Discord and Google OAuth**, then select a unique GorgonBuilder public username. OAuth client creation and callback origins require owner's credentials and explicit authorization. Email/password would require a genuine verified email/reset delivery system and separate approval. Browsing/planning remains available as a guest; login is required to persist to account or copy into My Builds.
 
-Optional later fields:
+Use stable immutable server-generated `userId` for authorization, **never** a changeable username, public build ID, client-provided owner field or email. Username is normalized for uniqueness (case-insensitive) and separately displayed to other users; reserve route-dangerous/admin handles. User identities/sessions are private, not bundled into build JSON.
 
-- account owner ID
-- visibility
-- title/description indexes
-- soft-delete timestamp
-- fork parent ID
+**Removed MVP design:** anonymous permanent owners holding secret edit/delete tokens and private management/recovery links. Earlier descriptions of those were speculative and **have not been implemented**. Don't implement two overlapping ownership systems.
 
-## Public ID
+## Build record and JSON boundary
 
-Requirements:
-
-- URL-safe
-- sufficiently collision-resistant
-- not derived from owner token
-- safe to expose publicly
-
-Example route:
+Conceptual persisted record:
 
 ```text
-/build/8F3K2A
+buildId (opaque public identifier)
+ownerUserId
+visibility ('private' | 'unlisted' | 'public')
+title
+publicDescription (optional, distinct from private editor notes)
+skillAId / skillBId (derived from validated BuildDocument slots)
+buildJson (validated BuildDocument schema v1)
+schemaVersion / gameDataVersion
+createdAt / updatedAt
 ```
 
-Actual encoding/length chosen during implementation.
+Account and session records are separate. Canonical skill IDs, title/search metadata and owner must be server-validated and synchronized; don't trust client search keys. No raw CharacterSheet or Storage report upload; imported item-instance working powers may exist in saved build JSON, so a user must understand which public fields are disclosed when publishing.
 
-## Owner Token
+BuildDocument's `notes` are not implicitly a public search summary. Keep a separate author-controlled `publicDescription` in server listing metadata if needed; public view/disclosure of actual BuildDocument fields must be clear. Keep BuildDocument schema v1 unless a separately approved migration is necessary.
 
-On create:
+## Visibility — exact user-facing meaning
 
-1. Backend generates or accepts a cryptographically strong random owner token.
-2. Backend stores a secure hash.
-3. Plain token is returned once to the creator.
-4. Browser stores it keyed by public build ID.
+- **Private (default):** only signed-in owner may read or edit; an ID/link alone is not access. Never included in public search, author profile or public counts.
+- **Unlisted:** anyone holding the URL may view read-only; not searchable and not listed in public author pages/directory. Not confidential once URL shared.
+- **Public:** readable by anyone via link and indexed in Search Builds and public author profiles. Only owner edits/deletes.
 
-The public share URL must not contain it.
+Changes from Public/Unlisted to Private must immediately remove outsider read access and public index/count exposure; caches must not leak revoked content. A public share link must not contain auth/session secrets.
 
-## Owner Management Link
+## API and core flows
 
-The UI should offer a separate private recovery/management link that can transfer ownership capability to another browser.
+Illustrative same-origin API:
+- `/api/auth/*`: selected supported authentication/session endpoints.
+- `POST /api/builds`: account-only create, default Private.
+- `GET /api/builds/:id`: Public and Unlisted guest read, Private owner-only.
+- `PUT /api/builds/:id`, `DELETE /api/builds/:id`: owner-only.
+- `GET /api/me/builds`: signed-in owner library across all visibility states.
+- `POST /api/builds/:id/copy`: authenticated user independently copies a viewable build to a fresh **Private**, owner-bound record. (Exact REST shape chosen in T0018/T0019.)
+- `GET /api/builds/search`: Public-only server-side indexed search, implemented T0020-F1.
+- `GET /api/users/:username`: public profile and Public builds only; signed-in owner's personal view is distinct.
 
-That link is sensitive. The product should clearly distinguish:
+Public build IDs are collision-resistant and nonsequential where practical. An unlisted ID is not an authorization token; it only confers guest read access by product design. Enforce all private/owner access on server, not just frontend.
 
-- **Share link** — safe to share, read-only
-- **Manage link** — private, grants edit/delete rights
+### Build naming and copying
 
-## Operations
+When choosing two combat skills, default new build title to official `SkillA/SkillB`, e.g. `Deer/Psychology`, `Cow/Unarmed`. For one/zero skills, use a sensible fallback. Titles may be edited freely; never overwrite a customized title when skill selections change. Saved new build defaults Private. Copy Public/Unlisted creates **new** build ID and user owner, default Private. This is **not** post-MVP T0017 A/B comparison.
 
-### Create
+## Search Builds and profiles (T0020-F1)
 
-Input:
+The directory has text search against public title, public description and author username/display name, with zero to two **combat-skill** ID filters. One chosen skill matches either slot. Two chosen skills with **Match both skills ON** require both anywhere in the two skill slots (AND, order-independent); OFF permits either skill (OR). Text and skills combine as AND. Show recent public builds by default. Server-side pagination and sorting are required; do not load every row in browser.
 
-- validated BuildDocument
+Use D1 indexes and/or FTS5 with documented correctness and costs. Public search/author profiles show only Public; owner My Builds shows all their Private/Unlisted/Public with visibility badges, sorting and skill filtering. Do not leak nonpublic content via result counts, author names, sort order or search autocomplete.
 
-Output:
+## Navigation
 
-- public ID
-- owner token
-- public URL
-- management/recovery representation
+Desktop sidebar or equivalent responsive navigation: Home, Build Planner, Search Builds; signed-in My Builds and Profile. Empty guest states must provide a useful sign-in path without blocking the planner. Search Builds entry must not be a dead link before T0020-F1 is implemented.
 
-### Read
+## Security and privacy
 
-Anyone with public ID can read an unlisted build.
+- Keep OAuth secrets and session cookies outside BuildDocument, git, logs and share URLs; secure HttpOnly SameSite cookies, CSRF and callback validation.
+- Server-side authorization for every mutation and private read; privacy tests across two different users and anonymous browsers.
+- Validate BuildDocument schema/game-data versions, payload size and title/description length, avoid unsafe HTML rendering.
+- Protect account registration, password reset (if added later), public posting and search from spam/abuse; record rate limits and moderation/unpublication procedure.
+- Use D1 migrations, test/staging/production isolation, backups/recovery instructions and transparent free-tier monitoring.
+- Preserve local drafts on login/logout, app errors, failed uploads, or save conflicts.
+- User profiles disclose only chosen public handle, voluntarily public metadata and public builds. No email, OAuth ID or private report fields.
 
-### Update
+## Historical implementation reference
 
-Requires:
-
-- public ID
-- valid owner token
-- valid schema payload
-
-### Delete
-
-Requires:
-
-- public ID
-- valid owner token
-- explicit confirmation in UI
-
-Initial MVP may hard-delete.
-
-### Duplicate
-
-Read public build and create a new independent build with a new owner token. This **fork/duplicate operation is not A/B side-by-side build comparison (T0017)** and does not require T0017 to be implemented.
-
-## Local Ownership Store
-
-Browser storage maps:
-
-```text
-publicBuildId -> ownerToken
-```
-
-The application should not embed the token inside normal saved build JSON.
-
-## Lost Token
-
-Without an account or possession of the management link, ownership cannot be proven.
-
-The UI should communicate this before relying on anonymous ownership for important builds.
-
-## Future Accounts
-
-An authenticated account may claim an anonymous build by providing its valid owner token.
-
-Do not require migration of the public build ID/link.
-
-## API Security
-
-- Rate-limit abusive create/update/delete patterns when deployed.
-- Validate build schema and maximum payload size.
-- Store token hashes only.
-- Use timing-safe token verification where practical.
-- Do not expose whether an owner token is "close" or otherwise leak validation detail.
-- Escape/render build titles/notes safely.
-
-## Provider Selection
-
-The core app should depend on a `BuildRepository` interface, not directly on one hosting vendor.
-
-A dedicated ticket will compare/select a small backend based on:
-
-- low complexity
-- low/no cost for early use
-- HTTPS
-- simple key/value or relational persistence
-- server-side hashing/token verification
-- easy deployment from GitHub
-- manageable local development
-
-## Offline Drafts
-
-A local draft should exist even before remote saving.
-
-Network failure must not destroy the user's in-progress build.
+The following completed local-draft/equipment work remains valid; its older future anonymous-save discussion is superseded by this version.
 
 ### Implemented in T0007
 
