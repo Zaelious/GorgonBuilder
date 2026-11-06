@@ -6,6 +6,8 @@
 
 ## Goals
 
+**Roadmap as of 2026-11-06:** T0018 provider decision/deployment foundation → T0019 persistent and anonymous-ownership API → T0020 public save/share/ownership/independent duplicate → T0021 release. **T0017 A/B comparison and T0016 character/defensive statistics are deferred post-MVP and are not dependencies of sharing.** This document is a contract, not a claim that remote storage already exists.
+
 - Save builds permanently.
 - Share a read-only public link.
 - Let anonymous creators later edit/delete their own build.
@@ -110,7 +112,7 @@ Initial MVP may hard-delete.
 
 ### Duplicate
 
-Read public build and create a new independent build with a new owner token.
+Read public build and create a new independent build with a new owner token. This **fork/duplicate operation is not A/B side-by-side build comparison (T0017)** and does not require T0017 to be implemented.
 
 ## Local Ownership Store
 
