@@ -115,7 +115,7 @@ Initial implementation can use normalized substring search. Fuzzy search is opti
 4. Character skills/abilities/current stats are imported.
 5. Owned item instances and TSys powers are imported.
 6. User chooses which imported items form the planner loadout.
-7. GorgonBuilder compares modeled aggregate values with imported `CurrentStats` where mappings exist.
+7. **Post-MVP T0016:** GorgonBuilder can optionally compare modeled character statistics with imported `CurrentStats` where meanings, units and full coverage match. The basic import/My Items workflow does **not** require this comparison.
 
 No server upload is required for parsing.
 
@@ -391,9 +391,9 @@ Phase 2: priority rules.
 
 The simulator must call the same ability calculator rather than reimplementing damage.
 
-## 13. Defensive / Threat Engine — Later
+## 13. Character Statistics and Defensive Engine — Post-MVP T0016
 
-Use the same Modifier model to support:
+Use the existing Modifier model to calculate **planned-build** character stats for the user's manually selected gear/skills/mods/Sparks, even without an import. Extend armor/defensive Mastery Spark support only after verifying official eligibility, categories and outcomes. Use optional imported CurrentStats as a snapshot reference, never as equipped-item inference. Do not invent missing base-stat totals or formulas; label unsupported/estimated values. Gradually support:
 
 - max health/armor
 - mitigation
@@ -404,7 +404,7 @@ Use the same Modifier model to support:
 - combat refresh
 - taunt/threat
 
-Practical tank builds supplied by the customer will be used as validation fixtures.
+Practical tank builds supplied by the customer will be used as validation fixtures. Full enemy encounter or threat/taunt simulation remains a separate later feature.
 
 ## 14. Optimization — Later
 
