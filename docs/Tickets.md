@@ -1377,199 +1377,137 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 3. Enter actual/manual Spark totals and compare ability changes.
 4. Run the quality suite.
 
-## T0018 — Save/Share Architecture, Provider Decision, and Deployment Foundation
+## T0018 — Cloudflare Workers + D1, Authentication Architecture, and Deployment Foundation
 
-**Queue:** **Next MVP ticket** as of 2026-11-06. T0016 and T0017 are deferred until after T0021. Full agent issue: [Issue #46](https://github.com/Zaelious/GorgonBuilder/issues/46).
+**Queue:** NEXT MVP implementation. **Status:** Cloudflare Workers + D1 chosen by product owner (2026-11-06); do not rerun open-ended provider selection. Complete implementation requirements: [Issue #46](https://github.com/Zaelious/GorgonBuilder/issues/46).
 
-**Complexity:** High
+**Complexity:** High. **Verification:** Automated + architect review, D1/Worker local health and deployment dry-run.
 
-**Verification:** Automated + architect review
+**Goal:** Establish the approved Cloudflare Workers + D1 backend and migration foundation for a registered-account, public/private build community. Prove authentication-library runtime compatibility and prepare schema/search/visibility contracts; do **not** implement production signup, CRUD or UI yet.
 
-**Goal:** Choose and prove the small persistence/deployment architecture before implementing public build ownership.
+**Dependencies:** T0007 BuildDocument v1 and existing Cloudflare Static Assets baseline.
 
-**Dependencies:** T0007
+**Allowed areas:** `src/persistence/remote`, backend/Worker scaffold, D1 bindings/migrations, `wrangler.jsonc`, essential CI/scripts/lockfile, documentation/ADR, focused tests.
 
-**Allowed areas:**
-- src/persistence/remote
-- backend/deployment configuration
-- docs/ADR
-- tests
-
-**Do not touch:**
-- full save/share UI
-- accounts
-- public gallery
+**Do not touch:** finished planner/damage/Sparks/import semantics, BuildDocument v1 schema, anonymous owner-token implementation, user-facing share/search/accounts, optimizer, A/B comparison, defensive simulation.
 
 **Requirements:**
-- Define a provider-agnostic BuildRepository interface for create/read/update/delete.
-- Compare at least two viable backend/hosting options against simplicity, cost, HTTPS, token hashing, local development, GitHub deployment, and future account compatibility.
-- Record the chosen provider and rejected alternative in an ADR/design update.
-- Create a minimal local/staging deployment foundation and secrets/configuration pattern.
-- Keep owner token outside BuildDocument.
+- Preserve static Vite app and SPA routes; add same-origin API health endpoint and proper API 404 handling with local D1 and explicit dev/staging/prod isolation.
+- Prove auth framework compatibility in Workers/D1 (Better Auth native D1 is preferred), document secure OAuth/session/username conventions. Recommend Discord and Google OAuth with unique public GorgonBuilder username; no custom passwords/email infrastructure without a separate approved design.
+- Design account/user ID, provider sessions, builds and public listing/search metadata; the owner is **user ID**; `public` searchable, `unlisted` link-only, `private` owner-only (default private). Profile/search must never leak private/unlisted content.
+- Define async provider-neutral BuildRepository and deterministic fake tests; no actual permanent CRUD implementation. Add server validation, rate/abuse, privacy, backups and domain/OAuth callback security architecture.
+- Dated ADR records approved Cloudflare choice, current cost/limitations, and owner-setup steps; local/mock verification does not need live OAuth credentials.
 
-**Non-goals:**
-- No production account system.
-- No searchable public gallery.
-- No complete sharing UI.
+**Non-goals:** Production user accounts, real persisted builds, search UI, public pages, payments, account registration or actual OAuth provider secrets. Do not deploy or provision paid resources without permission.
 
-**Acceptance criteria:**
-- Provider decision is documented with rationale.
-- BuildRepository contract is testable with a mock.
-- Local/staging backend skeleton can start/deploy without embedding secrets in git.
+**Acceptance criteria:** Local D1/Worker health works; root/assets/SPA unaffected; interfaces/test fake pass; auth feasibility evidenced; migrations/docs secure and repeatable; full quality checks plus Cloudflare dry-run; T0019 handoff concrete.
 
-**Manual verification:**
-1. Review the provider decision and deployment instructions.
-2. Run contract tests and any staging health check defined by the ticket.
+**Manual verification:** Review ADR/provider/security/cost and domain setup; run local health/API 404/static smoke; verify mock contract, D1 migration and no secrets; review `docs/T0018_Verification.md`.
 
-## T0019 — Build Persistence and Anonymous Ownership Backend
+## T0019 — Account Authentication, Build Persistence and Ownership API
 
-**Complexity:** High
+**Queue:** After accepted T0018. Full requirements: [Issue #48](https://github.com/Zaelious/GorgonBuilder/issues/48).
+**Complexity:** Very high (focused auth/backend work; split into reviewed follow-up PRs only if necessary).
+**Verification:** Automated security/API tests and customer local account smoke.
 
-**Verification:** Automated + API smoke test
+**Goal:** Implement actual registered accounts, secure sessions and user-ID-owned persistent builds on Cloudflare Workers + D1. This replaces anonymous owner-token-first persistence.
 
-**Goal:** Implement secure persistent build create/read/update/delete with anonymous ownership.
+**Dependencies:** T0018.
 
-**Dependencies:** T0018
+**Allowed areas:** Worker backend/API, D1 migrations, `src/persistence/remote`, auth and account contracts, validation, server tests, backend/security docs.
 
-**Allowed areas:**
-- backend/API
-- src/persistence/remote
-- server tests
-- schema validation
-
-**Do not touch:**
-- accounts
-- public gallery
-- final sharing UI
+**Do not touch:** final login/save/share/profile UI (T0020), public browse/search (T0020-F1), damage/Sparks/import, T0016/T0017.
 
 **Requirements:**
-- Create persisted build records with public ID, schemaVersion, gameDataVersion, build payload, timestamps, and owner-token hash.
-- Generate or accept a cryptographically strong owner token and return plaintext only to the creator as designed.
-- Public read must never return owner token/hash.
-- Update/delete require valid owner proof and use secure token verification.
-- Validate build schema and payload size.
-- Support duplicate/fork at the repository/service level by creating a new independently owned build.
-- Add abuse/rate-limit hooks or provider-level protections appropriate to the selected architecture.
+- Implement approved OAuth signup/login/logout, verified sessions and unique case-normalized public usernames (recommended Discord and Google, subject to T0018 runtime proof). Credentials remain outside git; no custom password auth without approved email/reset plan.
+- Use stable server-side `userId` for authorization and build ownership. Build record includes private/public/unlisted visibility, title, optional public description, indexed canonical combat skill IDs, BuildDocument JSON, versions and timestamps.
+- Real authenticated CRUD, own-build listing, ownership/visibility changes, public or link-known unlisted reads, strict private access and fork into a **new private build owned by the copier**. Guest can read Public/Unlisted but not save to account.
+- Guard every data route against user-id impersonation, unauthorized access, private/unlisted listing leakage, stale writes, CSRF/abuse, oversized/invalid payloads and game data/schema mismatches. Never rely on `IsInInventory` as equipped.
+- Profile/account metadata and list endpoints support the future UI; public directory search is a T0020-F1 extension, not this ticket.
 
-**Non-goals:**
-- No accounts.
-- No public discovery/search.
-- No UI ownership controls yet.
+**Non-goals:** User-facing accounts or Save/Share UI, full searchable gallery, A/B, optimization, defensive/DPS.
 
-**Acceptance criteria:**
-- Create/read/update/delete tests pass.
-- Wrong-token update/delete is rejected.
-- Public response contains no ownership secret.
-- Duplicate receives a new public ID and owner token.
+**Acceptance criteria:** Two test accounts cannot read or modify each other's private builds; public/unlisted/private ACL works; copied public build is privately owned by copier; account session expiration and wrong-owner edits fail; D1 migrations/CI pass.
 
-**Manual verification:**
-1. Run the documented API/local smoke flow for create/read/update/delete with both correct and incorrect tokens.
-2. Inspect a stored record representation for hashed-not-plaintext ownership.
+**Manual verification:** Use two accounts/guest contexts and local API tests to exercise auth, CRUD, visibility, independent copy and no private listing leaks. Document in `docs/T0019_Verification.md`.
 
-## T0020 — Sharing, Ownership, and Public Build UI
+## T0020 — Accounts, Personal Build Library, Save/Share UI and Profiles
 
-**Complexity:** Standard
+**Queue:** After accepted T0019. Full requirements: [Issue #49](https://github.com/Zaelious/GorgonBuilder/issues/49).
+**Complexity:** High. **Verification:** Customer hands-on with two accounts/incognito and mobile.
 
-**Verification:** Customer hands-on
+**Goal:** Add user-friendly signup/login, owner profile/My Builds, permanent Save/Update/Delete, public/unlisted/private visibility and link sharing, and independent build copying into an account.
 
-**Goal:** Expose the full anonymous save/share/edit/delete/duplicate workflow to users.
+**Dependencies:** T0019. **Not T0017.** Shared-build Copy is not an A/B comparison.
 
-**Dependencies:** T0019 (T0017 A/B comparison deferred post-MVP; T0020's shared-build Duplicate creates an independent owned copy and does not need A/B)
+**Allowed areas:** `src/features/sharing`, auth/profile and build library UI, app navigation/routes, minimal build editor/title/persistence integration, focused tests and docs.
 
-**Allowed areas:**
-- routes
-- src/features/sharing
-- src/persistence/local
-- src/persistence/remote integration
-- build editor
-- tests
-
-**Do not touch:**
-- accounts
-- public build gallery
-- rotation simulator
+**Do not touch:** Server auth design beyond necessary integration, public search directory (T0020-F1), A/B, optimizer, defense/DPS, core damage or official data.
 
 **Requirements:**
-- Add Save/Update controls for an owner.
-- Store owner tokens locally keyed by public build ID.
-- Add read-only public build route/share link.
-- Add a clearly distinguished private management/recovery representation for transferring ownership capability to another device.
-- Show edit/delete controls only when valid owner capability is available.
-- Require explicit confirmation for delete.
-- Allow public viewers to duplicate into a new independent build.
-- Handle network failures without destroying the local draft.
+- Guest planning/local draft continues without login. Login/sign-up/logout use approved auth provider and require unique public username; owner account clearly identified.
+- `My Builds` shows all owned Public/Unlisted/Private with skill filters, sorting and edit actions; accessible profile/navigation for account and planner. Public profile shows **only Public** builds; T0020-F1 completes author-directory browsing.
+- Saving a new build defaults to **Private**. Public is discoverable, Unlisted is shared by link without directory listing, Private is owner-only and cannot be read by anyone holding the URL. Allow deliberate visibility changes and safe delete.
+- Read-only share view respects owner, permissions and session; copy any viewable Public/Unlisted to a **new independent Private** owned build after sign-in.
+- Default new planner build title follows selected official combat skill names (e.g. `Deer/Psychology`, `Cow/Unarmed`); protect custom names from being overwritten by later skill changes.
+- Save selected BuildDocument v1 unchanged and separately store public listing description/title/visibility metadata. Never publish raw report files, auth tokens or unreviewed local private metadata; preserve unsaved draft and failures on login/navigation.
 
-**Non-goals:**
-- No login/signup.
-- No searchable gallery.
-- No soft-delete recovery requirement.
+**Non-goals:** General search directory/filter engine (T0020-F1), email/password without approved mail service, social reactions/ratings, rotations/optimizer, A/B.
 
-**Acceptance criteria:**
-- Public/incognito viewer cannot edit the original.
-- Owner can update/delete.
-- Management capability works on another test browser/device context.
-- Duplicate creates independent ownership.
-- Network failure preserves local work.
+**Acceptance criteria:** Guest drafts survive; signed-in owner creates, edits and deletes builds; visibility changes enforce access; profile/My Builds shows own private and public but other users cannot access private; manual copy is independent/private; default title customization holds; desktop/mobile smoke passes.
 
-**Manual verification:**
-1. Save a real planner build and open its public link in a private/incognito window.
-2. Verify read-only behavior and duplicate it.
-3. Return as owner and edit/update/delete a test build.
-4. Test the management/recovery flow in a second browser context.
-5. Run the quality suite.
+**Manual verification:** Save Private, Unlisted and Public; test URLs in incognito, sign out, second account, visibility revocation, own library, copy, custom title, local draft and errors. Record `docs/T0020_Verification.md`.
 
-## T0021 — v1 Stabilization, E2E Regression, Documentation, and Release
+## T0020-F1 — Public Build Discovery, Advanced Skill Filters and Author Profiles
 
-**Complexity:** High
+**Queue:** After accepted T0020 and before T0021 MVP release. Full requirements: [Issue #50](https://github.com/Zaelious/GorgonBuilder/issues/50).
+**Complexity:** High. **Verification:** Customer hands-on search and authorization tests.
 
-**Verification:** Customer milestone regression required
+**Goal:** Build the public Search Builds directory and author pages, with title/description/author search, two combat-skill filters and exact both/either semantics.
 
-**Goal:** Turn the completed features into a trustworthy deployable v1 and update the project record to match reality.
+**Dependencies:** T0019, T0020.
 
-**Dependencies:** T0020 (post-MVP T0016 and T0017 are not release prerequisites)
+**Allowed areas:** Public build search API/indexes, `src/features/search` and related routes/sidebar/profile presentation, focused tests and docs.
 
-**Allowed areas:**
-- tests
-- deployment configuration
-- docs
-- bug fixes strictly required for v1 acceptance
-- release configuration
-
-**Do not touch:**
-- rotation simulator
-- defensive/threat engine
-- optimizer
-- accounts
-- new product features
+**Do not touch:** Private data exposure, auth implementation beyond existing interfaces, A/B, optimizer, damage/Sparks/defense.
 
 **Requirements:**
-- Add minimal end-to-end smoke coverage for create/edit local build, real-data selection, calculator path, Spark path, sanitized import, and save/public-read/duplicate (T0017 A/B comparison is post-MVP).
-- Run the complete game-data integrity/completeness suite.
-- Run all unit/component/integration/E2E tests plus lint/typecheck/build.
-- Perform targeted regression against known Psychology and Cow/Unarmed validation cases.
-- Deploy the agreed v1 environment using the selected infrastructure.
-- Update Repo_Current_State, Known_Issues_And_Followups, and any design docs changed by implementation evidence.
-- Document remaining unvalidated formula areas clearly.
-- Do not add new features during stabilization.
+- Sidebar nav: Home, Build Planner, Search Builds, and signed-in My Builds/Profile. `/builds` shows **Public** builds only, with searchable name, public description and author username/display name.
+- Two optional **combat skills** selected by official ID. One selection matches in either slot; two with **Match both skills** ON require both in any order (AND); OFF accepts either (OR). Text filters combine with skills by AND. Never confuse selected combat skills with abilities in six-slot bars.
+- Paginated server-side search with bounded queries, indexes and proper sorting. D1 FTS5 is supported; choose a verified index/search strategy and keep visibility/text/skill metadata in sync. Never expose Private or Unlisted in public author pages, counts or search.
+- Public author profile lists only Public builds; owner My Builds can filter/sort all own visibility states; a copied Public build is owned independently and defaults to Private. Responsive/keyboard-accessible browse results.
 
-**Non-goals:**
-- No rotation/DPS simulator.
-- No defense/threat calculator, character-stat sheet or defensive Sparks (post-MVP T0016).
-- No optimizer.
-- No public gallery/accounts.
+**Non-goals:** Ratings, likes, comments, social network, recommendation/optimizer, A/B, rotation/DPS, threat simulation.
 
-**Acceptance criteria:**
-- All required quality checks pass.
-- Core user flow works end to end on the deployed environment.
-- Known formula limitations are visible/documented.
-- Repository state docs accurately describe the shipped system.
+**Acceptance criteria:** Name/description/author search works; Cow + Unarmed works with both/either and slot swapping; no Private/Unlisted leakage; pagination and 1440/375/320px UI work. Verification in `docs/T0020_F1_Verification.md`.
 
-**Manual verification:**
-1. Create a fresh manual build from real PG data.
-2. Select skills/levels/abilities, gear, mods, and Sparks and inspect calculation breakdowns.
-3. Import a current character snapshot; inspect existing My Items, timestamps, skills and item/power resolution diagnostics. A CurrentStats comparison or defensive stat sheet is **not** an MVP release requirement.
-4. Save/share the build, test read-only/duplicate in incognito, then verify owner editing.
-5. Run the release checklist and confirm no unexpected console errors.
+**Manual verification:** With two users and Public/Unlisted/Private synthetic builds, verify author text and skill AND/OR, visibility exclusions, own list, copy and incognito.
+
+## T0021 — v1 Stabilization, End-to-End Security/Discovery Regression, Documentation, and Release
+
+**Queue:** MVP release ticket after accepted T0020-F1.
+**Complexity:** High. **Verification:** Customer milestone regression required.
+
+**Goal:** Release a trustworthy GorgonBuilder community planner: guest planning, accounts, personal libraries, Public/Unlisted/Private sharing and public build search, using the existing per-ability/Spark model.
+
+**Dependencies:** T0018, T0019, T0020, **T0020-F1**. Post-MVP T0016/T0017 are not release requirements.
+
+**Allowed areas:** Release tests, security checks, deployment/CI and documentation, strictly required bug fixes and release configuration.
+
+**Do not touch:** New feature scope, A/B, defensive/threat/DPS engine, optimization, new game formulas, public build comments/ratings.
+
+**Requirements:**
+- E2E coverage for guest draft, two skills/abilities/gear/mods/Sparks/calculator, local CharacterSheet/Storage import without server upload, account signup/login/logout, CRUD, owner profile, Public/Unlisted/Private visibility and revocation, read-only share, independent copy and public search (name/description/author, 1/2 skills, match-both ON/OFF).
+- Security tests in real local D1 + Worker and at least one authorized staging context: two accounts/guest, denied private reads/mutations, no private listing/count leakage, invalid IDs, token/cookie/CSRF/sessions, rate limits and published data sanitization. Check public/private caches and auth callback configuration.
+- Test domain/HTTPS/OAuth redirect readiness, database migrations/backups, Cloudflare free-tier usage/limits, cost alarms or monitoring and recovery. The owner can attach the already purchased domain when ready.
+- Run complete unit/integration/browser/E2E, lint/typecheck/data-integrity/build/dry-run, desktop/mobile, real planner Psychology/Cow validation, and update repo state, known issues and docs with actual evidence.
+- Document formula Estimated/Unavailable states; do not invent validated outputs. No features added during stabilization.
+
+**Non-goals:** A/B T0017, character stats/armor Sparks T0016, DPS/rotation, optimizer, full threat simulator, comments/likes, broader social features.
+
+**Acceptance criteria:** Core guest and account workflows function end-to-end; discovery strictly Public-only; private content is actually private; search exact skill AND/OR; read-only share and independent copy work in incognito, production deployment with backups/security verified; all required checks pass and limitations disclosed.
+
+**Manual verification:** Create fresh guest build, sign in, save it Private, share as Unlisted/Public, verify with another account and incognito, copy privately, search names/author and Cow/Unarmed AND/OR, review own library and visibility, test logout/revocation/refresh, run final release checklist.
 
 ## T0022 — GorgonBuilder Visual Identity and Planner UI Redesign
 
