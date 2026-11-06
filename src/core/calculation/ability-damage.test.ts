@@ -230,7 +230,7 @@ describe('T0013 formula traceability and T0012 compatibility', () => {
     delete actual['equipment:MainHand#0/existing:power_20006:id_8#0/effect:0'];
     expect(actual).toEqual(expected);
     expect(JSON.stringify(before)).not.toContain('FixtureUnknownPower');
-    expect(before.aggregation.warnings).toContainEqual(expect.objectContaining({ code: 'sparks-not-aggregated' }));
+    expect(before.aggregation.warnings).toContainEqual(expect.objectContaining({ code: 'spark-result-missing' }));
   });
 
   it('keeps separately planned and working imported Unarmed powers and their removal deltas', () => {

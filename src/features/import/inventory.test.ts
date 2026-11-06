@@ -90,7 +90,7 @@ it('equips, persists, restores, replaces and clears an owned instance while reta
   { slot: 'Ring', item: { kind: 'database', itemId: 'item_49070' }, candidateMods: [], sparks: { mode: 'none' } }];
   const instance = selectedImportedInstance(session.storage.items[0]!);
   const edited = editBuild(original, { type: 'equipment-import', slot: 'MainHand', index: 0, instance }, data);
-  expect(edited.equipment[0]).toEqual({ ...original.equipment[0], item: { kind: 'imported', instance } });
+  expect(edited.equipment[0]).toEqual({ ...original.equipment[0], item: { kind: 'imported', instance }, sparks: { mode: 'none' } });
   expect(edited.equipment[1]).toBe(original.equipment[1]); expect(edited.abilityBarA).toBe(original.abilityBarA);
   expect(edited.skillSlotA).toBe(original.skillSlotA);
   const memory = new Map<string, string>();
@@ -100,7 +100,8 @@ it('equips, persists, restores, replaces and clears an owned instance while reta
   expect(deserializeBuildDocument(json.value)).toEqual({ ok: true, value: edited });
   const replaced = editBuild(edited, { type: 'equipment-import', slot: 'MainHand', index: 0, instance: selectedImportedInstance(session.storage.items[1]!) }, data);
   expect(replaced.equipment[0]?.item).not.toEqual(edited.equipment[0]?.item);
-  expect(replaced.equipment[0]?.sparks).toEqual(original.equipment[0]?.sparks);
+  expect(replaced.equipment[0]?.candidateMods).toEqual(original.equipment[0]?.candidateMods);
+  expect(replaced.equipment[0]?.sparks).toEqual({ mode: 'none' });
   expect(editBuild(replaced, { type: 'equipment-clear', index: 0 }, data).equipment).toEqual([original.equipment[1]]);
 });
 

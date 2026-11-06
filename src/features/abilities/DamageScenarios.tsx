@@ -1,6 +1,7 @@
 import type { DamageProcResult, StampedeScenarioResult, ModifierSource, UnsupportedEffect } from '../../core/calculation';
 import type { GameDataRepository } from '../../data/repository/repository';
 import { writeStampedeStacks, writeWhileStunned } from '../../persistence/local/stampede-scenario';
+import { STAMPEDE_MAX_CONTRIBUTIONS } from '../../core/calculation/damage-scenarios';
 
 const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 const value = (n: number | null) => n === null ? 'Unavailable' : number.format(n);
@@ -16,8 +17,8 @@ export function StampedeRows({ scenario, idPrefix }: { scenario: StampedeScenari
   return <>
     {scenario.hasStackSources && <div className="result-row stampede-control"><dt><label htmlFor={`${idPrefix}-stampede-stacks`}>Current Stampede stacks</label></dt><dd>
       <select id={`${idPrefix}-stampede-stacks`} value={scenario.stacks} onChange={event => writeStampedeStacks(Number(event.target.value))}
-        title="Assumed current stacks before this attack; 0 is the first attack.">
-        {Array.from({ length: 16 }, (_, stacks) => <option key={stacks} value={stacks}>{stacks}</option>)}
+        title={`Continuous Trampling contributions active before this attack (0–${STAMPEDE_MAX_CONTRIBUTIONS}); 0 is the first attack. With the 60-second buff and Stampede's 2-second reuse, about ${STAMPEDE_MAX_CONTRIBUTIONS} are active at steady state.`}>
+        {Array.from({ length: STAMPEDE_MAX_CONTRIBUTIONS + 1 }, (_, stacks) => <option key={stacks} value={stacks}>{stacks}</option>)}
       </select>
     </dd></div>}
     {scenario.stunnedModifiers.length > 0 && <div className="result-row stampede-control"><dt><label htmlFor={`${idPrefix}-while-stunned`}>While Stunned</label></dt><dd><input id={`${idPrefix}-while-stunned`} type="checkbox" checked={scenario.whileStunned} onChange={event => writeWhileStunned(event.target.checked)} /></dd></div>}

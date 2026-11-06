@@ -95,7 +95,7 @@ export function EquipmentPicker({ mode, equipment, onUnequipImported, slot, data
       <p id="target-level-help" className="muted picker-help">Published crafting target level; not a confirmed equip requirement. Clear the minimum to show all levels, including unknowns. Filters keep your equipped items.</p>
       {preferenceNotice}
       {offhand && <p className="muted picker-help">Offhand weapons and shields share one position. Choosing either replaces the current item and retains its official slot type.</p>}
-      {replacing && <p className="muted picker-help">Replacing changes this item only. Staged mods and Spark settings are retained.</p>}
+      {replacing && <p className="muted picker-help">Replacing changes this item only. Staged mods are retained; Mastery Sparks stay with the old item and are cleared.</p>}
       <p className="equipment-results-title muted" tabIndex={-1} aria-live="polite">{matches.length} matching {matches.length === 1 ? 'item' : 'items'}{matches.length > PAGE_SIZE && ` · Page ${currentPage + 1} of ${lastPage + 1}`}</p>
       {matches.length === 0 && <p className="empty-state">No official equipment matches. Try another search, a lower minimum, or include unknown target levels.</p>}
       <div className="equipment-results">{results.map(item => <article className="equipment-result" key={item.id}>

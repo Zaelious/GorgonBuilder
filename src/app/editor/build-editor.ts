@@ -2,6 +2,7 @@ import { sameImportedInstance } from '../../core/build/imported-identity';
 import { isOffhandSlot } from '../../core/build/slots';
 import { editCandidateMods, pruneCandidateModsForSkill, type CandidateModEdit } from '../../core/build/candidate-mods';
 import { editExistingMods, type ExistingModEdit } from '../../core/build/existing-mods';
+import { editSparks, sparksAfterReplacement, type SparkEdit } from '../../core/build/sparks';
 import { setTargetCount, setTargetDamageTypePercent, type TargetPercentField } from '../../core/build/target';
 import type { AbilitySelection, BuildDocument, ItemInstance } from '../../core/build/document';
 import { validateBuildDocument } from '../../core/build/validation';
@@ -12,6 +13,7 @@ export type Slot = 'A' | 'B';
 export type BuildEdit =
   | CandidateModEdit
   | ExistingModEdit
+  | SparkEdit
   | { type: 'title'; title: string }
   | { type: 'target-count'; count: number }
   | { type: 'target-damage-type'; damageType: string; field: TargetPercentField; value: number | null }
@@ -52,6 +54,15 @@ export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataR
     equipment[edit.equipmentIndex] = { ...selection, candidateMods };
     return { ...build, equipment };
   }
+  if (edit.type === 'sparks-set') {
+    const previous = build.equipment[edit.equipmentIndex];
+    if (!Number.isInteger(edit.equipmentIndex) || !previous) return build;
+    const offhandConflict = build.equipment.filter(selection => isOffhandSlot(selection.slot)).length > 1;
+    const selection = editSparks(previous, edit.sparks, data, { offhandConflict });
+    if (selection === previous) return build;
+    const equipment = [...build.equipment]; equipment[edit.equipmentIndex] = selection;
+    return { ...build, equipment };
+  }
   if (edit.type === 'equipment-resolve-offhand') {
     if (!Number.isInteger(edit.keepIndex) || !isOffhandSlot(build.equipment[edit.keepIndex]?.slot ?? '') ||
       build.equipment.filter(selection => isOffhandSlot(selection.slot)).length <= 1) return build;
@@ -83,8 +94,8 @@ export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataR
       const previous = equipment[edit.index];
       if (!Number.isInteger(edit.index) || !previous || (offhand ? !isOffhandSlot(previous.slot) : previous.slot !== edit.slot)) return build;
       if (edit.type === 'equipment-equip' && previous.slot === edit.slot && previous.item.kind === 'database' && previous.item.itemId === edit.itemId) return build;
-      // Replace the definition and canonical slot; staged mods/Sparks survive.
-      equipment[edit.index] = { ...previous, slot: edit.slot, item: selected };
+      // Replace the definition and canonical slot; staged mods survive. Sparks belong to the replaced item (T0015).
+      equipment[edit.index] = { ...previous, slot: edit.slot, item: selected, sparks: sparksAfterReplacement(previous) };
     }
     const next = { ...build, equipment };
     return edit.type === 'equipment-import' && !validateBuildDocument(next).ok ? build : next;

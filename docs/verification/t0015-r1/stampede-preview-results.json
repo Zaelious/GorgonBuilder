@@ -1,0 +1,140 @@
+[
+  {
+    "mode": "preview",
+    "width": 1440,
+    "height": 900,
+    "iconTransport": "official-cdn",
+    "cases": [
+      {
+        "stacks": 0,
+        "projected": "208"
+      },
+      {
+        "stacks": 1,
+        "projected": "258"
+      },
+      {
+        "stacks": 15,
+        "projected": "958"
+      },
+      {
+        "stacks": 16,
+        "projected": "1,008"
+      },
+      {
+        "stacks": 30,
+        "projected": "1,708"
+      }
+    ],
+    "stunned": {
+      "zeroStacks": 2912,
+      "fifteenStacksOneMod": 13412
+    },
+    "twoSources": 1933,
+    "tierReplacement": 1243,
+    "removal": 268,
+    "proc": {
+      "normal": 530,
+      "triggered": 1060,
+      "probability": 0.33,
+      "expected": 704.9
+    },
+    "geometry": {
+      "width": 1440,
+      "scroll": 1440
+    },
+    "errors": []
+  },
+  {
+    "mode": "preview",
+    "width": 375,
+    "height": 812,
+    "iconTransport": "official-cdn",
+    "cases": [
+      {
+        "stacks": 0,
+        "projected": "208"
+      },
+      {
+        "stacks": 1,
+        "projected": "258"
+      },
+      {
+        "stacks": 15,
+        "projected": "958"
+      },
+      {
+        "stacks": 16,
+        "projected": "1,008"
+      },
+      {
+        "stacks": 30,
+        "projected": "1,708"
+      }
+    ],
+    "stunned": {
+      "zeroStacks": 2912,
+      "fifteenStacksOneMod": 13412
+    },
+    "twoSources": 1933,
+    "tierReplacement": 1243,
+    "removal": 268,
+    "proc": {
+      "normal": 530,
+      "triggered": 1060,
+      "probability": 0.33,
+      "expected": 704.9
+    },
+    "geometry": {
+      "width": 375,
+      "scroll": 375
+    },
+    "errors": []
+  },
+  {
+    "mode": "preview",
+    "width": 320,
+    "height": 812,
+    "iconTransport": "official-cdn",
+    "cases": [
+      {
+        "stacks": 0,
+        "projected": "208"
+      },
+      {
+        "stacks": 1,
+        "projected": "258"
+      },
+      {
+        "stacks": 15,
+        "projected": "958"
+      },
+      {
+        "stacks": 16,
+        "projected": "1,008"
+      },
+      {
+        "stacks": 30,
+        "projected": "1,708"
+      }
+    ],
+    "stunned": {
+      "zeroStacks": 2912,
+      "fifteenStacksOneMod": 13412
+    },
+    "twoSources": 1933,
+    "tierReplacement": 1243,
+    "removal": 268,
+    "proc": {
+      "normal": 530,
+      "triggered": 1060,
+      "probability": 0.33,
+      "expected": 704.9
+    },
+    "geometry": {
+      "width": 320,
+      "scroll": 320
+    },
+    "errors": []
+  }
+]

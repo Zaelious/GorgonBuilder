@@ -53,12 +53,14 @@ it('equips, replaces and clears official IDs through autosave and fresh persiste
   expect(build.equipment).toEqual(original.equipment);
 });
 
-it('explicit replacement preserves associated candidates and Spark settings; unrelated edits retain instance metadata', () => {
+it('explicit replacement preserves associated candidates, clears the replaced item\'s Sparks; unrelated edits retain instance metadata', () => {
   const original = populated();
   const replaced = editBuild(original, { type: 'equipment-equip', slot: 'Ring', index: 0, itemId: 'item_49070' }, data);
   expect(replaced.equipment[0]!.item).toEqual({ kind: 'database', itemId: 'item_49070' });
   expect(replaced.equipment[0]!.candidateMods).toBe(original.equipment[0]!.candidateMods);
-  expect(replaced.equipment[0]!.sparks).toBe(original.equipment[0]!.sparks);
+  // T0015: Sparks belong to the physical item and never transfer to its replacement.
+  expect(replaced.equipment[0]!.sparks).toEqual({ mode: 'none' });
+  expect(original.equipment[0]!.sparks.mode).toBe('simulated');
   expect(editBuild(original, { type: 'title', title: 'New title' }, data).equipment).toBe(original.equipment);
   expect(original.equipment[0]!.item.kind).toBe('imported');
 });
@@ -98,9 +100,8 @@ it('swaps weapon/shield types through explicit edits, preserving exact IDs, slot
     const item = data.getItem(itemId)!;
     const next = editBuild(build, { type: 'equipment-equip', itemId, slot: item.slot, index: 1 }, data);
     expect(next.equipment).toHaveLength(2);
-    expect(next.equipment[1]).toEqual({ ...original.equipment[1], slot: item.slot, item: { kind: 'database', itemId } });
+    expect(next.equipment[1]).toEqual({ ...original.equipment[1], slot: item.slot, item: { kind: 'database', itemId }, sparks: { mode: 'none' } });
     expect(next.equipment[1]!.candidateMods).toBe(original.equipment[1]!.candidateMods);
-    expect(next.equipment[1]!.sparks).toBe(original.equipment[1]!.sparks);
     expect(next.equipment[0]).toBe(original.equipment[0]);
     for (const field of ['skillSlotA', 'skillSlotB', 'abilityBarA', 'abilityBarB', 'target', 'notes', 'title', 'characterImport'] as const) expect(next[field]).toBe(original[field]);
     const local = createLocalPersistence({ gameDataVersion: data.gameDataVersion, storage });

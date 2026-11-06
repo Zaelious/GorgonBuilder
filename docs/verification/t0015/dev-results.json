@@ -1,0 +1,173 @@
+[
+  {
+    "mode": "dev",
+    "width": 1440,
+    "height": 900,
+    "before": {
+      "mock": "178 Psychic",
+      "aimed": "231 Piercing"
+    },
+    "scenarios": [
+      {
+        "step": "simulate-110",
+        "seed": "961bc8b43d62954a",
+        "counts": {
+          "allDirectDamagePercent": 11,
+          "skillDamageFlat": 48,
+          "allDirectDamageFlat": 4,
+          "skillDamagePercent": 27,
+          "skillBaseDamagePercent": 20
+        },
+        "mock": "411.55 Psychic"
+      },
+      {
+        "step": "reroll",
+        "seed": "f0eb301cea0e2721",
+        "counts": {
+          "allDirectDamagePercent": 20,
+          "skillDamageFlat": 42,
+          "allDirectDamageFlat": 11,
+          "skillDamagePercent": 25,
+          "skillBaseDamagePercent": 12
+        },
+        "mock": "375.93 Psychic"
+      },
+      {
+        "step": "actual-110",
+        "mock": "402.52 Psychic",
+        "aimed": "255.31 Piercing"
+      },
+      {
+        "step": "ring+necklace",
+        "mock": "409.09 Psychic"
+      },
+      {
+        "step": "necklace-cleared",
+        "mock": "402.52 Psychic"
+      },
+      {
+        "step": "ring-archery",
+        "mock": "199.4 Psychic",
+        "aimed": "500.83 Piercing"
+      }
+    ],
+    "geometry": {
+      "width": 1440,
+      "scroll": 1440
+    }
+  },
+  {
+    "mode": "dev",
+    "width": 375,
+    "height": 812,
+    "before": {
+      "mock": "178 Psychic",
+      "aimed": "231 Piercing"
+    },
+    "scenarios": [
+      {
+        "step": "simulate-110",
+        "seed": "d4d016fc6cd7c9b8",
+        "counts": {
+          "allDirectDamagePercent": 11,
+          "skillDamageFlat": 37,
+          "allDirectDamageFlat": 11,
+          "skillDamagePercent": 33,
+          "skillBaseDamagePercent": 18
+        },
+        "mock": "409.13 Psychic"
+      },
+      {
+        "step": "reroll",
+        "seed": "1ed4e36ff6864366",
+        "counts": {
+          "allDirectDamagePercent": 10,
+          "skillDamageFlat": 40,
+          "allDirectDamageFlat": 17,
+          "skillDamagePercent": 25,
+          "skillBaseDamagePercent": 18
+        },
+        "mock": "401.62 Psychic"
+      },
+      {
+        "step": "actual-110",
+        "mock": "402.52 Psychic",
+        "aimed": "255.31 Piercing"
+      },
+      {
+        "step": "ring+necklace",
+        "mock": "409.09 Psychic"
+      },
+      {
+        "step": "necklace-cleared",
+        "mock": "402.52 Psychic"
+      },
+      {
+        "step": "ring-archery",
+        "mock": "199.4 Psychic",
+        "aimed": "500.83 Piercing"
+      }
+    ],
+    "geometry": {
+      "width": 375,
+      "scroll": 375
+    }
+  },
+  {
+    "mode": "dev",
+    "width": 320,
+    "height": 812,
+    "before": {
+      "mock": "178 Psychic",
+      "aimed": "231 Piercing"
+    },
+    "scenarios": [
+      {
+        "step": "simulate-110",
+        "seed": "d6b8a3d63eda285e",
+        "counts": {
+          "allDirectDamagePercent": 14,
+          "skillDamageFlat": 45,
+          "allDirectDamageFlat": 10,
+          "skillDamagePercent": 26,
+          "skillBaseDamagePercent": 15
+        },
+        "mock": "389.99 Psychic"
+      },
+      {
+        "step": "reroll",
+        "seed": "475bc00b9ec66a60",
+        "counts": {
+          "allDirectDamagePercent": 4,
+          "skillDamageFlat": 47,
+          "allDirectDamageFlat": 8,
+          "skillDamagePercent": 32,
+          "skillBaseDamagePercent": 19
+        },
+        "mock": "413.68 Psychic"
+      },
+      {
+        "step": "actual-110",
+        "mock": "402.52 Psychic",
+        "aimed": "255.31 Piercing"
+      },
+      {
+        "step": "ring+necklace",
+        "mock": "409.09 Psychic"
+      },
+      {
+        "step": "necklace-cleared",
+        "mock": "402.52 Psychic"
+      },
+      {
+        "step": "ring-archery",
+        "mock": "199.4 Psychic",
+        "aimed": "500.83 Piercing"
+      }
+    ],
+    "geometry": {
+      "width": 320,
+      "scroll": 320
+    }
+  }
+]

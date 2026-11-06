@@ -1,4 +1,5 @@
 import { getUniqueActiveSkillIds } from '../build/document';
+import { isOffhandSlot } from '../build/slots';
 import type { BuildDocument, CandidateMod, EquipmentSelection, SkillSlot } from '../build/document';
 import {
   CONFIDENCE_ORDER, MODIFIER_AGGREGATION_SCHEMA_VERSION,
@@ -8,6 +9,7 @@ import {
 } from './modifiers';
 import { defaultModifierRegistry, parseEffectDescription, type ModifierDataContext, type ModifierRegistry } from './registry';
 import { interpretTreasureEffect, type TreasureEffectRule, type TreasureTargetCondition } from './treasure-effect-rules';
+import { sparkModifiersForSelection, type SparkAggregationContext } from './spark-modifiers';
 
 export interface AggregateOptions {
   /** Defaults to the documented initial mapping subset. */
@@ -75,7 +77,7 @@ interface EffectInput {
 /**
  * Pure and deterministic: reads `build` and `data` only, never mutates them, and returns fresh
  * records in source order (unique active skills A→B, then equipment array order: fixed effects,
- * effective existing powers, staged candidate mods). Spark settings are not aggregated (T0015).
+ * effective existing powers, staged candidate mods, then valid Mastery Spark outcome totals (T0015)).
  * Imported `metadata.sourceItem` / `originalWorkingPowers` are historical evidence and never read.
  */
 export function aggregateBuildModifiers(build: BuildDocument, data: ModifierDataContext, options: AggregateOptions = {}): ModifierAggregationResult {
@@ -152,15 +154,17 @@ export function aggregateBuildModifiers(build: BuildDocument, data: ModifierData
   aggregateSkills(build, activeSkillIds, data, registry, out, emitUnsupported);
 
   const occurrences = new Map<string, number>();
+  const sparkContext: SparkAggregationContext = { activeSkillIds, data, registry,
+    offhandConflict: build.equipment.filter(selection => isOffhandSlot(selection.slot)).length > 1 };
   build.equipment.forEach((selection, equipmentIndex) => {
     const occurrence = occurrences.get(selection.slot) ?? 0;
     occurrences.set(selection.slot, occurrence + 1);
-    aggregateEquipment(selection, equipmentIndex, `${selection.slot}#${occurrence}`, data, out, interpretEffect);
+    aggregateEquipment(selection, equipmentIndex, `${selection.slot}#${occurrence}`, data, out, interpretEffect, sparkContext);
   });
 
   const byCategory: Partial<Record<ModifierCategory, number>> = {};
   const byConfidence: Record<ModifierConfidence, number> = { validated: 0, partially_validated: 0, assumed: 0, unknown: 0 };
-  const bySourceKind: Record<ModifierSource['kind'], number> = { 'skill-advancement': 0, 'item-fixed-effect': 0, 'existing-power': 0, 'candidate-mod': 0 };
+  const bySourceKind: Record<ModifierSource['kind'], number> = { 'skill-advancement': 0, 'item-fixed-effect': 0, 'existing-power': 0, 'candidate-mod': 0, spark: 0 };
   for (const modifier of out.modifiers) {
     byCategory[modifier.category] = (byCategory[modifier.category] ?? 0) + 1;
     byConfidence[modifier.confidence] += 1;
@@ -279,7 +283,7 @@ function aggregateSkills(build: BuildDocument, activeSkillIds: readonly string[]
 }
 
 function aggregateEquipment(selection: EquipmentSelection, equipmentIndex: number, equipmentKey: string, data: ModifierDataContext,
-  out: Collector, interpretEffect: (input: EffectInput) => void) {
+  out: Collector, interpretEffect: (input: EffectInput) => void, sparkContext: SparkAggregationContext) {
   const { item } = selection;
   const itemId = item.kind === 'database' ? item.itemId : item.instance.baseItemId;
   const definition = itemId === null ? undefined : data.getItem(itemId);
@@ -345,8 +349,9 @@ function aggregateEquipment(selection: EquipmentSelection, equipmentIndex: numbe
   if (instance) aggregateMods(instance.existingPowers, 'existing');
   aggregateMods(selection.candidateMods, 'planned');
 
-  if (selection.sparks.mode !== 'none') {
-    out.warnings.push({ code: 'sparks-not-aggregated', equipment: ref,
-      message: `Mastery Spark settings (${selection.sparks.mode}) on ${selection.slot} are not aggregated until T0015.` });
-  }
+  // T0015: one record per non-zero Spark outcome; invalid/pending configurations are reported, never applied.
+  const sparks = sparkModifiersForSelection(selection, ref, sparkContext);
+  out.modifiers.push(...sparks.modifiers);
+  out.unsupported.push(...sparks.unsupported);
+  out.warnings.push(...sparks.warnings);
 }

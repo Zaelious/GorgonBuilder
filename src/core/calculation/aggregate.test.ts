@@ -203,7 +203,7 @@ describe('T0012 equipment and treasure aggregation', () => {
   it('12. unresolved powers, tiers, items and unsupported descriptions are preserved as warnings/records', () => {
     const result = aggregate(cowUnarmed());
     expect(result.warnings.map(w => [w.code, w.powerId ?? null, w.tierId ?? null])).toEqual([
-      ['sparks-not-aggregated', null, null],
+      ['spark-result-missing', null, null], // T0015: simulated input saved without a result contributes nothing
       ['candidate-tier-unselected', 'power_20203', null],
       ['unknown-power', 'power_99999999', 'id_1'],
       ['instance-without-base-item', null, null],

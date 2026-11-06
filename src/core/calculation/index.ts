@@ -33,3 +33,7 @@ export {
   type CriticalDamageResult, type CriticalData, type CriticalHitResult, type CriticalInputs, type CriticalModifierDecision, type CriticalStep, type CriticalTerm,
 } from './critical-damage';
 export { CRITICAL_TREASURE_ASSUMPTIONS, CRITICAL_TREASURE_RULES } from './critical-treasure-rules';
+export {
+  SPARK_ASSUMPTIONS, sparkAttributeId, sparkModifiersForSelection, sparkOutcomeSupport,
+  type SparkAggregation, type SparkAggregationContext, type SparkOutcomeSupport,
+} from './spark-modifiers';

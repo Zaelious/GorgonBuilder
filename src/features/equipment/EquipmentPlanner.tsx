@@ -15,6 +15,8 @@ import { PublishedItemDetails } from './ItemFacts';
 import { ImportedItemDetails, ImportedItemWarnings } from '../import/ImportedItemDetails';
 import { importedSlot, restoredImportedItem, selectedImportedInstance, type ImportSession } from '../import/inventory';
 import { equipmentRowMatches, prepareModSearch, selectAvailableMods } from '../../data/search/available-mods';
+import { isOffensiveSparkSlot } from '../../core/sparks';
+import { SparkEditor, sparkRowNote } from '../sparks/SparkEditor';
 import { indexTreasurePowers, normalizeTreasureSearch } from '../../data/search/treasure';
 import './equipment.css';
 
@@ -28,6 +30,11 @@ interface Props {
   preferenceNotice: ReactNode;
   onMinimumChange: (value: number | null) => void;
   imported?: ImportSession | null;
+}
+
+/** Sparks belong to the physical item (T0015): replacing it clears them, so say so in the existing confirmation. */
+function sparkReplacementNote(previous: EquipmentSelection | undefined): string {
+  return previous && previous.sparks.mode !== 'none' ? ' Its Mastery Spark settings belong to the replaced item and will be cleared.' : '';
 }
 
 const PRIMARY_SLOTS = ['Head', 'Chest', 'Legs', 'Hands', 'Feet', 'Ring', 'Necklace', 'MainHand', 'OffHand'] as const;
@@ -99,6 +106,9 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
       {item && !sameLoadoutPosition(item.slot, selection.slot) && <p className="warning">Published slot is {item.slot}; saved slot {selection.slot} is retained.</p>}
       {owned && <ImportedItemWarnings item={owned} data={data} historical />}
       <ItemStats selection={selection} item={item} data={data} skillA={build.skillSlotA.skillId} skillB={build.skillSlotB.skillId} />
+      {/* T0015-R1 order: STATS → Mastery Sparks → treasure mods → actions → details & source. */}
+      {(isOffensiveSparkSlot(selection.slot) || selection.sparks.mode !== 'none') && <div className="equipment-sparks">
+        <SparkEditor selection={selection} equipmentIndex={index} activeSkillIds={skillIds} data={data} onEdit={onEdit} readOnly={readOnly} offhandConflict={conflict} /></div>}
       <EquipmentMods searchIndex={searchIndex} preparedSearch={prepared[index]} browser={modBrowser} selection={selection} equipmentIndex={index} item={item} skillIds={skillIds} skillA={build.skillSlotA.skillId} skillB={build.skillSlotB.skillId} data={data} onEdit={onEdit} readOnly={readOnly} available={available[index]} expanded={expanded.has(isOffhandSlot(selection.slot) ? 'OffHand' : selection.slot)} />
       <div className="equipment-actions"><button type="button" disabled={readOnly || conflict || !officialSlots.has(selection.slot)} onClick={event => openPicker(selection.slot, index, event.currentTarget)}>Replace {isOffhandSlot(selection.slot) ? 'OffHand' : selection.slot}</button>
         <button type="button" disabled={readOnly} onClick={event => {
@@ -149,7 +159,7 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
         <span className="equipment-slot-name">{slot}</span>
         <span className="equipment-row-name">{first ? `${name(first)}${selections.length > 1 ? ` + ${selections.length - 1} more` : ''}` : 'No gear selected'}</span>
         {searching && <span className="equipment-mod-count">{rowCount(slot)} Available · {rowCount(slot, true)} Selected</span>}
-        {first && <small className={slot === 'OffHand' && selections.length > 1 ? 'warning' : undefined}>{selections.length > 1 ? `${slot === 'OffHand' ? 'Conflict · ' : ''}${selections.length} saved` : `${first.slot === 'OffHandShield' ? 'Shield · ' : ''}${first.item.kind !== 'database' ? `${first.item.kind} instance` : item?.level == null ? 'Unknown target level' : `Target ${item.level}`}`}</small>}
+        {first && <small className={slot === 'OffHand' && selections.length > 1 ? 'warning' : undefined}>{selections.length > 1 ? `${slot === 'OffHand' ? 'Conflict · ' : ''}${selections.length} saved` : `${first.slot === 'OffHandShield' ? 'Shield · ' : ''}${first.item.kind !== 'database' ? `${first.item.kind} instance` : item?.level == null ? 'Unknown target level' : `Target ${item.level}`}${sparkRowNote(first) ? ` · ${sparkRowNote(first)}` : ''}`}</small>}
       </summary>
       <div className="equipment-row-content">
         {slot === 'OffHand' && selections.length > 1 && <p className="warning offhand-help" role="alert">This saved build has multiple offhand items sharing one position. All entries are retained. Choose an item to keep or clear individual entries before replacing equipment.</p>}
@@ -185,8 +195,10 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
         const found = picker.slot ? picker.index : build.equipment.findIndex(entry => isOffhandSlot(item.slot) ? isOffhandSlot(entry.slot) : entry.slot === item.slot);
         const index = found === -1 ? null : found;
         const previous = index === null ? undefined : build.equipment[index];
-        if (previous && previous.item.kind !== 'database' && !window.confirm('Replace this saved instance with a database definition? Its instance metadata and existing powers will be removed. Staged mods and Spark settings are retained.')) return;
-        if (!picker.slot && previous?.item.kind === 'database' && !window.confirm('Replace the selected database item in this slot? Staged candidate mods and Spark settings are retained.')) return;
+        // Re-picking the identical item is a no-op edit and never clears Sparks.
+        const sparks = previous?.item.kind === 'database' && previous.item.itemId === itemId ? '' : sparkReplacementNote(previous);
+        if (previous && previous.item.kind !== 'database' && !window.confirm(`Replace this saved instance with a database definition? Its instance metadata and existing powers will be removed.${sparks} Staged candidate mods are retained.`)) return;
+        if (previous?.item.kind === 'database' && (!picker.slot || sparks) && !window.confirm(`Replace the selected database item in this slot?${sparks} Staged candidate mods are retained.`)) return;
         onEdit({ type: 'equipment-equip', slot: item.slot, index, itemId });
         setPicker(null);
       }} onChooseImported={item => {
@@ -197,7 +209,7 @@ export function EquipmentPlanner({ build, data, onEdit, readOnly, minimum, prefe
         if (build.equipment.some(entry => entry.item.kind === 'imported' && sameImportedInstance(entry.item.instance, instance))) return;
         const found = picker.slot ? picker.index : build.equipment.findIndex(entry => isOffhandSlot(slot) ? isOffhandSlot(entry.slot) : entry.slot === slot);
         const index = found === -1 ? null : found;
-        if (index !== null && !window.confirm('Replace the selected item with this owned instance? The previous item and its existing powers/metadata will be replaced. Staged candidate mods and Spark settings are retained.')) return;
+        if (index !== null && !window.confirm(`Replace the selected item with this owned instance? The previous item and its existing powers/metadata will be replaced.${sparkReplacementNote(build.equipment[index])} Staged candidate mods are retained.`)) return;
         onEdit({ type: 'equipment-import', slot, index, instance });
         if (picker.mode === 'slot') setPicker(null);
       }} onUnequipImported={item => {

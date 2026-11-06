@@ -1,0 +1,173 @@
+[
+  {
+    "mode": "preview",
+    "width": 1440,
+    "height": 900,
+    "before": {
+      "mock": "178 Psychic",
+      "aimed": "231 Piercing"
+    },
+    "scenarios": [
+      {
+        "step": "simulate-110",
+        "seed": "d742ed224f03f1b1",
+        "counts": {
+          "allDirectDamagePercent": 9,
+          "skillDamageFlat": 50,
+          "allDirectDamageFlat": 8,
+          "skillDamagePercent": 24,
+          "skillBaseDamagePercent": 19
+        },
+        "mock": "404.72 Psychic"
+      },
+      {
+        "step": "reroll",
+        "seed": "c06764ab86802651",
+        "counts": {
+          "allDirectDamagePercent": 9,
+          "skillDamageFlat": 52,
+          "allDirectDamageFlat": 7,
+          "skillDamagePercent": 24,
+          "skillBaseDamagePercent": 18
+        },
+        "mock": "400.67 Psychic"
+      },
+      {
+        "step": "actual-110",
+        "mock": "402.52 Psychic",
+        "aimed": "255.31 Piercing"
+      },
+      {
+        "step": "ring+necklace",
+        "mock": "409.09 Psychic"
+      },
+      {
+        "step": "necklace-cleared",
+        "mock": "402.52 Psychic"
+      },
+      {
+        "step": "ring-archery",
+        "mock": "199.4 Psychic",
+        "aimed": "500.83 Piercing"
+      }
+    ],
+    "geometry": {
+      "width": 1440,
+      "scroll": 1440
+    }
+  },
+  {
+    "mode": "preview",
+    "width": 375,
+    "height": 812,
+    "before": {
+      "mock": "178 Psychic",
+      "aimed": "231 Piercing"
+    },
+    "scenarios": [
+      {
+        "step": "simulate-110",
+        "seed": "bf3e8a10481f1e85",
+        "counts": {
+          "allDirectDamagePercent": 13,
+          "skillDamageFlat": 40,
+          "allDirectDamageFlat": 16,
+          "skillDamagePercent": 27,
+          "skillBaseDamagePercent": 14
+        },
+        "mock": "387.15 Psychic"
+      },
+      {
+        "step": "reroll",
+        "seed": "cabf32787b8156c5",
+        "counts": {
+          "allDirectDamagePercent": 9,
+          "skillDamageFlat": 43,
+          "allDirectDamageFlat": 9,
+          "skillDamagePercent": 26,
+          "skillBaseDamagePercent": 23
+        },
+        "mock": "422.97 Psychic"
+      },
+      {
+        "step": "actual-110",
+        "mock": "402.52 Psychic",
+        "aimed": "255.31 Piercing"
+      },
+      {
+        "step": "ring+necklace",
+        "mock": "409.09 Psychic"
+      },
+      {
+        "step": "necklace-cleared",
+        "mock": "402.52 Psychic"
+      },
+      {
+        "step": "ring-archery",
+        "mock": "199.4 Psychic",
+        "aimed": "500.83 Piercing"
+      }
+    ],
+    "geometry": {
+      "width": 375,
+      "scroll": 375
+    }
+  },
+  {
+    "mode": "preview",
+    "width": 320,
+    "height": 812,
+    "before": {
+      "mock": "178 Psychic",
+      "aimed": "231 Piercing"
+    },
+    "scenarios": [
+      {
+        "step": "simulate-110",
+        "seed": "335d723bf039ead8",
+        "counts": {
+          "allDirectDamagePercent": 10,
+          "skillDamageFlat": 49,
+          "allDirectDamageFlat": 13,
+          "skillDamagePercent": 30,
+          "skillBaseDamagePercent": 8
+        },
+        "mock": "366.72 Psychic"
+      },
+      {
+        "step": "reroll",
+        "seed": "975815c625982800",
+        "counts": {
+          "allDirectDamagePercent": 17,
+          "skillDamageFlat": 36,
+          "allDirectDamageFlat": 12,
+          "skillDamagePercent": 33,
+          "skillBaseDamagePercent": 12
+        },
+        "mock": "383.87 Psychic"
+      },
+      {
+        "step": "actual-110",
+        "mock": "402.52 Psychic",
+        "aimed": "255.31 Piercing"
+      },
+      {
+        "step": "ring+necklace",
+        "mock": "409.09 Psychic"
+      },
+      {
+        "step": "necklace-cleared",
+        "mock": "402.52 Psychic"
+      },
+      {
+        "step": "ring-archery",
+        "mock": "199.4 Psychic",
+        "aimed": "500.83 Piercing"
+      }
+    ],
+    "geometry": {
+      "width": 320,
+      "scroll": 320
+    }
+  }
+]

@@ -2,7 +2,7 @@
 
 `aggregateBuildModifiers(build, data, options?)` converts one `BuildDocument` into
 calculation-ready **modifier inputs**. It is pure, deterministic and React-free.
-It computes no ability damage, crits, DoTs, DPS or Sparks (T0013/T0015).
+It computes no ability damage, crits, DoTs or DPS (T0013+). T0015 adds valid Mastery Spark outcome totals as ordinary modifier inputs (see *Mastery Sparks* below).
 
 T0013 adds the separate `calculateAbilityDamage` consumer described below. The
 T0012 aggregation behavior and contracts remain unchanged.
@@ -45,7 +45,9 @@ data are only read; every result is a fresh object.
      unknown power or unknown tier is a warning. Nothing is substituted with a nearby tier.
    - Existing and planned copies of the same power are separate records. Nothing is
      deduplicated by description. No mod-count or legality limit is applied.
-   - Spark settings other than `none` produce a `sparks-not-aggregated` warning.
+   - **Mastery Sparks (T0015)**: one modifier per non-zero outcome of a valid configuration, after the item's mods.
+     Pending, invalid, unsupported-slot and conflicting-offhand configurations produce a warning instead
+     (`spark-result-missing`, `spark-configuration-invalid`, `spark-slot-unsupported`, `spark-offhand-conflict`).
 
 Keys only use source identity, such as
 `equipment:MainHand#0/existing:power_3001:id_9#0/effect:0`. Removing another item
@@ -110,6 +112,27 @@ skills by ID suffix, published damage types and ability hook membership.
 T0013-F2 maps `critical-chance-percent` / `critical-damage-percent` for official attributes listed in an
 `AttributesThatDeltaCritChance` / `AttributesThatModCritDamage` hook (ability record or static abilitykeywords
 rule). They never contribute to normal damage. The aggregation code does not change.
+
+## Mastery Sparks (T0015)
+
+`spark-modifiers.ts` converts one selection's Spark configuration (validated and, for simulations, re-simulated by
+`core/sparks/evaluateSparkConfiguration`) into modifiers keyed `equipment:<slot>#<n>/sparks:<outcome>`. Each outcome
+uses the official attribute of its category, interpreted by the registry above, so ability hooks decide applicability
+exactly as for gear:
+
+| Outcome | Attribute | Category / scope |
+|---|---|---|
+| +0.5% All Direct | `MOD_UNIVERSAL_DIRECT` | `all-direct-damage-percent`, general direct |
+| +1 Skill | `BOOST_SKILL_<SKILL>` | `skill-damage-flat`, skill |
+| +1 All Direct | `BOOST_UNIVERSAL_DIRECT` | `all-direct-damage-flat`, general direct |
+| +1% Skill | `MOD_SKILL_ALL_<SKILL>` | `skill-damage-percent`, skill |
+| +3% Skill Base | `MOD_SKILL_<SKILL>` | `skill-base-damage-percent`, skill (original base only, T0013) |
+
+Values are count × per-outcome amount (fractions for percentages). Source kind `spark` records slot, item, mode, skill,
+outcome count, total, model version and seed. Every record requires its configured skill to be active (assumed; an
+inactive skill's Sparks are `conditions-not-met`, never remapped). Confidence is `assumed`. A skill without a matching
+official attribute yields an explicit unsupported record for that outcome. `sparkOutcomeSupport(skillId, data)` exposes
+the same check to the UI. The damage formula and its ordering are unchanged. See `docs/T0015_Verification.md`.
 
 ## Fixtures and review
 
@@ -318,6 +341,12 @@ effect and assumptions. These categories never enter ordinary damage automatical
 baseline, per-source stack contributions, and an Estimated projected result. It assesses applicability through
 the ordinary engine, then reuses `calculateAbilityDamage` with derived ability flats and `applyTargetDummy`.
 Zero stacks reuse the original result. Skill Base continues to use the original published base.
+
+**T0015-R1:** `stacks` is the number of *effective concurrent* Continuous Trampling contributions, 0–30
+(`STAMPEDE_MAX_CONTRIBUTIONS`). Customer in-game tests with Stampede 12 (2 s reuse) and the 60 s buff kept gaining
+damage for about 30 attacks, matching `contributions × Σ per-contribution values × 1.955` within 1 damage for +56 and
+for +50 with +56. Thirty is that steady state, not a game stack cap. The published "(stacks up to 15 times)" text is
+matched unchanged as source data. Other reuse times and expiry timing are not modeled; the arithmetic is unchanged.
 
 `calculateDamageProcs(result, ordinaryTarget, targetConfig, repository)` returns separate noncritical proc sources,
 chance, triggered hit, expected per successful hit and target totals. Multipliers scale the final ordinary hit;

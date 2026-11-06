@@ -5,6 +5,8 @@
  * distinct (see docs/Damage_And_DPS_Model.md); T0013 decides ordering and application.
  */
 
+import type { SparkOutcomeKey } from '../sparks/model';
+
 export const MODIFIER_AGGREGATION_SCHEMA_VERSION = 1 as const;
 
 /** Confidence in the interpretation (category, unit, value) of one source record. */
@@ -134,6 +136,22 @@ export type ModifierSource =
     readonly effectIndex: number;
     readonly tierRecordId: string;
     readonly description: string;
+  } & EquipmentSourceRef)
+  /** T0015: the total of one Skill Damage Spark outcome on one equipped item (one record per outcome kind). */
+  | ({
+    readonly kind: 'spark';
+    readonly mode: 'simulated' | 'actual';
+    readonly sparkCategory: 'skill-damage';
+    /** Configured skill; skill-scoped outcomes name it and every outcome requires it to be active. */
+    readonly skillId: string;
+    readonly outcome: SparkOutcomeKey;
+    /** Number of Sparks with this outcome. */
+    readonly outcomeCount: number;
+    /** All Sparks configured on the item. */
+    readonly totalSparks: number;
+    readonly modelVersion: string;
+    /** Simulated configurations only. */
+    readonly seed?: string;
   } & EquipmentSourceRef);
 
 export interface NormalizedModifier {
@@ -206,7 +224,11 @@ export type AggregationWarningCode =
   | 'unknown-power'
   | 'unknown-tier'
   | 'candidate-tier-unselected'
-  | 'sparks-not-aggregated';
+  // T0015 Spark configurations that are preserved but contribute nothing:
+  | 'spark-result-missing'          // simulated input saved without a result
+  | 'spark-configuration-invalid'   // malformed, unknown model version, non-reproducible result or unknown skill
+  | 'spark-slot-unsupported'        // saved on a slot outside MainHand/OffHand/Ring/Necklace
+  | 'spark-offhand-conflict';       // legacy multiple offhand entries: no offhand Spark source until resolved
 
 export interface AggregationWarning {
   readonly code: AggregationWarningCode;
