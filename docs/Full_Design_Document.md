@@ -325,8 +325,8 @@ A current export should be treated as a current snapshot. An old example export 
 Use browser storage for:
 
 - unsaved/current draft
-- owner tokens keyed by public build ID
 - user preferences such as minimum item level
+- account sessions handled by server-issued secure cookies, not manual owner tokens in browser storage
 - optionally recent builds
 
 ### Account-owned shared-build backend (Cloudflare Workers + D1)
