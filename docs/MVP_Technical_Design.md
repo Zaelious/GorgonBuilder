@@ -206,7 +206,7 @@ model `skill-damage-sparks-v1` (cyrb128 + sfc32, rejection-sampled whole-percent
 
 ## Import
 
-**Roadmap decision (2026-11-06):** T0016 was redefined as a **post-MVP Character Statistics and Defensive Calculation Engine** at the end of the queue. T0017 comparison and T0021 release rely on the existing import, modifier aggregation, offensive Sparks and ability engine; they do not require armor/defensive Sparks, a full character stat sheet, or a CurrentStats delta panel.
+**Roadmap decision (2026-11-06):** T0016 was redefined as a **post-MVP Character Statistics and Defensive Calculation Engine** at the end of the queue. T0018–T0021 release work relies on the existing import, modifier aggregation, offensive Sparks and ability engine; it does not require armor/defensive Sparks, a full character stat sheet, or a CurrentStats delta panel. **T0017 A/B comparison was also deferred post-MVP on 2026-11-06 and is not needed for share/duplicate.**
 
 Character import is browser-local.
 
@@ -296,7 +296,7 @@ Do not rely on React component shape as persistence format.
    - required every ticket
 
 4. v1 end-to-end smoke tests
-   - T0021 covers critical planner, sanitized import, save/share, duplicate, comparison, and release flows after architecture stabilizes
+   - T0021 covers critical planner, sanitized import, save/share, independent fork/duplicate, and release flows after architecture stabilizes. A/B comparison (T0017) and defensive statistics (T0016) are post-MVP.
 
 ## Performance Targets
 
