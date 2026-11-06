@@ -1389,7 +1389,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 **Allowed areas:** `src/persistence/remote`, backend/Worker scaffold, D1 bindings/migrations, `wrangler.jsonc`, essential CI/scripts/lockfile, documentation/ADR, focused tests.
 
-**Do not touch:** finished planner/damage/Sparks/import semantics, BuildDocument v1 schema, anonymous owner-token implementation, user-facing share/search/accounts, optimizer, A/B comparison, defensive simulation.
+**Do not touch:** finished planner/damage/Sparks/import semantics, BuildDocument v1 schema, **do not implement the abandoned anonymous owner-token model**, user-facing share/search/accounts, optimizer, A/B comparison, defensive simulation.
 
 **Requirements:**
 - Preserve static Vite app and SPA routes; add same-origin API health endpoint and proper API 404 handling with local D1 and explicit dev/staging/prod isolation.
