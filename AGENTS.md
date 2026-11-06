@@ -54,6 +54,16 @@ Also review any specialized document named by the ticket.
 - Item/mod search must be fast and understandable.
 - Retain complete calculation breakdowns, provenance, assumptions and confidence internally. Per the T0010-F2 customer decision, public damage results show supported values and concise Estimated/Unavailable status; calculation diagnostics and technical source details are exposed only through explicit development/debug mode.
 
+## Account, Build Privacy and Search Rules (MVP beginning T0018)
+
+- **Cloudflare Workers + D1** is the product-owner-approved backend. Do not autonomously switch providers or create paid resources.
+- Registered account identity and authenticated `userId`, never public username/client input, determines persistent build ownership.
+- `private` (default) means owner-only; `unlisted` means guest link-readable but excluded from public search/profiles; `public` means guest readable and searchable. Enforce all three **server-side**, including query/count paths, not merely by hiding UI controls.
+- Public search must never reveal Private or Unlisted builds; owner My Builds may show all the owner's states.
+- Keep auth tokens/cookies, raw imported report files and provider secrets out of BuildDocument, git and logs. Preserve local guest draft behavior and BuildDocument schema v1 unless separately approved.
+- T0017 A/B comparison and T0016 defensive stats are deferred and are **not** MVP dependencies. Build Copy means creating an independently owned Private copy, not A/B.
+- The Search Builds two-skill filter uses *combat skills* (not bar abilities): both = AND unordered; either = OR, plus AND with a text search.
+
 ## Character Import Rules
 
 - Treat CharacterSheet and Storage reports as user-provided snapshots.
