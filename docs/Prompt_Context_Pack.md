@@ -102,7 +102,8 @@ T0001–T0021 ends with:
 - Spark simulation
 - save/share/edit/delete
 - early character-report parsing plus My Items import
-- CurrentStats validation
-- A/B build comparison
+- A/B build comparison (T0017), independent of CurrentStats deltas
+
+**After T0021 release:** T0016 retains its identifier but is the final deferred ticket: **Character Statistics and Defensive Calculation Engine**, including officially supported armor/defensive Sparks and optional CurrentStats reconciliation. It is not a v1 dependency.
 
 Rotation Simulator is intentionally next-series work after the 21-ticket v1 is stabilized.
