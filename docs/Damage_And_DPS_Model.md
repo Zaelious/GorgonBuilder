@@ -239,3 +239,14 @@ Radius remainders preserve the probability of an extra full-damage target withou
 inventing a roll or expected value. Thresholds at/above nine retain full damage
 through their allowance and leave further falloff unsupported. The existing Mock
 ×0.5 ability penalty remains separate. No indirect/DoT totals are added.
+
+## T0015 Mastery Sparks
+
+Skill Damage Spark outcomes (10% +0.50% All Direct, 40% +1 Skill, 10% +1 All Direct, 24% +1% Skill, 16% +3% Skill
+Base) are simulated reproducibly from a saved seed or entered as actual counts. Their totals enter the engine as the
+existing modifier categories above: there is no separate Spark formula, and no category or step order changes. Spark
+Skill Base therefore also contributes `original base × fraction` only. For example, 110 actual Sparks of 11/44/11/26/18
+on Mock 11 (base 178) give `178 + 44 + 11 = 233`, `233 × 0.315 = 73.395` and `178 × 0.54 = 96.12`, for **402.515**.
+Spark values are the product-owner model (not official data). All outcomes are assumed to require the configured skill
+to be active. Results stay **Estimated**. Analytical expected values are displayed separately and never applied. See
+[T0015 verification](T0015_Verification.md).

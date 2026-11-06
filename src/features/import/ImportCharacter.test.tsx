@@ -266,7 +266,7 @@ it('recognizes the same report after autosave/refresh and working power edits, b
   expect(draft()).toEqual(changed);
 });
 
-it('retains candidates and Sparks on offhand replacement and protects them on removal', async () => {
+it('retains candidates, clears the replaced item\'s Sparks on offhand replacement and protects them on removal', async () => {
   vi.spyOn(window, 'confirm').mockReturnValue(true);
   await importReports(); await browse(); await click('[data-import-path="/Items/2"] button'); await tick();
   const saved = draft(); saved.equipment[0]!.candidateMods = [{ powerId: 'power_129', tierId: 'id_120' }];
@@ -276,7 +276,9 @@ it('retains candidates and Sparks on offhand replacement and protects them on re
   await click('[data-import-path="/Items/3"] button'); await tick();
   expect(draft().equipment).toHaveLength(1); expect(draft().equipment[0]?.slot).toBe('OffHand');
   expect(draft().equipment[0]?.candidateMods).toEqual(saved.equipment[0]?.candidateMods);
-  expect(draft().equipment[0]?.sparks).toEqual(saved.equipment[0]?.sparks);
+  // T0015: Sparks belong to the replaced item; they are cleared (after confirmation), never transferred.
+  expect(draft().equipment[0]?.sparks).toEqual({ mode: 'none' });
+  expect(vi.mocked(window.confirm).mock.calls.at(-1)?.[0]).toContain('Mastery Spark');
   expect(control('[data-import-path="/Items/2"] button').textContent).toBe('Replace');
   expect(control('dialog')).toBeTruthy();
   const confirm = vi.mocked(window.confirm); confirm.mockReturnValue(false);

@@ -62,6 +62,7 @@ function sourceLabel(source: ModifierSource): string {
     case 'item-fixed-effect': return `${source.slot === 'OffHandShield' ? 'OffHand' : source.slot} item effect`;
     case 'existing-power': return `${source.slot === 'OffHandShield' ? 'OffHand' : source.slot} imported power`;
     case 'candidate-mod': return `${source.slot === 'OffHandShield' ? 'OffHand' : source.slot} planned mod`;
+    case 'spark': return `${source.slot === 'OffHandShield' ? 'OffHand' : source.slot} Mastery Sparks (${source.outcomeCount} of ${source.totalSparks})`;
   }
 }
 
@@ -133,7 +134,7 @@ function PublicBreakdown({ components, target, modifiers, critical, stampede, pr
             const modifier = step.modifierKey ? modifiers.get(step.modifierKey) : undefined;
             const label = step.operation === 'base' ? 'Published base' : (modifier?.attributeLabel && modifier.attributeLabel !== modifier.attributeId ? modifier.attributeLabel : CATEGORY_LABELS[step.category]) ?? 'Damage bonus';
             const source = modifier ? modifier.source.kind === 'skill-advancement'
-              ? `${modifier.source.skillId} advancement` : modifier.source.slot === 'OffHandShield' ? 'OffHand' : modifier.source.slot : null;
+              ? `${modifier.source.skillId} advancement` : `${modifier.source.slot === 'OffHandShield' ? 'OffHand' : modifier.source.slot}${modifier.source.kind === 'spark' ? ' Sparks' : ''}` : null;
             return <li className="calc-step" key={index}>
               <span className="calc-step-label">{label}{source && ` — ${source}`}
                 {step.operation !== 'base' && step.operation !== 'add-flat' && <small>{percent(step.operand)} of {step.operation === 'add-skill-base-contribution' ? 'original base ' : ''}{formatDamage(step.basis)}</small>}</span>

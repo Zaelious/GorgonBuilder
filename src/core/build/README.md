@@ -25,9 +25,13 @@ transient editor state, remote record, or ownership credentials.
   metadata. A manual instance may have no known base item ID. Imported reports
   are not parsed here; `IsInInventory` metadata never implies equipped status.
 - Spark modes are `none`, `simulated` (input plus optional versioned output), and
-  `actual` (manual outcome counts). Counts describe the five planned Skill Damage
-  outcome categories; no RNG, probability, modifier values or damage is computed.
-  T0015 owns eligibility, modeled limits, result/input consistency and simulation.
+  `actual` (manual outcome counts). Counts describe the five Skill Damage outcome
+  categories. Schema validation stays structural; T0015 semantics live in
+  `core/sparks` (0–110 counts, reproducible versioned results, offensive slots) and
+  `sparks.ts` (`editSparks`: the only way the editor writes Sparks, computing the
+  simulated result itself and rejecting invalid requests). Replacing an equipped item
+  with a different item clears its Sparks (`sparksAfterReplacement`); staged candidate
+  mods are retained.
 - Targets default to one enemy and no damage-type overrides. T0014
   (`target.ts`) defines the planner meaning without a schema change: the UI edits
   `count` as a whole number 1–20 (schema validation still accepts any positive

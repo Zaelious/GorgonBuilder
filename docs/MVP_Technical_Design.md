@@ -197,6 +197,13 @@ Tests must verify:
 - count is respected
 - aggregate results are correct
 
+**Implemented in T0015:** `src/core/sparks` exports `simulateSkillDamageSparks({ skill, count, seed })`, returning
+`{ ok: true, value: SparkSimulationResult } | { ok: false, issue }` (invalid input is reported, never thrown or clamped),
+model `skill-damage-sparks-v1` (cyrb128 + sfc32, rejection-sampled whole-percent weights), `expectedSkillDamageSparks`,
+`sparkBonusTotals` and `evaluateSparkConfiguration`. `core/build/sparks.ts` provides the immutable `sparks-set` edit and
+`core/calculation/spark-modifiers.ts` maps outcomes to existing modifier categories. See
+[T0015 verification](T0015_Verification.md).
+
 ## Import
 
 Character import is browser-local.
@@ -265,7 +272,7 @@ Every saved build includes:
 - `createdWithAppVersion` when available
 - build payload
 
-**Current implementation:** Schema v1 is the `BuildDocument` itself, with top-level metadata, skill slots A/B, independent ability bars, equipment, target and optional character-import reference. Validation accepts only v1; upgrades require explicit future migrations. Saved game-data version is retained, not silently replaced with the currently loaded snapshot. Candidate mods and Sparks do not yet imply calculated mechanics or eligibility.
+**Current implementation:** Schema v1 is the `BuildDocument` itself, with top-level metadata, skill slots A/B, independent ability bars, equipment, target and optional character-import reference. Validation accepts only v1; upgrades require explicit future migrations. Saved game-data version is retained, not silently replaced with the currently loaded snapshot. Candidate mods do not imply eligibility; T0015 interprets Sparks without a schema change (see Spark API).
 
 Schema migrations should be explicit pure functions.
 

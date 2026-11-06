@@ -18,6 +18,8 @@ function sourceText(source: ModifierSource | ModifierAggregationResult['unsuppor
     case 'existing-power':
     case 'candidate-mod': return `${source.equipmentKey} ${source.itemKind} ${source.origin} ${source.powerId}/${source.tierId} effect[${source.effectIndex}]`;
     case 'equipment': return `${source.equipmentKey} ${source.itemKind} ${source.itemId ?? '(no base)'}`;
+    case 'spark': return `${source.equipmentKey} ${source.itemKind} ${source.itemId ?? '(no base)'} sparks ${source.mode} ${source.skillId} `
+      + `${source.outcome} ×${source.outcomeCount}/${source.totalSparks} ${source.modelVersion}${source.seed === undefined ? '' : ` seed ${source.seed}`}`;
   }
 }
 

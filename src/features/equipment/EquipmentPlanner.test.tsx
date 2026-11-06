@@ -307,11 +307,11 @@ it('searches both offhand types from one picker and confirms instance replacemen
   expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(bytes);
   confirm.mockReturnValue(true);
   await click('.equipment-result-heading button'); await tick(); await remount();
-  expect(draft().equipment).toEqual([{ ...build.equipment[0], slot: 'OffHandShield', item: { kind: 'database', itemId: 'item_45052' } }]);
+  expect(draft().equipment).toEqual([{ ...build.equipment[0], slot: 'OffHandShield', item: { kind: 'database', itemId: 'item_45052' }, sparks: { mode: 'none' } }]);
   await browse('OffHand'); await change('#equipment-search', 'item_45722');
   expect(control('dialog').textContent).toContain('Offhand weapon · OffHand');
   await click('.equipment-result-heading button'); await tick(); await remount();
-  expect(draft()).toEqual({ ...build, equipment: [{ ...build.equipment[0], item: { kind: 'database', itemId: 'item_45722' } }] });
+  expect(draft()).toEqual({ ...build, equipment: [{ ...build.equipment[0], item: { kind: 'database', itemId: 'item_45722' }, sparks: { mode: 'none' } }] });
   expect(confirm).toHaveBeenCalledTimes(2);
 });
 

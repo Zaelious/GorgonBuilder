@@ -1,0 +1,57 @@
+/* T0015 Mastery Sparks: one collapsed panel per offensive item, styled like the STATS panel. */
+.spark-editor { margin-block: 0.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-control); background: var(--color-input); font-size: 0.8125rem; min-width: 0; }
+.spark-editor > summary { display: flex; align-items: center; gap: 0.5rem; min-height: 2.25rem; padding: 0.25rem 0.75rem; cursor: pointer; list-style: none; border-radius: var(--radius-control); }
+.spark-editor > summary::-webkit-details-marker { display: none; }
+.spark-editor > summary::before { content: '▸'; color: var(--color-secondary); }
+.spark-editor[open] > summary::before { content: '▾'; }
+.spark-editor > summary:hover { background: #ffffff08; }
+.spark-title { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-secondary); white-space: nowrap; }
+.spark-summary { margin-left: auto; min-width: 0; text-align: right; overflow-wrap: anywhere; color: var(--color-text); }
+.spark-summary.warning { color: var(--color-warning); }
+.spark-body { display: grid; gap: 0.5rem; padding: 0.125rem 0.75rem 0.625rem; min-width: 0; }
+.spark-body > p { margin: 0; }
+.spark-note, .spark-seed, .spark-error { font-size: 0.75rem; }
+.spark-seed code { font-size: 0.75rem; color: var(--color-secondary); overflow-wrap: anywhere; }
+
+.spark-modes { display: flex; flex-wrap: wrap; width: fit-content; max-width: 100%; margin: 0; padding: 0; border: 1px solid var(--color-border-strong); border-radius: var(--radius-control); overflow: hidden; min-width: 0; }
+.spark-mode { position: relative; display: inline-flex; align-items: center; min-height: 2rem; padding: 0.25rem 0.75rem; color: var(--color-secondary); cursor: pointer; white-space: nowrap; }
+.spark-mode + .spark-mode { border-left: 1px solid var(--color-border-strong); }
+.planner-main .spark-mode input { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; margin: 0; padding: 0; opacity: 0; cursor: inherit; }
+.spark-mode.selected { background: var(--color-hover); color: var(--color-text); font-weight: 600; box-shadow: inset 0 -2px 0 var(--color-positive); }
+.spark-mode:hover:not(.selected) { color: var(--color-text); }
+.spark-mode:has(input:focus-visible) { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+.spark-mode:has(input:disabled) { cursor: not-allowed; opacity: 0.5; }
+
+.spark-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.875rem; }
+.spark-field { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0; color: var(--color-secondary); }
+.planner-main .spark-field select { width: auto; max-width: 12rem; min-height: 2rem; padding: 0.15rem 0.4rem; }
+.planner-main .spark-field input, .planner-main .spark-outcomes input { width: 4.25rem; min-height: 2rem; padding: 0.15rem 0.4rem; text-align: right; font-variant-numeric: tabular-nums; }
+.planner-main .spark-controls button { min-height: 2rem; padding: 0.15rem 0.75rem; }
+
+.spark-outcomes { width: 100%; max-width: 32rem; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.spark-outcomes th, .spark-outcomes td { padding: 0.2rem 0.5rem 0.2rem 0; text-align: left; font-weight: 400; vertical-align: middle; }
+.spark-outcomes td:last-child, .spark-outcomes th:last-child { padding-right: 0; }
+.spark-outcomes thead th { color: var(--color-secondary); font-size: 0.75rem; }
+.spark-outcomes tbody th { overflow-wrap: anywhere; }
+.spark-outcomes tbody th small { display: block; color: var(--color-muted); font-size: 0.6875rem; line-height: 1.2; }
+.spark-outcomes tbody tr > * { border-top: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent); }
+.spark-outcomes tfoot > tr > * { border-top: 1px solid var(--color-border); font-weight: 600; }
+.spark-outcomes .spark-number, .spark-expected .spark-number { text-align: right; white-space: nowrap; }
+.spark-outcomes label { cursor: default; }
+
+.spark-expected > summary { width: fit-content; display: flex; align-items: center; min-height: 2rem; color: var(--color-secondary); cursor: pointer; }
+.spark-expected > summary:hover { color: var(--color-text); }
+.spark-expected ul { list-style: none; margin: 0.125rem 0 0.25rem; padding: 0; max-width: 24rem; }
+.spark-expected li { display: flex; justify-content: space-between; gap: 1rem; padding-block: 1px; }
+.spark-expected p { font-size: 0.75rem; }
+
+@media (pointer: coarse), (max-width: 30rem) {
+  .spark-editor > summary, .spark-mode, .spark-expected > summary { min-height: 2.75rem; }
+  .planner-main .spark-field select, .planner-main .spark-field input, .planner-main .spark-outcomes input, .planner-main .spark-controls button { min-height: 2.75rem; }
+}
+@media (max-width: 30rem) {
+  .spark-editor > summary, .spark-body { padding-inline: 0.5rem; }
+  .spark-modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+  .spark-mode { justify-content: center; padding: 0.25rem 0.375rem; white-space: normal; text-align: center; line-height: 1.2; }
+  .planner-main .spark-field input, .planner-main .spark-outcomes input { width: 3.5rem; }
+}
