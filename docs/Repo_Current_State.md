@@ -52,7 +52,7 @@ T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on
 
 ## Ticket Sequence After T0015
 
-T0008-F2, T0013-F2, T0014-F1 and T0015 have been customer-accepted and merged. T0015 verification and the existing preliminary follow-up details remain in [Tickets.md](Tickets.md), [T0015 verification](T0015_Verification.md), and [Known Issues](Known_Issues_And_Followups.md). **T0016 — CurrentStats Validation and Import Integration** is the next baseline ticket by dependency order, subject to a separate product-owner request and scoped agent handoff. Do not start work on it automatically. Formula and status confidence remain provisional for unmeasured conditions; no DPS/DoT/pet/threat simulator has been implemented.
+T0008-F2, T0013-F2, T0014-F1 and T0015 have been customer-accepted and merged. T0015 verification and the existing preliminary follow-up details remain in [Tickets.md](Tickets.md), [T0015 verification](T0015_Verification.md), and [Known Issues](Known_Issues_And_Followups.md). **T0017 — A/B Build Comparison** is now the next MVP ticket. Product-owner roadmap change 2026-11-06: T0016 is redefined as **Character Statistics and Defensive Calculation Engine**, deferred to the **end of the queue after T0021 release**, and removed as a dependency of both T0017 and T0021. [Updated Issue #43](https://github.com/Zaelious/GorgonBuilder/issues/43) and [Tickets.md](Tickets.md) hold the scope. The existing browser-local CharacterSheet/Storage and My Items workflow is already sufficient for MVP; CurrentStats deltas and complete character/defensive stat sheets are not required for release. Formula and status confidence remain provisional for unmeasured conditions; no DPS/DoT/pet/threat simulator has been implemented.
 
 ## Current Stack
 

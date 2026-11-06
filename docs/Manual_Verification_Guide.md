@@ -211,6 +211,8 @@ Verify:
 
 ## Import Tickets
 
+**MVP scope boundary:** Test existing browser-local CharacterSheet/Storage, My Items, exact TSys tiers, timestamps and manual equip. The full character/defensive stat sheet and optional CurrentStats validation are **post-MVP T0016**; neither blocks T0017 or T0021.
+
 Use sanitized fixtures and fresh private exports without ever committing original reports.
 
 ### T0011 — Parser acceptance (2026-11-02)
@@ -258,6 +260,8 @@ Test at least:
 - duplicate creates new independent ownership
 
 ## Comparison Tickets
+
+**T0017 is next:** Use the existing modifier aggregation, ability calculator and offensive Mastery Sparks. Do not require deferred T0016's defense engine, armor Sparks, whole-character totals or CurrentStats comparisons.
 
 Create build A, duplicate to B, change one controlled input, and confirm:
 

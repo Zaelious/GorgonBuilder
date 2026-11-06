@@ -1,8 +1,8 @@
 # GorgonBuilder — Character Import and Validation
 
-**Status:** T0011 parser and T0011-F1/F2/F3 browser import and editable quick-loadout workflow accepted/merged; CurrentStats validation pending  
-**Version:** 1.4  
-**Date:** 2026-11-02
+**Status:** T0011 parser and T0011-F1/F2/F3 browser import and editable quick-loadout workflow accepted/merged; CurrentStats-only comparison deferred into post-MVP T0016 Character Statistics/Defensive Engine  
+**Version:** 1.5  
+**Date:** 2026-11-06
 
 ## Clarification About Export Freshness
 
@@ -63,7 +63,7 @@ Useful item-instance fields observed include:
 - **T0011-F2 (merged):** Imported treasure powers become editable working-copy pairs. Unified Selected/STATS displays imported and planned powers with matching skill color/grouping. Remove, exact tier change and Restore Imported Mods update effective pairs without mutating historical `metadata.sourceItem`, and preserve other planned mods and Sparks. Unknown originals/imbues remain source evidence, not invented effective modifiers.
 - **T0011-F3 (merged):** General My Items browser supports repeated equip/replace/unequip without dismissing the dialog, with accurate exact-imported-instance Equipped state and retained filters/page/scroll; slot-specific pickers retain one-pick-and-close behavior. Matching source report evidence conservatively avoids falsely equating items across changed snapshots; user accepted the deployed interface.
 - **T0008-F1 (merged, PR #27):** Customer-verified CharacterSheet `Level` already includes `BonusLevels`; the planner uses `Level` directly and never adds bonus/Prodigy levels again. Deliberate selection initializes an editable level, and **Apply imported level** explicitly repairs an existing slot without clearing abilities, equipment, mods or Sparks. Import/reimport alone leaves the working build unchanged. Source Level/BonusLevels and metadata remain intact. See [semantics and evidence](../src/features/import/skill-levels.md) and [T0008-F1 verification](../src/features/skills/verification/T0008-F1.md).
-- **T0016 (later):** CurrentStats-vs-modeled aggregate comparisons; this no longer duplicates the basic import UI.
+- **T0016 (post-MVP, moved to end of queue on 2026-11-06):** A build-first Character Statistics and Defensive Calculation Engine, including source-supported armor/defensive Sparks. Imported CurrentStats comparison becomes optional validation, not an MVP dependency.
 
 Independent checks of fresh customer exports against T0011's typed field constraints succeeded after the next-XP sentinel fix. The exact full Node CLI with v490 reference-resolution on the real private files was **not** run; actual resolved/unresolved ID and tier counts remain to be checked through the now-available T0011-F1 UI using private customer files. Never commit original customer reports.
 
@@ -76,7 +76,7 @@ A successful import can:
 - create a "My Items" collection from owned item instances
 - preserve exact TSys power IDs/tiers
 - let users select imported items in the planner
-- compare GorgonBuilder's modeled aggregate stats with Project Gorgon's exported `CurrentStats`
+- **post-MVP only:** optionally compare GorgonBuilder's modeled character stats with compatible Project Gorgon `CurrentStats` fields
 
 ## What Import Must Not Assume
 
@@ -113,9 +113,9 @@ Suggested flow:
 9. User chooses active planner gear.
 10. User enters or simulates Sparks as needed.
 
-## CurrentStats Validation
+## Optional Post-MVP CurrentStats Validation (T0016)
 
-A validation panel should map supported exported stat keys to GorgonBuilder normalized stats.
+The primary future T0016 UI displays **the selected GorgonBuilder build's** source-supported character/defensive stats without needing an import. An optional snapshot comparison can map supported CurrentStats keys to equivalent modeled stats. A Storage item being in inventory does not mean the character wore it when exported; missing bases/buffs/conditions prevent honest direct deltas.
 
 Display:
 

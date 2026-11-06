@@ -206,6 +206,8 @@ model `skill-damage-sparks-v1` (cyrb128 + sfc32, rejection-sampled whole-percent
 
 ## Import
 
+**Roadmap decision (2026-11-06):** T0016 was redefined as a **post-MVP Character Statistics and Defensive Calculation Engine** at the end of the queue. T0017 comparison and T0021 release rely on the existing import, modifier aggregation, offensive Sparks and ability engine; they do not require armor/defensive Sparks, a full character stat sheet, or a CurrentStats delta panel.
+
 Character import is browser-local.
 
 Expected files:

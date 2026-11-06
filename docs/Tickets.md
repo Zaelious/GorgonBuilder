@@ -22,6 +22,7 @@ Guidelines:
 - Customer hands-on testing is required only where marked.
 - Out-of-scope discoveries go to `Known_Issues_And_Followups.md`.
 - Stateful Rotation/DPS simulation begins in the **next ticket series after T0021**, after the per-ability engine is validated.
+- **Roadmap update (2026-11-06):** Keep the historical T0016 identifier, but place its revised Character Statistics and Defensive Calculation Engine ticket **last in the queue, after T0021 release**. Ticket numbers are stable IDs, not strict execution order. T0017 and T0021 no longer depend on T0016.
 
 ## Verification Classes
 
@@ -1376,52 +1377,9 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 3. Enter actual/manual Spark totals and compare ability changes.
 4. Run the quality suite.
 
-## T0016 — CurrentStats Validation and Import Integration
-
-**Complexity:** High
-
-**Verification:** Customer hands-on with current export
-
-**Goal:** Compare imported Project Gorgon CurrentStats with modeled aggregate stats from the T0011-F1 imported/manual loadout.
-
-**Dependencies:** T0011-F1,T0012,T0013,T0015
-
-**Allowed areas:**
-- src/features/import
-- src/core/validation
-- equipment picker
-- src/core/build
-- tests
-
-**Do not touch:**
-- automatic equipped-set guessing without authoritative data
-- remote upload of raw reports
-- rotation simulator
-
-**Requirements:**
-- Reuse T0011-F1's existing browser-local Import Character and My Items workflow; do not duplicate its picker.
-- Use the manually selected imported loadout and preserve source TSys power tiers separately from candidate mods.
-- Add a registry mapping supported CurrentStats keys to modeled aggregate stats.
-- Show Project Gorgon value, GorgonBuilder value, delta, and unsupported keys.
-
-**Non-goals:**
-- No automatic Spark-roll import unless explicitly present in the report.
-- No attempt to solve the equipped loadout from CurrentStats in v1.
-
-**Acceptance criteria:**
-- Current customer export can populate representative skills/items.
-- Imported TSys powers match the source report.
-- CurrentStats panel compares supported mappings and labels unsupported ones.
-- Raw reports never leave the browser.
-
-**Manual verification:**
-1. Generate/use a current export.
-2. Import both reports and verify timestamp, skills, and several known item/mod instances.
-3. Select a controlled loadout and inspect CurrentStats deltas.
-4. Do a one-item before/after in-game comparison if practical.
-5. Run the quality suite.
-
 ## T0017 — A/B Build Comparison
+
+**Queue:** Next unimplemented MVP ticket after accepted T0015. Use the existing aggregation, ability-damage and offensive Spark engines. Do not wait for post-MVP T0016.
 
 **Complexity:** Standard
 
@@ -1429,7 +1387,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 **Goal:** Make comparison a first-class planner workflow using the same calculation engine on both sides.
 
-**Dependencies:** T0014,T0015,T0016
+**Dependencies:** T0014,T0015 (T0016 has been deferred until after the MVP; it is not a prerequisite)
 
 **Allowed areas:**
 - src/features/comparison
@@ -1450,7 +1408,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 **Non-goals:**
 - No rotation comparison.
 - No automatic 'winner' optimization.
-- No defensive score yet.
+- No defensive score yet. Character Statistics, defensive/armor Sparks and optional CurrentStats reconciliation belong to post-MVP T0016.
 
 **Acceptance criteria:**
 - Changing one controlled source in B produces an explainable corresponding delta.
@@ -1609,7 +1567,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 **Goal:** Turn the completed features into a trustworthy deployable v1 and update the project record to match reality.
 
-**Dependencies:** T0016,T0017,T0020
+**Dependencies:** T0017,T0020 (post-MVP T0016 is not a release prerequisite)
 
 **Allowed areas:**
 - tests
@@ -1637,7 +1595,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 **Non-goals:**
 - No rotation/DPS simulator.
-- No defense/threat calculator.
+- No defense/threat calculator, character-stat sheet or defensive Sparks (post-MVP T0016).
 - No optimizer.
 - No public gallery/accounts.
 
@@ -1650,7 +1608,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 **Manual verification:**
 1. Create a fresh manual build from real PG data.
 2. Select skills/levels/abilities, gear, mods, and Sparks and inspect calculation breakdowns.
-3. Import a current character snapshot and inspect My Items/validation.
+3. Import a current character snapshot; inspect existing My Items, timestamps, skills and item/power resolution diagnostics. A CurrentStats comparison or defensive stat sheet is **not** an MVP release requirement.
 4. Create an A/B comparison.
 5. Save/share the build, test read-only/duplicate in incognito, then verify owner editing.
 6. Run the release checklist and confirm no unexpected console errors.
@@ -1751,3 +1709,60 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 
 T0010-F2 final clarification: the public view includes a default-collapsed **Damage breakdown** showing actual engine steps, individual named equipment/skill contributions, flat/percentage/Skill Base contributions, target multipliers and final hit/total. It contains numerical presentation only: no raw IDs, source paths, uncertainty/exclusion inventories, implementation assumptions or long explanations. Those diagnostics remain available only through the development `?debugDamage=1` view. Public `Partial` labels are replaced with `Estimated`; unavailable numbers remain `Unavailable`. No engine results or accepted mod-search/Selected-heading behavior change.
+
+## T0016 — Character Statistics and Defensive Calculation Engine (Post-MVP)
+
+**Status:** Deferred — **post-MVP, last in current ticket queue**, after T0021 release. The T0016 identifier is retained for history although this ticket executes after T0017–T0021. **Do not begin before the user explicitly starts it.**
+
+**Complexity:** Very high — scope to be rechecked against data evidence at handoff. **Verification:** Customer hands-on with controlled equipment, stats, defensive effects and where possible in-game measurements.
+
+### Goal
+Provide a useful **planned-build character stat sheet** and a pure, source-backed **defensive/character-stat calculation engine**. The primary output is the stats of the equipment/skills/mods/Sparks the user selects in GorgonBuilder, **even if those items are only in inventory and were never equipped in-game**. Imported CharacterSheet.CurrentStats is an **optional reference/validation snapshot**, not the foundation of the planned build and not a requirement to use it.
+
+### Scheduling and dependencies
+- **After:** T0021 (v1 release), T0012 (aggregation), T0013/T0014 (ability calculations/UI), T0015 (offensive Mastery Sparks); integrate with T0017 comparison only when post-MVP functionality exists.
+- **T0017 and T0021 must NOT depend on T0016.** They use currently supported ability and aggregate outputs and may ship without the future character/defense engine.
+- This is the last planned ticket in the current backlog, not an MVP release gate.
+
+### Allowed areas (subject to implementation-time architecture review)
+- `src/core/calculation/`, new pure character-stat/defense modules and focused tests.
+- `src/core/sparks/`, `src/features/sparks/` for source-supported defensive/utility Mastery Spark modeling and UI.
+- `src/features/` or `src/app/` for compact Character Statistics UI, and necessary integration with existing planner equipment/mod/skill state.
+- `src/core/validation/`, `src/features/import/` for optional CurrentStats comparison using existing local import.
+- Minimal compatible build/persistence changes **only with an explicit migration plan** if newly modeled state cannot fit schema v1.
+- Verification docs and sanitized/synthetic fixtures.
+
+### Requirements
+1. **Source-first stat inventory.** Audit official current Project Gorgon data, existing modifier categories, playable defensive/utility Spark types, item slots/eligibility, CharacterSheet.CurrentStats keys and known unmodeled effects. Record supported stat keys, numeric units, stacking/scopes, conditionality, game-data version and observed evidence. Do not treat unknown export fields or third-party guesses as established mechanics.
+2. **Pure stat engine.** Reuse `aggregateBuildModifiers` and its provenance/condition/confidence contracts, extending only as needed. Model supported character and defensive families such as Max Health/Armor/Power, damage-type mitigation and vulnerability, direct/indirect reductions, evasion, critical chance/damage where relevant, regeneration and Combat Refresh. Other relevant stats may follow **only where data and mechanics support them**. Clearly separate innate/base character values, equipment/skill contributions and actually known final totals. Never assert a complete total from incomplete contribution data.
+3. **Defensive Mastery Sparks.** Expand beyond T0015's four offensive planning slots to **officially supported armor/defensive Spark categories and eligible slots**. Preserve existing offensive behavior. Simulate only source-backed, validated roll distributions/caps/eligibility; otherwise offer clearly labeled manual/planning inputs with explicit unsupported/Estimated state. Never invent armor Spark probability tables, capacities or stat benefits, and never infer rolls from Storage/CraftPoints.
+4. **Build-first UI.** Add a compact, grouped **Character Statistics** panel driven by the **current planned loadout**. Show numeric stats where valid, supported contribution breakdowns, and concise `Estimated` / `Unavailable` statuses. Refresh immediately after choosing/removing gear, changing a working imported power tier, staging candidates, changing skills or configuring Sparks. Retain a clean default and drill-down details; support desktop, mobile and keyboard access.
+5. **Optional import reference.** When CharacterSheet.CurrentStats is loaded locally, offer an optional comparison view showing the exported value, export timestamp/version, planned value or contribution, and a delta **only when identical units, basis, conditions and complete coverage justify comparison**. If items were merely in Storage inventory at export, say the character snapshot does not represent the selected GorgonBuilder loadout. Never infer equipped state from `IsInInventory`, solve equipment from stats, mutate the planned build on import, or send raw report data off-device. Unmapped/non-numeric CurrentStats keys remain inspectable.
+6. **Preserve existing game/damage behavior.** Avoid double-counting imported historical `metadata.sourceItem` and editable effective `existingPowers`, candidate mods or Sparks. Honor active skill/level logic and conditional effects. Reuse offensive and critical systems rather than duplicating or changing them just to fit a stat panel. Clearly distinguish damage taken after known mitigations from overall survivability, which also depends on enemy attacks/conditions.
+7. **Honest test coverage.** Deterministic unit and integration tests for flat/percent/conditional contributions, scope, units, contradictory/off-skill sources, level conflicts, editable imported tiers, source provenance, spark results, no-report workflows, nonmatching report snapshots, incomplete totals and refresh. Use sanitized fixtures only. Verify with one-source in-game before/after data when practical; keep uncertain formula ordering marked provisional.
+
+### Non-goals
+- Not an MVP requirement; **no need to change T0017 or T0021 implementation to include defensive stats**.
+- No automated gear optimizer, automatic equipped-loadout identification, full enemy-combat/rotation/DPS or threat/taunt encounter simulator in this ticket.
+- No invented base character stats, immunity rules, evasion chance formulas, Spark distributions, condition defaults or unmeasured multipliers.
+- No remote uploads of raw character reports.
+
+### Acceptance criteria
+- Planned stats are useful with **no import at all** and reflect only the user's manually configured build and supported mechanics.
+- A controlled change to one gear/mod/Spark input changes the appropriate modeled character stat, with traceable breakdown and no unrelated deltas.
+- Supported Max Health/Armor/Power and prioritized mitigation/vulnerability families have tests and confidence states; unsupported families clearly remain unavailable.
+- Armor/defensive Spark support is limited to evidenced eligible slots/types and does not alter established T0015 offensive outcomes.
+- CurrentStats comparison is optional and correctly distinguishes a snapshot of actually worn gear at export from hypothetical inventory-only equipment.
+- Existing skill/ability damage, import/My Items, source evidence, autosave/share and A/B comparison regressions remain green.
+- Lint, typecheck, all tests, build, official data check, Cloudflare dry-run and desktop/mobile smoke pass, with explicit customer game-math validation tasks.
+
+### Manual verification
+1. Build a character without importing any report, equip representative defensive gear, and inspect grouped Health/Armor/Power, mitigation/vulnerability, critical and other supported stats; verify unsupported categories are labeled rather than guessed.
+2. Change one effective imported or planned power tier and one armor Spark result; inspect source-specific modeled deltas, and remove each to restore the baseline.
+3. Configure the same items in-game if practical, record controlled before/after stat readings, and document exactly which modeled contributions or complete totals agree.
+4. Import fresh CharacterSheet and Storage JSON with matching character/server and timestamps. Confirm no automatic loadout, confirm snapshot comparison is optional, and test a different inventory-only planned loadout without falsely treating its deltas as errors.
+5. Reload/save/share, test desktop and mobile, and run the full quality suite. Never commit private exports.
+
+**Suggested future branch:** `feature/t0016-character-defensive-stats`.
+
+**Agent handoff:** Before implementation, check updated official data and inspect whether the very-high-complexity work needs several focused follow-up tickets. Preserve this ticket's post-MVP scheduling and do not silently expand into rotation, encounter or optimization mechanics.
