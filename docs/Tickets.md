@@ -1271,9 +1271,9 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 ## T0014-F1 — Stampede Stacking and Chance-Based Damage Proc Scenarios
 
-**Status:** Implemented for review on `feature/t0014-f1-stampede-procs` (2026-11-05), based on latest `main` `a814bfc`. [Verification](T0014_F1_Verification.md) and [separate scenario coverage](treasure-coverage/T0014-F1.md). Game stacking/order remains Estimated; duplicate proc combinations remain Unavailable. No merge or T0015 work.
+**Status:** Customer-accepted and squash-merged 2026-11-06 via [PR #41](https://github.com/Zaelious/GorgonBuilder/pull/41), commit `430f92b`. [Verification](T0014_F1_Verification.md) covers the original scenarios and the While Stunned correction. Game stacking/conditional ordering remains Estimated, and duplicate proc combinations remain Unavailable. T0015-R1 later expanded the manually selected effective Trampling contributions from 0–15 to 0–30 based on customer in-game measurements.
 
-**Queue:** Next after T0013-F2 (merged PR #40); complete before T0015 Mastery Sparks. This is one bounded ticket covering two closely related scenario-based damage families.
+**Queue:** Completed before T0015 (now merged in PR #42). This ticket covers the two source-backed scenario-based damage families.
 
 **Complexity:** High
 
@@ -1325,6 +1325,8 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 5. In Project Gorgon, compare Stampede before/after stack buildup and Strike a Nerve normal/proc hit amounts with the same target and buffs; record any mismatch in ordering/stack semantics. Check 1440/375/320 px and run the required quality suite.
 
 ## T0015 — Mastery Spark Simulation, UI, and Damage Integration
+
+**Status:** Customer-accepted and squash-merged 2026-11-06 via [PR #42](https://github.com/Zaelious/GorgonBuilder/pull/42), commit `ff9745a`. [Verification including R1](T0015_Verification.md): 1,272 tests across 64 files, final-head GitHub CI and Cloudflare preview green, desktop/mobile dev/preview Chromium checks and product-owner acceptance. The final R1 places a high-contrast Mastery Sparks panel above treasure mods and models 0–30 effective concurrent Continuous Trampling contributions for the measured 60-second duration / 2-second reuse steady state, without changing the base damage formula. Spark categories/activation and other unmeasured game rules remain Estimated.
 
 **Complexity:** High
 

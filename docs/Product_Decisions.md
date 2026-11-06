@@ -98,7 +98,7 @@ Known Skill Damage Spark probability model:
 - 24%: `+1% [Skill] Damage`
 - 16%: `+3% [Skill] Base Damage`
 
-Simulation should eventually expose one roll, rerolls, expected values, percentile/luck context, and the resulting ability/build impact.
+**Implemented and customer-accepted 2026-11-06:** T0015 ([PR #42](https://github.com/Zaelious/GorgonBuilder/pull/42), `ff9745a`) supports reproducible per-item seeded simulations, reroll, separately calculated analytical expectations, manual Actual outcome counts, persistence and direct ability-damage integration. Sparks are item-owned and cleared when replacing the item; staged candidate treasure mods remain. The planner requires the configured Spark skill to be active for all five outcomes, including All Direct (an explicit unvalidated applicability assumption). Mastery Sparks appears above the treasure-mod editor with a clearly visible collapsed summary. Percentile/luck context and broader Spark validation remain future work.
 
 ## DPS / Rotation
 

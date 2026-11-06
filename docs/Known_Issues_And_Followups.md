@@ -32,7 +32,7 @@ Supplied reports expose normal item TSys powers but do not establish a field con
 
 `CraftPoints` exists on some items but should not be converted into definitive Spark history without validation.
 
-**Action:** Spark outcomes remain simulated/manual in initial implementation.
+**Action:** T0015 now supports simulated and manually entered Actual outcomes ([PR #42](https://github.com/Zaelious/GorgonBuilder/pull/42)); individual rolls are not inferred from CharacterSheet/Storage. Confirm actual data fields before proposing Spark import.
 
 ## KI-0004 — Backend Provider Not Yet Selected
 
@@ -171,7 +171,7 @@ The published attribute token syntax is parsed separately in `src/features/mods/
 - **T0010-F2 — Accepted and merged** via [PR #38](https://github.com/Zaelious/GorgonBuilder/pull/38), `34d7cd7`, 2026-11-04. Responsive Available/Selected search and a public numerical Damage breakdown are complete; diagnostic-only text is hidden from ordinary users. No damage formula changed.
 - **T0008-F2 — Ability Role Labels, Relevant Mods and Variant Picker Consolidation (Codex High).** Show source-backed Basic/Core/Nice/Epic/Minor Healing/Major Healing/Signature Support/Signature Debuff/Survival Utility roles; verify category-related gear effects actually reach eligible abilities without duplication or conditional keyword leaks. Compact only Vampirism Blood Mist, Animal Handling Call Stabled Pet, Bard SoD, Mentalism Mindworm, Necromancy SZ, Priest Triage and Priest Flamestrike. Preserve exact canonical IDs/ranks. Correct 'unconditional' audit counts for required-active-skill source conditions; report affected totals.
 - **T0013-F2 — Imported Anatomy/Phrenology Critical Hits and Target Conditions (Codex Extra High).** Full working critical chance/critical hit/expected hit calculator using imported/manual creature subskills, target creature selector and source-backed equipped crit modifiers. Keep unknown rules marked provisional; no full rotation/DPS, Spark, pet or DoT work.
-- **Sequence:** T0010-F2 (merged) → T0008-F2 (merged PR #39, `3aff873`) → **T0013-F2 (implemented, in product-owner review)** → existing T0015 Mastery Sparks. Do not start T0015 without a separate handoff.
+- **Sequence (completed):** T0010-F2 (PR #38) → T0008-F2 (PR #39) → T0013-F2 (PR #40) → T0014-F1 (PR #41) → T0015 Mastery Sparks (PR #42, `ff9745a`). T0016 needs a separate handoff.
 
 ## T0013-F2 open questions and follow-ups (2026-11-04)
 
@@ -183,12 +183,10 @@ The published attribute token syntax is parsed separately in `src/features/mods/
 
 ## T0014-F1 — Stampede and Damage Proc Follow-ups (2026-11-05)
 
-**Status:** Implemented for review on the feature branch. [Verification](T0014_F1_Verification.md) and
-[separate exact-power audit](treasure-coverage/T0014-F1.md). No in-game measurements were performed.
+**Status:** Merged 2026-11-06 via [PR #41](https://github.com/Zaelious/GorgonBuilder/pull/41), `430f92b`. [Verification](T0014_F1_Verification.md) and
+[separate exact-power audit](treasure-coverage/T0014-F1.md). Customer subsequently measured Stampede damage for T0015-R1.
 
-- Continuous Trampling uses manually selected current stacks 0–15 (default 0), with independent equipped tier values.
-  Cross-mod addition and placement before non-base percentages remain **Estimated**, including stacking/caps and
-  rounding. The published 60-second duration is not simulated.
+- Continuous Trampling now accepts 0–30 manually selected **effective concurrent contributions** (default 0), with independent equipped tier values. Customer testing of +56 only and +50/+56 together matched 30 contributions scaled at 1.955× within 1 damage. The 60-second buff and Stampede 12's 2-second reuse explain the steady state, not an intrinsic game cap. Source text mentioning 15 remains unchanged. Full expiry timing, other cooldowns, conditional ordering and rounding are not simulated; those remain **Estimated**.
 - Five direct-hit proc families are supported: Strike a Nerve, Deer Bash, Pig Rend, Spirit Bolt, and Cow Front Kick
   extra flat damage. Final-hit multiplication or flat placement through the ordinary engine remain **Estimated**.
 - Duplicate proc copies retain separate source/tier/probability/effect records but combined results are **Unavailable**:
@@ -203,6 +201,6 @@ The published attribute token syntax is parsed separately in `src/features/mods/
 - Vite reports the main chunk slightly above 500 kB (~506 kB minified). Build succeeds; consider profiling/code splitting
   under the existing browser performance follow-up, rather than mixing an unrelated architecture change into this ticket.
 
-T0013-F3 remains a separate allocation/conversion measurement candidate. T0015 was not started.
+T0013-F3 remains a separate allocation/conversion measurement candidate. T0015 is customer-accepted and merged via [PR #42](https://github.com/Zaelious/GorgonBuilder/pull/42), `ff9745a`; see [T0015 verification including R1](T0015_Verification.md). Remaining follow-ups: real Spark applicability validation (especially All Direct requiring an active skill), shield eligibility, item-level percentile/luck analysis, Stampede expiration timing at other reuse values and critical/proc interactions. No related formula redesign was authorized.
 
 T0010-F2 final clarification: the public view includes a default-collapsed **Damage breakdown** showing actual engine steps, individual named equipment/skill contributions, flat/percentage/Skill Base contributions, target multipliers and final hit/total. It contains numerical presentation only: no raw IDs, source paths, uncertainty/exclusion inventories, implementation assumptions or long explanations. Those diagnostics remain available only through the development `?debugDamage=1` view. Public `Partial` labels are replaced with `Estimated`; unavailable numbers remain `Unavailable`. No engine results or accepted mod-search/Selected-heading behavior change.

@@ -334,15 +334,19 @@ Full procedure, sources, fixtures and the controlled in-game comparison: [T0013-
 4. Add/remove `power_4009`/`power_9009` (Psychology/Mentalism critical damage), ArcheryBoost tiers 6+ (chance) and ArcheryCritDamage. Inspect the **Critical hit** section of the collapsed Damage breakdown; normal hits never change. Check a 0% case and a high multiplier (tiers id_25: ×6.9).
 5. Check Elite = Not Elite with Decapitate + `power_1203` and Undead with Flashing Strike + `power_1253`. Repeat at 1440/375/320 px; `?debugDamage=1` diagnostics appear only in dev. Run the quality suite and `critical.smoke.mjs` in dev and preview.
 
-### T0014-F1 — Stampede stacks and damage procs (implemented for review)
+### T0014-F1 — Stampede stacks and damage procs (merged via PR #41; T0015-R1 correction)
 
 Follow the concise [product-owner checklist and controlled game measurements](T0014_F1_Verification.md#product-owner-checklist).
-Without an import, test Cow Stampede with one/two Continuous Trampling mods at 0/1/15 current stacks and remove or
+Without an import, test Cow Stampede with one/two Continuous Trampling mods at 0/1/15/30 active contributions and remove or
 replace the exact selected tiers. Check Psychology Strike a Nerve with `power_4062/id_25`: unconditional +100 once,
 33% separate double-damage proc, and expected per successful noncritical hit. Check Deer Bash `power_21023/id_13`
 (24%, +92% triggered damage), then duplicate Strike a Nerve sources (combined Unavailable). Recheck unrelated
 Anatomy/Phrenology chance/multiplier, narrow layouts and session-only stack state; never save these scenarios in
 BuildDocument v1. Formulas remain Estimated pending actual game evidence. Separate [new coverage](treasure-coverage/T0014-F1.md)
-from unchanged historical snapshots.
+from unchanged historical snapshots. Confirm the player-only While Stunned checkbox separately; historical source wording mentioning 15 is preserved, while the customer-tested steady-state scenario supports 30 effective contributions at 2-second reuse and 60-second duration.
+
+### T0015 — Mastery Sparks (customer-accepted and merged via PR #42)
+
+Follow [T0015 verification including R1](T0015_Verification.md). For MainHand, OffHand, Ring and Necklace, confirm **Mastery Sparks** appears below STATS and above Available/Selected treasure mods. Check None/Simulated/Actual, seeded 110 rolls, reroll, manual category totals, persistence after refresh, inactive skill handling, replacing an item clears its item-owned Sparks, and the damage breakdown retains Spark source contributions. For Stampede 12, check 0/15/30 effective Trampling contributions and the isolated +56 and combined +50/+56 increases; the 60-second duration and 2-second cooldown explain the 30-contribution steady state, not a game-defined cap. Verify While Stunned remains separate. The accepted R1 CI passed 1,272 tests, with Chromium checks at 1440/375/320 px. Other unvalidated mechanics remain Estimated.
 
 T0010-F2 final clarification: the public view includes a default-collapsed **Damage breakdown** showing actual engine steps, individual named equipment/skill contributions, flat/percentage/Skill Base contributions, target multipliers and final hit/total. It contains numerical presentation only: no raw IDs, source paths, uncertainty/exclusion inventories, implementation assumptions or long explanations. Those diagnostics remain available only through the development `?debugDamage=1` view. Public `Partial` labels are replaced with `Estimated`; unavailable numbers remain `Unavailable`. No engine results or accepted mod-search/Selected-heading behavior change.
