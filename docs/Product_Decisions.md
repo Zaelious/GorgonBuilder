@@ -1,8 +1,8 @@
 # GorgonBuilder — Product Decisions
 
 **Status:** Initial product decisions locked  
-**Version:** 1.0  
-**Date:** 2026-10-31
+**Version:** 1.1  
+**Date:** 2026-11-06
 
 ## Product Goal
 
@@ -11,7 +11,7 @@ GorgonBuilder is a Project Gorgon build planner focused on answering both:
 1. **What can I put in this build?**
 2. **What does that choice actually do to the build?**
 
-It should retain the approachable two-skill/gear/mod planning model of tools such as GorgonExplorer while adding transparent damage calculations, Mastery Spark modeling, character import/validation, build comparison, and later stateful rotation/DPS, survivability, threat, and optimization.
+It should retain the approachable two-skill/gear/mod planning model of tools such as GorgonExplorer while adding transparent damage calculations, Mastery Spark modeling, browser-local character import and permanent save/share. **A/B build comparison is optional post-MVP (T0017)**; complete character/defensive statistics (T0016), stateful rotation/DPS, survivability, threat and optimization are also later work.
 
 ## Core Build Model
 
@@ -180,7 +180,7 @@ Import uses include:
 - Load character skill levels and known abilities
 - Load owned/imported item instances and their TSys powers
 - Seed manual planning
-- Compare Project Gorgon's `CurrentStats` with GorgonBuilder-calculated values
+- **Post-MVP T0016 (optional):** compare compatible Project Gorgon `CurrentStats` with modeled planned-build values where equivalence is supported
 - Create repeatable formula-validation cases
 
 Important limitations established from the supplied reports:
@@ -225,7 +225,7 @@ Initial deletion may be a confirmed hard delete. Later accounts may claim anonym
 
 ## Build Comparison
 
-A/B comparison is a first-class feature.
+**Product-owner priority update 2026-11-06:** A/B comparison (T0017) is **deferred post-MVP**, not a requirement for share/fork, launch or rotation planning. Its incremental value versus simply editing a build or using future automatic optimization should be reassessed before starting. The following is the retained possible future scope:
 
 Side-by-side comparison should eventually show:
 
@@ -280,7 +280,7 @@ Priorities:
 - Clear gear slots
 - Clear ability bars
 - Expandable math
-- Easy A/B comparison
+- Easy A/B comparison **if T0017 is revived post-MVP**
 - Integrated Spark modeling
 
 Desktop-first full editing is acceptable initially. Shared/read-only builds should remain reasonably usable on smaller screens.
