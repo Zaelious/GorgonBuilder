@@ -94,7 +94,7 @@ Do not duplicate formulas.
 6. Add candidate treasure mods.
 7. Configure/simulate Sparks on eligible offensive items.
 8. View ability damage and breakdown.
-9. Save/share or compare.
+9. Save/share; optional A/B compare is deferred to post-MVP T0017.
 
 ### 3.2 Item/effect search
 
@@ -348,9 +348,9 @@ Exact provider is selected in a dedicated infrastructure ticket.
 - Validate saved build payload size and schema.
 - Treat all imported/generated item names and notes as untrusted display text.
 
-## 11. Comparison
+## 11. Comparison — Deferred Post-MVP T0017
 
-Build comparison consumes two independent Build states and the same calculation engine.
+A/B comparison is **not required for T0018–T0021 MVP save/share or independent shared-build duplication**. When implemented later, build comparison consumes two independent Build states and the same calculation engine.
 
 Comparison layers:
 
@@ -364,7 +364,7 @@ Comparison layers:
 
 ## 12. Rotation Simulator — Later Architecture
 
-Not part of T0001–T0021 implementation. Rotation work begins in the next ticket series after the v1 per-ability calculator, import validation, comparison, and save/share workflows have been stabilized.
+Not part of the T0001–T0021 MVP implementation. Rotation work belongs to a separately scoped post-MVP series, after the v1 per-ability calculator and save/share workflows are stabilized. The deferred A/B comparison (T0017) is **not** a prerequisite for rotation architecture.
 
 It will consume:
 

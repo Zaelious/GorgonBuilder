@@ -22,7 +22,7 @@ Guidelines:
 - Customer hands-on testing is required only where marked.
 - Out-of-scope discoveries go to `Known_Issues_And_Followups.md`.
 - Stateful Rotation/DPS simulation begins in the **next ticket series after T0021**, after the per-ability engine is validated.
-- **Roadmap update (2026-11-06):** Keep the historical T0016 identifier, but place its revised Character Statistics and Defensive Calculation Engine ticket **last in the queue, after T0021 release**. Ticket numbers are stable IDs, not strict execution order. T0017 and T0021 no longer depend on T0016.
+- **Roadmap update (2026-11-06):** Ticket numbers are stable IDs, not execution order. **T0018 is next**, followed by T0019, T0020 and T0021 release. Defer T0017 A/B comparison and T0016 Character Statistics/Defensive Engine until after T0021, with T0016 last. Neither deferred feature is a requirement for T0018–T0021.
 
 ## Verification Classes
 
@@ -1377,50 +1377,9 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 3. Enter actual/manual Spark totals and compare ability changes.
 4. Run the quality suite.
 
-## T0017 — A/B Build Comparison
-
-**Queue:** Next unimplemented MVP ticket after accepted T0015. Use the existing aggregation, ability-damage and offensive Spark engines. Do not wait for post-MVP T0016.
-
-**Complexity:** Standard
-
-**Verification:** Customer hands-on
-
-**Goal:** Make comparison a first-class planner workflow using the same calculation engine on both sides.
-
-**Dependencies:** T0014,T0015 (T0016 has been deferred until after the MVP; it is not a prerequisite)
-
-**Allowed areas:**
-- src/features/comparison
-- src/core/build
-- tests
-
-**Do not touch:**
-- rotation/DPS comparison
-- optimizer
-- defensive scoring
-
-**Requirements:**
-- Create/duplicate build B from build A or load two BuildDocuments.
-- Show skill/level/ability differences, equipment/mod/Spark differences, relevant aggregate-stat differences, and supported ability-result deltas.
-- Allow expandable explanations showing which sources caused a delta.
-- Ensure both sides call the same aggregation and calculation engines.
-
-**Non-goals:**
-- No rotation comparison.
-- No automatic 'winner' optimization.
-- No defensive score yet. Character Statistics, defensive/armor Sparks and optional CurrentStats reconciliation belong to post-MVP T0016.
-
-**Acceptance criteria:**
-- Changing one controlled source in B produces an explainable corresponding delta.
-- Unchanged values remain unchanged.
-- Same engine paths are used for A and B.
-
-**Manual verification:**
-1. Duplicate a real test build, alter one item/mod/Spark source, and confirm the expected delta.
-2. Try a more heavily changed build and inspect explanations.
-3. Run the quality suite.
-
 ## T0018 — Save/Share Architecture, Provider Decision, and Deployment Foundation
+
+**Queue:** **Next MVP ticket** as of 2026-11-06. T0016 and T0017 are deferred until after T0021. Full agent issue: [Issue #46](https://github.com/Zaelious/GorgonBuilder/issues/46).
 
 **Complexity:** High
 
@@ -1515,7 +1474,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 **Goal:** Expose the full anonymous save/share/edit/delete/duplicate workflow to users.
 
-**Dependencies:** T0017,T0019
+**Dependencies:** T0019 (T0017 A/B comparison deferred post-MVP; T0020's shared-build Duplicate creates an independent owned copy and does not need A/B)
 
 **Allowed areas:**
 - routes
@@ -1567,7 +1526,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 **Goal:** Turn the completed features into a trustworthy deployable v1 and update the project record to match reality.
 
-**Dependencies:** T0017,T0020 (post-MVP T0016 is not a release prerequisite)
+**Dependencies:** T0020 (post-MVP T0016 and T0017 are not release prerequisites)
 
 **Allowed areas:**
 - tests
@@ -1584,7 +1543,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 - new product features
 
 **Requirements:**
-- Add minimal end-to-end smoke coverage for create/edit local build, real-data selection, calculator path, Spark path, sanitized import, save/public-read/duplicate, and A/B comparison.
+- Add minimal end-to-end smoke coverage for create/edit local build, real-data selection, calculator path, Spark path, sanitized import, and save/public-read/duplicate (T0017 A/B comparison is post-MVP).
 - Run the complete game-data integrity/completeness suite.
 - Run all unit/component/integration/E2E tests plus lint/typecheck/build.
 - Perform targeted regression against known Psychology and Cow/Unarmed validation cases.
@@ -1609,9 +1568,8 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 1. Create a fresh manual build from real PG data.
 2. Select skills/levels/abilities, gear, mods, and Sparks and inspect calculation breakdowns.
 3. Import a current character snapshot; inspect existing My Items, timestamps, skills and item/power resolution diagnostics. A CurrentStats comparison or defensive stat sheet is **not** an MVP release requirement.
-4. Create an A/B comparison.
-5. Save/share the build, test read-only/duplicate in incognito, then verify owner editing.
-6. Run the release checklist and confirm no unexpected console errors.
+4. Save/share the build, test read-only/duplicate in incognito, then verify owner editing.
+5. Run the release checklist and confirm no unexpected console errors.
 
 ## T0022 — GorgonBuilder Visual Identity and Planner UI Redesign
 
@@ -1709,6 +1667,49 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 
 T0010-F2 final clarification: the public view includes a default-collapsed **Damage breakdown** showing actual engine steps, individual named equipment/skill contributions, flat/percentage/Skill Base contributions, target multipliers and final hit/total. It contains numerical presentation only: no raw IDs, source paths, uncertainty/exclusion inventories, implementation assumptions or long explanations. Those diagnostics remain available only through the development `?debugDamage=1` view. Public `Partial` labels are replaced with `Estimated`; unavailable numbers remain `Unavailable`. No engine results or accepted mod-search/Selected-heading behavior change.
+
+## T0017 — A/B Build Comparison (Deferred Post-MVP)
+
+**Status / Queue:** **Deferred until after T0021 v1 release by product-owner decision 2026-11-06.** This is optional post-MVP scope, placed before the postponed T0016 at the end of the current backlog. **Not a dependency of T0018–T0021.** Reassess product value before starting. Full future implementation scope: [Issue #45](https://github.com/Zaelious/GorgonBuilder/issues/45).
+
+**Complexity:** Standard
+
+**Verification:** Customer hands-on
+
+**Goal:** Make comparison a first-class planner workflow using the same calculation engine on both sides.
+
+**Dependencies:** T0021 MVP release (scheduling only); existing T0014/T0015 engines. T0016 not required.
+
+**Allowed areas:**
+- src/features/comparison
+- src/core/build
+- tests
+
+**Do not touch:**
+- rotation/DPS comparison
+- optimizer
+- defensive scoring
+
+**Requirements:**
+- Create/duplicate build B from build A or load two BuildDocuments.
+- Show skill/level/ability differences, equipment/mod/Spark differences, relevant aggregate-stat differences, and supported ability-result deltas.
+- Allow expandable explanations showing which sources caused a delta.
+- Ensure both sides call the same aggregation and calculation engines.
+
+**Non-goals:**
+- No rotation comparison.
+- No automatic 'winner' optimization.
+- No defensive score yet. Character Statistics, defensive/armor Sparks and optional CurrentStats reconciliation belong to post-MVP T0016.
+
+**Acceptance criteria:**
+- Changing one controlled source in B produces an explainable corresponding delta.
+- Unchanged values remain unchanged.
+- Same engine paths are used for A and B.
+
+**Manual verification:**
+1. Duplicate a real test build, alter one item/mod/Spark source, and confirm the expected delta.
+2. Try a more heavily changed build and inspect explanations.
+3. Run the quality suite.
 
 ## T0016 — Character Statistics and Defensive Calculation Engine (Post-MVP)
 

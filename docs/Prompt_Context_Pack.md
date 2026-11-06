@@ -20,8 +20,8 @@ Project Gorgon build planner inspired functionally by GorgonExplorer, but focuse
 - Mastery Sparks
 - save/share
 - character import/validation
-- A/B comparison
-- later rotation/DPS, defense/threat, optimizer
+- **post-MVP** A/B comparison (T0017), character/defensive stats (T0016)
+- later rotation/DPS, encounter/threat, optimizer
 
 ## Critical Math Rule
 
@@ -102,8 +102,9 @@ T0001–T0021 ends with:
 - Spark simulation
 - save/share/edit/delete
 - early character-report parsing plus My Items import
-- A/B build comparison (T0017), independent of CurrentStats deltas
 
-**After T0021 release:** T0016 retains its identifier but is the final deferred ticket: **Character Statistics and Defensive Calculation Engine**, including officially supported armor/defensive Sparks and optional CurrentStats reconciliation. It is not a v1 dependency.
+**Next MVP sequence:** **T0018 → T0019 → T0020 → T0021** (provider/deployment architecture → secure persistent API → save/share/duplicate UI → release). **No A/B comparison is required for remote build duplication.**
+
+**After T0021 release:** **T0017 A/B Build Comparison** is optional and deferred ([Issue #45](https://github.com/Zaelious/GorgonBuilder/issues/45)); **T0016 Character Statistics and Defensive Calculation Engine** remains last and deferred ([Issue #43](https://github.com/Zaelious/GorgonBuilder/issues/43)), with armor/defensive Sparks and optional CurrentStats reconciliation. Neither is a v1 dependency.
 
 Rotation Simulator is intentionally next-series work after the 21-ticket v1 is stabilized.
