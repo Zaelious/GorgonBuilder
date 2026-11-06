@@ -114,11 +114,11 @@ Project Gorgon cannot have the same combat skill at different effective levels i
 
 ## KI-0014 — Advancement-Table Accumulation and Modifier Applicability
 
-**Status:** Deliberate assumptions after T0012; validate with in-game character evidence in T0013/T0016.
+**Status:** Deliberate assumptions after T0012; existing offensive formulas need current in-game evidence. Broad character-stat/CurrentStats validation is deferred to post-MVP T0016.
 
 T0012 reports level reward entries summed through the configured skill level as `assumed`. Combining advancement-table rewards across different active skills, and final application of skill-scoped gear modifiers, still requires validation. A gear item may contain bonuses for inactive Necromancy or Priest skills; these source facts are retained, but must not affect unrelated ability damage.
 
-**Action:** Compare controlled actual-character gear, skills and levels with game-visible totals and imported `CurrentStats` (T0016). Compare ability damage and isolate one change at a time during T0013. Never upgrade confidence or silently apply off-skill bonuses without evidence.
+**Action:** Compare ability damage and isolate individual changes with current T0013/T0014/T0015 capabilities. Post-MVP T0016 will calculate planned-build character/defensive statistics, add evidenced armor Sparks and optionally compare compatible CurrentStats snapshots. Never upgrade confidence or silently apply off-skill bonuses without evidence.
 
 ## KI-0015 — Duplicated Effect Token Parsing Grammar
 
@@ -136,7 +136,7 @@ The published attribute token syntax is parsed separately in `src/features/mods/
 - priority-rule rotations
 - food/drink/meditation/potions
 - Player.log optional rotation capture/replay research
-- defensive/threat calculator
+- **T0016 (post-MVP)**: Character Statistics and Defensive Calculation Engine, with source-validated armor/defensive Sparks and optional CurrentStats validation; encounter/threat simulation remains a distinct later feature
 - optimizer
 - public searchable build gallery
 - optional accounts/claim anonymous builds
@@ -171,7 +171,7 @@ The published attribute token syntax is parsed separately in `src/features/mods/
 - **T0010-F2 — Accepted and merged** via [PR #38](https://github.com/Zaelious/GorgonBuilder/pull/38), `34d7cd7`, 2026-11-04. Responsive Available/Selected search and a public numerical Damage breakdown are complete; diagnostic-only text is hidden from ordinary users. No damage formula changed.
 - **T0008-F2 — Ability Role Labels, Relevant Mods and Variant Picker Consolidation (Codex High).** Show source-backed Basic/Core/Nice/Epic/Minor Healing/Major Healing/Signature Support/Signature Debuff/Survival Utility roles; verify category-related gear effects actually reach eligible abilities without duplication or conditional keyword leaks. Compact only Vampirism Blood Mist, Animal Handling Call Stabled Pet, Bard SoD, Mentalism Mindworm, Necromancy SZ, Priest Triage and Priest Flamestrike. Preserve exact canonical IDs/ranks. Correct 'unconditional' audit counts for required-active-skill source conditions; report affected totals.
 - **T0013-F2 — Imported Anatomy/Phrenology Critical Hits and Target Conditions (Codex Extra High).** Full working critical chance/critical hit/expected hit calculator using imported/manual creature subskills, target creature selector and source-backed equipped crit modifiers. Keep unknown rules marked provisional; no full rotation/DPS, Spark, pet or DoT work.
-- **Sequence (completed):** T0010-F2 (PR #38) → T0008-F2 (PR #39) → T0013-F2 (PR #40) → T0014-F1 (PR #41) → T0015 Mastery Sparks (PR #42, `ff9745a`). T0016 needs a separate handoff.
+- **Sequence (completed):** T0010-F2 (PR #38) → T0008-F2 (PR #39) → T0013-F2 (PR #40) → T0014-F1 (PR #41) → T0015 Mastery Sparks (PR #42, `ff9745a`). T0017 is next for the MVP; T0016 was redefined and moved after T0021 release, so neither T0017 nor T0021 depends on it. See [Issue #43](https://github.com/Zaelious/GorgonBuilder/issues/43).
 
 ## T0013-F2 open questions and follow-ups (2026-11-04)
 
