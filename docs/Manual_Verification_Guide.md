@@ -249,19 +249,19 @@ Use the [ticket-specific verification report](T0011_F3_Verification.md) for exac
 
 ## Save/Share Tickets
 
-**Next MVP sequence:** T0018 provider decision + local backend/health proof, then T0019 secure persistent API, then T0020 public save/share/ownership/independent fork, then T0021 release. Neither deferred T0017 A/B nor T0016 defensive statistics are release gates.
+**Revised MVP sequence (2026-11-06):** T0018 Cloudflare Workers+D1/backend and auth feasibility, T0019 account/signup/session and owner-bound D1 CRUD, T0020 account/My Builds/Save/Share/Private-Public-Unlisted UI, T0020-F1 public Search Builds/author profiles/skill filters, then T0021 release. Neither deferred T0017 A/B nor T0016 defensive statistics is a release gate.
 
-T0018 specifically requires architecture/ADR review, mocked BuildRepository contract tests, local health endpoint smoke, SPA/static assets regression, deploy dry-run and no credential leakage. The full create/read/update/delete/anonymous-ownership scenarios below are **T0019/T0020**, not implemented by T0018.
+T0018 specifically requires approved D1/Worker architecture, auth package runtime proof, tested mock BuildRepository contracts, migrations/local health, static/SPA routing, dry-run and no secrets. Live signup/session/build CRUD belongs to T0019; Save/Share/My Builds/visibility UI to T0020; indexed public discovery/search to T0020-F1.
 
 Test at least:
 
-- create
-- public read
-- owner edit
-- wrong-token rejection
-- delete
-- public read-only in private/incognito window
-- duplicate creates new independent ownership
+- account first-signup via approved OAuth, unique public username, login/logout/expired session
+- Save/Create/Update/Delete in authenticated owner's own account; reject cross-account editing and forged owner IDs
+- Public (listed and link-viewable), Unlisted (link-only), Private (owner-only) and visibility revocation
+- public read-only build in incognito, authenticated independent Copy to new Private owned build
+- My Builds owner view includes all visibility types, public author profiles/search only Public
+- author/text search and canonical combat skill filters; two skills + Match both ON = AND, OFF = OR regardless of slot order
+- no private/unlisted search/count/profile leakage, invalid-cookie/session handling, secure API errors and refresh/local draft preservation
 
 ## Comparison Tickets
 

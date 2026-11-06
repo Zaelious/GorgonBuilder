@@ -94,7 +94,7 @@ Do not duplicate formulas.
 6. Add candidate treasure mods.
 7. Configure/simulate Sparks on eligible offensive items.
 8. View ability damage and breakdown.
-9. Save/share; optional A/B compare is deferred to post-MVP T0017.
+9. Save to a registered account as Private/Unlisted/Public; browse Search Builds and author profiles; optional A/B compare remains post-MVP T0017.
 
 ### 3.2 Item/effect search
 
@@ -119,14 +119,17 @@ Initial implementation can use normalized substring search. Fuzzy search is opti
 
 No server upload is required for parsing.
 
-### 3.4 Save/share
+### 3.4 Accounts, save/share and public discovery (MVP)
 
-1. User saves a build.
-2. Backend creates public ID and private owner token.
-3. Browser stores owner token locally.
-4. Public URL is read-only.
-5. Owner can edit/delete when the token is available.
-6. Other users can duplicate the build into a new build.
+1. Guest can plan and autosave locally; login is required for permanent server persistence.
+2. User signs up with approved OAuth method and chooses a unique GorgonBuilder username.
+3. Backend assigns stable account ID and establishes a secure session. User chooses Save, with default **Private** visibility.
+4. Public builds are searchable and guest-viewable. Unlisted builds are guest-viewable by URL but excluded from public search/profiles. Private builds are owner-only, including direct URLs.
+5. Owner's My Builds/profile lists all owned builds and can sort/filter skill combinations; public author page lists only Public.
+6. Search Builds finds Public by title, public description or author, plus 0–2 canonical combat skills. Two skills with Match both ON require both (AND, order-independent); OFF means either (OR).
+7. Reader may Copy a viewable build into a new independently owned Private build after login. No anonymous owner/edit token is required; no A/B comparison dependency.
+
+The approved backend is **Cloudflare Workers + D1**, with OAuth/session mechanism verified in T0018. Never upload raw CharacterSheet/Storage reports to the backend.
 
 ## 4. Domain Model
 
@@ -322,29 +325,23 @@ A current export should be treated as a current snapshot. An old example export 
 Use browser storage for:
 
 - unsaved/current draft
-- owner tokens keyed by public build ID
 - user preferences such as minimum item level
+- account sessions handled by server-issued secure cookies, not manual owner tokens in browser storage
 - optionally recent builds
 
-### Shared-build backend
+### Account-owned shared-build backend (Cloudflare Workers + D1)
 
-Provider-agnostic backend contract:
+A provider-neutral backend data-access contract enables create/get/update/delete and independent copy using a stable authenticated owner user ID. Auth provider credentials/sessions are stored separately from BuildDocument. A build record persists `ownerUserId`, Public/Unlisted/Private visibility, title/description for public listing, canonical combat-skill IDs for indexing and versioned build JSON. Session and row ACL checks are server-side.
 
-- create build
-- get public build
-- update build with owner token
-- delete build with owner token
-- duplicate is client-side create using copied payload
-
-Exact provider is selected in a dedicated infrastructure ticket.
+T0018 provides D1/Worker and auth feasibility; T0019 implements secure accounts and build CRUD; T0020 adds account/share/profile UI; T0020-F1 adds public discovery; T0021 validates/release. The old token-only anonymous save design is superseded.
 
 ## 10. Security / Privacy
 
 - Character JSON imports are parsed locally by default.
 - Do not upload entire character/storage reports without explicit future design.
-- Owner tokens must have sufficient entropy.
-- Store token hashes server-side, not plaintext.
-- Public share URLs do not expose owner tokens.
+- Use supported OAuth/session middleware and secure cookie/CSRF protections; never disclose session or provider credentials in share URLs.
+- All private read/mutation operations require server-verified ownership; Public/Unlisted access and search visibility are distinct.
+- Do not leak Private or Unlisted builds through public search, profile counts, direct URLs or stale caches.
 - Validate saved build payload size and schema.
 - Treat all imported/generated item names and notes as untrusted display text.
 

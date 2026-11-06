@@ -1,7 +1,7 @@
 # GorgonBuilder — Product Decisions
 
-**Status:** Initial product decisions locked  
-**Version:** 1.1  
+**Status:** Product-owner approved account/community MVP expansion, 2026-11-06  
+**Version:** 2.0  
 **Date:** 2026-11-06
 
 ## Product Goal
@@ -11,7 +11,7 @@ GorgonBuilder is a Project Gorgon build planner focused on answering both:
 1. **What can I put in this build?**
 2. **What does that choice actually do to the build?**
 
-It should retain the approachable two-skill/gear/mod planning model of tools such as GorgonExplorer while adding transparent damage calculations, Mastery Spark modeling, browser-local character import and permanent save/share. **A/B build comparison is optional post-MVP (T0017)**; complete character/defensive statistics (T0016), stateful rotation/DPS, survivability, threat and optimization are also later work.
+It should retain the approachable two-skill/gear/mod planning model of tools such as GorgonExplorer while adding transparent damage calculations, Mastery Spark modeling, browser-local character import, account-owned permanent builds, privacy controls and public build discovery. **A/B build comparison is optional post-MVP (T0017)**; complete character/defensive statistics (T0016), stateful rotation/DPS, survivability, threat and optimization are also later work.
 
 ## Core Build Model
 
@@ -195,33 +195,22 @@ Initial validation builds:
 - Deer / Psychology
 - Cow / Unarmed
 
-## Saving and Sharing
+## Saving, Accounts, Profiles and Public Build Discovery — MVP (Revised 2026-11-06)
 
-Saving and sharing are core requirements.
+Cloudflare Workers + D1 is the approved backend. The previous **anonymous edit-token / management recovery link** design was *planned but not implemented* and is superseded. Use **account-based ownership** for permanent saved builds; guests may plan and browser-autosave locally, browse Public and view Unlisted links without login. Signing in is required to save permanently, manage a personal build library and copy a shared build into one's account.
 
-Initial shared builds are **unlisted by link**.
+- Register/login using a supported D1-compatible auth library and accessible social OAuth (recommended Discord + Google), with secure cookie sessions and a unique public GorgonBuilder username. Do not custom-build password authentication without approved email verification/reset delivery.
+- Stable `ownerUserId` drives authorization; no secret editable owner token stored in BuildDocument, public share URLs or UI.
+- Every saved build defaults **Private**. Users may explicitly mark it **Unlisted** (guest-readable by link, not indexed) or **Public** (guest-readable by link and discoverable by text/skill/author search).
+- Public profiles and Search Builds display **Public only**; logged-in My Builds displays all own visibility states with sorting/skill filtering. No email or private provider identifiers on public profiles.
+- Save/update/delete permitted only to authenticated owner; copying a viewable Public/Unlisted build creates a new independent **Private** owned build. This is not A/B comparison.
+- Default build title derives from the two selected canonical combat skills (`Deer/Psychology`, `Cow/Unarmed`); a user's manually customized name is never overwritten.
+- Search Builds matches public title, public description and author; select up to 2 combat skills; **Match both skills** selects AND when on, OR when off, in either skill-slot order. Text + skills combine by AND.
+- Sidebar navigation: Home, Build Planner, Search Builds, and signed-in My Builds/Profile.
+- Preserve `BuildDocument` v1, existing local drafts, and private local CharacterSheet/Storage imports. Public description is controlled listing metadata, not automatically all personal notes.
+- Security includes server-side ACL, session/CSRF validation, abuse safeguards, database backups and privacy/revocation tests before launch.
 
-Accounts are not required initially. Anonymous ownership uses:
-
-- Public build ID
-- Saved build JSON
-- Schema version
-- Timestamps
-- Private owner/edit token
-- Secure server-side hash of the token
-
-The public share link never contains the owner token.
-
-The creator's browser stores ownership locally. A separate private management/recovery link should be available for another device.
-
-Public-link users may:
-
-- View
-- Duplicate/copy
-
-They may not edit/delete the original.
-
-Initial deletion may be a confirmed hard delete. Later accounts may claim anonymous builds by proving possession of the owner token.
+**MVP queue:** T0018 D1/auth architecture → T0019 accounts and owner-bound persistence API → T0020 account/library/save/share/profile UI → T0020-F1 public discovery/search/author pages → T0021 release. Deferred post-MVP: T0017 A/B and T0016 character/defensive calculations. See [build/save/share contract](Build_Save_And_Share_Design.md) and [tickets](Tickets.md).
 
 ## Build Comparison
 

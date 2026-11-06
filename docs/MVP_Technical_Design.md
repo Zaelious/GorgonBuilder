@@ -1,6 +1,6 @@
 # GorgonBuilder — MVP Technical Design
 
-**Status:** Approved baseline  
+**Status:** Approved baseline with 2026-11-06 account/community MVP amendment  
 **Version:** 1.0  
 **Date:** 2026-10-31
 
@@ -17,9 +17,10 @@ Frontend:
 
 Backend:
 
-- Provider-agnostic interface first
-- Small persistence API introduced in the save/share phase
-- Provider chosen in a dedicated infrastructure ticket based on simplicity, cost, deployment ergonomics, and anonymous token support
+- **Cloudflare Workers + D1 selected by product owner (2026-11-06).** Existing static app preserved; D1-backed API with local/staging/prod migration and auth/session isolation
+- A provider-neutral BuildRepository contract remains useful as a boundary, but registered user IDs, not anonymous owner tokens, authorize saved-build CRUD
+- A supported Cloudflare/D1-compatible authentication library with Discord and Google OAuth is preferred (subject to T0018 runtime/security verification); optional email/password needs approved verification/reset-email delivery
+- Public/Unlisted/Private visibility, personal account libraries, and indexed public build discovery are MVP requirements, covered by T0019/T0020/T0020-F1
 
 ## Folder Direction
 
@@ -240,30 +241,25 @@ Local persistence stores:
 
 - current draft
 - preferences
-- owner tokens
-- recent build references
+- **No anonymous owner-token map is required for the revised MVP.** Auth sessions use server-verified cookies; recent account-owned build references come from D1 (T0019/T0020), outside current local draft JSON.
 
 Provide a storage abstraction so browser-storage details do not leak through UI components.
 
 **Implemented in T0007:** `createLocalPersistence` in `src/persistence/local/storage.ts` stores current draft under `gorgonbuilder.current-draft` and versioned preferences under `gorgonbuilder.preferences`. Storage is injected for tests or resolved lazily from browser `localStorage`. Missing or invalid data returns explicit fallback status without deleting original bytes; incompatible schema versions block accidental overwrite, and read/write/security/quota failures are reported. Preferences default to an unvalidated minimum equipment-level filter value of 90 (or null to disable); KI-0007/T0009 implement the explicit nullable published target-level browsing filter, not an equipping requirement. `createDraftAutosave` in `src/persistence/local/autosave.ts` provides a 500 ms debounced snapshot with flush/cancel and failed-save retry. T0008 connects actual committed UI edits to 500 ms local autosave, restores refresh state, flushes pending work, exposes save retry/recovery and protects unsupported/unreadable drafts. Owner tokens and recent-build references remain future work and must not enter the build JSON.
 
-### Remote
+### Remote — Approved Account-Owned Architecture
 
-Illustrative REST-like contract:
+The existing Worker serves the Vite static frontend plus a same-origin API backed by **Cloudflare D1**. Supported auth middleware maintains sessions, validates current user ID and protects every private read/mutation.
 
-- `POST /api/builds`
-- `GET /api/builds/:id`
-- `PUT /api/builds/:id`
-- `DELETE /api/builds/:id`
+Illustrative endpoints:
+- `/api/auth/*` register/login/logout/callback/session (selected auth library)
+- `POST /api/builds` authenticated, default private; `GET /api/builds/:id` subject to visibility/owner ACL
+- `PUT /api/builds/:id`, `DELETE /api/builds/:id` authenticated owner only
+- `GET /api/me/builds` signed-in owner library; `POST /api/builds/:id/copy` authenticated copy of a viewable build into a new private owned record
+- `GET /api/builds/search` Public-only title/description/author and canonical combat-skill search (T0020-F1)
+- `GET /api/users/:username` Public-only author profile.
 
-Create returns:
-
-- public ID
-- owner token once
-
-Update/delete require proof of owner token.
-
-Server stores only a token hash.
+Store user/session/provider tables separately from build records. Build records carry a stable ownerUserId, visibility (`private` / `unlisted` / `public`), sanitized public listing metadata, indexed canonical skill IDs, schema/data versions and validated BuildDocument v1 payload. An unlisted link is guest-readable; a private link is not. Server-side authorization is mandatory. See [Build_Save_And_Share_Design.md](Build_Save_And_Share_Design.md) for the full contract.
 
 ## Saved Build Schema
 
@@ -296,7 +292,7 @@ Do not rely on React component shape as persistence format.
    - required every ticket
 
 4. v1 end-to-end smoke tests
-   - T0021 covers critical planner, sanitized import, save/share, independent fork/duplicate, and release flows after architecture stabilizes. A/B comparison (T0017) and defensive statistics (T0016) are post-MVP.
+   - T0021 covers critical planner, sanitized import, **signup/session/authenticated owner-bound CRUD**, private/unlisted/public reads and revocation, saved build libraries, read-only share, independent fork, **public search/profile and skill AND/OR filters**, and release flows. A/B comparison (T0017) and defensive statistics (T0016) are post-MVP.
 
 ## Performance Targets
 

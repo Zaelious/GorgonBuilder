@@ -34,11 +34,9 @@ Supplied reports expose normal item TSys powers but do not establish a field con
 
 **Action:** T0015 now supports simulated and manually entered Actual outcomes ([PR #42](https://github.com/Zaelious/GorgonBuilder/pull/42)); individual rolls are not inferred from CharacterSheet/Storage. Confirm actual data fields before proposing Spark import.
 
-## KI-0004 — Backend Provider Not Yet Selected
+## KI-0004 — Approved Backend Provider and Outstanding Account/Deployment Integration
 
-**Status:** Planned T0018 decision
-
-Architecture intentionally uses a provider-agnostic `BuildRepository`.
+**Status:** Cloudflare Workers + D1 **selected by product owner 2026-11-06**, not yet implemented. T0018 proves Worker/D1 migration and OAuth-library compatibility; T0019 then implements user-ID-owned CRUD and secure sessions; T0020 UI; T0020-F1 search/discovery. Existing provider-neutral BuildRepository contract remains a useful boundary. Monitor free-tier request/CPU/D1 limits and domain/OAuth callback setup. The anonymous owner-token-first design is superseded.
 
 ## KI-0005 — Rotation Simulator Deferred
 
@@ -139,8 +137,8 @@ The published attribute token syntax is parsed separately in `src/features/mods/
 - **T0017 (post-MVP)**: Optional A/B Build Comparison using existing engine outputs; assess whether manual comparisons are worthwhile relative to automation before implementation
 - **T0016 (post-MVP)**: Character Statistics and Defensive Calculation Engine, with source-validated armor/defensive Sparks and optional CurrentStats validation; encounter/threat simulation remains a distinct later feature
 - optimizer
-- public searchable build gallery
-- optional accounts/claim anonymous builds
+- public searchable build gallery **moved into MVP T0020-F1** ([Issue #50](https://github.com/Zaelious/GorgonBuilder/issues/50)); not a post-MVP candidate
+- optional future email/password login (requires verified mail/reset service), richer account options or migration for any legacy anonymous builds **if such builds are ever introduced**; account-based ownership is already MVP T0019
 - game-data diff/update automation
 
 ## T0013-F1 follow-ups (customer-accepted 2026-11-04; implementation follow-ups approved)
