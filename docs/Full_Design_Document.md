@@ -402,7 +402,7 @@ Use the existing Modifier model to calculate **planned-build** character stats f
 - evasion
 - healing received
 - combat refresh
-- taunt/threat
+- taunt/threat (separate future encounter/scoring work, not included in T0016)
 
 Practical tank builds supplied by the customer will be used as validation fixtures. Full enemy encounter or threat/taunt simulation remains a separate later feature.
 
