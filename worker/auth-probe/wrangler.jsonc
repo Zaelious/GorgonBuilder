@@ -1,0 +1,22 @@
+// T0018 AUTH FEASIBILITY PROBE — LOCAL ONLY. Never deploy this configuration.
+// Used by `npm run worker:smoke` with `wrangler dev --local`; shares the committed migrations.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "gorgonbuilder-auth-probe-local-only",
+  "main": "./index.ts",
+  "compatibility_date": "2026-10-23",
+  // Better Auth needs AsyncLocalStorage (node:async_hooks) in workerd.
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": { "PROBE_ORIGIN": "http://127.0.0.1:8798" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gorgonbuilder-auth-probe-local",
+      // Local-only placeholder; it does not identify any Cloudflare resource.
+      "database_id": "00000000-0000-4000-8000-0000000000a1",
+      "migrations_dir": "../../migrations"
+    }
+  ]
+}
