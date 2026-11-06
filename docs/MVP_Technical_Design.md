@@ -241,8 +241,7 @@ Local persistence stores:
 
 - current draft
 - preferences
-- owner tokens
-- recent build references
+- **No anonymous owner-token map is required for the revised MVP.** Auth sessions use server-verified cookies; recent account-owned build references come from D1 (T0019/T0020), outside current local draft JSON.
 
 Provide a storage abstraction so browser-storage details do not leak through UI components.
 
