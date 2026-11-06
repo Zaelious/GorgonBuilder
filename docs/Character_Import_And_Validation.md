@@ -1,8 +1,8 @@
 # GorgonBuilder — Character Import and Validation
 
 **Status:** T0011 parser and T0011-F1/F2/F3 browser import and editable quick-loadout workflow accepted/merged; CurrentStats-only comparison deferred into post-MVP T0016 Character Statistics/Defensive Engine  
-**Version:** 1.4  
-**Date:** 2026-11-02
+**Version:** 1.5  
+**Date:** 2026-11-06
 
 ## Clarification About Export Freshness
 
