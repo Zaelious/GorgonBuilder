@@ -1,6 +1,15 @@
+// GorgonBuilder Worker: Vite SPA via Static Assets + same-origin `/api/*` (T0018).
+// Environments are isolated: each has its own Worker name, APP_ENV and D1 database.
+//   (top level)  production `gorgonbuilder` — NO D1 binding until the owner creates and
+//                reviews a production database (launch step; see docs/T0018_Owner_Setup.md).
+//   env.local    local development/tests only (`--env local --local`); never deployed.
+//   env.staging  optional `gorgonbuilder-staging`; inert until the owner creates the staging
+//                database and replaces the placeholder database_id.
+// D1 database IDs are identifiers, not secrets. Never put secrets in this file.
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "gorgonbuilder",
+  "main": "./worker/index.ts",
   "compatibility_date": "2026-10-23",
   "observability": {
     "enabled": true
@@ -10,6 +19,51 @@
   "previews": {},
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // Only API paths invoke the Worker; all other requests stay asset-first (free, unlimited),
+    // including SPA deep links. `/api` is listed separately because `/api/*` does not match it.
+    "run_worker_first": ["/api", "/api/*"]
+  },
+  "vars": {
+    "APP_ENV": "production"
+  },
+  "env": {
+    "local": {
+      "name": "gorgonbuilder-local",
+      "workers_dev": false,
+      "preview_urls": false,
+      "vars": {
+        "APP_ENV": "local"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "gorgonbuilder-local",
+          // Local-only placeholder: identifies the SQLite file under .wrangler/state, not a
+          // Cloudflare resource. `wrangler deploy --env local` must never be run.
+          "database_id": "00000000-0000-4000-8000-000000000000",
+          "migrations_dir": "migrations"
+        }
+      ]
+    },
+    "staging": {
+      "name": "gorgonbuilder-staging",
+      "workers_dev": true,
+      "preview_urls": false,
+      "vars": {
+        "APP_ENV": "staging"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "gorgonbuilder-staging",
+          // OWNER ACTION (optional): replace with the ID printed by
+          // `npx wrangler d1 create gorgonbuilder-staging`. Until then staging cannot deploy.
+          "database_id": "REPLACE_WITH_STAGING_DATABASE_ID",
+          "migrations_dir": "migrations"
+        }
+      ]
+    }
   }
 }

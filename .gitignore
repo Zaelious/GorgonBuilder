@@ -6,3 +6,9 @@ coverage/
 .wrangler/
 src/data/raw/cache/
 src/data/raw/snapshot.json.tmp
+worker/worker-configuration.d.ts
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.env
+.env.*
