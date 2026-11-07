@@ -15,6 +15,6 @@
     "skipLibCheck": true,
     "types": []
   },
-  "include": ["./worker-configuration.d.ts", "./index.ts", "./api/**/*.ts", "./auth-probe/**/*.ts"],
+  "include": ["./worker-configuration.d.ts", "./index.ts", "./api/**/*.ts", "./auth-probe/**/*.ts", "./auth/**/*.ts"],
   "exclude": ["./**/*.test.ts"]
 }

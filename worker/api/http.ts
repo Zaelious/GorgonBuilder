@@ -1,6 +1,6 @@
 /** JSON response helpers for same-origin `/api/*` routes. API paths never return SPA HTML. */
 
-export type ApiErrorCode = 'not_found' | 'method_not_allowed' | 'internal_error';
+export type ApiErrorCode = string;
 
 export interface ApiErrorBody {
   error: { code: ApiErrorCode; message: string };

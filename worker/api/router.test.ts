@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { handleApiRequest, isApiPath, type ApiEnv, type HealthDatabase } from './router';
 
-const ORIGIN = 'https://gorgonbuilder.example';
+const ORIGIN = 'https://gorgonbuilder.zbailouz7.workers.dev';
 
 function database(first: () => Promise<unknown>): HealthDatabase {
   return { prepare: () => ({ first: first as never }) };
@@ -43,13 +43,13 @@ describe('API routing', () => {
   it('reports database failures without leaking error details', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const failing = database(async () => { throw new Error('D1_ERROR: secret table "user" at db 1234'); });
-    const { response, text } = await call('/api/health', {}, { DB: failing });
+    const { response, text } = await call('/api/health', {}, { APP_ENV: 'local', DB: failing });
     expect(response.status).toBe(503);
-    expect(JSON.parse(text)).toMatchObject({ status: 'unavailable', environment: 'unknown', database: 'error' });
+    expect(JSON.parse(text)).toMatchObject({ status: 'unavailable', environment: 'local', database: 'error' });
     expect(text).not.toMatch(/secret|D1_ERROR|1234/);
     expect(JSON.stringify(consoleError.mock.calls)).not.toMatch(/secret|1234/);
     consoleError.mockRestore();
-    const wrong = await call('/api/health', {}, { DB: database(async () => null) });
+    const wrong = await call('/api/health', {}, { APP_ENV: 'local', DB: database(async () => null) });
     expect(wrong.response.status).toBe(503);
   });
 
@@ -58,9 +58,12 @@ describe('API routing', () => {
     expect(response.status).toBe(200);
     expect(text).toBe('');
     expect(response.headers.get('cache-control')).toBe('no-store');
+    const disabled = await call('/api/health', { method: 'HEAD' }, { APP_ENV: 'preview' });
+    expect(disabled.response.status).toBe(503);
+    expect(disabled.text).toBe('');
   });
 
-  it.each(['/api', '/api/', '/api/nope', '/api/health/', '/api/health/extra', '/api/builds', '/api/auth/sign-in'])(
+  it.each(['/api', '/api/', '/api/nope', '/api/health/', '/api/health/extra', '/api/builds/invalid', '/api/auth/sign-in'])(
     'unknown API path %s is a JSON 404, never SPA HTML',
     async path => {
       const { response, body, text } = await call(path);

@@ -3,20 +3,27 @@
 //   (top level)  production `gorgonbuilder` — NO D1 binding until the owner creates and
 //                reviews a production database (launch step; see docs/T0018_Owner_Setup.md).
 //   env.local    local development/tests only (`--env local --local`); never deployed.
-//   env.staging  optional `gorgonbuilder-staging`; inert until the owner creates the staging
-//                database and replaces the placeholder database_id.
+//   env.staging  existing owner-created D1; remote migration/deploy requires owner approval.
 // D1 database IDs are identifiers, not secrets. Never put secrets in this file.
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "gorgonbuilder",
   "main": "./worker/index.ts",
   "compatibility_date": "2026-10-23",
+  "compatibility_flags": ["nodejs_compat"],
   "observability": {
-    "enabled": true
+    "enabled": true,
+    "redact_query_string": true,
+    // Invocation URL logs can contain OAuth codes/state. Keep only safe application logs.
+    "logs": { "enabled": true, "invocation_logs": false },
+    "traces": { "enabled": false }
   },
   "workers_dev": true,
   "preview_urls": true,
-  "previews": {},
+  "previews": {
+    "vars": { "APP_ENV": "preview" },
+    "d1_databases": []
+  },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
@@ -58,9 +65,8 @@
         {
           "binding": "DB",
           "database_name": "gorgonbuilder-staging",
-          // OWNER ACTION (optional): replace with the ID printed by
-          // `npx wrangler d1 create gorgonbuilder-staging`. Until then staging cannot deploy.
-          "database_id": "REPLACE_WITH_STAGING_DATABASE_ID",
+          // Existing owner-created staging database. Never bind this to production or previews.
+          "database_id": "477e9b46-bb96-4eca-a5ed-1ee57185fb2a",
           "migrations_dir": "migrations"
         }
       ]
