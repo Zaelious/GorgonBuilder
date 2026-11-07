@@ -96,13 +96,29 @@ describe('no committed secrets', () => {
     }
   });
 
-  it('contains no credential-shaped values in text files', () => {
-    const patterns = [
-      /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
-      /\bGOCSPX-[A-Za-z0-9_-]{10,}/, // Google OAuth client secret
-      /\b(?:CLOUDFLARE_API_TOKEN|CF_API_TOKEN|BETTER_AUTH_SECRET|DISCORD_CLIENT_SECRET|GOOGLE_CLIENT_SECRET)\s*[=:]\s*["']?[A-Za-z0-9_+/=-]{16,}/,
-      /\bghp_[A-Za-z0-9]{30,}/,
+  const patterns = [
+    /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
+    /\bGOCSPX-[A-Za-z0-9_-]{10,}/, // Google OAuth client secret
+    /\b(?:CLOUDFLARE_API_TOKEN|CF_API_TOKEN|BETTER_AUTH_SECRET|DISCORD_CLIENT_SECRET|GOOGLE_CLIENT_SECRET)\s*[=:]\s*["']?[A-Za-z0-9_+/=-]{16,}/,
+    /\bghp_[A-Za-z0-9]{30,}/,
+  ];
+
+  it('the scanner still recognizes credential-shaped values (samples are assembled at runtime)', () => {
+    const value = 'Ab1'.repeat(8);
+    const samples = [
+      `-----BEGIN ${'PRIVATE'} KEY-----`, `GOCSPX-${value}`, `ghp_${value}${value}`,
+      ...['CLOUDFLARE_API_TOKEN', 'BETTER_AUTH_SECRET', 'DISCORD_CLIENT_SECRET', 'GOOGLE_CLIENT_SECRET']
+        .flatMap(name => [`${name}=${value}`, `${name}: '${value}'`, `${name} = "${value}"`]),
+      // T0020 regression: a 16+ character placeholder literal assigned to a secret name is still flagged.
+      `{ ${'DISCORD_CLIENT_'}SECRET: 'local-placeholder' }`,
     ];
+    for (const sample of samples) expect(patterns.some(pattern => pattern.test(sample)), sample).toBe(true);
+    for (const safe of ['BETTER_AUTH_SECRET: secret', 'GOOGLE_CLIENT_SECRET: \'local-test\'', '[...].map(name => [name, `unused-${hex}`])']) {
+      expect(patterns.some(pattern => pattern.test(safe)), safe).toBe(false);
+    }
+  });
+
+  it('contains no credential-shaped values in text files', () => {
     const textFiles = tracked.filter(file => /\.(?:ts|tsx|js|mjs|json|jsonc|md|sql|ya?ml|toml|html|css|example|py)$/.test(file)
       && !file.startsWith('src/data/raw/') && statSync(file).size < 2_000_000);
     expect(textFiles.length).toBeGreaterThan(50);

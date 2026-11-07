@@ -18,7 +18,8 @@ import { useCloudSave } from '../features/sharing/CloudSave';
 import { MyBuilds } from '../features/sharing/MyBuilds';
 import { SharedBuildView } from '../features/sharing/SharedBuildView';
 import { AuthorPage, ProfilePage } from '../features/sharing/ProfilePages';
-import { hasUnsavedWork, readCloudLink, readReplacedDraft, writeCloudLink, writeReplacedDraft, type CloudLink, type ReplacedDraft } from '../features/sharing/workspace';
+import { discardReplacedDraft, readCloudLink, readReplacedDrafts, stashWorkingBuild, writeCloudLink, type CloudLink, type ReplacedDraft } from '../features/sharing/workspace';
+import { formatTime } from '../features/sharing/format';
 import './planner.css';
 import '../features/sharing/sharing.css';
 
@@ -45,7 +46,9 @@ function BuildEditor({ data, imported, setImported }: { data: GameDataRepository
   // T0020: which My Builds record (if any) this working draft came from; kept beside the draft.
   const [link, setLinkState] = useState<CloudLink | null>(readCloudLink);
   const linkRef = useRef(link);
-  const [backup, setBackup] = useState<ReplacedDraft | null>(readReplacedDraft);
+  // Unsaved builds kept when the working build was replaced (bounded list, see workspace.ts).
+  const [backups, setBackups] = useState<ReplacedDraft[]>(() => { const kept = readReplacedDrafts(); return kept.ok ? kept.entries : []; });
+  const [backupError, setBackupError] = useState<string | null>(null);
   const [detailSlot, setDetailSlot] = useState<Slot | null>(null);
   const [recoveryVisible, setRecoveryVisible] = useState(true);
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
@@ -76,8 +79,12 @@ function BuildEditor({ data, imported, setImported }: { data: GameDataRepository
     };
   }, [autosave]);
 
-  // Leaving for the OAuth provider: write any pending local edit first.
-  useEffect(() => account.onBeforeRedirect(() => autosave.flush()), [account, autosave]);
+  // Leaving for the OAuth provider: write any pending local edit first; a failed write blocks
+  // the redirect until the user retries or explicitly accepts losing those changes.
+  useEffect(() => account.onBeforeRedirect(() => {
+    const result = autosave.flush();
+    return result === null || result.ok;
+  }), [account, autosave]);
 
   function setLink(next: CloudLink | null) {
     linkRef.current = next;
@@ -85,29 +92,35 @@ function BuildEditor({ data, imported, setImported }: { data: GameDataRepository
     setLinkState(next);
   }
 
-  /** Replace the working build; unsaved work is kept as a restorable backup, never silently lost. */
-  function replaceWorking(next: BuildDocument, nextLink: CloudLink | null) {
-    const previous = current.current;
-    if (hasUnsavedWork(previous, linkRef.current)) {
-      const kept: ReplacedDraft = { version: 1, replacedAt: Date.now(), document: previous, link: linkRef.current };
-      writeReplacedDraft(kept); setBackup(kept);
-    }
+  /**
+   * Replace the working build. Unsaved work is first appended to the kept backups; if that
+   * cannot be stored, nothing is replaced and the returned message explains why.
+   */
+  function replaceWorking(next: BuildDocument, nextLink: CloudLink | null, consume?: number): string | null {
+    if (readOnly) return 'This draft is protected, so it was not replaced. Follow the recovery message above.';
+    const stash = stashWorkingBuild(current.current, linkRef.current, consume === undefined ? {} : { consume });
+    if (!stash.ok) return stash.message;
+    setBackups(stash.entries);
+    setBackupError(null);
     setCleared(null); setDetailSlot(null);
     apply(next);
     autosave.flush();
     setLink(nextLink);
+    return null;
   }
 
-  function restoreBackup() {
-    if (readOnly || !backup) return;
-    const restoring = backup;
-    if (!hasUnsavedWork(current.current, linkRef.current)) { writeReplacedDraft(null); setBackup(null); }
-    replaceWorking(restoring.document, restoring.link);
+  function restoreBackup(index: number) {
+    const entry = backups[index];
+    if (readOnly || !entry) return;
+    setBackupError(replaceWorking(entry.document, entry.link, index));
   }
 
-  function discardBackup() {
-    if (!window.confirm('Discard the kept backup build? This cannot be undone.')) return;
-    writeReplacedDraft(null); setBackup(null);
+  function discardBackup(index: number) {
+    const entry = backups[index];
+    if (!entry || !window.confirm(`Discard the kept backup “${entry.document.title}”? This cannot be undone.`)) return;
+    const result = discardReplacedDraft(index);
+    if (result.ok) setBackups(result.entries);
+    else setBackupError('The backup could not be discarded because browser storage is unavailable. Nothing was changed.');
   }
 
   const cloud = useCloudSave({
@@ -184,9 +197,15 @@ function BuildEditor({ data, imported, setImported }: { data: GameDataRepository
       </div>
     </div>
     {cloud.status}
-    {backup && <div className="notice cloud-notice info backup-notice" role="status"><p>A previous working build, “{backup.document.title}”, was kept on this device when another build was opened.</p>
-      <div className="notice-actions"><button type="button" disabled={readOnly} onClick={restoreBackup}>Restore it</button>
-        <button type="button" onClick={discardBackup}>Discard</button></div></div>}
+    {backups.length > 0 && <div className="notice cloud-notice info backup-notice" role="status">
+      <p>{backups.length === 1 ? 'An unsaved build was kept on this device when another build replaced it.' : `${backups.length} unsaved builds are kept on this device.`}</p>
+      <ul className="backup-list">{backups.map((entry, index) => <li key={`${entry.replacedAt}-${index}`}>
+        <span>“{entry.document.title}” was kept on this device {formatTime(entry.replacedAt)}</span>
+        <span className="notice-actions"><button type="button" disabled={readOnly} aria-label={`Restore “${entry.document.title}”`} onClick={() => restoreBackup(index)}>Restore</button>
+          <button type="button" aria-label={`Discard “${entry.document.title}”`} onClick={() => discardBackup(index)}>Discard</button></span>
+      </li>)}</ul></div>}
+    {backupError && <div className="notice cloud-notice warning" role="alert"><p>{backupError}</p>
+      <button type="button" className="notice-dismiss" aria-label="Dismiss backup message" onClick={() => setBackupError(null)}>×</button></div>}
     {recoveryVisible && session.restored.status === 'fallback' && <p className="notice warning" role="alert">{saveError(session.restored.error)}</p>}
     {versionMismatch && <p className="notice warning" role="alert">This draft uses game data {build.gameDataVersion}; loaded data is {data.gameDataVersion}. The saved version and selections are preserved. Editing is disabled because the original snapshot is unavailable.</p>}
     {saveResult && !saveResult.ok && <div className="notice warning" role="alert"><p>{saveError(saveResult)}</p><button type="button" onClick={() => autosave.flush()}>Retry saving</button></div>}

@@ -22,8 +22,9 @@ export interface CloudSaveOptions {
   onLinkChange: (link: CloudLink | null) => void;
   /** Commit a new title into the working BuildDocument; returns the committed document. */
   onTitle: (title: string) => BuildDocument;
-  /** Replace the working build (keeping a recoverable backup of unsaved work). */
-  onReplace: (document: BuildDocument, link: CloudLink | null) => void;
+  /** Replace the working build, keeping a recoverable backup of unsaved work. Returns an error
+   * message (and replaces nothing) if that backup could not be stored. */
+  onReplace: (document: BuildDocument, link: CloudLink | null) => string | null;
 }
 
 const CloudIcon = () => <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5a4 4 0 0 1-.5 8.5z" /><path d="M12 11v5m-2.5-2.5L12 11l2.5 2.5" /></svg>;
@@ -105,7 +106,8 @@ export function useCloudSave({ build, getBuild, readOnly, link, onLinkChange, on
       try {
         const record = await account.api.getBuild(link.buildId);
         const document = documentForEditing(record);
-        onReplace(document, linkFor(record, link.ownerUsername, document));
+        const failed = onReplace(document, linkFor(record, link.ownerUsername, document));
+        if (failed) { setMessage({ tone: 'warning', text: failed }); return; }
         setConflict(false);
         setMessage({ tone: 'info', text: 'Loaded the latest saved version. Your previous edits were kept as a backup you can restore.' });
       } catch (error) { setMessage({ tone: 'warning', text: account.failure(error, 'load the saved version') }); }

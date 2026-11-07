@@ -26,8 +26,9 @@ export interface AccountValue {
   failure: (error: unknown, action?: string) => string;
   notice: { text: string; tone: 'info' | 'warning' } | null;
   setNotice: (notice: AccountValue['notice']) => void;
-  /** Called before leaving for the OAuth provider (e.g. flush the local autosave). */
-  onBeforeRedirect: (callback: () => void) => () => void;
+  /** Called before leaving for the OAuth provider (e.g. flush the local autosave). Return
+   * false when work could not be saved; the redirect then waits for an explicit user choice. */
+  onBeforeRedirect: (callback: () => boolean) => () => void;
 }
 
 const AccountContext = createContext<AccountValue | null>(null);
@@ -45,7 +46,7 @@ export function AccountProvider({ children, api: provided }: { children: ReactNo
   const [state, setState] = useState<AccountState>({ kind: 'checking' });
   const [notice, setNotice] = useState<AccountValue['notice']>(null);
   const [dialog, setDialog] = useState<{ kind: 'sign-in'; reason?: string } | { kind: 'username' } | null>(null);
-  const redirectCallbacks = useRef(new Set<() => void>());
+  const redirectCallbacks = useRef(new Set<() => boolean>());
   const lastCheck = useRef(0);
   const promptedUsername = useRef(false);
   const current = useRef<AccountState>(state);
@@ -119,11 +120,12 @@ export function AccountProvider({ children, api: provided }: { children: ReactNo
 
   return <AccountContext.Provider value={value}>
     {children}
-    {dialog?.kind === 'sign-in' && <SignInDialog reason={dialog.reason} onClose={() => setDialog(null)} onStart={async provider => {
-      const url = await api.signIn(provider, window.location.pathname + window.location.search);
-      for (const callback of redirectCallbacks.current) callback();
-      redirectTo(url);
-    }} />}
+    {dialog?.kind === 'sign-in' && <SignInDialog reason={dialog.reason} onClose={() => setDialog(null)}
+      prepare={() => [...redirectCallbacks.current].map(callback => callback()).every(Boolean)}
+      onStart={async provider => {
+        const url = await api.signIn(provider, window.location.pathname + window.location.search);
+        redirectTo(url);
+      }} />}
     {dialog?.kind === 'username' && <UsernameDialog onClose={() => setDialog(null)} onChoose={async name => {
       const chosen = await api.chooseUsername(name);
       setState({ kind: 'user', username: chosen });
@@ -133,12 +135,19 @@ export function AccountProvider({ children, api: provided }: { children: ReactNo
   </AccountContext.Provider>;
 }
 
-function SignInDialog({ reason, onClose, onStart }: { reason?: string; onClose: () => void; onStart: (provider: Provider) => Promise<void> }) {
+function SignInDialog({ reason, onClose, onStart, prepare }: {
+  reason?: string; onClose: () => void; onStart: (provider: Provider) => Promise<void>; prepare: () => boolean;
+}) {
   const [pending, setPending] = useState<Provider | null>(null);
   const [error, setError] = useState<string | null>(null);
-  async function start(provider: Provider) {
+  const [unsaved, setUnsaved] = useState<Provider | null>(null);
+  /** Leaving the page must not lose work silently: a failed local save stops here unless the
+   * user explicitly chooses to continue without it. */
+  async function start(provider: Provider, acceptLoss = false) {
     if (pending) return;
-    setPending(provider); setError(null);
+    setError(null);
+    if (!acceptLoss && !prepare()) { setUnsaved(provider); return; }
+    setUnsaved(null); setPending(provider);
     try { await onStart(provider); } catch (failure) {
       setError(describeApiError(failure, 'start sign-in'));
       setPending(null);
@@ -152,6 +161,11 @@ function SignInDialog({ reason, onClose, onStart }: { reason?: string; onClose: 
       <button type="button" className="provider-button" disabled={pending !== null} onClick={() => void start('google')}>
         {pending === 'google' ? 'Opening Google…' : 'Continue with Google'}</button>
     </div>
+    {unsaved && <div className="notice warning unsaved-before-sign-in" role="alert">
+      <p>Your latest changes could not be saved in this browser (storage may be full or blocked). Signing in leaves this page, so those unsaved changes would be lost.</p>
+      <div className="notice-actions"><button type="button" onClick={() => void start(unsaved)}>Try saving again</button>
+        <button type="button" onClick={() => void start(unsaved, true)}>Sign in anyway and lose unsaved changes</button></div>
+    </div>}
     {error && <p className="warning" role="alert">{error}</p>}
     <p className="muted">Planning never requires an account. Signing in lets you save builds to My Builds and share links. Your current work stays saved in this browser while you sign in. New accounts choose a public username next.</p>
   </Modal>;

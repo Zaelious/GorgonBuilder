@@ -9,7 +9,7 @@ import { loadPlannerFixture } from '../../test/planner-fixture';
 import { createAccountApi } from '../account/api';
 import { redirectTo } from '../account/browser';
 import { createFakeAccountServer, type FakeAccountServer } from '../account/testing/fake-server';
-import { CLOUD_LINK_KEY, REPLACED_DRAFT_KEY } from './workspace';
+import { CLOUD_LINK_KEY, MAX_REPLACED_DRAFTS, REPLACED_DRAFT_KEY, type ReplacedDraft } from './workspace';
 
 vi.mock('../../data/repository/load', () => ({ loadGameDataRepository: vi.fn() }));
 vi.mock('../account/browser', () => ({ redirectTo: vi.fn() }));
@@ -82,6 +82,15 @@ async function submit(selector: string) { await act(async () => { find<HTMLFormE
 async function tick(ms = 500) { await act(async () => { vi.advanceTimersByTime(ms); }); }
 const draft = () => JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)!) as BuildDocument;
 const text = () => container.textContent ?? '';
+const backups = () => (JSON.parse(localStorage.getItem(REPLACED_DRAFT_KEY)!) as { version: 2; entries: ReplacedDraft[] }).entries;
+/** Make one storage key fail to write (quota/permission/per-key failure) while others work. */
+function failWrites(key: string) {
+  const original = Storage.prototype.setItem;
+  return vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, name: string, value: string) {
+    if (name === key) throw new DOMException('Quota exceeded', 'QuotaExceededError');
+    original.call(this, name, value);
+  });
+}
 
 describe('deployments without the account backend (production, PR previews)', () => {
   it('shows the unchanged guest planner with no account or cloud controls', async () => {
@@ -127,6 +136,32 @@ describe('guest and sign-in', () => {
     expect(draft().title).toBe('Cow/Unarmed');
     expect(server.calls.find(c => c.path === '/api/auth/sign-in/social')?.body).toEqual({ provider: 'google', callbackURL: '/' });
     expect(redirect).toHaveBeenCalledWith('https://accounts.example/google?return=%2F');
+  });
+  it('does not leave for the provider when the local draft cannot be saved, unless the user explicitly accepts the loss', async () => {
+    await render();
+    const writes = failWrites(DRAFT_STORAGE_KEY);
+    await type('#skill-A', 'Cow');
+    await click(find('.cloud-save'));
+    await click('Continue with Google');
+    expect(redirect).not.toHaveBeenCalled();
+    expect(server.calls.some(c => c.path === '/api/auth/sign-in/social')).toBe(false);
+    expect(find('.unsaved-before-sign-in').textContent).toContain('those unsaved changes would be lost');
+    await click('Try saving again');
+    expect(redirect).not.toHaveBeenCalled();
+    writes.mockRestore();
+    await click('Try saving again');
+    expect(draft().skillSlotA.skillId).toBe('Cow');
+    expect(redirect).toHaveBeenCalledTimes(1);
+  });
+  it('an explicit "sign in anyway" proceeds even though local saving failed', async () => {
+    await render();
+    failWrites(DRAFT_STORAGE_KEY);
+    await type('#skill-A', 'Cow');
+    await click(find('.cloud-save'));
+    await click('Continue with Discord');
+    expect(redirect).not.toHaveBeenCalled();
+    await click('Sign in anyway and lose unsaved changes');
+    expect(redirect).toHaveBeenCalledWith('https://accounts.example/discord?return=%2F');
   });
   it('returns to the shared page after sign-in (copy context is preserved)', async () => {
     const id = server.insert('Author', doc('Cow/Unarmed', 'Cow', 'Unarmed'), { visibility: 'public' }).id;
@@ -252,9 +287,51 @@ describe('saving to My Builds', () => {
     for (const label of ['Save mine as a new build', 'Load the saved version', 'Overwrite with mine']) expect(hasButton(label)).toBe(true);
     await click('Load the saved version');
     expect(find<HTMLInputElement>('#level-A').value).toBe('11');
-    expect(JSON.parse(localStorage.getItem(REPLACED_DRAFT_KEY)!).document.skillSlotA.level).toBe(77);
-    await click('Restore it');
+    expect(backups().map(entry => entry.document.skillSlotA.level)).toEqual([77]);
+    await click(find('[aria-label="Restore “Cow”"]'));
     expect(find<HTMLInputElement>('#level-A').value).toBe('77');
+    expect(localStorage.getItem(REPLACED_DRAFT_KEY)).toBeNull();
+  });
+  async function conflictWithEdit(level: string) {
+    await render();
+    await type('#skill-A', 'Cow'); await saveNew();
+    const row = [...server.rows.values()][0]!;
+    row.revision = 2; row.document = { ...row.document, skillSlotA: { skillId: 'Cow', level: 11 } };
+    await type('#level-A', level);
+    await click('Save changes');
+    expect(hasButton('Load the saved version')).toBe(true);
+  }
+  it('loading the saved version is refused, keeping the edits, when the backup cannot be written', async () => {
+    await conflictWithEdit('77');
+    const writes = failWrites(REPLACED_DRAFT_KEY);
+    await click('Load the saved version');
+    expect(text()).toContain('Nothing was replaced: this browser could not save a backup of your current build');
+    expect(find<HTMLInputElement>('#level-A').value).toBe('77');
+    expect(localStorage.getItem(REPLACED_DRAFT_KEY)).toBeNull();
+    expect(hasButton('Load the saved version')).toBe(true);
+    writes.mockRestore();
+    await click('Load the saved version');
+    expect(find<HTMLInputElement>('#level-A').value).toBe('11');
+    expect(backups().map(entry => entry.document.skillSlotA.level)).toEqual([77]);
+  });
+  it('earlier backups are never overwritten; a full backup list refuses further replacement', async () => {
+    const earlier = Array.from({ length: MAX_REPLACED_DRAFTS - 1 }, (_, index) => ({ replacedAt: index + 1, document: doc(`Earlier ${index}`, 'Deer', null), link: null }));
+    localStorage.setItem(REPLACED_DRAFT_KEY, JSON.stringify({ version: 2, entries: earlier }));
+    await conflictWithEdit('77');
+    await click('Load the saved version');
+    expect(backups().map(entry => entry.document.title)).toEqual([...earlier.map(entry => entry.document.title), 'Cow']);
+    await type('#level-A', '12');
+    server.rows.values().next().value!.revision = 9;
+    await click('Save changes');
+    await click('Load the saved version');
+    expect(text()).toContain(`${MAX_REPLACED_DRAFTS} earlier builds are already kept`);
+    expect(find<HTMLInputElement>('#level-A').value).toBe('12');
+    expect(backups()).toHaveLength(MAX_REPLACED_DRAFTS);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    await click(find('[aria-label="Discard “Earlier 0”"]'));
+    await click('Load the saved version');
+    expect(find<HTMLInputElement>('#level-A').value).toBe('11');
+    expect(backups().map(entry => entry.document.title).slice(-2)).toEqual(['Cow', 'Cow']);
   });
   it('overwrite after a conflict requires confirmation and then saves against the latest revision', async () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
@@ -362,8 +439,8 @@ describe('My Builds, sharing and profiles', () => {
     expect(window.location.pathname).toBe('/');
     expect(find('.title-button').textContent).toBe('Alpha');
     expect(find('#cloud-status').textContent).toContain('All changes saved');
-    expect(text()).toContain('“My experiment”, was kept on this device');
-    await click('Restore it');
+    expect(text()).toContain('“My experiment” was kept on this device');
+    await click(find('[aria-label="Restore “My experiment”"]'));
     expect(find('.title-button').textContent).toBe('My experiment');
   });
   it('publishing needs a review; share links exist only for Unlisted/Public; Private revokes them', async () => {

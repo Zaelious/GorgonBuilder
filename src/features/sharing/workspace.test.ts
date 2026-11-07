@@ -5,17 +5,20 @@ import { DRAFT_STORAGE_KEY } from '../../persistence/local/storage';
 import type { BuildRecord } from '../account/api';
 import { openRecordInPlanner } from './open-build';
 import {
-  CLOUD_LINK_KEY, cloudState, documentHash, hasUnsavedWork, isEmptyBuild, linkFor, readCloudLink, readReplacedDraft,
-  REPLACED_DRAFT_KEY, stableStringify, syncLinkMetadata, writeCloudLink,
+  CLOUD_LINK_KEY, cloudState, discardReplacedDraft, documentHash, hasUnsavedWork, isEmptyBuild, linkFor, MAX_REPLACED_DRAFTS,
+  readCloudLink, readReplacedDrafts, REPLACED_DRAFT_KEY, stableStringify, stashWorkingBuild, syncLinkMetadata, writeCloudLink,
 } from './workspace';
 
 const version = 'v490';
 const empty = () => createDefaultBuildDocument({ gameDataVersion: version });
 const built = (title = 'Cow/Unarmed'): BuildDocument => ({ ...empty(), title, skillSlotA: { skillId: 'Cow', level: 90 }, skillSlotB: { skillId: 'Unarmed', level: 80 } });
-function memory(initial: Record<string, string> = {}) {
+/** In-memory StorageLike; `failing` keys throw on write (quota/permission/per-key failure). */
+function memory(initial: Record<string, string> = {}, failing: string[] = []) {
   const map = new Map(Object.entries(initial));
-  return { map, getItem: (key: string) => map.get(key) ?? null, setItem: (key: string, value: string) => { map.set(key, value); }, removeItem: (key: string) => { map.delete(key); } };
+  return { map, failing, getItem: (key: string) => map.get(key) ?? null, removeItem: (key: string) => { map.delete(key); },
+    setItem: (key: string, value: string) => { if (failing.includes(key)) throw new DOMException('Quota exceeded', 'QuotaExceededError'); map.set(key, value); } };
 }
+const kept = (store: ReturnType<typeof memory>) => { const read = readReplacedDrafts(store); if (!read.ok) throw new Error('unreadable'); return read.entries; };
 const record = (document: BuildDocument, overrides: Partial<BuildRecord> = {}): BuildRecord => ({
   id: 'abcdefghijklmnop', visibility: 'private', title: document.title, publicDescription: '', skillAId: document.skillSlotA.skillId,
   skillBId: document.skillSlotB.skillId, schemaVersion: 1, gameDataVersion: version, revision: 1, createdAt: 1, updatedAt: 1,
@@ -83,8 +86,46 @@ describe('opening a My Builds record into the planner', () => {
     expect(JSON.parse(store.map.get(DRAFT_STORAGE_KEY)!)).toEqual(local);
     expect(prompts[0]).toMatch(/My local experiment.*Saved.*backup/s);
     expect(openRecordInPlanner(record(built('Saved')), 'CowFan', version, { storage: store, confirm: () => true, now: 9 })).toEqual({ status: 'opened' });
-    expect(readReplacedDraft(store)).toEqual({ version: 1, replacedAt: 9, document: local, link: null });
+    expect(kept(store)).toEqual([{ replacedAt: 9, document: local, link: null }]);
     expect(JSON.parse(store.map.get(DRAFT_STORAGE_KEY)!).title).toBe('Saved');
+  });
+  it('fails closed when the required backup cannot be written: draft, link and earlier backups stay intact', () => {
+    const local = built('Only copy');
+    const linked = built('Linked elsewhere');
+    const earlier = { replacedAt: 1, document: built('Earlier'), link: null };
+    const store = memory({ [DRAFT_STORAGE_KEY]: draft(local), [REPLACED_DRAFT_KEY]: JSON.stringify({ version: 2, entries: [earlier] }) }, [REPLACED_DRAFT_KEY]);
+    writeCloudLink(linkFor(record(linked, { id: 'linkedlinkedlink' }), 'CowFan', linked), store);
+    const before = new Map(store.map);
+    const result = openRecordInPlanner(record(built('Incoming')), 'CowFan', version, { storage: store, confirm: () => true });
+    expect(result).toMatchObject({ status: 'failed', message: expect.stringContaining('could not save a backup') });
+    expect(store.map).toEqual(before);
+  });
+  it('rolls the backup back if the draft itself then cannot be written', () => {
+    const local = built('Only copy');
+    const store = memory({ [DRAFT_STORAGE_KEY]: draft(local) }, [DRAFT_STORAGE_KEY]);
+    expect(openRecordInPlanner(record(built('Incoming')), 'CowFan', version, { storage: store, confirm: () => true }).status).toBe('failed');
+    expect(JSON.parse(store.map.get(DRAFT_STORAGE_KEY)!)).toEqual(local);
+    expect(store.map.has(REPLACED_DRAFT_KEY)).toBe(false);
+    expect(store.map.has(CLOUD_LINK_KEY)).toBe(false);
+  });
+  it('A → B → C keeps both replaced builds instead of overwriting the first backup', () => {
+    const a = built('A unsaved');
+    const store = memory({ [DRAFT_STORAGE_KEY]: draft(a) });
+    expect(openRecordInPlanner(record(built('B'), { id: 'bbbbbbbbbbbbbbbb' }), 'CowFan', version, { storage: store, confirm: () => true, now: 1 }).status).toBe('opened');
+    const bEdited = { ...JSON.parse(store.map.get(DRAFT_STORAGE_KEY)!) as BuildDocument, title: 'B edited' };
+    store.map.set(DRAFT_STORAGE_KEY, draft(bEdited));
+    expect(openRecordInPlanner(record(built('C'), { id: 'cccccccccccccccc' }), 'CowFan', version, { storage: store, confirm: () => true, now: 2 }).status).toBe('opened');
+    expect(kept(store).map(entry => entry.document.title)).toEqual(['A unsaved', 'B edited']);
+    expect(kept(store)[1]!.link?.buildId).toBe('bbbbbbbbbbbbbbbb');
+  });
+  it('asks before replacing a damaged (invalid) draft and leaves its bytes untouched on cancel', () => {
+    const damaged = '{"schemaVersion":1,"title":';
+    const store = memory({ [DRAFT_STORAGE_KEY]: damaged });
+    const prompts: string[] = [];
+    expect(openRecordInPlanner(record(built('Incoming')), 'CowFan', version, { storage: store, confirm: m => { prompts.push(m); return false; } }).status).toBe('cancelled');
+    expect(prompts[0]).toMatch(/damaged.*permanently replace/s);
+    expect(store.map.get(DRAFT_STORAGE_KEY)).toBe(damaged);
+    expect(openRecordInPlanner(record(built('Incoming')), 'CowFan', version, { storage: store, confirm: () => true }).status).toBe('opened');
   });
   it('continues unsaved edits of the same build instead of discarding them', () => {
     const saved = built();
@@ -99,5 +140,38 @@ describe('opening a My Builds record into the planner', () => {
     const store = memory({ [DRAFT_STORAGE_KEY]: future });
     expect(openRecordInPlanner(record(built()), 'CowFan', version, { storage: store, confirm: () => true }).status).toBe('failed');
     expect(store.map.get(DRAFT_STORAGE_KEY)).toBe(future);
+  });
+});
+
+describe('kept backups', () => {
+  const entry = (title: string, replacedAt: number) => ({ replacedAt, document: built(title), link: null });
+  it('appends without overwriting, reads the earlier single-entry form, and restores by consuming one entry', () => {
+    const store = memory({ [REPLACED_DRAFT_KEY]: JSON.stringify({ version: 1, ...entry('Legacy', 1) }) });
+    expect(stashWorkingBuild(built('Second'), null, { store, now: 2 })).toMatchObject({ ok: true, kept: true });
+    expect(kept(store).map(item => item.document.title)).toEqual(['Legacy', 'Second']);
+    // Restoring "Legacy" while the working build is clean removes only that entry.
+    const saved = built('Clean');
+    expect(stashWorkingBuild(saved, linkFor(record(saved), 'CowFan', saved), { store, consume: 0 })).toMatchObject({ ok: true, kept: false });
+    expect(kept(store).map(item => item.document.title)).toEqual(['Second']);
+    expect(discardReplacedDraft(0, store)).toEqual({ ok: true, entries: [] });
+    expect(store.map.has(REPLACED_DRAFT_KEY)).toBe(false);
+  });
+  it('refuses when the list is full, unreadable or cannot be written, changing nothing', () => {
+    const full = JSON.stringify({ version: 2, entries: Array.from({ length: MAX_REPLACED_DRAFTS }, (_, i) => entry(`Old ${i}`, i)) });
+    for (const [initial, failing, reason] of [
+      [full, [], 'full'], ['{not json', [], 'unreadable'], [JSON.stringify({ version: 2, entries: [{ replacedAt: 1, document: { nope: true } }] }), [], 'unreadable'],
+      [null, [REPLACED_DRAFT_KEY], 'write-failed'],
+    ] as const) {
+      const store = memory(initial === null ? {} : { [REPLACED_DRAFT_KEY]: initial }, [...failing]);
+      const before = new Map(store.map);
+      expect(stashWorkingBuild(built('Unsaved'), null, { store })).toMatchObject({ ok: false, reason });
+      expect(store.map).toEqual(before);
+    }
+  });
+  it('needs no backup (and never writes) for empty or already-saved work', () => {
+    const store = memory({}, [REPLACED_DRAFT_KEY]);
+    expect(stashWorkingBuild(empty(), null, { store })).toMatchObject({ ok: true, kept: false });
+    const saved = built();
+    expect(stashWorkingBuild(saved, linkFor(record(saved), 'CowFan', saved), { store })).toMatchObject({ ok: true, kept: false });
   });
 });

@@ -133,8 +133,11 @@ async function main() {
   const moo = seedAccount(secret, 'moo', 'MooTank');
   const deer = seedAccount(secret, 'deer', 'DeerSage');
   const fresh = seedAccount(secret, 'fresh', null);
-  const accounts = await startWorker({ BETTER_AUTH_SECRET: secret, DISCORD_CLIENT_ID: 'local-placeholder', DISCORD_CLIENT_SECRET: 'local-placeholder',
-    GOOGLE_CLIENT_ID: 'local-placeholder', GOOGLE_CLIENT_SECRET: 'local-placeholder' });
+  // Provider IDs only need to be present: no request reaches Discord or Google in this run.
+  // Values are generated per run (never literals), so no credential-shaped text is committed.
+  const providerVars = Object.fromEntries(['DISCORD_CLIENT_ID', 'DISCORD_CLIENT_SECRET', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET']
+    .map(name => [name, `unused-${randomBytes(6).toString('hex')}`]));
+  const accounts = await startWorker({ ...providerVars, BETTER_AUTH_SECRET: secret });
   const plain = await startWorker({});
   const browser = await chromium.launch();
   const desktop = { width: 1440, height: 900 };
