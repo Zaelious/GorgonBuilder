@@ -1,22 +1,26 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createDefaultBuildDocument, type BuildDocument } from '../core/build/document';
 import { loadGameDataRepository } from '../data/repository/load';
 import type { GameDataRepository } from '../data/repository/repository';
-import { SkillPlanner } from '../features/skills/SkillPlanner';
-import { EquipmentPlanner } from '../features/equipment/EquipmentPlanner';
 import { ImportCharacter } from '../features/import/ImportCharacter';
-import { TargetDummy } from '../features/abilities/TargetDummy';
-import type { AbilityDamageInputs } from '../features/abilities/AbilityResults';
-import { aggregateBuildModifiers, getCreatureType, resolveCriticalSkillLevel } from '../core/calculation';
-import { eliteFlag, readCriticalScenario, writeCriticalScenario, type CriticalScenario } from '../persistence/local/critical-scenario';
-import { useSessionFlag } from './useSessionFlag';
 import type { ImportSession } from '../features/import/inventory';
 import { createDraftAutosave } from '../persistence/local/autosave';
 import { createLocalPersistence, type SaveResult } from '../persistence/local/storage';
 import { editBuild, type BuildEdit, type Slot } from './editor/build-editor';
 import { BuildTitle } from './editor/BuildTitle';
 import { BrandHeader } from './BrandHeader';
+import { PlannerBody } from './PlannerBody';
+import { navigate, parseRoute, useLocation } from './router';
+import { AccountProvider, useAccount } from '../features/account/AccountContext';
+import type { AccountApi } from '../features/account/api';
+import { AppNav } from '../features/account/AppNav';
+import { useCloudSave } from '../features/sharing/CloudSave';
+import { MyBuilds } from '../features/sharing/MyBuilds';
+import { SharedBuildView } from '../features/sharing/SharedBuildView';
+import { AuthorPage, ProfilePage } from '../features/sharing/ProfilePages';
+import { hasUnsavedWork, readCloudLink, readReplacedDraft, writeCloudLink, writeReplacedDraft, type CloudLink, type ReplacedDraft } from '../features/sharing/workspace';
 import './planner.css';
+import '../features/sharing/sharing.css';
 
 function saveError(result: Exclude<SaveResult, { ok: true }>): string {
   switch (result.reason) {
@@ -28,7 +32,8 @@ function saveError(result: Exclude<SaveResult, { ok: true }>): string {
   }
 }
 
-function BuildEditor({ data }: { data: GameDataRepository }) {
+function BuildEditor({ data, imported, setImported }: { data: GameDataRepository; imported: ImportSession | null; setImported: (session: ImportSession | null) => void }) {
+  const account = useAccount();
   const [session] = useState(() => {
     const local = createLocalPersistence({ gameDataVersion: data.gameDataVersion });
     return { local, restored: local.restoreDraft(), preferences: local.restorePreferences() };
@@ -36,8 +41,11 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
   const [minimumEquipmentLevel, setMinimumEquipmentLevel] = useState(session.preferences.value.minimumEquipmentLevel);
   const [preferenceResult, setPreferenceResult] = useState<SaveResult | null>(session.preferences.status === 'fallback' ? session.preferences.error : null);
   const [build, setBuild] = useState(session.restored.value);
-  const [imported, setImported] = useState<ImportSession | null>(null);
   const current = useRef(build);
+  // T0020: which My Builds record (if any) this working draft came from; kept beside the draft.
+  const [link, setLinkState] = useState<CloudLink | null>(readCloudLink);
+  const linkRef = useRef(link);
+  const [backup, setBackup] = useState<ReplacedDraft | null>(readReplacedDraft);
   const [detailSlot, setDetailSlot] = useState<Slot | null>(null);
   const [recoveryVisible, setRecoveryVisible] = useState(true);
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
@@ -55,23 +63,6 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
   const protectedDraft = session.restored.status === 'fallback' &&
     (session.restored.error.reason === 'unsupported-version' || session.restored.error.reason === 'read-failed');
   const readOnly = versionMismatch || protectedDraft;
-  // Calculation UI is opt-in for this browser session (not saved in the build). When on, one pure aggregation per
-  // committed build feeds every equipped ability result.
-  const [damageAnalysis, setDamageAnalysis] = useSessionFlag('damageAnalysis');
-  // T0013-F2 critical scenario (creature type, Elite, manual sub-skill levels): browser-session state, never the build.
-  const [criticalScenario, setCriticalScenarioState] = useState<CriticalScenario>(readCriticalScenario);
-  const updateCriticalScenario = (next: CriticalScenario) => { setCriticalScenarioState(next); writeCriticalScenario(next); };
-  const character = imported?.character;
-  const damageInputs = useMemo<AbilityDamageInputs | undefined>(() => {
-    if (!damageAnalysis) return undefined;
-    const creatureType = getCreatureType(criticalScenario.creatureType, data)?.id ?? null;
-    return {
-      aggregation: aggregateBuildModifiers(build, data, { target: { creatureType, elite: eliteFlag(criticalScenario.elite) } }),
-      target: build.target,
-      critical: { creatureType, skillLevel: skillId => resolveCriticalSkillLevel(skillId, { snapshot: character, manualLevels: criticalScenario.manualLevels }, data) },
-    };
-  }, [build, data, damageAnalysis, criticalScenario, character]);
-
   useEffect(() => {
     const flush = () => { autosave.flush(); };
     const onVisibility = () => { if (document.visibilityState === 'hidden') flush(); };
@@ -84,6 +75,45 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
       autosave.cancel();
     };
   }, [autosave]);
+
+  // Leaving for the OAuth provider: write any pending local edit first.
+  useEffect(() => account.onBeforeRedirect(() => autosave.flush()), [account, autosave]);
+
+  function setLink(next: CloudLink | null) {
+    linkRef.current = next;
+    writeCloudLink(next);
+    setLinkState(next);
+  }
+
+  /** Replace the working build; unsaved work is kept as a restorable backup, never silently lost. */
+  function replaceWorking(next: BuildDocument, nextLink: CloudLink | null) {
+    const previous = current.current;
+    if (hasUnsavedWork(previous, linkRef.current)) {
+      const kept: ReplacedDraft = { version: 1, replacedAt: Date.now(), document: previous, link: linkRef.current };
+      writeReplacedDraft(kept); setBackup(kept);
+    }
+    setCleared(null); setDetailSlot(null);
+    apply(next);
+    autosave.flush();
+    setLink(nextLink);
+  }
+
+  function restoreBackup() {
+    if (readOnly || !backup) return;
+    const restoring = backup;
+    if (!hasUnsavedWork(current.current, linkRef.current)) { writeReplacedDraft(null); setBackup(null); }
+    replaceWorking(restoring.document, restoring.link);
+  }
+
+  function discardBackup() {
+    if (!window.confirm('Discard the kept backup build? This cannot be undone.')) return;
+    writeReplacedDraft(null); setBackup(null);
+  }
+
+  const cloud = useCloudSave({
+    build, getBuild: () => current.current, readOnly, link, onLinkChange: setLink, onReplace: replaceWorking,
+    onTitle: title => { commit({ type: 'title', title }); return current.current; },
+  });
 
   function apply(next: BuildDocument) {
     current.current = next;
@@ -111,10 +141,11 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
   }
 
   function clearBuild() {
-    if (readOnly || !window.confirm('Clear the current working build? This removes configured skills and levels, both ability bars, equipment, imported working powers and planned mods, Spark configurations, title and notes, and target settings. My Items, imported CharacterSheet/Storage reports and browser preferences are kept. This cannot be undone.')) return;
+    if (readOnly || !window.confirm(`Clear the current working build? This removes configured skills and levels, both ability bars, equipment, imported working powers and planned mods, Spark configurations, title and notes, and target settings. My Items, imported CharacterSheet/Storage reports and browser preferences are kept.${linkRef.current ? ' The copy saved in My Builds is not changed; the cleared build starts as a new unsaved build.' : ''} This cannot be undone.`)) return;
     setCleared(null);
     setDetailSlot(null);
     apply(createDefaultBuildDocument({ gameDataVersion: data.gameDataVersion }));
+    if (linkRef.current) setLink(null);
   }
 
   function undoCleared() {
@@ -145,37 +176,28 @@ function BuildEditor({ data }: { data: GameDataRepository }) {
       <div className="planner-actions">
         <p className="save-status" id="save-status" role="status">{saveState}</p>
         <ImportCharacter data={data} session={imported} onApply={setImported} />
-        <button type="button" className="save-draft" disabled={readOnly} onClick={saveNow} aria-label="Save local draft" aria-describedby="save-status"
+        <button type="button" className={account.enabled ? 'save-draft save-local' : 'save-draft'} disabled={readOnly} onClick={saveNow} aria-label="Save local draft" aria-describedby="save-status"
           title="Save this draft in this browser now. Changes also save automatically; nothing is uploaded.">
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2zM8 3v5h7V3M8 21v-7h8v7" /></svg>Save</button>
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2zM8 3v5h7V3M8 21v-7h8v7" /></svg>{account.enabled ? 'Save locally' : 'Save'}</button>
+        {cloud.actions}
         <button type="button" className="clear-build" disabled={readOnly} onClick={clearBuild}>Clear build</button>
       </div>
     </div>
+    {cloud.status}
+    {backup && <div className="notice cloud-notice info backup-notice" role="status"><p>A previous working build, “{backup.document.title}”, was kept on this device when another build was opened.</p>
+      <div className="notice-actions"><button type="button" disabled={readOnly} onClick={restoreBackup}>Restore it</button>
+        <button type="button" onClick={discardBackup}>Discard</button></div></div>}
     {recoveryVisible && session.restored.status === 'fallback' && <p className="notice warning" role="alert">{saveError(session.restored.error)}</p>}
     {versionMismatch && <p className="notice warning" role="alert">This draft uses game data {build.gameDataVersion}; loaded data is {data.gameDataVersion}. The saved version and selections are preserved. Editing is disabled because the original snapshot is unavailable.</p>}
     {saveResult && !saveResult.ok && <div className="notice warning" role="alert"><p>{saveError(saveResult)}</p><button type="button" onClick={() => autosave.flush()}>Retry saving</button></div>}
-    <section className="skills-section" aria-labelledby="skills-abilities-title"><div className="section-heading"><h2 id="skills-abilities-title"><svg className="section-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"><path d="M12 2.5c.6 4.6 2.9 6.9 7.5 7.5-4.6.6-6.9 2.9-7.5 7.5-.6-4.6-2.9-6.9-7.5-7.5 4.6-.6 6.9-2.9 7.5-7.5Z" /></svg>Skills &amp; Abilities</h2>
-      <label className="damage-analysis-toggle" title="Show calculated damage, target dummy and scenario controls. Remembered for this browser session; not saved in the build.">
-        <input type="checkbox" role="switch" checked={damageAnalysis} onChange={e => setDamageAnalysis(e.target.checked)} />Damage analysis</label>
-      <details className="planner-help" onKeyDown={e => {
-        if (e.key === 'Escape') { e.preventDefault(); e.currentTarget.open = false; e.currentTarget.querySelector<HTMLElement>('summary')?.focus(); }
-      }}><summary aria-label="Planner help">?</summary><div className="planner-help-content">
-        <p>Select skills and levels, then use + to browse abilities. Open an equipped icon for details and bar controls. Turn on Damage analysis (remembered for this browser session) to add calculated damage, the target dummy and scenario controls. Changing a skill clears its bar and staged mods for a skill no longer in either slot (with Undo). Both slots can use the same skill.</p>
-      </div></details>
-    </div><div className="planner-grid">
-      <SkillPlanner slot="A" skill={build.skillSlotA} bar={build.abilityBarA} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} equipment={build.equipment} imported={imported?.character} damageInputs={damageInputs} />
-      <SkillPlanner slot="B" skill={build.skillSlotB} bar={build.abilityBarB} data={data} onEdit={commit} readOnly={readOnly} detailSlot={detailSlot} onDetailOpen={setDetailSlot} equipment={build.equipment} imported={imported?.character} damageInputs={damageInputs} />
-    </div>
-    {damageAnalysis && <TargetDummy build={build} data={data} onEdit={commit} readOnly={readOnly}
-      critical={{ scenario: criticalScenario, onChange: updateCriticalScenario, imported: character }} />}
-    <div className="skill-change-notice" aria-live="polite">{cleared && <p>
-      <span>{cleared.message}</span>
-      <button type="button" onClick={undoCleared}>Undo</button>
-      <button type="button" className="notice-dismiss" aria-label="Dismiss cleared mods notice" onClick={() => setCleared(null)}>×</button>
-    </p>}</div></section>
-    <EquipmentPlanner build={build} data={data} imported={imported} onEdit={commit} readOnly={readOnly} minimum={minimumEquipmentLevel}
-      preferenceProtected={preferenceProtected} preferenceNotice={preferenceNotice} onMinimumChange={updateMinimum} />
-    <footer className="planner-footer"><span>Draft game data: {build.gameDataVersion} · Loaded: {data.gameDataVersion} · Schema {build.schemaVersion}</span><span>Some portions copyright {new Date().getFullYear()} Elder Game, LLC. · Local draft only</span></footer>
+    <PlannerBody build={build} data={data} readOnly={readOnly} onEdit={commit} imported={imported} detailSlot={detailSlot} onDetailOpen={setDetailSlot}
+      minimum={minimumEquipmentLevel} preferenceProtected={preferenceProtected} preferenceNotice={preferenceNotice} onMinimumChange={updateMinimum}
+      skillNotice={cleared && <p>
+        <span>{cleared.message}</span>
+        <button type="button" onClick={undoCleared}>Undo</button>
+        <button type="button" className="notice-dismiss" aria-label="Dismiss cleared mods notice" onClick={() => setCleared(null)}>×</button>
+      </p>} />
+    <footer className="planner-footer"><span>Draft game data: {build.gameDataVersion} · Loaded: {data.gameDataVersion} · Schema {build.schemaVersion}</span><span>Some portions copyright {new Date().getFullYear()} Elder Game, LLC. · {account.enabled ? 'Autosaves in this browser; Save build stores it in your account' : 'Local draft only'}</span></footer>
   </>;
 }
 
@@ -195,7 +217,31 @@ function clearedNotice(previous: BuildDocument, next: BuildDocument, slot: Slot,
 
 type LoadState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; data: GameDataRepository };
 
-export function App() {
+function Routes({ data }: { data: GameDataRepository }) {
+  const location = useLocation();
+  // The imported CharacterSheet/Storage session is page memory only; keep it across in-app pages.
+  const [imported, setImported] = useState<ImportSession | null>(null);
+  const route = parseRoute(location.split('?')[0]!);
+  switch (route.name) {
+    case 'planner': return <BuildEditor data={data} imported={imported} setImported={setImported} />;
+    case 'my-builds': return <MyBuilds data={data} />;
+    case 'profile': return <ProfilePage data={data} />;
+    case 'author': return <AuthorPage username={route.username} data={data} />;
+    case 'build': return <SharedBuildView key={route.id} id={route.id} data={data} />;
+    default: return <div className="notice"><h1>Page not found</h1><p>This address does not match a GorgonBuilder page.</p>
+      <button type="button" onClick={() => navigate('/')}>Open the planner</button></div>;
+  }
+}
+
+function AccountNotice() {
+  const account = useAccount();
+  const notice = account.notice;
+  if (!notice) return null;
+  return <div className={`notice cloud-notice ${notice.tone}`} role={notice.tone === 'warning' ? 'alert' : 'status'}><p>{notice.text}</p>
+    <button type="button" className="notice-dismiss" aria-label="Dismiss notice" onClick={() => account.setNotice(null)}>×</button></div>;
+}
+
+export function App({ accountApi }: { accountApi?: AccountApi } = {}) {
   const [attempt, setAttempt] = useState(0);
   const [load, setLoad] = useState<LoadState>({ status: 'loading' });
   useEffect(() => {
@@ -208,12 +254,14 @@ export function App() {
     return () => { active = false; };
   }, [attempt]);
 
-  return <div className="app-shell">
+  return <AccountProvider {...(accountApi ? { api: accountApi } : {})}><div className="app-shell">
     <BrandHeader />
+    <AppNav />
     <main className="planner-main">
+      <AccountNotice />
       {load.status === 'loading' && <section className="notice" role="status"><h1>Loading official game data…</h1><p>Preparing the build planner.</p></section>}
       {load.status === 'error' && <section className="notice" role="alert"><h1>Game data could not be loaded</h1><p>Check your connection and retry. Your stored draft has not been changed.</p><button type="button" onClick={() => { setLoad({ status: 'loading' }); setAttempt(n => n + 1); }}>Retry loading game data</button></section>}
-      {load.status === 'ready' && <BuildEditor data={load.data} />}
+      {load.status === 'ready' && <Routes data={load.data} />}
     </main>
-  </div>;
+  </div></AccountProvider>;
 }

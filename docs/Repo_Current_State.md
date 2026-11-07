@@ -1,6 +1,6 @@
 # GorgonBuilder — Repository Current State
 
-**Last updated:** 2026-11-06  
+**Last updated:** 2026-11-07  
 **Canonical repository:** `Zaelious/GorgonBuilder`  
 **Default branch:** `main`
 
@@ -50,7 +50,11 @@ T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on
 
 **Deployment housekeeping completed** via [PR #2](https://github.com/Zaelious/GorgonBuilder/pull/2) (squash commit `9df290379b396f8bb4cc2717e154bbbca577af98`): explicit static-assets `wrangler.jsonc`, Wrangler 4.156.0 and synchronized lockfile, deploy/preview scripts, GitHub CI with Cloudflare dry-run, and deployment instructions.
 
-## T0018 accepted; T0019 implementation under review
+## T0020 implemented on review branch
+
+T0019 was squash-merged via PR #53 (`e607a29`) and deployed by the owner to staging, where genuine Google OAuth, username onboarding and private build persistence were confirmed (Discord, the full privacy matrix and CPU/D1 usage remain pending launch checks). **T0020** (account UI, My Builds, save/share, read-only shared builds, copy, profiles) is implemented on `feature/t0020-accounts-save-share-ui` and is **not merged**. The frontend detects the account backend, so production and PR previews keep the unchanged guest planner. Staging hands-on testing requires owner merge plus the manual main-only staging workflow. See [T0020 verification](T0020_Verification.md). T0020-F1 not started.
+
+## T0018 accepted; T0019 implementation under review (historical)
 
 T0018 was accepted and squash-merged via [PR #52](https://github.com/Zaelious/GorgonBuilder/pull/52), commit `5befbb5` (2026-11-07). The merged Worker, D1 migrations, Better Auth 1.7.18 probe and repository contracts are authoritative. T0019 adds runtime OAuth/session/onboarding APIs, native D1 persistence, ownership/privacy controls and a manual approval-controlled staging workflow on `feature/t0019-auth-build-backend`; **not yet accepted or merged**. See [T0019 verification](T0019_Verification.md) and [website-only owner setup](T0019_Owner_Setup.md).
 

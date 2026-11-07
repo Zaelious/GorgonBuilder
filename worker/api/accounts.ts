@@ -59,7 +59,11 @@ export async function handleAccount(request: Request, env: AccountEnv): Promise<
         if (!valid) throw new RequestFailure(400, 'invalid_callback', 'Use a same-origin callback.');
       }
       body.callbackURL ??= '/';
-      body.errorCallbackURL = '/api/auth/error';
+      // T0020: a failed/cancelled sign-in returns to the same SPA page with ?signin=failed,
+      // where the planner shows a friendly notice (never raw JSON). Same origin as callbackURL.
+      const failed = new URL(body.callbackURL as string, origin);
+      failed.searchParams.set('signin', 'failed');
+      body.errorCallbackURL = `${failed.pathname}${failed.search}`;
     } else onlyKeys(body, []);
     const response = await auth.handler(new Request(request.url, { method: 'POST', headers: request.headers, body: JSON.stringify(body) }));
     if (!response.ok) return apiError(response.status, 'auth_failed', 'Sign-in or sign-out could not be completed. Try your original provider or Google.');
