@@ -104,7 +104,7 @@ async function smokeMainWorker(): Promise<void> {
 
   const tables = d1Json(env, persist, `SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE '\\_%' ESCAPE '\\' AND name NOT LIKE 'sqlite%' AND name <> 'd1_migrations' ORDER BY name`)
     .map(row => row.name);
-  check('local D1 schema has auth, profile and build tables', JSON.stringify(tables) === JSON.stringify(['account', 'build', 'profile', 'session', 'user', 'verification']),
+  check('local D1 schema has auth, profile and build tables', JSON.stringify(tables) === JSON.stringify(['account', 'api_rate_limit', 'build', 'profile', 'session', 'user', 'verification']),
     tables.join(', '));
   const fk = d1Json(env, persist, 'PRAGMA foreign_keys');
   check('local D1 enforces foreign keys', fk[0]?.foreign_keys === 1);
@@ -128,13 +128,17 @@ async function smokeMainWorker(): Promise<void> {
     check('HEAD /api/health is 200 without a body', head.status === 200 && (await head.text()) === '');
     const post = await fetch(`${dev.origin}/api/health`, { method: 'POST' });
     check('POST /api/health is a JSON 405', post.status === 405 && isJson(post) && post.headers.get('allow') === 'GET, HEAD');
-    for (const path of ['/api', '/api/', '/api/unknown', '/api/builds/AAAAAAAAAAAAAAAA', '/api/auth/session']) {
+    for (const path of ['/api', '/api/', '/api/unknown', '/api/builds/malformed-id', '/api/auth/session']) {
       for (const headers of [{}, { 'sec-fetch-mode': 'navigate', accept: 'text/html' }] as Record<string, string>[]) {
         const response = await fetch(`${dev.origin}${path}`, { headers });
         const text = await response.text();
         check(`${path}${'accept' in headers ? ' (browser navigation)' : ''} is a JSON 404, not SPA HTML`,
           response.status === 404 && isJson(response) && !/<html/i.test(text), `${response.status} ${response.headers.get('content-type')}`);
       }
+    }
+    for (const path of ['/api/me', '/api/builds/AAAAAAAAAAAAAAAA', '/api/auth/get-session']) {
+      const disabled = await fetch(`${dev.origin}${path}`);
+      check(`${path} fails closed without local auth secrets`, disabled.status === 503 && isJson(disabled));
     }
     const index = readFileSync(resolve(ROOT, 'dist/index.html'), 'utf8');
     const root = await fetch(`${dev.origin}/`);
@@ -157,6 +161,76 @@ async function smokeMainWorker(): Promise<void> {
       const bytes = new Uint8Array(await response.arrayBuffer());
       check('compressed game-data asset is served', response.status === 200 && bytes.byteLength > 0, `${gzip} ${bytes.byteLength} bytes`);
     }
+  } finally { dev.stop(); }
+  await smokeAccountWorker(persist);
+}
+
+async function smokeAccountWorker(persist: string): Promise<void> {
+  console.log('\n== T0019 real Worker account API (local D1, synthetic accounts; no real OAuth) ==');
+  const port = await freePort();
+  const origin = `http://127.0.0.1:${port}`;
+  const signingSecret = crypto.randomUUID() + crypto.randomUUID();
+  const at = Date.now();
+  const cookies: string[] = [];
+  for (const label of ['smoke-alice', 'smoke-bob']) {
+    const token = crypto.randomUUID();
+    d1Json(['--env', 'local'], persist, `INSERT INTO "user" (id,name,email,emailVerified,createdAt,updatedAt)
+      VALUES ('${label}','Synthetic test','${label}@example.invalid',1,${at},${at});
+      INSERT INTO session (id,userId,token,expiresAt,createdAt,updatedAt)
+      VALUES ('${label}','${label}','${token}',${at + 3600000},${at},${at});`);
+    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(signingSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const signature = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(token)));
+    cookies.push(`better-auth.session_token=${encodeURIComponent(`${token}.${btoa(String.fromCharCode(...signature))}`)}`);
+  }
+  const vars = { APP_ORIGIN: origin, BETTER_AUTH_SECRET: signingSecret, DISCORD_CLIENT_ID: 'inert-local',
+    DISCORD_CLIENT_SECRET: 'inert-local', GOOGLE_CLIENT_ID: 'inert-local', GOOGLE_CLIENT_SECRET: 'inert-local' };
+  const dev = await startDev(['--env', 'local', '--persist-to', persist,
+    ...Object.entries(vars).flatMap(([name, value]) => ['--var', `${name}:${value}`])], '/api/health', port);
+  const call = (path: string, method = 'GET', body?: unknown, cookie = '') => fetch(`${origin}${path}`, {
+    method, headers: { origin, cookie, 'content-type': 'application/json' },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  try {
+    for (const [i, username] of ['SmokeAlice', 'SmokeBob'].entries()) {
+      check(`synthetic account ${i + 1} claims username through real Worker`,
+        (await call('/api/me/username', 'PUT', { username }, cookies[i])).status === 200);
+    }
+    const document = { schemaVersion: 1, gameDataVersion: 'v490', title: 'Synthetic smoke', notes: 'private-only-notes',
+      skillSlotA: { skillId: 'Cow', level: 90 }, skillSlotB: { skillId: 'Unarmed', level: 90 },
+      abilityBarA: [], abilityBarB: [], equipment: [], target: { count: 1, damageTypes: {} },
+      characterImport: { characterName: 'private-only-character', server: 'private-only-server' } };
+    for (const visibility of ['private', 'unlisted', 'public']) {
+      const create = await call('/api/builds', 'POST', { document, visibility }, cookies[0]);
+      const row = await create.json() as { id: string; revision: number };
+      check(`${visibility}: authenticated create in workerd`, create.status === 201);
+      for (const [viewer, cookie] of [['owner', cookies[0]], ['second account', cookies[1]], ['guest', '']] as const) {
+        const read = await call(`/api/builds/${row.id}`, 'GET', undefined, cookie);
+        const text = await read.text();
+        const readable = viewer === 'owner' || visibility !== 'private';
+        check(`${visibility}: ${viewer} read`, read.status === (readable ? 200 : 404)
+          && (viewer === 'owner' || !/private-only|ownerUserId/.test(text)) && read.headers.get('cache-control') === 'no-store');
+      }
+      const denied = await call(`/api/builds/${row.id}`, 'PATCH', { expectedRevision: 1, title: 'intrusion' }, cookies[1]);
+      check(`${visibility}: second account edit denied`, denied.status === (visibility === 'private' ? 404 : 403));
+      const copy = await call(`/api/builds/${row.id}/copy`, 'POST', {}, cookies[1]);
+      const copied = await copy.json() as { id?: string; visibility?: string };
+      check(`${visibility}: independent copy permission`, visibility === 'private' ? copy.status === 404
+        : copy.status === 201 && copied.id !== row.id && copied.visibility === 'private');
+      if (visibility === 'public') {
+        check('Worker privacy revocation updates atomically', (await call(`/api/builds/${row.id}`, 'PATCH',
+          { expectedRevision: 1, visibility: 'private' }, cookies[0])).status === 200);
+        check('Worker revocation denies guest immediately', (await call(`/api/builds/${row.id}`)).status === 404);
+      }
+    }
+    for (const provider of ['discord', 'google']) {
+      const initiated = await call('/api/auth/sign-in/social', 'POST', { provider });
+      check(`runtime ${provider} OAuth initiation (inert clients, no provider login)`, initiated.status === 200
+        && (initiated.headers.get('set-cookie') ?? '').includes('HttpOnly'));
+    }
+    const cross = await fetch(`${origin}/api/builds`, { method: 'POST', headers: { origin: 'https://evil.example', cookie: cookies[0]!, 'content-type': 'application/json' }, body: '{}' });
+    check('Worker rejects cross-origin mutation', cross.status === 403);
+    const out = await call('/api/auth/sign-out', 'POST', {}, cookies[0]);
+    check('Worker logout invalidates D1 session', out.status === 200 && (await call('/api/me', 'GET', undefined, cookies[0])).status === 401);
   } finally { dev.stop(); }
 }
 

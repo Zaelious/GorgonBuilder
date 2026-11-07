@@ -1,4 +1,4 @@
-# Template for LOCAL-ONLY Worker secrets. T0018 reads none of these; T0019 will.
+# Template for LOCAL-ONLY Worker secrets. T0019 reads these only on the configured local origin.
 #
 # 1. Copy to `.dev.vars` (git-ignored) only when T0019 local login testing needs it.
 # 2. Fill values locally. NEVER commit, paste into an issue/PR/chat, or log real values.
@@ -6,6 +6,7 @@
 #    never in this file or in wrangler.jsonc. See docs/T0018_Owner_Setup.md.
 #
 # BETTER_AUTH_SECRET=        # 32+ random bytes, e.g. `openssl rand -base64 32`; unique per environment
+# APP_ORIGIN=              # Exact http://127.0.0.1:8787 or http://localhost:8787
 # DISCORD_CLIENT_ID=
 # DISCORD_CLIENT_SECRET=
 # GOOGLE_CLIENT_ID=

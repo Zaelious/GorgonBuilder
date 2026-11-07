@@ -9,6 +9,7 @@
  * validated from a signed cookie and revoked by sign-out.
  */
 import { betterAuth } from 'better-auth';
+import { isAPIError } from 'better-auth/api';
 import { createAuthOptions } from './auth-options';
 
 interface ProbeEnv {
@@ -42,7 +43,7 @@ export default {
       // Stand-in for a completed OAuth callback: create user + session rows in D1.
       const context = await auth.$context;
       const user = await context.internalAdapter.createUser({
-        email: `probe-${crypto.randomUUID()}@example.invalid`, name: 'Auth Probe', emailVerified: false,
+        email: `probe-${crypto.randomUUID()}@example.invalid`, name: 'Auth Probe', emailVerified: true,
       }, { method: 'oauth', oauth: { providerId: 'discord' } });
       const session = await context.internalAdapter.createSession(user.id);
       const cookie = `better-auth.session_token=${await signCookieValue(session.token)}`;
@@ -54,7 +55,13 @@ export default {
                 (SELECT count(*) FROM "verification") AS verifications`).first();
       return Response.json(counts);
     }
-    if (pathname.startsWith('/api/auth/')) return auth.handler(request);
+    if (pathname.startsWith('/api/auth/')) {
+      try { return await auth.handler(request); }
+      catch (error) {
+        return isAPIError(error) ? Response.json({ code: error.body?.code }, { status: error.statusCode })
+          : Response.json({ code: 'unavailable' }, { status: 503 });
+      }
+    }
     return new Response('auth probe', { status: 404 });
   },
 } satisfies ExportedHandler<ProbeEnv>;

@@ -235,6 +235,9 @@ It does **not** claim items are currently equipped solely from `IsInInventory`.
 
 ## Persistence
 
+T0018 foundation was accepted via PR #52. The T0019 review branch implements Better Auth 1.7.18 and native D1 APIs without frontend changes; see [architecture ADR](T0018_Backend_Architecture_ADR.md), [T0019 verification](T0019_Verification.md), and [owner setup](T0019_Owner_Setup.md). Hosted OAuth and staging deployment remain unverified. Production is deliberately unbound.
+
+
 ### Local
 
 Local persistence stores:

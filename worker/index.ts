@@ -1,9 +1,9 @@
 /**
- * GorgonBuilder Worker entrypoint (T0018).
+ * GorgonBuilder Worker entrypoint (T0019).
  *
  * Static Assets still serves the Vite SPA (including deep-link fallback) without
  * invoking this code; `assets.run_worker_first` routes only `/api` and `/api/*` here.
- * No authentication, sessions or build CRUD are mounted yet (T0019).
+ * Account API is fail-closed unless the canonical deployment has D1 and every auth secret.
  */
 import { handleApiRequest, isApiPath } from './api/router';
 

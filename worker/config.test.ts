@@ -31,8 +31,14 @@ describe('wrangler.jsonc', () => {
       binding: 'DB', database_name: 'gorgonbuilder-local', database_id: '00000000-0000-4000-8000-000000000000', migrations_dir: 'migrations',
     }]);
     expect(staging.d1_databases).toEqual([{
-      binding: 'DB', database_name: 'gorgonbuilder-staging', database_id: 'REPLACE_WITH_STAGING_DATABASE_ID', migrations_dir: 'migrations',
+      binding: 'DB', database_name: 'gorgonbuilder-staging', database_id: '477e9b46-bb96-4eca-a5ed-1ee57185fb2a', migrations_dir: 'migrations',
     }]);
+    expect(read().previews?.vars).toEqual({ APP_ENV: 'preview' });
+    expect(read().previews?.d1_databases).toEqual([]);
+    expect(read().compatibility_flags).toContain('nodejs_compat');
+    expect(read().observability?.logs?.invocation_logs).toBe(false);
+    expect(read().observability?.traces?.enabled).toBe(false);
+    expect(read().observability?.redact_query_string).toBe(true);
     expect(local.workers_dev).toBe(false);
     for (const env of [local, staging]) expect(env.assets).toEqual(read().assets);
   });
@@ -56,6 +62,21 @@ describe('automation safety', () => {
       expect(text).not.toMatch(/\bd1 (create|delete|execute)\b/);
     }
     expect(packageScripts.filter(script => /\bd1\b/.test(script)).every(script => /--local\b/.test(script))).toBe(true);
+  });
+
+  it('restricts remote staging automation to explicit main dispatch and two environment approvals', () => {
+    const staging = readFileSync('.github/workflows/staging.yml', 'utf8');
+    expect(staging).toMatch(/workflow_dispatch:/);
+    expect(staging).not.toMatch(/^ {2}(pull_request|pull_request_target|push|schedule):/m);
+    expect(staging.match(/environment: staging/g)).toHaveLength(2);
+    expect(staging.match(/ref: \$\{\{ github.sha \}\}/g)).toHaveLength(2);
+    expect(staging).toContain("github.ref == 'refs/heads/main'");
+    expect(staging).toContain('needs: preflight');
+    expect(staging).toContain('d1 migrations list DB --env staging --remote');
+    expect(staging).toContain('d1 time-travel info DB --env staging');
+    expect(staging).toContain('d1 migrations apply DB --env staging --remote');
+    expect(staging).toContain('wrangler deploy --env staging --name gorgonbuilder-staging');
+    expect(staging).not.toMatch(/secrets\.(BETTER_AUTH|DISCORD|GOOGLE)|wrangler secret|d1 create/);
   });
 
   it('CI only performs Wrangler dry-runs', () => {
