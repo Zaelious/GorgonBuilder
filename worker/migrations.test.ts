@@ -42,13 +42,13 @@ beforeEach(() => {
 describe('D1 migrations', () => {
   it('are sequentially numbered, uniquely prefixed SQL files', () => {
     const files = migrationFiles();
-    expect(files).toEqual(['0001_better_auth_core.sql', '0002_profiles_and_builds.sql']);
+    expect(files).toEqual(['0001_better_auth_core.sql', '0002_profiles_and_builds.sql', '0003_api_rate_limit.sql']);
     files.forEach((file, index) => expect(file.startsWith(String(index + 1).padStart(4, '0') + '_')).toBe(true));
   });
 
   it('create the auth, profile and build tables separately', () => {
     const tables = db.prepare(`SELECT name FROM sqlite_schema WHERE type = 'table' ORDER BY name`).all().map(r => r.name);
-    expect(tables).toEqual(['account', 'build', 'profile', 'session', 'user', 'verification']);
+    expect(tables).toEqual(['account', 'api_rate_limit', 'build', 'profile', 'session', 'user', 'verification']);
     const buildColumns = db.prepare(`SELECT name FROM pragma_table_info('build')`).all().map(r => r.name);
     expect(buildColumns).not.toContain('raw_report');
     expect(buildColumns).not.toContain('owner_token');
