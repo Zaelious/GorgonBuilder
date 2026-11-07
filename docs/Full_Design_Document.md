@@ -333,7 +333,7 @@ Use browser storage for:
 
 A provider-neutral backend data-access contract enables create/get/update/delete and independent copy using a stable authenticated owner user ID. Auth provider credentials/sessions are stored separately from BuildDocument. A build record persists `ownerUserId`, Public/Unlisted/Private visibility, title/description for public listing, canonical combat-skill IDs for indexing and versioned build JSON. Session and row ACL checks are server-side.
 
-T0018 provides D1/Worker and auth feasibility; T0019 implements secure accounts and build CRUD; T0020 adds account/share/profile UI; T0020-F1 adds public discovery; T0021 validates/release. The old token-only anonymous save design is superseded.
+T0018 D1/Worker/auth feasibility was accepted via PR #52; T0019 secure accounts and native D1 CRUD are implemented on the review branch (hosted verification pending); T0020 adds account/share/profile UI; T0020-F1 adds public discovery; T0021 validates/release. The old token-only anonymous save design is superseded.
 
 ## 10. Security / Privacy
 
@@ -414,8 +414,7 @@ No optimization feature may define its own separate damage rules.
 T0001–T0021 deliver the working v1 planner and do not attempt to fully implement:
 
 - stateful rotation simulation
-- public build gallery
-- accounts
+- social reactions/comments beyond the approved account/community MVP
 - live combat log parsing
 - all food/meditation/potion/party buffs
 - defensive/threat scoring

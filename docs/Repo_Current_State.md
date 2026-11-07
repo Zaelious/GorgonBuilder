@@ -50,9 +50,15 @@ T0001–T0009 and T0009-F1 are merged and customer-accepted. The planner runs on
 
 **Deployment housekeeping completed** via [PR #2](https://github.com/Zaelious/GorgonBuilder/pull/2) (squash commit `9df290379b396f8bb4cc2717e154bbbca577af98`): explicit static-assets `wrangler.jsonc`, Wrangler 4.156.0 and synchronized lockfile, deploy/preview scripts, GitHub CI with Cloudflare dry-run, and deployment instructions.
 
+## T0018 accepted; T0019 implementation under review
+
+T0018 was accepted and squash-merged via [PR #52](https://github.com/Zaelious/GorgonBuilder/pull/52), commit `5befbb5` (2026-11-07). The merged Worker, D1 migrations, Better Auth 1.7.18 probe and repository contracts are authoritative. T0019 adds runtime OAuth/session/onboarding APIs, native D1 persistence, ownership/privacy controls and a manual approval-controlled staging workflow on `feature/t0019-auth-build-backend`; **not yet accepted or merged**. See [T0019 verification](T0019_Verification.md) and [website-only owner setup](T0019_Owner_Setup.md).
+
+The existing staging D1 is `gorgonbuilder-staging`, `477e9b46-bb96-4eca-a5ed-1ee57185fb2a`. Its configuration is staging-only. Remote migrations, staging deployment, credential setup, live OAuth and Free CPU/usage measurements remain **Not run — owner action required**. Production remains unbound and account APIs fail closed. T0020 UI and T0020-F1 discovery are pending and were not started.
+
 ## Ticket Sequence After T0015
 
-T0008-F2, T0013-F2, T0014-F1 and T0015 have been customer-accepted and merged. T0015 verification and the existing preliminary follow-up details remain in [Tickets.md](Tickets.md), [T0015 verification](T0015_Verification.md), and [Known Issues](Known_Issues_And_Followups.md). **T0018 — Cloudflare Workers + D1, Authentication Architecture and Deployment Foundation** is now the next MVP ticket ([Issue #46](https://github.com/Zaelious/GorgonBuilder/issues/46)). Product owner approved Cloudflare Workers + D1 and expanded the MVP on 2026-11-06 to include registered accounts, owner-bound saved builds, Public/Unlisted/Private visibility, a personal build library, and Public Search Builds by name/description/author and up to two combat skills. **Planned sequence: T0018 → [T0019 #48](https://github.com/Zaelious/GorgonBuilder/issues/48) → [T0020 #49](https://github.com/Zaelious/GorgonBuilder/issues/49) → [T0020-F1 #50](https://github.com/Zaelious/GorgonBuilder/issues/50) → T0021 release.** These are future plans only; no account, D1 DB, backend or UI has been implemented yet. Product-owner roadmap decisions on 2026-11-06 deferred **both** [T0017 A/B comparison (Issue #45)](https://github.com/Zaelious/GorgonBuilder/issues/45) and [T0016 Character Statistics/Defensive Engine (Issue #43)](https://github.com/Zaelious/GorgonBuilder/issues/43) until **after T0021 release**, with T0016 last. They are **not dependencies of T0018–T0021**, and T0020's shared-build duplication does not depend on A/B. The prior anonymous edit-token-first ownership design is superseded by account/session ownership; temporary guest drafts remain browser-local. [Tickets.md](Tickets.md) holds the revised sequence. The existing browser-local CharacterSheet/Storage and My Items workflow is already sufficient for MVP; CurrentStats deltas and complete character/defensive stat sheets are not required for release. Formula and status confidence remain provisional for unmeasured conditions; no DPS/DoT/pet/threat simulator has been implemented.
+T0008-F2, T0013-F2, T0014-F1 and T0015 have been customer-accepted and merged. T0015 verification and the existing preliminary follow-up details remain in [Tickets.md](Tickets.md), [T0015 verification](T0015_Verification.md), and [Known Issues](Known_Issues_And_Followups.md). **T0018 — Cloudflare Workers + D1, Authentication Architecture and Deployment Foundation** was merged via PR #52 ([Issue #46](https://github.com/Zaelious/GorgonBuilder/issues/46)). Product owner approved Cloudflare Workers + D1 and expanded the MVP on 2026-11-06 to include registered accounts, owner-bound saved builds, Public/Unlisted/Private visibility, a personal build library, and Public Search Builds by name/description/author and up to two combat skills. **Planned sequence: T0018 → [T0019 #48](https://github.com/Zaelious/GorgonBuilder/issues/48) → [T0020 #49](https://github.com/Zaelious/GorgonBuilder/issues/49) → [T0020-F1 #50](https://github.com/Zaelious/GorgonBuilder/issues/50) → T0021 release.** T0018 foundation is merged; T0019 backend is implemented on its review branch. Hosted account operation and T0020 UI are pending. Product-owner roadmap decisions on 2026-11-06 deferred **both** [T0017 A/B comparison (Issue #45)](https://github.com/Zaelious/GorgonBuilder/issues/45) and [T0016 Character Statistics/Defensive Engine (Issue #43)](https://github.com/Zaelious/GorgonBuilder/issues/43) until **after T0021 release**, with T0016 last. They are **not dependencies of T0018–T0021**, and T0020's shared-build duplication does not depend on A/B. The prior anonymous edit-token-first ownership design is superseded by account/session ownership; temporary guest drafts remain browser-local. [Tickets.md](Tickets.md) holds the revised sequence. The existing browser-local CharacterSheet/Storage and My Items workflow is already sufficient for MVP; CurrentStats deltas and complete character/defensive stat sheets are not required for release. Formula and status confidence remain provisional for unmeasured conditions; no DPS/DoT/pet/threat simulator has been implemented.
 
 ## Current Stack
 
@@ -60,11 +66,11 @@ T0008-F2, T0013-F2, T0014-F1 and T0015 have been customer-accepted and merged. T
 - ESLint 10 with TypeScript rules and core-layer import restrictions
 - Vitest 5 with jsdom: 1,272 tests passing at accepted T0015-R1 head (64 files); GitHub CI and Cloudflare preview green. Optional Chromium/Playwright layout, transport and equipment smokes remain applicable.
 - Shared CSS variables and responsive baseline styles
-- Cloudflare Workers Static Assets for the Vite frontend (no Cloudflare Vite plugin or backend yet); **Cloudflare Workers + D1 approved as the future backend, not implemented**
-- T0008 connects T0007's injected local draft/autosave to the actual planner; remote provider-agnostic saving remains future work
+- Cloudflare Workers Static Assets plus same-origin Worker API and D1; no Cloudflare Vite plugin. Production has no DB binding.
+- T0008 connects T0007's injected local draft/autosave to the actual planner; native D1 remote persistence is implemented in the T0019 review branch
 
 Runtime dependencies: `react`, `react-dom`.  
-Development dependencies: `@eslint/js`, `@types/node`, `@types/react`, `@types/react-dom`, `@vitejs/plugin-react`, `eslint`, `globals`, `jsdom`, `typescript`, `typescript-eslint`, `vite`, `vitest`, `wrangler` (pinned to 4.156.0).
+Development dependencies: `@eslint/js`, `@types/node`, `@types/react`, `@types/react-dom`, `@vitejs/plugin-react`, `eslint`, `globals`, `jsdom`, `typescript`, `typescript-eslint`, `vite`, `vitest`, `better-auth` (exact 1.7.18), `wrangler` (pinned to 4.156.0).
 
 `package.json` requires Node `^22.22.2 || ^24.15.0 || >=26.0.0`; Codex tested with Node 24.19.0.
 
@@ -76,7 +82,10 @@ Development dependencies: `@eslint/js`, `@types/node`, `@types/react`, `@types/r
 - `npm run dev` — Vite development server
 - `npm run preview` — local Vite preview of a production build
 - `npm run lint` — ESLint with zero allowed warnings
-- `npm run typecheck` — TypeScript no-emit checking
+- `npm run typecheck` — generate Worker types, then check app/scripts/Worker TypeScript
+- `npm run worker:smoke` — temporary native local D1, real Worker APIs and local auth probe
+- `npm run worker:dev` — apply local migrations and serve built planner in workerd
+- `npm run db:migrate:local` — local D1 migrations only
 - `npm test` — one-shot Vitest
 - `npm run build` — typecheck + Vite production build
 - `npm run deploy` — build and deploy to Cloudflare Workers
@@ -186,7 +195,7 @@ These are implementation-agent test results, not a separate independent executio
 - Cloudflare dashboard commands: build `npm run build`, deploy `npx wrangler deploy`, preview `npx wrangler preview`
 - `wrangler.jsonc` serves `./dist` with single-page-app fallback.
 - Cloudflare Preview Builds were confirmed working for PR #12; production deployment should still be checked independently in the dashboard.
-- Deployment implementation is frontend-only and does not decide the T0018 backend provider.
+- The Worker API is asset-first outside `/api/*`; see the T0018 ADR and T0019 verification for backend isolation.
 
 ## Game Data
 

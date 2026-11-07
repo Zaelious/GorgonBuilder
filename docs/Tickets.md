@@ -22,7 +22,7 @@ Guidelines:
 - Customer hands-on testing is required only where marked.
 - Out-of-scope discoveries go to `Known_Issues_And_Followups.md`.
 - Stateful Rotation/DPS simulation begins in the **next ticket series after T0021**, after the per-ability engine is validated.
-- **Roadmap update (2026-11-06):** Ticket numbers are stable IDs, not execution order. **T0018 is next**, followed by T0019, T0020 and T0021 release. Defer T0017 A/B comparison and T0016 Character Statistics/Defensive Engine until after T0021, with T0016 last. Neither deferred feature is a requirement for T0018–T0021.
+- **Roadmap update (2026-11-06):** Ticket numbers are stable IDs, not execution order. **T0018 merged via PR #52; T0019 is under implementation review**, followed by T0020, T0020-F1 and T0021 release. Defer T0017 A/B comparison and T0016 Character Statistics/Defensive Engine until after T0021, with T0016 last. Neither deferred feature is a requirement for T0018–T0021.
 
 ## Verification Classes
 
@@ -1379,7 +1379,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 ## T0018 — Cloudflare Workers + D1, Authentication Architecture, and Deployment Foundation
 
-**Queue:** NEXT MVP implementation. **Status:** Cloudflare Workers + D1 chosen by product owner (2026-11-06); do not rerun open-ended provider selection. Complete implementation requirements: [Issue #46](https://github.com/Zaelious/GorgonBuilder/issues/46).
+**Queue / Status:** Accepted and squash-merged via PR #52, commit `5befbb5` (2026-11-07). Cloudflare Workers + D1 selected and locally proven; hosted deployment remains separate. Complete implementation requirements: [Issue #46](https://github.com/Zaelious/GorgonBuilder/issues/46).
 
 **Complexity:** High. **Verification:** Automated + architect review, D1/Worker local health and deployment dry-run.
 
@@ -1406,8 +1406,8 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 ## T0019 — Account Authentication, Build Persistence and Ownership API
 
-**Queue:** After accepted T0018. Full requirements: [Issue #48](https://github.com/Zaelious/GorgonBuilder/issues/48).
-**Complexity:** Very high (focused auth/backend work; split into reviewed follow-up PRs only if necessary).
+**Queue / Status:** Implemented on `feature/t0019-auth-build-backend`, awaiting PR review and genuine hosted staging/OAuth verification; not merged. T0018 accepted via PR #52. Full requirements: [Issue #48](https://github.com/Zaelious/GorgonBuilder/issues/48).
+**Complexity:** Very high (one phased implementation PR, per Issue #48).
 **Verification:** Automated security/API tests and customer local account smoke.
 
 **Goal:** Implement actual registered accounts, secure sessions and user-ID-owned persistent builds on Cloudflare Workers + D1. This replaces anonymous owner-token-first persistence.
@@ -1485,7 +1485,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 ## T0021 — v1 Stabilization, End-to-End Security/Discovery Regression, Documentation, and Release
 
-**Queue:** MVP release ticket after accepted T0020-F1.
+**Queue:** MVP release ticket after accepted T0020-F1. T0018 foundation is merged via PR #52; hosted T0019 acceptance remains pending real OAuth/CPU verification.
 **Complexity:** High. **Verification:** Customer milestone regression required.
 
 **Goal:** Release a trustworthy GorgonBuilder community planner: guest planning, accounts, personal libraries, Public/Unlisted/Private sharing and public build search, using the existing per-ability/Spark model.

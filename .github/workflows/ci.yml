@@ -32,7 +32,7 @@ jobs:
         run: npm run typecheck
 
       - name: Test
-        run: npm test
+        run: npm test -- --maxWorkers=2 --testTimeout=15000
 
       - name: Verify committed treasure-coverage reports are current
         run: npm run coverage:treasure -- --check

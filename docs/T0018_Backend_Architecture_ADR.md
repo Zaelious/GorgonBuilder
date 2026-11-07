@@ -1,10 +1,12 @@
 # ADR T0018 — Cloudflare Workers + D1 Backend, Authentication and Build Storage
 
-**Status:** Proposed with T0018 PR (awaiting product-owner review)
+**Status:** Accepted via PR #52 (`5befbb5`, 2026-11-07). Historical T0018 decisions below; T0019 implementation details and corrections are in [T0019 verification](T0019_Verification.md).
 **Date:** 2026-11-06
 **Ticket:** T0018 ([Issue #46](https://github.com/Zaelious/GorgonBuilder/issues/46))
 **Provider decision:** Cloudflare Workers + D1, approved by the product owner on 2026-11-06. This ADR records it; it does not reopen it.
 **Related:** [Build save/share design](Build_Save_And_Share_Design.md), [MVP technical design](MVP_Technical_Design.md), [T0018 verification](T0018_Verification.md), [owner setup](T0018_Owner_Setup.md)
+
+**T0019 delta (under review):** staging now points only to owner-created D1 `477e9b46-bb96-4eca-a5ed-1ee57185fb2a`; production remains unbound. Runtime options moved to `worker/auth/options.ts`. All signup emails must be provider-verified; provider auto-linking is disabled. Immutable username onboarding precedes every build write. Native D1 limits replace isolate-local memory limits. Owner/public DTOs are distinct; foreign copies strip the same private metadata as public reads. `DELETE /api/me` adds the ADR's explicit account-erasure flow (confirmation + fresh login). No hosted operation has been performed. The later Preview isolation guidance below is superseded: **previews must have neither staging nor production DB/credentials**.
 
 ## 1. Context
 

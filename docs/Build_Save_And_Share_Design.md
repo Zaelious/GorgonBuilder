@@ -16,9 +16,11 @@ Guest planning and local autosave work without signup. Registration enables pers
 
 ## Backend and authentication
 
+T0018 is merged via PR #52. T0019 runtime API/D1 implementation is under review, not merged or hosted-verified; see [verification](T0019_Verification.md). T0020 UI and T0020-F1 search remain pending.
+
 Use the already existing Cloudflare Workers Static Assets host, adding a same-origin Worker API and Cloudflare D1 database. Preserve the Vite SPA, v490 data, BuildDocument v1 and local `gorgonbuilder.current-draft`.
 
-A supported Cloudflare D1-compatible authentication library (Better Auth native D1 is the preferred T0018 feasibility candidate) manages accounts, OAuth provider identities, session cookies and expiry; **do not hand-roll password handling**. Recommended MVP quick signup: **Discord and Google OAuth**, then select a unique GorgonBuilder public username. OAuth client creation and callback origins require owner's credentials and explicit authorization. Email/password would require a genuine verified email/reset delivery system and separate approval. Browsing/planning remains available as a guest; login is required to persist to account or copy into My Builds.
+A supported Cloudflare D1-compatible authentication library (Better Auth 1.7.18 native D1 was accepted through PR #52) manages accounts, OAuth provider identities, session cookies and expiry; **do not hand-roll password handling**. Recommended MVP quick signup: **Discord and Google OAuth**, then select a unique GorgonBuilder public username. OAuth client creation and callback origins require owner's credentials and explicit authorization. Email/password would require a genuine verified email/reset delivery system and separate approval. Browsing/planning remains available as a guest; login is required to persist to account or copy into My Builds.
 
 Use stable immutable server-generated `userId` for authorization, **never** a changeable username, public build ID, client-provided owner field or email. Username is normalized for uniqueness (case-insensitive) and separately displayed to other users; reserve route-dangerous/admin handles. User identities/sessions are private, not bundled into build JSON.
 
@@ -40,7 +42,9 @@ schemaVersion / gameDataVersion
 createdAt / updatedAt
 ```
 
-Account and session records are separate. Canonical skill IDs, title/search metadata and owner must be server-validated and synchronized; don't trust client search keys. No raw CharacterSheet or Storage report upload; imported item-instance working powers may exist in saved build JSON, so a user must understand which public fields are disclosed when publishing.
+Account and session records are separate. Canonical skill IDs, title/search metadata and owner must be server-validated and synchronized; don't trust client search keys. No raw CharacterSheet or Storage report upload; imported item-instance working powers exist in saved build JSON; only audited build mechanics are included in non-owner representations.
+
+T0019 non-owner DTOs and foreign copies remove `characterImport`, item instance IDs/custom names/provenance/metadata (including `sourceItem`), target extension metadata, app-version metadata, and private notes; effective working powers, candidate mods, Sparks and target mechanics remain. Owner reads preserve exact BuildDocument v1. Free-form build titles/public descriptions are deliberately public author text.
 
 BuildDocument's `notes` are not implicitly a public search summary. Keep a separate author-controlled `publicDescription` in server listing metadata if needed; public view/disclosure of actual BuildDocument fields must be clear. Keep BuildDocument schema v1 unless a separately approved migration is necessary.
 
@@ -58,7 +62,7 @@ Illustrative same-origin API:
 - `/api/auth/*`: selected supported authentication/session endpoints.
 - `POST /api/builds`: account-only create, default Private.
 - `GET /api/builds/:id`: Public and Unlisted guest read, Private owner-only.
-- `PUT /api/builds/:id`, `DELETE /api/builds/:id`: owner-only.
+- `PATCH /api/builds/:id`, `DELETE /api/builds/:id`: owner-only.
 - `GET /api/me/builds`: signed-in owner library across all visibility states.
 - `POST /api/builds/:id/copy`: authenticated user independently copies a viewable build to a fresh **Private**, owner-bound record. (Exact REST shape chosen in T0018/T0019.)
 - `GET /api/builds/search`: Public-only server-side indexed search, implemented T0020-F1.
