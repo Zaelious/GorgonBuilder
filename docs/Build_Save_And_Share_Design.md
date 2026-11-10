@@ -16,7 +16,7 @@ Guest planning and local autosave work without signup. Registration enables pers
 
 ## Backend and authentication
 
-T0018 is merged via PR #52. T0019 runtime API/D1 implementation is under review, not merged or hosted-verified; see [verification](T0019_Verification.md). T0020 UI and T0020-F1 search remain pending.
+T0018 is merged via PR #52. T0019 runtime API/D1 implementation is under review, not merged or hosted-verified; see [verification](T0019_Verification.md). T0019 was subsequently merged via PR #53. The T0020 UI is implemented on its review branch (see [T0020 verification](T0020_Verification.md)): backend feature detection, OAuth sign-in/onboarding, Save build/Save changes/Save as new, My Builds, sharing review, read-only `/builds/:id`, copy and `/profile` / `/u/:username`. A browser-local `gorgonbuilder.cloud-link` records which owned record the working draft came from (no tokens; BuildDocument v1 and `gorgonbuilder.current-draft` unchanged), and `gorgonbuilder.replaced-draft` keeps one unsaved build replaced by an explicit open. T0020-F1 search remains pending.
 
 Use the already existing Cloudflare Workers Static Assets host, adding a same-origin Worker API and Cloudflare D1 database. Preserve the Vite SPA, v490 data, BuildDocument v1 and local `gorgonbuilder.current-draft`.
 

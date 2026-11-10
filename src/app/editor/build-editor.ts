@@ -7,6 +7,7 @@ import { setTargetCount, setTargetDamageTypePercent, type TargetPercentField } f
 import type { AbilitySelection, BuildDocument, ItemInstance } from '../../core/build/document';
 import { validateBuildDocument } from '../../core/build/validation';
 import type { GameDataRepository } from '../../data/repository/repository';
+import { followSkillTitle } from './default-title';
 
 export const COMBAT_BAR_SIZE = 6;
 export type Slot = 'A' | 'B';
@@ -119,7 +120,8 @@ export function editBuild(build: BuildDocument, edit: BuildEdit, data: GameDataR
     const other = edit.slot === 'A' ? build.skillSlotB : build.skillSlotA;
     const departed = skill.skillId !== null && skill.skillId !== other.skillId ? skill.skillId : null;
     const equipment = departed === null ? build.equipment : pruneCandidateModsForSkill(build.equipment, departed, data);
-    return { ...build, [skillKey]: { ...skill, skillId: edit.skillId, level: edit.level ?? skill.level }, [barKey]: [], equipment };
+    // T0020: an automatic title follows the official skill pair; a customized title never changes.
+    return followSkillTitle(build, { ...build, [skillKey]: { ...skill, skillId: edit.skillId, level: edit.level ?? skill.level }, [barKey]: [], equipment }, data);
   }
   if (edit.type === 'level') {
     if (!Number.isSafeInteger(edit.level) || edit.level < 0) return build;

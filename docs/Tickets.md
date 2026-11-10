@@ -1433,7 +1433,7 @@ T0008-F1, T0010-F1 and T0010-F2 are customer-accepted and merged UI follow-ups. 
 
 ## T0020 — Accounts, Personal Build Library, Save/Share UI and Profiles
 
-**Queue:** After accepted T0019. Full requirements: [Issue #49](https://github.com/Zaelious/GorgonBuilder/issues/49).
+**Queue / Status:** Implemented on `feature/t0020-accounts-save-share-ui` (2026-11-07) per the product-owner kickoff update; awaiting owner review, merge and manual staging deployment for hands-on acceptance. Not merged; T0020-F1 not started. Full requirements: [Issue #49](https://github.com/Zaelious/GorgonBuilder/issues/49). Verification: [T0020_Verification.md](T0020_Verification.md).
 **Complexity:** High. **Verification:** Customer hands-on with two accounts/incognito and mobile.
 
 **Goal:** Add user-friendly signup/login, owner profile/My Builds, permanent Save/Update/Delete, public/unlisted/private visibility and link sharing, and independent build copying into an account.

@@ -223,11 +223,13 @@ it('clears only staged mods resolved to a departed skill, atomically, with undo 
   expect(after.equipment[0]!.item).toEqual(build.equipment[0]!.item);
   expect(after.equipment[0]!.sparks).toEqual(build.equipment[0]!.sparks);
   expect(after.equipment[1]).toEqual(build.equipment[1]);
-  expect({ ...after, skillSlotA: build.skillSlotA, skillSlotB: build.skillSlotB, equipment: build.equipment }).toEqual(build);
+  // T0020: the factory "Untitled build" title follows the new skill pair; everything else is untouched.
+  expect(after.title).toBe('Psychology');
+  expect({ ...after, title: build.title, skillSlotA: build.skillSlotA, skillSlotB: build.skillSlotB, equipment: build.equipment }).toEqual(build);
   // Undo restores the exact previous document, including the departed skill and every candidate.
   await click('.skill-change-notice button');
   await tick();
-  expect(saved()).toEqual({ ...build, skillSlotA: { ...build.skillSlotA, skillId: null } });
+  expect(saved()).toEqual({ ...build, title: 'Druid', skillSlotA: { ...build.skillSlotA, skillId: null } });
   expect(container.querySelector('.skill-change-notice p')).toBeNull();
   // Removing the skill entirely also clears; any later edit retires the undo.
   await change('#skill-B', '');
