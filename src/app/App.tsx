@@ -18,7 +18,8 @@ import { useCloudSave } from '../features/sharing/CloudSave';
 import { MyBuilds } from '../features/sharing/MyBuilds';
 import { SharedBuildView } from '../features/sharing/SharedBuildView';
 import { AuthorPage, ProfilePage } from '../features/sharing/ProfilePages';
-import { discardReplacedDraft, readCloudLink, readReplacedDrafts, stashWorkingBuild, writeCloudLink, type CloudLink, type ReplacedDraft } from '../features/sharing/workspace';
+import { discardReplacedDraft, readCloudLink, readReplacedDrafts, type CloudLink, type ReplacedDraft } from '../features/sharing/workspace';
+import { persistCloudLink, replaceWorkingDraft } from '../features/sharing/replace-working';
 import { formatTime } from '../features/sharing/format';
 import './planner.css';
 import '../features/sharing/sharing.css';
@@ -55,11 +56,16 @@ function BuildEditor({ data, imported, setImported }: { data: GameDataRepository
   // Undo for mods cleared automatically by a skill change; valid only until the next edit.
   const [cleared, setCleared] = useState<{ previous: BuildDocument; next: BuildDocument; message: string } | null>(null);
   const [saveState, setSaveState] = useState(session.restored.status === 'restored' ? 'Local draft restored' : 'No changes saved yet');
+  // True while storage could not record the cloud link for the build in memory; retried after
+  // every successful autosave so storage never pairs this draft with a different record.
+  const linkPending = useRef(false);
+  const [linkWarning, setLinkWarning] = useState(false);
   const [autosave] = useState(() => createDraftAutosave(session.local, {
     onResult: result => {
       setSaveResult(result);
       if (result.ok) setRecoveryVisible(false);
       setSaveState(result.ok ? 'Saved in this browser' : 'Changes are not saved');
+      if (result.ok && linkPending.current && persistCloudLink(linkRef.current)) { linkPending.current = false; setLinkWarning(false); }
     },
   }));
   const versionMismatch = build.gameDataVersion !== data.gameDataVersion;
@@ -88,24 +94,48 @@ function BuildEditor({ data, imported, setImported }: { data: GameDataRepository
 
   function setLink(next: CloudLink | null) {
     linkRef.current = next;
-    writeCloudLink(next);
     setLinkState(next);
+    const stored = persistCloudLink(next);
+    linkPending.current = !stored;
+    setLinkWarning(!stored);
   }
 
   /**
-   * Replace the working build. Unsaved work is first appended to the kept backups; if that
-   * cannot be stored, nothing is replaced and the returned message explains why.
+   * Replace the working build through the shared storage transaction (replace-working.ts):
+   * backup, old link removal, incoming draft and incoming link are all stored before anything
+   * in the editor changes. On failure the editor, its link and every backup stay as they were
+   * and the returned message explains what to do.
    */
   function replaceWorking(next: BuildDocument, nextLink: CloudLink | null, consume?: number): string | null {
     if (readOnly) return 'This draft is protected, so it was not replaced. Follow the recovery message above.';
-    const stash = stashWorkingBuild(current.current, linkRef.current, consume === undefined ? {} : { consume });
-    if (!stash.ok) return stash.message;
-    setBackups(stash.entries);
-    setBackupError(null);
-    setCleared(null); setDetailSlot(null);
-    apply(next);
-    autosave.flush();
-    setLink(nextLink);
+    const flushed = autosave.flush();
+    if (flushed && !flushed.ok) return 'Nothing was replaced: your latest changes could not be saved in this browser (storage may be full or blocked). Free some browser storage, then try again.';
+    const result = replaceWorkingDraft({
+      current: current.current, currentLink: linkRef.current, next, nextLink,
+      saveDraft: document => session.local.saveDraft(document).ok,
+      ...(consume === undefined ? {} : { consume }),
+    });
+    if (!result.ok) {
+      if (result.partial) {
+        // Storage now holds the incoming build unlinked; keep editing the current one and
+        // re-store it (and its link) as soon as storage works again.
+        autosave.schedule(current.current);
+        linkPending.current = true; setLinkWarning(true);
+      }
+      const kept = readReplacedDrafts();
+      if (kept.ok) setBackups(kept.entries);
+      return result.message;
+    }
+    autosave.cancel();
+    setBackups(result.backups);
+    setBackupError(null); setCleared(null); setDetailSlot(null);
+    current.current = next;
+    setBuild(next);
+    setSaveResult(null);
+    setSaveState('Saved in this browser');
+    linkRef.current = nextLink;
+    setLinkState(nextLink);
+    linkPending.current = false; setLinkWarning(false);
     return null;
   }
 
@@ -204,6 +234,7 @@ function BuildEditor({ data, imported, setImported }: { data: GameDataRepository
         <span className="notice-actions"><button type="button" disabled={readOnly} aria-label={`Restore “${entry.document.title}”`} onClick={() => restoreBackup(index)}>Restore</button>
           <button type="button" aria-label={`Discard “${entry.document.title}”`} onClick={() => discardBackup(index)}>Discard</button></span>
       </li>)}</ul></div>}
+    {linkWarning && <p className="notice cloud-notice warning" role="alert">This browser could not record which My Builds record this build belongs to (storage may be full or blocked). It retries automatically after the next local save. Until then, avoid reloading: after a reload this build would show as not saved to My Builds, and saving it would create a new build.</p>}
     {backupError && <div className="notice cloud-notice warning" role="alert"><p>{backupError}</p>
       <button type="button" className="notice-dismiss" aria-label="Dismiss backup message" onClick={() => setBackupError(null)}>×</button></div>}
     {recoveryVisible && session.restored.status === 'fallback' && <p className="notice warning" role="alert">{saveError(session.restored.error)}</p>}

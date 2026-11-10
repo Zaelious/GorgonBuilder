@@ -124,7 +124,7 @@ export function readReplacedDrafts(store: Store | null = browserStorage()): Back
     const entry = entryFrom(stored);
     return entry ? { ok: true, entries: [entry] } : { ok: false };
   }
-  if (stored?.version !== 2 || !Array.isArray(stored.entries) || stored.entries.length > MAX_REPLACED_DRAFTS) return { ok: false };
+  if (stored?.version !== 2 || !Array.isArray(stored.entries) || stored.entries.length > MAX_REPLACED_DRAFTS + 1) return { ok: false };
   const entries = stored.entries.map(entryFrom);
   return entries.every(entry => entry !== null) ? { ok: true, entries: entries as ReplacedDraft[] } : { ok: false };
 }
@@ -134,7 +134,7 @@ function writeReplacedDrafts(entries: readonly ReplacedDraft[], store: Store | n
 }
 
 export type StashResult =
-  | { ok: true; entries: ReplacedDraft[]; kept: boolean }
+  | { ok: true; entries: ReplacedDraft[]; kept: boolean; commit: () => ReplacedDraft[] }
   | { ok: false; reason: 'unreadable' | 'full' | 'write-failed'; message: string };
 
 const STASH_MESSAGES = {
@@ -144,29 +144,38 @@ const STASH_MESSAGES = {
 } as const;
 
 /**
- * Prepare to replace the working build. If it holds unsaved work it is appended to the kept
- * backups (never overwriting earlier ones); `consume` removes the backup being restored. Only
- * when this returns ok may the caller overwrite the working draft.
+ * First step of replacing the working build. If it holds unsaved work it is appended to the
+ * kept backups (never overwriting earlier ones). `consume` names the backup being restored: it
+ * is NOT removed here, only by `commit()` once the caller has stored the incoming draft, so a
+ * failed switch can never lose it. Only when this returns ok may the caller write the draft.
  */
 export function stashWorkingBuild(current: BuildDocument, link: CloudLink | null, options: {
   store?: Store | null; now?: number; consume?: number;
 } = {}): StashResult {
   const store = options.store === undefined ? browserStorage() : options.store;
   const needed = hasUnsavedWork(current, link);
+  const commitFor = (entries: ReplacedDraft[]) => () => {
+    if (options.consume === undefined || !entries[options.consume]) return entries;
+    const removed = discardReplacedDraft(options.consume, store);
+    // A failed removal only leaves a duplicate backup of the restored build, never a loss.
+    return removed.ok ? removed.entries : entries;
+  };
   if (!needed && options.consume === undefined) {
     const existing = readReplacedDrafts(store);
-    return { ok: true, entries: existing.ok ? existing.entries : [], kept: false };
+    const entries = existing.ok ? existing.entries : [];
+    return { ok: true, entries, kept: false, commit: () => entries };
   }
   const fail = (reason: keyof typeof STASH_MESSAGES): StashResult => ({ ok: false, reason, message: STASH_MESSAGES[reason] });
   const existing = readReplacedDrafts(store);
   if (!existing.ok) return fail('unreadable');
-  const entries = existing.entries.filter((_, index) => index !== options.consume);
+  const entries = [...existing.entries];
   if (needed) {
-    if (entries.length >= MAX_REPLACED_DRAFTS) return fail('full');
+    const afterCommit = entries.length - (options.consume !== undefined && entries[options.consume] ? 1 : 0);
+    if (afterCommit >= MAX_REPLACED_DRAFTS) return fail('full');
     entries.push({ replacedAt: options.now ?? Date.now(), document: current, link });
+    if (!writeReplacedDrafts(entries, store)) return fail('write-failed');
   }
-  if (!writeReplacedDrafts(entries, store)) return fail('write-failed');
-  return { ok: true, entries, kept: needed };
+  return { ok: true, entries, kept: needed, commit: commitFor(entries) };
 }
 
 /** Explicitly discard one kept backup (the caller confirms with the user first). */

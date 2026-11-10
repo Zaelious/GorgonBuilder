@@ -149,9 +149,12 @@ describe('kept backups', () => {
     const store = memory({ [REPLACED_DRAFT_KEY]: JSON.stringify({ version: 1, ...entry('Legacy', 1) }) });
     expect(stashWorkingBuild(built('Second'), null, { store, now: 2 })).toMatchObject({ ok: true, kept: true });
     expect(kept(store).map(item => item.document.title)).toEqual(['Legacy', 'Second']);
-    // Restoring "Legacy" while the working build is clean removes only that entry.
+    // Restoring "Legacy" while the working build is clean: the entry is removed only on commit.
     const saved = built('Clean');
-    expect(stashWorkingBuild(saved, linkFor(record(saved), 'CowFan', saved), { store, consume: 0 })).toMatchObject({ ok: true, kept: false });
+    const stash = stashWorkingBuild(saved, linkFor(record(saved), 'CowFan', saved), { store, consume: 0 });
+    expect(stash).toMatchObject({ ok: true, kept: false });
+    expect(kept(store).map(item => item.document.title)).toEqual(['Legacy', 'Second']);
+    if (stash.ok) expect(stash.commit().map(item => item.document.title)).toEqual(['Second']);
     expect(kept(store).map(item => item.document.title)).toEqual(['Second']);
     expect(discardReplacedDraft(0, store)).toEqual({ ok: true, entries: [] });
     expect(store.map.has(REPLACED_DRAFT_KEY)).toBe(false);

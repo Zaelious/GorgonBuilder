@@ -10,6 +10,7 @@ import { createAccountApi } from '../account/api';
 import { redirectTo } from '../account/browser';
 import { createFakeAccountServer, type FakeAccountServer } from '../account/testing/fake-server';
 import { CLOUD_LINK_KEY, MAX_REPLACED_DRAFTS, REPLACED_DRAFT_KEY, type ReplacedDraft } from './workspace';
+import { REPLACE_MESSAGES } from './replace-working';
 
 vi.mock('../../data/repository/load', () => ({ loadGameDataRepository: vi.fn() }));
 vi.mock('../account/browser', () => ({ redirectTo: vi.fn() }));
@@ -82,6 +83,7 @@ async function submit(selector: string) { await act(async () => { find<HTMLFormE
 async function tick(ms = 500) { await act(async () => { vi.advanceTimersByTime(ms); }); }
 const draft = () => JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)!) as BuildDocument;
 const text = () => container.textContent ?? '';
+const storedLink = () => JSON.parse(localStorage.getItem(CLOUD_LINK_KEY)!) as { buildId: string; revision: number };
 const backups = () => (JSON.parse(localStorage.getItem(REPLACED_DRAFT_KEY)!) as { version: 2; entries: ReplacedDraft[] }).entries;
 /** Make one storage key fail to write (quota/permission/per-key failure) while others work. */
 function failWrites(key: string) {
@@ -301,6 +303,36 @@ describe('saving to My Builds', () => {
     await click('Save changes');
     expect(hasButton('Load the saved version')).toBe(true);
   }
+  it.each([[DRAFT_STORAGE_KEY, REPLACE_MESSAGES.draft], [CLOUD_LINK_KEY, REPLACE_MESSAGES.link]])(
+    'Load the saved version with a failing %s write keeps the edits, the stored draft, link and backups', async (key, message) => {
+      await conflictWithEdit('77'); await tick();
+      const before = { draft: localStorage.getItem(DRAFT_STORAGE_KEY), link: localStorage.getItem(CLOUD_LINK_KEY), backups: localStorage.getItem(REPLACED_DRAFT_KEY) };
+      expect(storedLink().revision).toBe(1);
+      const writes = failWrites(key);
+      await click('Load the saved version');
+      expect(text()).toContain(message);
+      expect(text()).not.toContain('Loaded the latest saved version');
+      expect(find<HTMLInputElement>('#level-A').value).toBe('77');
+      expect({ draft: localStorage.getItem(DRAFT_STORAGE_KEY), link: localStorage.getItem(CLOUD_LINK_KEY), backups: localStorage.getItem(REPLACED_DRAFT_KEY) }).toEqual(before);
+      expect(hasButton('Load the saved version')).toBe(true);
+      writes.mockRestore();
+      await click('Load the saved version');
+      expect(find<HTMLInputElement>('#level-A').value).toBe('11');
+      expect(storedLink().revision).toBe(2);
+    });
+  it('a cloud link that cannot be stored after saving is cleared (never stale), flagged, and retried after the next local save', async () => {
+    await render();
+    await type('#skill-A', 'Cow'); await tick();
+    const writes = failWrites(CLOUD_LINK_KEY);
+    await saveNew();
+    expect(server.rows.size).toBe(1);
+    expect(localStorage.getItem(CLOUD_LINK_KEY)).toBeNull();
+    expect(text()).toContain('could not record which My Builds record this build belongs to');
+    writes.mockRestore();
+    await type('#level-A', '42'); await tick();
+    expect(storedLink().buildId).toBe([...server.rows.keys()][0]);
+    expect(text()).not.toContain('could not record which My Builds record');
+  });
   it('loading the saved version is refused, keeping the edits, when the backup cannot be written', async () => {
     await conflictWithEdit('77');
     const writes = failWrites(REPLACED_DRAFT_KEY);
@@ -424,6 +456,28 @@ describe('My Builds, sharing and profiles', () => {
     await click('Sign out');
     await render('/my-builds');
     expect(text()).toContain('Sign in to see and manage your saved builds');
+  });
+  it('Restore with a failing incoming-draft write keeps the backup, the active build and its link', async () => {
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(doc('My experiment', 'Cow', null)));
+    const alpha = server.insert('CowFan', doc('Alpha', 'Deer', 'Psychology'));
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    await render('/my-builds');
+    await click(find('[aria-label="Open Alpha in the planner"]'));
+    expect(find('.title-button').textContent).toBe('Alpha');
+    const before = { draft: localStorage.getItem(DRAFT_STORAGE_KEY), link: localStorage.getItem(CLOUD_LINK_KEY), backups: localStorage.getItem(REPLACED_DRAFT_KEY) };
+    const writes = failWrites(DRAFT_STORAGE_KEY);
+    await click(find('[aria-label="Restore “My experiment”"]'));
+    expect(text()).toContain(REPLACE_MESSAGES.draft);
+    expect(find('.title-button').textContent).toBe('Alpha');
+    expect(find('#cloud-status').textContent).toContain('In My Builds');
+    expect({ draft: localStorage.getItem(DRAFT_STORAGE_KEY), link: localStorage.getItem(CLOUD_LINK_KEY), backups: localStorage.getItem(REPLACED_DRAFT_KEY) }).toEqual(before);
+    expect(backups().map(entry => entry.document.title)).toEqual(['My experiment']);
+    expect(storedLink().buildId).toBe(alpha.id);
+    writes.mockRestore();
+    await click(find('[aria-label="Restore “My experiment”"]'));
+    expect(find('.title-button').textContent).toBe('My experiment');
+    expect(localStorage.getItem(CLOUD_LINK_KEY)).toBeNull();
+    expect(localStorage.getItem(REPLACED_DRAFT_KEY)).toBeNull();
   });
   it('opening a build protects unsaved local work with a confirmation and a backup', async () => {
     const local = doc('My experiment', 'Cow', null);

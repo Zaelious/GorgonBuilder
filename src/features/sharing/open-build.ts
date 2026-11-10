@@ -5,7 +5,8 @@
  */
 import { createLocalPersistence } from '../../persistence/local/storage';
 import type { BuildRecord } from '../account/api';
-import { cloudState, documentForEditing, hasUnsavedWork, linkFor, readCloudLink, snapshotReplacedDrafts, stashWorkingBuild, writeCloudLink } from './workspace';
+import { cloudState, documentForEditing, hasUnsavedWork, linkFor, readCloudLink } from './workspace';
+import { replaceWorkingDraft } from './replace-working';
 
 export type OpenResult =
   | { status: 'opened' }
@@ -35,16 +36,11 @@ export function openRecordInPlanner(record: BuildRecord, ownerUsername: string, 
     const ok = confirm(`Replace the build in the planner (“${current.title}”) with “${record.title}”?\n\nThe current build has changes that are not saved to My Builds. It will be kept as a backup you can restore from the planner.`);
     if (!ok) return { status: 'cancelled' };
   }
-  const before = snapshotReplacedDrafts(store);
-  const stash = stashWorkingBuild(current, link, { ...(store ? { store } : {}), ...(options.now === undefined ? {} : { now: options.now }) });
-  if (!stash.ok) return { status: 'failed', message: stash.message };
   const document = documentForEditing(record);
-  const saved = local.saveDraft(document);
-  if (!saved.ok) {
-    before.restore();
-    return { status: 'failed', message: 'This browser could not store the build for editing (storage may be full or blocked). Nothing was changed.' };
-  }
-  // A stale link must never point at a different record than the new draft.
-  if (!writeCloudLink(linkFor(record, ownerUsername, document, options.now), store)) writeCloudLink(null, store);
-  return { status: 'opened' };
+  const result = replaceWorkingDraft({
+    current, currentLink: link, next: document, nextLink: linkFor(record, ownerUsername, document, options.now),
+    saveDraft: value => local.saveDraft(value).ok,
+    ...(store ? { store } : {}), ...(options.now === undefined ? {} : { now: options.now }),
+  });
+  return result.ok ? { status: 'opened' } : { status: 'failed', message: result.message };
 }
